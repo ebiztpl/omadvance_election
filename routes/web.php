@@ -28,6 +28,9 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::get('/logout', [LoginController::class, 'logout']);
 
+Route::post('/send-otp', [LoginController::class, 'sendOtp']);
+Route::post('/verify_otp', [LoginController::class, 'verifyOtp']);
+
 // Route::get('/dashboard', [LoginController::class, 'index'])->name('dashboard');
 
 
@@ -185,7 +188,12 @@ Route::middleware('checklogin')->group(function () {
 
 
 // user routes
-Route::middleware('checklogin')->group(function () {});
+Route::middleware('checklogin')->group(function () {
+});
 
 
 
+// member routes
+Route::middleware('checklogin')->group(function () {
+
+});

@@ -13,11 +13,14 @@ class RegistrationForm extends Model
     protected $fillable = [
         'name',
         'mobile',
+        'mobile1',
+        'otp',
+        'otp_created_at',
         'email',
         'reference_id',
         'workarea',
         'ref_id',
-        'position_id', 
+        'position_id',
     ];
 
 
@@ -26,7 +29,7 @@ class RegistrationForm extends Model
         return $this->belongsTo(RegistrationForm::class, 'reference_id', 'registration_id');
     }
 
-  
+
     public function referrals()
     {
         return $this->hasMany(self::class, 'reference_id', 'registration_id');
