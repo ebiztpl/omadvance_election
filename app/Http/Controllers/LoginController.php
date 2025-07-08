@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use App\Models\RegistrationForm;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 
@@ -32,12 +35,12 @@ class LoginController extends Controller
 
     public function showLoginForm()
     {
-        return view('login'); 
+        return view('login');
     }
 
     public function login(Request $request)
     {
-       
+
         $request->validate([
             'username' => 'required|string',
             'password' => 'required|string',
@@ -72,10 +75,23 @@ class LoginController extends Controller
         return back()->withErrors(['login_error' => 'Invalid credentials or role.']);
     }
 
-    public function logout()
+    // public function logout()
+    // {
+    //     session()->flush();
+    //     return redirect('/login');
+    // }
+
+    public function logout(Request $request)
     {
-        session()->flush();
-        return redirect('/login');
+        $logId = Session::get('log_id');
+        if ($logId) {
+            DB::table('login_history')->where('login_history_id', $logId)->update([
+                'logout_date_time' => now()
+            ]);
+        }
+
+        Session::flush();
+        return redirect('/login')->with('success', 'Logged out successfully.');
     }
 
     public function showChangePasswordForm()
@@ -109,5 +125,139 @@ class LoginController extends Controller
         session()->flush();
 
         return redirect('/login')->with('success', 'Password changed successfully. Please log in again.');
+    }
+
+    public function messageSent($otp, $mobile)
+    {
+        if (!preg_match('/^[6-9][0-9]{9}$/', $mobile)) {
+            \Log::error('Invalid mobile format: ' . $mobile);
+            return 0;
+        }
+
+        $senderId = "EBIZTL";
+        $flow_id = '6284e26a635ab0350d1600a5';
+        $recipients = [[
+            "mobiles" => "91" . $mobile,
+            "otp" => $otp,
+        ]];
+
+        $postData = [
+            "sender" => $senderId,
+            "flow_id" => $flow_id,
+            "recipients" => $recipients
+        ];
+
+        $url = "http://api.msg91.com/api/v5/flow/";
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode($postData),
+            CURLOPT_HTTPHEADER => [
+                "authkey: 373533AlLNuR0X62174363P1", // Replace with real key
+                "content-type: application/json"
+            ],
+        ]);
+
+        $output = curl_exec($curl);
+        $err = curl_error($curl);
+        curl_close($curl);
+
+        if ($err) {
+            \Log::error('SMS send error: ' . $err);
+            return 0;
+        }
+
+        $response = json_decode($output, true);
+
+        if ($response && isset($response['type']) && $response['type'] === 'success') {
+            \Log::info("OTP sent to $mobile: $otp");
+            return 1;
+        } else {
+            \Log::error("Failed OTP send to $mobile. Response: " . $output);
+            return 0;
+        }
+    }
+
+    public function sendOtp(Request $request)
+    {
+        $request->validate(['mobile' => 'required']);
+
+        $inputMobile = $request->mobile;
+
+        $sendToMobile = $inputMobile;
+
+        $member = RegistrationForm::where('mobile1', $inputMobile)
+            ->where('position_id', 8)
+            ->first();
+
+        if (!$member) {
+            return response()->json([
+                'status' => 'otp_error',
+                'message' => 'मोबाइल नंबर पंजीकृत नहीं है या अधिकृत नहीं है!'
+            ]);
+        }
+
+        $otp = rand(100000, 999999);
+
+        $member->update([
+            'otp' => $otp,
+            'otp_created_at' => now()
+        ]);
+
+        $sent = $this->messageSent($otp, $sendToMobile);
+
+        return response()->json([
+            'status' => $sent ? 'otp_success' : 'otp_error',
+            'message' => $sent ? 'ओटीपी सफलतापूर्वक भेजा गया!' : 'ओटीपी भेजने में विफल!'
+        ]);
+    }
+
+
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'mobile' => 'required',
+            'otp' => 'required|digits:6'
+        ]);
+
+        $member = RegistrationForm::where('mobile1', $request->mobile)
+            ->where('otp', $request->otp)
+            ->where('position_id', 8)
+            ->first();
+
+        if (!$member) {
+            return back()->withErrors(['otp' => 'अमान्य ओटीपी या अनुमति नहीं है!']);
+        }
+
+        $logId = DB::table('login_history')->insertGetId([
+            'registration_id' => $member->registration_id,
+            'login_date_time' => now(),
+            'logout_date_time' => null,
+            'ip' => $request->ip()
+        ]);
+
+        Session::put([
+            'registration_id' => $member->registration_id,
+            'admin_name' => $member->name ?? '',
+            'admin_role' => 'member',
+            'log_id' => $logId,
+        ]);
+
+        $member->update(['otp' => null]);
+
+        return redirect('/dashboard')->with('success', 'आप सफलतापूर्वक लॉग इन हो गए हैं!');
+    }
+
+
+
+    public function loginhistory()
+    {
+        if (!$this->usermodel->hasLoggedIn()) {
+            redirect("account/login");
+        }
+        $data = $this->db->select("*")->from('login_history')->order_by("login_date_time", "desc")->get()->result_array();
+        $this->load->view($this->folder . "login_history", array("rst" => $data));
     }
 }

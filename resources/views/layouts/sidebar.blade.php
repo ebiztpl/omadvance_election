@@ -77,6 +77,19 @@ $role = session('logged_in_role');
             <li><a href="{{route('change_password.index') }}"><i class="icon icon-lock"></i><span class="nav-text">पासवर्ड बदलें</span></a></li>
             @endif
 
+
+
+            {{-- Member Panel --}}
+            @else
+            <li class="nav-label">मेंबर टूल्स</li>
+            <li><a href="{{ route('complaints.index') }}"><i class="icon icon-user"></i><span class="nav-text">समस्या पंजीयन करे</span></a></li>
+
+            <li><a href="#"><i class="icon icon-user-following"></i><span class="nav-text">मेरी प्रोफ़ाइल</span></a></li>
+            <li><a href=""><i class="icon icon-lock"></i><span class="nav-text">पासवर्ड बदलें</span></a></li>
+            @endif
+
+
+
             {{-- Common Links --}}
             <!-- <li class="nav-label">Logout</li>
             <li><a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="icon icon-single-copy-06"></i><span class="nav-text">Logout</span></a></li>
