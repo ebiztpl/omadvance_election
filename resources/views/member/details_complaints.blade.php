@@ -1,7 +1,7 @@
 @php
 $pageTitle = 'समस्याएँ देखे';
 $breadcrumbs = [
-'एडमिन' => '#',
+'मेंबर' => '#',
 'समस्याएँ देखे' => '#'
 ];
 @endphp
@@ -23,6 +23,7 @@ $breadcrumbs = [
             'शिकायतकर्ता का नाम' => $complaint->name,
             'शिकायतकर्ता का मोबाइल' => $complaint->email,
             'पदाधिकारी का मोबाइल' => $complaint->mobile_number,
+            'मतदाता पहचान' => $complaint->voter_id,
             'संभाग का नाम' => $complaint->division->division_name ?? '',
             'जिले का नाम' => $complaint->district->district_name ?? '',
             'विधानसभा का नाम' => $complaint->vidhansabha->vidhansabha ?? '',
