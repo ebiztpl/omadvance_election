@@ -234,6 +234,10 @@
             padding: 0 10px;
             width: auto;
         }
+
+        .icon-arrow-right {
+            font-size: 11px !important;
+        }
     </style>
 
 </head>
