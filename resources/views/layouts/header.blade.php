@@ -16,7 +16,8 @@ $role = session('logged_in_role');
         <h4 class="text-white m-3">यूजर
             पैनल</h4>
         @else
-        <h4 class="text-white m-3">स्वागत</h4>
+        <h4 class="text-white m-3">मेंबर
+            पैनल</h4>
         @endif
     </a>
 
@@ -56,10 +57,18 @@ $role = session('logged_in_role');
                         </ol>
                     </div>
 
+                    @php
+                    $role = session('admin_role');
+                    $registrationId = session('registration_id');
 
+                    $memberName = null;
+                    if ($role === 'member' && $registrationId) {
+                    $memberName = \App\Models\RegistrationForm::where('registration_id', $registrationId)->value('name');
+                    }
+                    @endphp
                     <div class="dropdown">
                         <a class="btn btn-danger text-black dropdown-toggle" href="#" role="button" data-toggle="dropdown">
-                            {{ $name ?? 'User' }}
+                            {{ $role === 'member' ? ($memberName ?? 'मेंबर') : ($name ?? 'User') }}
                         </a>
                         <div class="dropdown-menu dropdown-menu-right">
                             <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">

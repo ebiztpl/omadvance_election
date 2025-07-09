@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\MemberController;
 
 Route::get('/', function () {
     return view('login');
@@ -194,6 +195,19 @@ Route::middleware('checklogin')->group(function () {
 
 
 // member routes
-Route::middleware('checklogin')->group(function () {
+Route::middleware('checkmember')->group(function () {
+    Route::get('member/dashboard', function () {return view('member/dashboard');})->name('member.dashboard');
+    Route::get('member/complaints', [MemberController::class, 'index'])->name('complaints.index');
+    Route::post('member/complaints/store', [MemberController::class, 'store'])->name('complaint.store');
+    Route::get('/get-districts/{division_id}', [MemberController::class, 'getDistricts']);
+    Route::get('/get-vidhansabha/{district_id}', [MemberController::class, 'getVidhansabhas']);
+    Route::get('/get-mandal/{vidhansabha_id}', [MemberController::class, 'getMandals']);
+    Route::get('/get-nagar/{mandal_id}', [MemberController::class, 'getNagars']);
+    Route::get('/get-polling/{mandal_id}', [MemberController::class, 'getPollings']);
+    Route::get('/get-area/{polling_id}', [MemberController::class, 'getAreas']);
 
+
+    Route::get('/member/view_complaint', [MemberController::class, 'complaint_index'])->name('complaints.view');
+    Route::get('/member/details_complaint/{id}', [MemberController::class, 'complaint_show'])->name('complaints.show');
+    Route::post('member/complaints/{id}/reply', [MemberController::class, 'postReply'])->name('complaints.reply');
 });

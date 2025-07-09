@@ -75,7 +75,6 @@ $role = session('logged_in_role');
             <li><a href="#"><i class="icon icon-picture"></i><span class="nav-text">फोटो गैलरी</span></a></li>
             <li><a href="#"><i class="icon icon-camrecorder"></i><span class="nav-text">वीडियो गैलरी</span></a></li>
             <li><a href="{{route('change_password.index') }}"><i class="icon icon-lock"></i><span class="nav-text">पासवर्ड बदलें</span></a></li>
-            @endif
 
 
 
@@ -84,8 +83,7 @@ $role = session('logged_in_role');
             <li class="nav-label">मेंबर टूल्स</li>
             <li><a href="{{ route('complaints.index') }}"><i class="icon icon-user"></i><span class="nav-text">समस्या पंजीयन करे</span></a></li>
 
-            <li><a href="#"><i class="icon icon-user-following"></i><span class="nav-text">मेरी प्रोफ़ाइल</span></a></li>
-            <li><a href=""><i class="icon icon-lock"></i><span class="nav-text">पासवर्ड बदलें</span></a></li>
+            <li><a href="{{ route('complaints.view') }}"><i class="icon icon-book-open"></i><span class="nav-text">समस्याएँ देखे</span></a></li>
             @endif
 
 

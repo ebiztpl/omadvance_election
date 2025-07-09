@@ -30,7 +30,11 @@
         }
 
         label {
-            color: #73879c;
+            color:rgb(32, 38, 44);
+        }
+
+        .error {
+            color: red
         }
 
         #loader-wrapper {
@@ -215,6 +219,20 @@
 
         .member-link:hover {
             color: darkblue;
+        }
+
+        .fieldset-bordered {
+            border: 2px solid #ccc;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .fieldset-bordered legend {
+            font-weight: bold;
+            padding: 0 10px;
+            width: auto;
         }
     </style>
 
