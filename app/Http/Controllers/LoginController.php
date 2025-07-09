@@ -135,7 +135,7 @@ class LoginController extends Controller
         }
 
         $senderId = "EBIZTL";
-        $flow_id = '6284e26a635ab0350d1600a5';
+        $flow_id = '686e28df91e9813c053cb273';
         $recipients = [[
             "mobiles" => "91" . $mobile,
             "otp" => $otp,
@@ -155,7 +155,7 @@ class LoginController extends Controller
             CURLOPT_CUSTOMREQUEST => "POST",
             CURLOPT_POSTFIELDS => json_encode($postData),
             CURLOPT_HTTPHEADER => [
-                "authkey: 373533AlLNuR0X62174363P1", // Replace with real key
+                "authkey: 459517AVl7UerR686e26ffP1", 
                 "content-type: application/json"
             ],
         ]);
@@ -194,7 +194,7 @@ class LoginController extends Controller
 
         if (!$member) {
             return response()->json([
-                'status' => 'otp_error',
+                'status' => 'error',
                 'message' => 'मोबाइल नंबर पंजीकृत नहीं है या अधिकृत नहीं है!'
             ]);
         }
@@ -209,7 +209,7 @@ class LoginController extends Controller
         $sent = $this->messageSent($otp, $sendToMobile);
 
         return response()->json([
-            'status' => $sent ? 'otp_success' : 'otp_error',
+            'status' => $sent ? 'success' : 'error',
             'message' => $sent ? 'ओटीपी सफलतापूर्वक भेजा गया!' : 'ओटीपी भेजने में विफल!'
         ]);
     }
@@ -247,7 +247,7 @@ class LoginController extends Controller
 
         $member->update(['otp' => null]);
 
-        return redirect('/dashboard')->with('success', 'आप सफलतापूर्वक लॉग इन हो गए हैं!');
+        return redirect('member/dashboard')->with('success', 'आप सफलतापूर्वक लॉग इन हो गए हैं!');
     }
 
 
