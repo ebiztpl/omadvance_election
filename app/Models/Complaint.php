@@ -17,9 +17,11 @@ class Complaint extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'user_id',
         'name',
         'email',
         'mobile_number',
+        'complaint_number',
         'complaint_type',
         'issue_title',
         'issue_description',
@@ -36,10 +38,23 @@ class Complaint extends Model
         'division_id',
         'district_id',
         'vidhansabha_id',
+        'complaint_department',
         'mandal_id',
         'gram_id',
         'area_id',
+        'polling_id',
+        'voter_id',
         'issue_attachment',
+        'news_time',
+        'complaint_status',
+        'posted_date',
+        'news_date',
+        'program_date'
+    ];
+
+
+    protected $attributes = [
+    'complaint_status' => 'Opened',
     ];
 
 
@@ -51,14 +66,14 @@ class Complaint extends Model
     public function statusText()
     {
         $statusLabels = [
-            0 => '<button class="btn btn-warning">Pending</button>',
             1 => '<button class="btn btn-success">Opened</button>',
             2 => '<button class="btn btn-warning">Processing</button>',
             3 => '<button class="btn btn-danger">On Hold</button>',
             4 => '<button class="btn btn-success">Closed</button>',
+            5 => '<button class="btn btn-danger">Cancel</button>',
         ];
 
-        return $statusLabels[$this->complaint_status] ?? '<button class="btn btn-secondary">Pending</button>';
+        return $statusLabels[$this->complaint_status] ?? '<button class="btn btn-primary">Opened</button>';
     }
     public function division()
     {

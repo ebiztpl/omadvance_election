@@ -9,6 +9,7 @@
                     <div class="auth-form">
                         <h4 class="text-center mb-4">Sign in your account</h4>
 
+                        {{-- Success --}}
                         @if(session('success'))
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
                             {{ session('success') }}
@@ -18,6 +19,7 @@
                         </div>
                         @endif
 
+                        {{-- Errors --}}
                         @if($errors->any())
                         <div class="alert alert-danger">
                             <ul class="mb-0">
@@ -27,6 +29,8 @@
                             </ul>
                         </div>
                         @endif
+
+                        {{-- Role Selection --}}
                         <div class="form-group mt-3">
                             <label><strong>Select Role</strong></label><br>
                             <div class="form-check form-check-inline">
@@ -47,9 +51,10 @@
                             </div>
                         </div>
 
-
+                        {{-- Normal Login Form --}}
                         <form method="POST" action="/login" id="normal-login-form">
                             @csrf
+                            <input type="hidden" name="user_role" id="user_role_hidden" value="admin"> {{-- ✅ Role sent here --}}
                             <div class="form-group">
                                 <label><strong>Username</strong></label>
                                 <input type="text" name="username" class="form-control">
@@ -63,13 +68,13 @@
                             </div>
                         </form>
 
+                        {{-- OTP Login Form --}}
                         <form method="POST" action="/verify_otp" id="otp-login-form" style="display: none;">
                             @csrf
                             <div class="form-group">
-                                <label><strong>Phone / Email</strong></label>
+                                <label><strong>Registered Mobile</strong></label>
                                 <input type="text" name="mobile" id="mobile" class="form-control" placeholder="Enter Registered Mobile">
                             </div>
-
                             <div class="text-center mb-3">
                                 <button type="button" id="send-otp-btn" class="btn btn-primary btn-block">Send OTP</button>
                             </div>
@@ -79,15 +84,13 @@
                                     <label><strong>OTP</strong></label>
                                     <input type="text" name="otp" class="form-control" placeholder="Enter OTP">
                                 </div>
-
                                 <div class="text-center">
                                     <button type="submit" class="btn btn-success btn-block">Verify OTP</button>
                                 </div>
                             </div>
+
+                            <div id="otp-feedback" class="mt-3"></div>
                         </form>
-
-                        <div id="otp-feedback" class="mb-3"></div>
-
                     </div>
                 </div>
             </div>
@@ -95,17 +98,19 @@
     </div>
 </div>
 
+{{-- JS --}}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const roleRadios = document.querySelectorAll('input[name="user_role"]');
         const normalForm = document.getElementById('normal-login-form');
         const otpForm = document.getElementById('otp-login-form');
+        const hiddenRoleInput = document.getElementById('user_role_hidden');
 
         const contactInput = document.getElementById('mobile');
         const sendOtpBtn = document.getElementById('send-otp-btn');
         const otpSection = document.getElementById('otp-section');
 
-        // Form toggle
+        // Form toggle based on role
         function toggleForms(role) {
             if (role === 'member') {
                 normalForm.style.display = 'none';
@@ -116,23 +121,28 @@
             }
         }
 
+        // Listen to role changes
         roleRadios.forEach(radio => {
             radio.addEventListener('change', function() {
                 toggleForms(this.value);
+                hiddenRoleInput.value = this.value; 
             });
         });
 
+        // Set default on load
         const selected = document.querySelector('input[name="user_role"]:checked');
-        if (selected) toggleForms(selected.value);
+        if (selected) {
+            toggleForms(selected.value);
+            hiddenRoleInput.value = selected.value;
+        }
+
 
         let countdown = 60;
         let timer;
 
         sendOtpBtn.addEventListener("click", function() {
             const contactValue = contactInput.value.trim();
-            if (!contactValue) {
-                return;
-            }
+            if (!contactValue) return;
 
             fetch("/send-otp", {
                     method: "POST",
@@ -146,30 +156,26 @@
                 })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.status === "success") {
+                    const feedback = document.getElementById('otp-feedback');
+                    const isSuccess = (data.status || '').toLowerCase() === 'success';
+
+                    feedback.innerHTML = `
+                <div class="alert alert-${isSuccess ? 'success' : 'danger'} alert-dismissible fade show" role="alert">
+                    ${data.message || (isSuccess ? 'ओटीपी सफलतापूर्वक भेजा गया!' : 'ओटीपी भेजने में विफल!')}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>`;
+
+                    if (isSuccess) {
                         contactInput.readOnly = true;
                         otpSection.style.display = "block";
                         sendOtpBtn.disabled = true;
                         startCountdown();
-                    } else {
-                        const feedback = document.getElementById('otp-feedback');
-                        feedback.innerHTML = `<div class="alert alert-${data.status === 'otp_success' ? 'success' : 'danger'} alert-dismissible fade show" role="alert">${data.message || (data.status === 'otp_success' ? 'ओटीपी सफलतापूर्वक भेजा गया!' : 'ओटीपी भेजने में विफल!')}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        </div>`;
                     }
                 })
-                .catch(err => {
-                    console.error(err);
-                });
-
+                .catch(err => console.error(err));
         });
-
-        setTimeout(() => {
-            const alertBox = document.querySelector('#otp-feedback .alert');
-            if (alertBox) {
-                alertBox.classList.remove('show');
-                alertBox.classList.add('fade');
-            }
-        }, 6000);
 
         function startCountdown() {
             sendOtpBtn.textContent = `Resend OTP (${countdown}s)`;
@@ -184,6 +190,14 @@
                 }
             }, 1000);
         }
+
+        setTimeout(() => {
+            const alertBox = document.querySelector('#otp-feedback .alert');
+            if (alertBox) {
+                alertBox.classList.remove('show');
+                alertBox.classList.add('fade');
+            }
+        }, 6000);
     });
 </script>
 
