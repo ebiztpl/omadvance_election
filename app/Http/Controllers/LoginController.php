@@ -155,7 +155,7 @@ class LoginController extends Controller
             CURLOPT_CUSTOMREQUEST => "POST",
             CURLOPT_POSTFIELDS => json_encode($postData),
             CURLOPT_HTTPHEADER => [
-                "authkey: 459517AVl7UerR686e26ffP1", 
+                "authkey: 459517AVl7UerR686e26ffP1",
                 "content-type: application/json"
             ],
         ]);

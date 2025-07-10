@@ -27,8 +27,8 @@ $breadcrumbs = [
 
                     <div class="col-md-6 mt-2">
                         <br />
-                        <button type="submit" class="btn btn-primary">अपडेट करें</button>
-                        <a href="{{ route('jati.index') }}" class="btn btn-secondary">रद्द करें</a>
+                        <button type="submit" class="btn btn-success">Update</button>
+                        <a href="{{ route('jati.index') }}" class="btn btn-primary">Cancel</a>
                     </div>
                 </div>
             </form>

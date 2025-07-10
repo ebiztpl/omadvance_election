@@ -13,7 +13,7 @@ $breadcrumbs = [
 <div class="container">
     <div class="row page-titles mx-0">
         <div class="col-md-12 col-sm-12 col-xs-12">
-            <form method="POST" action="{{ route('nagar.store') }}">
+            <form method="POST" action="{{ route('area.store') }}">
                 @csrf
                 <div class="item form-group row">
 
@@ -33,7 +33,7 @@ $breadcrumbs = [
                     </div>
 
                     <div class="col-md-3 col-sm-3 col-xs-12">
-                        <label>मंडल का नाम <span class="text-danger">*</span></label>
+                        <label>नगर केंद्र/ग्राम केंद्र का नाम <span class="text-danger">*</span></label>
                         <select id="nagar" class="form-control"></select>
                     </div>
 
