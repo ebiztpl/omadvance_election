@@ -18,7 +18,7 @@ $breadcrumbs = [
                 <div class="item form-group row">
                     <div class="col-md-3 col-sm-3 col-xs-12">
                         <label>जिले का नाम <span class="text-danger">*</span></label>
-                        <select id="district_id" class="form-control" required>
+                        <select id="district_id" name="district_id" class="form-control" required>
                             <option>--Select District--</option>
                             @foreach($districts as $d)
                             <option value="{{ $d->district_id }}">{{ $d->district_name }}</option>
@@ -29,7 +29,7 @@ $breadcrumbs = [
 
                     <div class="col-md-3 col-sm-3 col-xs-12">
                         <label>विधानसभा का नाम <span class="text-danger">*</span></label>
-                        <select id="vidhansabha_id" class="form-control" required></select>
+                        <select id="vidhansabha_id" name="vidhansabha_id" class="form-control" required></select>
                     </div>
 
                     <div class="col-md-3 col-sm-3 col-xs-12">

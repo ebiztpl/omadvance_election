@@ -39,7 +39,7 @@ $breadcrumbs = [
 
                     <div class="col-md-3 col-sm-3 col-xs-12">
                         <label>नगर केंद्र/ग्राम केंद्र का नाम <span class="text-danger">*</span></label>
-                        <select name="gram_id" id="gram_id" class="form-control" required></select>
+                        <select name="nagar_id" id="nagar_id" class="form-control" required></select>
                     </div>
                 </div>
 
@@ -143,7 +143,7 @@ $breadcrumbs = [
         }, function(res) {
             $('#vidhansabha_id').html(res.options);
             $('#mandal_id').html('');
-            $('#gram_id').html('');
+            $('#nagar_id').html('');
         });
     });
 
@@ -152,7 +152,7 @@ $breadcrumbs = [
             id: $(this).val()
         }, function(res) {
             $('#mandal_id').html(res.options);
-            $('#gram_id').html('');
+            $('#nagar_id').html('');
         });
     });
 
@@ -160,7 +160,7 @@ $breadcrumbs = [
         $.post('{{ route("ajax.nagar") }}', {
             id: $(this).val()
         }, function(res) {
-            $('#gram_id').html(res.options);
+            $('#nagar_id').html(res.options);
         });
     });
 

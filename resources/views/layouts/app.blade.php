@@ -17,7 +17,6 @@
     <link href="{{ asset('focus/assets/icons/material-design-iconic-font/css/materialdesignicons.min.css') }}" rel="stylesheet">
     <link href="{{ asset('focus/assets/icons/font-awesome-old/css/font-awesome.min.css') }}" rel="stylesheet">
     <link href="{{ asset('focus/assets/vendor/datatables/css/jquery.dataTables.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css">
 
 
     <!-- Buttons extension CSS & JS -->

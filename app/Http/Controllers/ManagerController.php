@@ -291,7 +291,7 @@ class ManagerController extends Controller
                 'mandal_type' => $mandalType,
                 'nagar_name' => $name,
                 'post_date' => $date,
-            ]);
+            ]); 
         }
 
         return redirect()->route('nagar.index')->with('success', 'नगर केंद्र/ग्राम केंद्र जोड़ा गया!');
@@ -563,7 +563,7 @@ class ManagerController extends Controller
             'post_date' => now()->toDateString(),
         ]);
 
-        return redirect()->route('positions.index')->with('message', 'दायित्व जोड़ा गया!');
+        return redirect()->route('positions.index')->with('success', 'दायित्व जोड़ा गया!');
     }
 
     public function positionEdit($id)
@@ -611,7 +611,7 @@ class ManagerController extends Controller
             'jati_name' => $request->jati_name,
         ]);
 
-        return redirect()->route('jati.index')->with('success', 'जाति सफलतापूर्वक जोड़ी गई');
+        return redirect()->route('jati.index')->with('success', 'जाति सफलतापूर्वक जोड़ी गई!');
     }
 
     public function jatiEdit($id)
@@ -667,7 +667,7 @@ class ManagerController extends Controller
             ]);
         }
 
-        return redirect()->route('jati_polling.index')->with('success', 'डेटा सफलतापूर्वक जोड़ा गया');
+        return redirect()->route('jati_polling.index')->with('success', 'जातिगत मतदाता सफलतापूर्वक जोड़ी गई!');
     }
 
 
@@ -705,7 +705,7 @@ class ManagerController extends Controller
     {
         switch ($request->type) {
             case 'vidhansabha':
-                return Vidhansabha::where('district_id', $request->id)->get();
+                return VidhansabhaLoksabha::where('district_id', $request->id)->get();
             case 'mandal':
                 return Mandal::where('vidhansabha_id', $request->id)->get();
             case 'gram':
