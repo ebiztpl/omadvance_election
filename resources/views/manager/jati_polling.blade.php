@@ -48,7 +48,7 @@ $breadcrumbs = [
                     </div>
 
                     <div class="col-md-2">
-                        <label>नगर केंद्र/ग्राम केंद्र <span class="text-danger">*</span></label>
+                        <label>कमाण्ड ऐरिया <span class="text-danger">*</span></label>
                         <select name="txtgram" id="txtgram" class="form-control" required></select>
                     </div>
 

@@ -32,8 +32,8 @@
                 <li><a href="{{ route('view_responsibility.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">दायित्व कार्यकर्ता देखे</span></a></li>
 
-                <li><a href="{{ route('generate.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">दायित्व कार्यकर्ता प्रिंट करे</span></a></li>
+                {{-- <li><a href="{{ route('generate.index') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">दायित्व कार्यकर्ता प्रिंट करे</span></a></li> --}}
 
                 <li><a href="{{ route('change_password.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">पासवर्ड बदलें</span></a></li>
@@ -104,10 +104,10 @@
             {{-- Member Panel --}}
             @if (!in_array($role, [1, 2, 3]))
                 <li class="nav-label" style="color: #c0bebe">मेंबर टूल्स</li>
-                <li><a href="{{ route('complaints.index') }}"><i class="icon icon-arrow-right"></i><span
+                <li><a href="{{ route('complaint.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
 
-                <li><a href="{{ route('complaints.view') }}"><i class="icon icon-arrow-right"></i><span
+                <li><a href="{{ route('complaint.view') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्याएँ देखे</span></a></li>
             @endif
 

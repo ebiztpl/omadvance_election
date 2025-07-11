@@ -169,7 +169,7 @@ $breadcrumbs = [
 
                             <!-- GRAM -->
                             <div class="col-md-3" id="gram" style="display:none;">
-                                <label>नगर केंद्र/ग्राम केंद्र</label>
+                                <label>कमाण्ड ऐरिया</label>
                                 <select name="txtgram" id="txtgram" class="form-control"></select>
                             </div>
 
@@ -389,7 +389,7 @@ $breadcrumbs = [
                 $('#vidhansabha, #mandal').show();
                 $('#txtvidhansabha, #txtmandal').attr('required', true);
                 break;
-            case 'नगर केंद्र/ग्राम केंद्र':
+            case 'कमाण्ड ऐरिया':
                 $('#vidhansabha, #mandal, #gram').show();
                 $('#txtvidhansabha, #txtmandal, #txtgram').attr('required', true);
                 break;

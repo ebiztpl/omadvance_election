@@ -28,7 +28,7 @@ $breadcrumbs = [
             'जिले का नाम' => $complaint->district->district_name ?? '',
             'विधानसभा का नाम' => $complaint->vidhansabha->vidhansabha ?? '',
             'मंडल का नाम' => $complaint->mandal->mandal_name ?? '',
-            'नगर केंद्र/ग्राम केंद्र' => $complaint->gram->nagar_name ?? '',
+            'कमाण्ड ऐरिया' => $complaint->gram->nagar_name ?? '',
             'मतदान केंद्र' => ($complaint->polling->polling_name ?? '') . '-' . $complaint->polling->polling_no,
             'ग्राम चौपाल/वार्ड चौपाल' => $complaint->area->area_name ?? '',
             'Gender' => $complaint->registration->gender ?? '',
@@ -124,7 +124,7 @@ $breadcrumbs = [
     <div class="card">
         <div class="card-header" style="color: #000">Reply to {{ $complaint->complaint_number }}</div>
         <div class="card-body">
-            <form method="POST" action="{{ route('complaints.reply', $complaint->complaint_id) }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('complaint.reply', $complaint->complaint_id) }}" enctype="multipart/form-data">
                 @csrf
                 <div class="row g-3">
                     <div class="col-md-8">

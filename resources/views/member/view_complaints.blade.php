@@ -46,7 +46,7 @@ $breadcrumbs = [
                                     <td>{{ $complaint->email }}</td>
                                     <td>{{ $complaint->issue_title }}</td>
                                     <td>
-                                        <a href="{{ route('complaints.show', $complaint->complaint_id) }}" class="btn btn-sm btn-primary" style="white-space: nowrap;">
+                                        <a href="{{ route('complaint.show', $complaint->complaint_id) }}" class="btn btn-sm btn-primary" style="white-space: nowrap;">
                                             क्लिक करें
                                         </a>
                                     </td>

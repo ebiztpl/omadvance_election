@@ -245,7 +245,7 @@ class AdminController extends Controller
             "लोकसभा",
             "विधानसभा का नाम",
             "मंडल का नाम",
-            "नगर केंद्र/ग्राम केंद्र का नाम",
+            "कमाण्ड ऐरिया का नाम",
             "मतदान केंद्र का नाम/क्रमांक",
             "परिवार में कुल सदस्य",
             "परिवार में कुल मतदाता",
@@ -522,57 +522,56 @@ class AdminController extends Controller
             ->join('step2 as st', 'st.registration_id', '=', 'A.registration_id')
             ->join('step3 as st3', 'st3.registration_id', '=', 'A.registration_id')
             ->join('step4 as st4', 'st4.registration_id', '=', 'A.registration_id')
-            ->select('A.*', 'B.name',  'B.member_id', 'B.mobile1 as mbl', 'B.date_time as pdate');
+            ->select(
+                'A.*',
+                'B.name',
+                'B.member_id',
+                'B.mobile1 as mbl',
+                'B.mobile2',
+                'B.gender',
+                'B.date_time as pdate',
+                'A.registration_id as member',
+                'B.registration_id as added_member_id'
+            );
 
         if (!empty($condition)) {
             $query->whereRaw($condition);
         }
 
+        $query->whereNotNull('A.mobile1')->where('A.mobile1', '!=', '');
+
         $registrations = $query->get();
         $count = $registrations->count();
 
-        $html = '<table class="display table table-bordered" style="min-width: 845px" id="example">';
-        $html = '<thead>
-                <tr>
-                <th>Sr.No.</th>
-                    <th>Member ID</th>
-                    <th>Name</th>
-                    <th>Mobile1</th>
-                    <th>Mobile2</th>
-                    <th>Gender</th>
-                    <th>Entry Date</th>
-                    <th>Action</th>
-                </tr>
-              </thead><tbody>';
-
-
+        $html = '';
         $x = 0;
+
         foreach ($registrations as $row) {
-            $x += 1;
-            $date = date('d-m-Y', strtotime($row->pdate));
+            $x++;
+            $date = $row->pdate ? date('d-m-Y', strtotime($row->pdate)) : '';
+
             $html .= '<tr>';
             $html .= '<td>' . $x . '</td>';
             $html .= '<td>' . $row->member_id . '</td>';
             $html .= '<td>' . $row->name . '</td>';
             $html .= '<td>' . $row->mbl . '</td>';
-            $html .= '<td>' . $row->mobile2 . '</td>';
-            $html .= '<td>' . $row->gender . '</td>';
+            $html .= '<td>' . ($row->mobile2 ?? '-') . '</td>';
+            $html .= '<td>' . ($row->gender ?? '-') . '</td>';
             $html .= '<td>' . $date . '</td>';
             $html .= '<td style="white-space: nowrap;">
-              <a href="' . route('register.show', $row->registration_id) . '" class="btn btn-sm btn-success">View</a>
-              <a href="' . route('register.card', $row->registration_id) . '" class="btn btn-sm btn-primary">Card</a>
-              <a href="' . route('register.destroy', $row->registration_id) . '" class="btn btn-sm btn-danger">Delete</a>
+                <a href="' . route('register.show', $row->added_member_id) . '" class="btn btn-sm btn-success">View</a>
+                <a href="' . route('register.card', $row->added_member_id) . '" class="btn btn-sm btn-primary">Card</a>
+                <a href="' . route('register.destroy', $row->added_member_id) . '" class="btn btn-sm btn-danger">Delete</a>
             </td>';
             $html .= '</tr>';
         }
-
-        $html .= '</tbody></table>';
 
         return response()->json([
             'html' => $html,
             'count' => $count,
         ]);
     }
+
 
     public function dashboard2_download(Request $request)
     {
@@ -674,7 +673,7 @@ class AdminController extends Controller
             "लोकसभा",
             "विधानसभा का नाम",
             "मंडल का नाम",
-            "नगर केंद्र/ग्राम केंद्र का नाम",
+            "कमाण्ड ऐरिया का नाम",
             "मतदान केंद्र का नाम/क्रमांक",
             "परिवार में कुल सदस्य",
             "परिवार में कुल मतदाता",
@@ -968,7 +967,7 @@ class AdminController extends Controller
             case 'मंडल':
                 $ref_id = $request->input('txtmandal');
                 break;
-            case 'नगर केंद्र/ग्राम केंद्र':
+            case 'कमाण्ड ऐरिया':
                 $ref_id = $request->input('txtgram');
                 break;
             case 'ग्राम/वार्ड चौपाल':
@@ -1074,6 +1073,90 @@ class AdminController extends Controller
         return redirect()->route('view_responsibility.index')->with('delete_msg', 'दायित्व सफलतापूर्वक हटाया गया!');
     }
 
+    public function fetchFullResponsibilityData($registration_id)
+    {
+        $step2 = Step2::where('registration_id', $registration_id)->first();
+        $assign = AssignPosition::where('member_id', $registration_id)->first();
+
+        if (!$step2 || !$assign) {
+            return response()->json(['error' => 'Data not found.'], 404);
+        }
+
+        return response()->json([
+            'district_id' => $step2->district,
+            'vidhansabha' => $step2->vidhansabha,
+            'mandal' => $step2->mandal,
+            'gram' => $step2->nagar,
+            'polling' => $step2->matdan_kendra_name,
+            'area' => $step2->area_id,
+
+            'workarea' => $assign->level_name,
+            'ref_id' => $assign->refrence_id,
+            'position_id' => $assign->position_id,
+            'from' => $assign->from_date,
+            'to' => $assign->to_date,
+        ]);
+    }
+
+    public function responsibility_update(Request $request, $assign_position_id)
+    {
+
+        $validated = $request->validate([
+            'member_id' => 'required|integer',
+            'workarea' => 'required|string',
+            'position_id' => 'required|integer',
+            'from' => 'required|date',
+            'to' => 'required|date',
+        ]);
+
+        $workarea = $request->input('workarea');
+
+        switch ($workarea) {
+            case 'प्रदेश':
+                $ref_id = $request->input('txtpradesh');
+                break;
+            case 'जिला':
+                $ref_id = $request->input('txtdistrict');
+                break;
+            case 'विधानसभा':
+                $ref_id = $request->input('txtvidhansabha');
+                break;
+            case 'मंडल':
+                $ref_id = $request->input('txtmandal');
+                break;
+            case 'कमाण्ड ऐरिया':
+                $ref_id = $request->input('txtgram');
+                break;
+            case 'ग्राम/वार्ड चौपाल':
+                $ref_id = $request->input('area_name');
+                break;
+            default:
+                $ref_id = null;
+        }
+
+        if (!$ref_id) {
+            return redirect()->back()->with('error', 'Reference ID missing.');
+        }
+
+        DB::table('assign_position')->where('assign_position_id', $assign_position_id)->update([
+            'member_id' => $request->member_id,
+            'level_name' => $workarea,
+            'refrence_id' => $ref_id,
+            'position_id' => $request->position_id,
+            'from_date' => Carbon::parse($request->from),
+            'to_date' => Carbon::parse($request->to),
+            'status' => 0,
+            'post_date' => now(),
+        ]);
+
+        DB::table('registration_form')->where('registration_id', $request->member_id)
+            ->update(['position_id' => $request->position_id]);
+
+        return redirect()->back()->with('update_msg', 'दायित्व सफलतापूर्वक अपडेट किया गया।');
+    }
+
+
+
     public function generate()
     {
         $assignments = AssignPosition::with([
@@ -1083,7 +1166,7 @@ class AdminController extends Controller
         ])->get();
 
         $cards = collect();
-   
+
 
         foreach ($assignments as $assign) {
             $member = $assign->member;
@@ -1099,7 +1182,7 @@ class AdminController extends Controller
             }
 
             $cards[] = [
-                'photoPath' => 'file://' . $photoPath,         
+                'photoPath' => 'file://' . $photoPath,
                 'name' => $member->name,
                 'mobile' => $member->mobile1,
                 'position' => optional($assign->position)->position_name ?? '—',
@@ -1145,7 +1228,7 @@ class AdminController extends Controller
             case 'मंडल':
                 return optional(Mandal::find($refrence_id))->mandal_name;
 
-            case 'नगर केंद्र/ग्राम केंद्र':
+            case 'कमाण्ड ऐरिया':
                 $nagar = nagar::find($refrence_id);
                 if ($nagar) {
                     $type = $nagar->mandal_type == 1 ? 'ग्रामीण मंडल' : 'नगर मंडल';
@@ -1162,4 +1245,3 @@ class AdminController extends Controller
         }
     }
 }
-
