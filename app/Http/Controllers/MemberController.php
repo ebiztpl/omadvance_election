@@ -173,7 +173,7 @@ class MemberController extends Controller
         $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaint_number;
         $this->messageSent($complaint_number, $mobile);
 
-        return redirect()->route('complaints.index')->with('success', 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number);
+        return redirect()->route('complaint.index')->with('success', 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number);
     }
 
 

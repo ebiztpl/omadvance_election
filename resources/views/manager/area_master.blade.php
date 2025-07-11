@@ -33,7 +33,7 @@ $breadcrumbs = [
                     </div>
 
                     <div class="col-md-3 col-sm-3 col-xs-12">
-                        <label>नगर केंद्र/ग्राम केंद्र का नाम <span class="text-danger">*</span></label>
+                        <label>कमाण्ड ऐरिया का नाम <span class="text-danger">*</span></label>
                         <select id="nagar" class="form-control"></select>
                     </div>
 
