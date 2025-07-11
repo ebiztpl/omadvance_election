@@ -252,12 +252,12 @@ class LoginController extends Controller
 
 
 
-    public function loginhistory()
-    {
-        if (!$this->usermodel->hasLoggedIn()) {
-            redirect("account/login");
-        }
-        $data = $this->db->select("*")->from('login_history')->order_by("login_date_time", "desc")->get()->result_array();
-        $this->load->view($this->folder . "login_history", array("rst" => $data));
-    }
+    // public function loginhistory()
+    // {
+    //     if (!$this->usermodel->hasLoggedIn()) {
+    //         redirect("account/login");
+    //     }
+    //     $data = $this->db->select("*")->from('login_history')->order_by("login_date_time", "desc")->get()->result_array();
+    //     $this->load->view($this->folder . "login_history", array("rst" => $data));
+    // }
 }

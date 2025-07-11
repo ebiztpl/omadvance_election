@@ -67,7 +67,7 @@ Route::middleware('checklogin')->group(function () {
 
     Route::get('/admin/view_complaint', [AdminController::class, 'complaint_index'])->name('complaints.index');
     Route::get('/admin/details_complaint/{id}', [AdminController::class, 'complaint_show'])->name('complaints.show');
-    Route::post('admin/complaints/{id}/reply', [AdminController::class, 'postReply'])->name('complaints.reply');
+    Route::post('/admin/complaints/{id}/reply', [AdminController::class, 'postReply'])->name('complaints.reply');
 
     Route::get('admin/assign_responsibility', [AdminController::class, 'reponsibility_index'])->name('responsibility.index');
     Route::post('admin/assign_responsibility', [AdminController::class, 'responsibility_filter'])->name('responsibility.filter');
@@ -75,6 +75,8 @@ Route::middleware('checklogin')->group(function () {
     Route::post('admin/assign-position/save', [AdminController::class, 'responsibility_store'])->name('responsibility.store');
     Route::get('/get-vidhansabhas', [AdminController::class, 'getVidhansabhasByDistrict'])->name('get.vidhansabhas');
     Route::get('/admin/fetch-location/{registration_id}', [AdminController::class, 'fetchLocationData']);
+    Route::get('/admin/fetch-responsibility/{registration_id}', [AdminController::class, 'fetchFullResponsibilityData']);
+    Route::post('/admin/responsibility/update/{assign_position_id}', [AdminController::class, 'responsibility_update'])->name('responsibility.update');
     Route::get('/admin/get-vidhansabha/{district_id}', [AdminController::class, 'getVidhansabha']);
     Route::get('/admin/get-mandal/{vidhansabha_id}', [AdminController::class, 'getMandal']);
     Route::get('/admin/get-nagar/{mandal_id}', [AdminController::class, 'getNagar']);
@@ -197,7 +199,7 @@ Route::middleware('checklogin')->group(function () {
 // member routes
 Route::middleware('checkmember')->group(function () {
     Route::get('member/dashboard', function () {return view('member/dashboard');})->name('member.dashboard');
-    Route::get('member/complaints', [MemberController::class, 'index'])->name('complaints.index');
+    Route::get('member/complaints', [MemberController::class, 'index'])->name('complaint.index');
     Route::post('member/complaints/store', [MemberController::class, 'store'])->name('complaint.store');
     Route::get('/get-districts/{division_id}', [MemberController::class, 'getDistricts']);
     Route::get('/get-vidhansabha/{district_id}', [MemberController::class, 'getVidhansabhas']);
@@ -206,8 +208,7 @@ Route::middleware('checkmember')->group(function () {
     Route::get('/get-polling/{mandal_id}', [MemberController::class, 'getPollings']);
     Route::get('/get-area/{polling_id}', [MemberController::class, 'getAreas']);
 
-
     Route::get('/member/view_complaint', [MemberController::class, 'complaint_index'])->name('complaints.view');
-    Route::get('/member/details_complaint/{id}', [MemberController::class, 'complaint_show'])->name('complaints.show');
-    Route::post('member/complaints/{id}/reply', [MemberController::class, 'postReply'])->name('complaints.reply');
+    Route::get('/member/details_complaint/{id}', [MemberController::class, 'complaint_show'])->name('complaint.show');
+    Route::post('/member/complaints/{id}/reply', [MemberController::class, 'postReply'])->name('complaint.reply');
 });

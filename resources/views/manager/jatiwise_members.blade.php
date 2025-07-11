@@ -36,7 +36,7 @@ $breadcrumbs = [
 
 
                     <div class="col-md-3 col-sm-3 col-xs-12">
-                        <label class="control-label">नगर केंद्र/ग्राम केंद्र <span class="required">*</span></label>
+                        <label class="control-label">कमाण्ड ऐरिया <span class="required">*</span></label>
                         <select name="txtgram" required class="form-control" id="txtgram">
                             <option value="">--Select--</option>
                         </select>
