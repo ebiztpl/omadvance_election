@@ -245,7 +245,7 @@ class AdminController extends Controller
             "लोकसभा",
             "विधानसभा का नाम",
             "मंडल का नाम",
-            "कमाण्ड ऐरिया का नाम",
+            "नगर केंद्र/ग्राम केंद्र का नाम",
             "मतदान केंद्र का नाम/क्रमांक",
             "परिवार में कुल सदस्य",
             "परिवार में कुल मतदाता",
@@ -439,6 +439,14 @@ class AdminController extends Controller
             abort(404, 'Member not found');
         }
 
+        $assignPosition = AssignPosition::with('position')
+            ->where('member_id', $id)
+            ->orderByDesc('assign_position_id')
+            ->first();
+
+        $positionName = $assignPosition->position->position_name;
+        $fromDate = Carbon::parse($assignPosition->from_date)->format('d-M-Y');
+        $toDate = Carbon::parse($assignPosition->to_date)->format('d-M-Y');
 
         $photoPath = public_path('assets/upload/' . $member->photo);
         $backgroundPath = public_path('assets/images/member_back.jpg');
@@ -450,6 +458,9 @@ class AdminController extends Controller
             'address' => $step3->permanent_address ?? '',
             'photoPath' => $photoPath,
             'backgroundPath' => $backgroundPath,
+            'positionName' => $positionName,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
         ])->render();
 
         $mpdf = new Mpdf([
@@ -464,12 +475,11 @@ class AdminController extends Controller
             'margin_footer' => 0,
         ]);
 
-        $mpdf->SetWatermarkText('etutorialspoint');
-        $mpdf->showWatermarkText = false;
-
+        $mpdf->showImageErrors = true;
         $mpdf->WriteHTML($html);
-        return response($mpdf->Output('', 'S'), 200)
-            ->header('Content-Type', 'application/pdf');
+        $mpdf->SetDisplayMode('fullpage');
+
+        return response($mpdf->Output('', 'S'))->header('Content-Type', 'application/pdf');
     }
 
     public function uploadPhoto(Request $request)
@@ -673,7 +683,7 @@ class AdminController extends Controller
             "लोकसभा",
             "विधानसभा का नाम",
             "मंडल का नाम",
-            "कमाण्ड ऐरिया का नाम",
+            "नगर केंद्र/ग्राम केंद्र का नाम",
             "मतदान केंद्र का नाम/क्रमांक",
             "परिवार में कुल सदस्य",
             "परिवार में कुल मतदाता",
@@ -916,6 +926,13 @@ class AdminController extends Controller
 
         foreach ($results as $index => $b) {
             $date = $b->date_time ? \Carbon\Carbon::parse($b->date_time)->format('d-m-Y') : '';
+            $isAssigned = AssignPosition::where('member_id', $b->registration_id)->exists();
+
+            if ($isAssigned) {
+                $assignButton = "<button class='btn btn-secondary btn-sm mr-1 already-assigned' data-name='{$b->name}'>Assigned</button>";
+            } else {
+                $assignButton = "<a href='#' class='btn btn-primary btn-sm chk' data-id='{$b->registration_id}' data-toggle='modal' data-target='#assignModal'>Assign</a>";
+            }
             $html .= "<tr>
             <td>" . ($index + 1) . "</td>
             <td>{$b->member_id}</td>
@@ -928,7 +945,7 @@ class AdminController extends Controller
             <div class='d-flex'>
                 <a href='" . route('register.show', $b->registration_id) . "' class='btn btn-success btn-sm mr-1'>View</a>
                <a href='" . route('register.card', ['id' => $b->registration_id]) . "' class='btn btn-warning btn-sm mr-1'>Card</a>
-                <a href='#' class='btn btn-primary btn-sm chk' data-id='{$b->registration_id}' data-toggle='modal' data-target='#assignModal'>Assign</a>
+               {$assignButton}
             </div>
             </td>
         </tr>";
@@ -1061,8 +1078,9 @@ class AdminController extends Controller
     public function viewResponsibilities()
     {
         $assignments = AssignPosition::with(['member', 'position', 'addressInfo', 'district'])->get();
+        $districts = District::all();
 
-        return view('admin/view_responsibility_member', compact('assignments'));
+        return view('admin/view_responsibility', compact('assignments', 'districts'));
     }
 
     public function assign_destroy($id)
@@ -1082,21 +1100,88 @@ class AdminController extends Controller
             return response()->json(['error' => 'Data not found.'], 404);
         }
 
-        return response()->json([
-            'district_id' => $step2->district,
-            'vidhansabha' => $step2->vidhansabha,
-            'mandal' => $step2->mandal,
-            'gram' => $step2->nagar,
-            'polling' => $step2->matdan_kendra_name,
-            'area' => $step2->area_id,
+        $level = $assign->level_name;
+        $refId = $assign->refrence_id;
+        $workarea_name = '';
 
-            'workarea' => $assign->level_name,
-            'ref_id' => $assign->refrence_id,
-            'position_id' => $assign->position_id,
-            'from' => $assign->from_date,
-            'to' => $assign->to_date,
+        // Define all IDs as null initially
+        $district_id = $step2->district;
+        $vidhansabha_id = $step2->vidhansabha;
+        $mandal_id = null;
+        $gram_id = null;
+        $polling_id = null;
+        $area_id = null;
+
+        switch ($level) {
+            case 'प्रदेश':
+                $workarea_name = 'मध्य प्रदेश';
+                break;
+
+            case 'जिला':
+                $district_id = $refId;
+                $district = DB::table('district_master')->where('district_id', $district_id)->value('district_name');
+                $workarea_name = $district;
+                break;
+
+            case 'विधानसभा':
+                $vidhansabha_id = $refId;
+                $vidhansabha = DB::table('vidhansabha_loksabha')->where('vidhansabha_id', $vidhansabha_id)->value('vidhansabha');
+                $workarea_name = $vidhansabha;
+                break;
+
+            case 'मंडल':
+                $mandal = DB::table('mandal')->where('mandal_id', $refId)->first();
+                $mandal_id = $mandal->mandal_id;
+                $vidhansabha_id = $mandal->vidhansabha_id;
+                $workarea_name = "मंडल : $mandal->mandal_name";
+                break;
+
+            case 'नगर केंद्र/ग्राम केंद्र':
+                $nagar = DB::table('nagar_master')->where('nagar_id', $refId)->first();
+                $gram_id = $nagar->nagar_id;
+                $mandal_id = $nagar->mandal_id;
+                $mandal = DB::table('mandal')->where('mandal_id', $mandal_id)->first();
+                $vidhansabha_id = $mandal->vidhansabha_id;
+                $workarea_name = "नगर केंद्र/ग्राम केंद्र : $nagar->nagar_name, <br/>मंडल : $mandal->mandal_name";
+                break;
+
+            case 'ग्राम/वार्ड चौपाल':
+                $area = DB::table('area_master')->where('area_id', $refId)->first();
+                $polling_id = $area->polling_id;
+                $polling = DB::table('gram_polling')
+                    ->join('nagar_master', 'gram_polling.nagar_id', '=', 'nagar_master.nagar_id')
+                    ->where('gram_polling.gram_polling_id', $polling_id)
+                    ->select('gram_polling.gram_polling_id', 'nagar_master.nagar_name', 'nagar_master.mandal_id', 'nagar_master.nagar_id')
+                    ->first();
+
+                $mandal_id = $polling->mandal_id;
+                $gram_id = $polling->nagar_id;
+                $mandal = DB::table('mandal')->where('mandal_id', $mandal_id)->first();
+                $vidhansabha_id = $mandal->vidhansabha_id;
+                $area_id = $refId;
+
+                $workarea_name = "$level : $area->area_name, <br/>नगर केंद्र/ग्राम केंद्र : $polling->nagar_name, <br/>मंडल : $mandal->mandal_name";
+                break;
+        }
+
+        return response()->json([
+            'district_id'    => $district_id,
+            'vidhansabha_id' => $vidhansabha_id,
+            'mandal_id'      => $mandal_id,
+            'gram_id'        => $gram_id,
+            'polling_id'     => $polling_id,
+            'area_id'        => $area_id,
+
+            'workarea'       => $assign->level_name,
+            'ref_id'         => $assign->refrence_id,
+            'position_id'    => $assign->position_id,
+            'from'           => $assign->from_date,
+            'to'             => $assign->to_date,
+            'workarea_name'  => $workarea_name,
         ]);
     }
+
+
 
     public function responsibility_update(Request $request, $assign_position_id)
     {
@@ -1124,7 +1209,7 @@ class AdminController extends Controller
             case 'मंडल':
                 $ref_id = $request->input('txtmandal');
                 break;
-            case 'कमाण्ड ऐरिया':
+            case 'नगर केंद्र/ग्राम केंद्र':
                 $ref_id = $request->input('txtgram');
                 break;
             case 'ग्राम/वार्ड चौपाल':
@@ -1155,6 +1240,40 @@ class AdminController extends Controller
         return redirect()->back()->with('update_msg', 'दायित्व सफलतापूर्वक अपडेट किया गया।');
     }
 
+    public function nagarStore(Request $request)
+    {
+        $mandalId = $request->txtmandal;
+        $gramNames = $request->gram_name;
+        $mandalType = $request->mandal_type;
+        $date = now();
+
+        $newNagars = [];
+
+        foreach ($gramNames as $name) {
+            $exists = DB::table('nagar_master')
+                ->where('mandal_id', $mandalId)
+                ->where('nagar_name', $name)
+                ->exists();
+
+            if ($exists) {
+                return response()->json(['error' => 'ये नगर और मंडल पहले से हैं'], 409);
+            }
+
+            $id = DB::table('nagar_master')->insertGetId([
+                'mandal_id' => $mandalId,
+                'mandal_type' => $mandalType,
+                'nagar_name' => $name,
+                'post_date' => $date,
+            ]);
+
+            $newNagars[] = [
+                'id' => $id,
+                'name' => $name,
+            ];
+        }
+
+        return response()->json(['success' => true, 'nagars' => $newNagars]);
+    }
 
 
     public function generate()
@@ -1228,7 +1347,7 @@ class AdminController extends Controller
             case 'मंडल':
                 return optional(Mandal::find($refrence_id))->mandal_name;
 
-            case 'कमाण्ड ऐरिया':
+            case 'नगर केंद्र/ग्राम केंद्र':
                 $nagar = nagar::find($refrence_id);
                 if ($nagar) {
                     $type = $nagar->mandal_type == 1 ? 'ग्रामीण मंडल' : 'नगर मंडल';
