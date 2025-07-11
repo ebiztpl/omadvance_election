@@ -1,8 +1,8 @@
 @php
-$pageTitle = 'कमाण्ड ऐरिया अपडेट करें';
+$pageTitle = 'नगर केंद्र/ग्राम केंद्र अपडेट करें';
 $breadcrumbs = [
 'मैनेजर' => '#',
-'कमाण्ड ऐरिया अपडेट करें' => '#'
+'नगर केंद्र/ग्राम केंद्र अपडेट करें' => '#'
 ];
 @endphp
 
@@ -13,7 +13,7 @@ $breadcrumbs = [
 <div class="container">
     <div class="row page-titles mx-0">
         <div class="col-md-12 col-sm-12 col-xs-12">
-            <h3>कमाण्ड ऐरिया</h3>
+            <h3>नगर केंद्र/ग्राम केंद्र</h3>
             <form method="POST" action="{{ route('nagar.update', $nagar->nagar_id) }}">
                 @csrf
                 <div class="item form-group row">
@@ -40,7 +40,7 @@ $breadcrumbs = [
                     </div>
 
                     <div class="col-md-3 col-sm-3 col-xs-12">
-                        <label>कमाण्ड ऐरिया का नाम <span class="required">*</span></label>
+                        <label>नगर केंद्र/ग्राम केंद्र का नाम <span class="required">*</span></label>
                         <input type="text" name="gram_name" value="{{ $nagar->nagar_name }}" class="form-control" required>
                     </div>
 

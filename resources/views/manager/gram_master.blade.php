@@ -1,8 +1,8 @@
 @php
-$pageTitle = 'कमाण्ड ऐरिया जोड़े';
+$pageTitle = 'नगर केंद्र/ग्राम केंद्र जोड़े';
 $breadcrumbs = [
 'मैनेजर' => '#',
-'कमाण्ड ऐरिया जोड़े' => '#'
+'नगर केंद्र/ग्राम केंद्र जोड़े' => '#'
 ];
 @endphp
 
@@ -50,7 +50,7 @@ $breadcrumbs = [
                 <div id="rowGroup">
                     <div class="form-row align-items-end mb-2">
                         <div class="col-md-4">
-                            <label>कमाण्ड ऐरिया का नाम <span class="text-danger">*</span></label>
+                            <label>नगर केंद्र/ग्राम केंद्र का नाम <span class="text-danger">*</span></label>
                             <input type="text" name="gram_name[]" class="form-control" required>
                         </div>
 

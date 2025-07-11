@@ -110,7 +110,7 @@ $breadcrumbs = [
                             </div>
 
                             <div class="col-md-4 mb-3">
-                                <label>कमाण्ड ऐरिया का नाम <span class="error">*</span></label>
+                                <label>नगर केंद्र/ग्राम केंद्र का नाम <span class="error">*</span></label>
                                 <select name="txtgram" class="form-control" id="txtgram" required></select>
                             </div>
 

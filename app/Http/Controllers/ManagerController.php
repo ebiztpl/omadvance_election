@@ -294,7 +294,7 @@ class ManagerController extends Controller
             ]); 
         }
 
-        return redirect()->route('nagar.index')->with('success', 'कमाण्ड ऐरिया जोड़ा गया!');
+        return redirect()->route('nagar.index')->with('success', 'नगर केंद्र/ग्राम केंद्र जोड़ा गया!');
     }
 
     public function nagarEdit($id)
@@ -321,7 +321,7 @@ class ManagerController extends Controller
             'nagar_name' => $request->gram_name
         ]);
 
-        return redirect()->route('nagar.index')->with('update_msg', 'कमाण्ड ऐरिया अपडेट किया गया!');
+        return redirect()->route('nagar.index')->with('update_msg', 'नगर केंद्र/ग्राम केंद्र अपडेट किया गया!');
     }
 
     public function getMandal(Request $request)
