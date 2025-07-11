@@ -94,6 +94,9 @@ Route::middleware('checklogin')->group(function () {
 
     Route::get('/change-password', [LoginController::class, 'showChangePasswordForm'])->name('change_password.index');
     Route::post('/change-password', [LoginController::class, 'changePassword'])->name('change-password');
+
+
+    Route::post('admin/view-responsibilities/store', [AdminController::class, 'nagarStore'])->name('nagaradd.store');
 });
 
 

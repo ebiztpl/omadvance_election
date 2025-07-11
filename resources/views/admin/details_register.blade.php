@@ -229,7 +229,7 @@ $breadcrumbs = [
             </div>
 
             <div class="col-lg-3 col-md-6 col-12">
-                <label for="nagar" class="form-label">कमाण्ड ऐरिया का नाम</label>
+                <label for="nagar" class="form-label">नगर केंद्र/ग्राम केंद्र का नाम</label>
                 <input disabled type="text" class="form-control" name="nagar" id="nagar" value="{{ $nagar }}">
             </div>
 

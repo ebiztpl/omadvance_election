@@ -12,7 +12,6 @@
             background-size: fill;
             text-align: center;
             padding-top: 65px;
-            font-family: 'DejaVu Sans', sans-serif;
         }
 
         .photo {
@@ -22,21 +21,18 @@
             margin-bottom: 10px;
         }
 
-        .info {
-            margin-top: 8px;
-            font-size: 12px;
-        }
     </style>
 </head>
 
 <body>
     <div class="card">
         <img class="photo" src="{{ $photoPath }}" style="width:118px; height:160px; margin-top: 90px" alt="Photo">
-        <div class="info">{{ $member->name }}</div>
-        <div class="info">{{ $member->membership }}</div>
-        <div class="info">{{ $address}}</div>
-        <div class="info">31-Dec-2027</div>
-        <div class="info">{{ $member->mobile1 }}</div>
+        <div class="info" style="margin-left: -2%; font-size: 16px; margin-top: 8px;">{{ $member->name }}</div>
+        <div class="info" style="margin-left: -40px; font-size: 16px; margin-top: 6px;">{{ $positionName }}</div>
+        {{-- <div class="info">{{ $address}}</div> --}}
+        <div class="info-second" style="margin-left: 50px; font-size: 14px; margin-top: 6px;">{{ $fromDate }} - {{ $toDate }}
+        </div>
+        <div class="info-second" style="margin-left: 70px; font-size: 14px; margin-top: 6px;">{{ $member->mobile1 }}</div>
     </div>
 </body>
 
