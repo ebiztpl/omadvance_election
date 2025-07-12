@@ -18,6 +18,9 @@ use App\Models\Position;
 use App\Models\Complaint;
 use App\Models\Reply;
 use App\Models\AssignPosition;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Carbon\Carbon;
 use Intervention\Image\Facades\Image;
 use App\Models\Division;
@@ -929,7 +932,7 @@ class AdminController extends Controller
             $isAssigned = AssignPosition::where('member_id', $b->registration_id)->exists();
 
             if ($isAssigned) {
-                $assignButton = "<button class='btn btn-secondary btn-sm mr-1 already-assigned' data-name='{$b->name}'>Assigned</button>";
+                $assignButton = "<button class='btn btn-info btn-sm mr-1 already-assigned' data-name='{$b->name}'>Assigned</button>";
             } else {
                 $assignButton = "<a href='#' class='btn btn-primary btn-sm chk' data-id='{$b->registration_id}' data-toggle='modal' data-target='#assignModal'>Assign</a>";
             }
@@ -1347,7 +1350,7 @@ class AdminController extends Controller
             case 'मंडल':
                 return optional(Mandal::find($refrence_id))->mandal_name;
 
-            case 'नगर केंद्र/ग्राम केंद्र':
+            case 'कमाण्ड ऐरिया':
                 $nagar = nagar::find($refrence_id);
                 if ($nagar) {
                     $type = $nagar->mandal_type == 1 ? 'ग्रामीण मंडल' : 'नगर मंडल';
@@ -1362,5 +1365,124 @@ class AdminController extends Controller
             default:
                 return '';
         }
+    }
+
+
+    // upload voters data functions
+    public function upload() {
+        return view('admin/upload_voter');
+    }
+
+    public function exportVoterExcel()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = [
+            'name',
+            'membership',
+            'gender',
+            'dob',
+            'age',
+            'mobile1',
+            'mobile2',
+            'mobile1_whatsapp',
+            'mobile2_whatsapp',
+            'religion',
+            'caste',
+            'jati',
+            'education',
+            'business',
+            'position',
+            'voter_id',
+            'father_name',
+            'email',
+            'pincode',
+            'samagra_id',
+            'position_id',
+        ];
+
+        $sheet->fromArray($headers, null, 'A1');
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'voter_sheet.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header("Content-Disposition: attachment; filename=\"$filename\"");
+        $writer->save('php://output');
+        exit;
+    }
+
+
+    public function uploadVoterData(Request $request)
+    {
+        $request->validate([
+            'voter_excel' => 'required|file|mimes:xlsx,xls,csv'
+        ]);
+
+        $file = $request->file('voter_excel');
+        $spreadsheet = IOFactory::load($file);
+        $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+
+        unset($sheetData[1]);
+
+        foreach ($sheetData as $row) {
+            $mobile1  = $row['F'] ?? null; 
+            $voter_id = $row['P'] ?? null; 
+
+            if (!$mobile1) {
+                continue;
+            }
+
+            $dobRaw = $row['D'] ?? null;
+            $dob = null;
+            if (!empty($dobRaw)) {
+                try {
+                    $dob = Carbon::parse($dobRaw)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    $dob = null;
+                }
+            }
+
+            $data = [
+                'reference_id'      => 0,
+                'member_id'         => $mobile1,
+                'name'              => $row['A'] ?? null,
+                'membership'        => $row['B'] ?? null,
+                'gender'            => $row['C'] ?? null,
+                'dob'               => $dob,
+                'age'               => $row['E'] ?? null,
+                'mobile1'           => $mobile1,
+                'mobile2'           => $row['G'] ?? null,
+                'mobile1_whatsapp'  => $row['H'] ?? 0,
+                'mobile2_whatsapp'  => $row['I'] ?? null,
+                'religion'          => $row['J'] ?? null,
+                'caste'             => $row['K'] ?? null,
+                'jati'              => $row['L'] ?? null,
+                'education'         => $row['M'] ?? null,
+                'business'          => $row['N'] ?? null,
+                'position'          => $row['O'] ?? null,
+                'voter_id'          => $voter_id,
+                'father_name'       => $row['Q'] ?? null,
+                'email'             => $row['R'] ?? null,
+                'photo'             => 'NA',
+                'pincode'           => $row['S'] ?? null,
+                'samagra_id'        => $row['T'] ?? null,
+                'otp_recieved'      => 'NA',
+                'position_id'       => $row['U'] ?? 0,
+                'date_time'         => Carbon::now(),
+                'type'              => 1,
+            ];
+
+            $exists = DB::table('registration_form')->where('mobile1', $mobile1)->exists();
+
+            if ($exists) {
+                DB::table('registration_form')->where('mobile1', $mobile1)->update($data);
+            } else {
+                DB::table('registration_form')->insert($data);
+            }
+        }
+
+        return back()->with('success', 'एक्सेल फ़ाइल सफलतापूर्वक संसाधित हो गई!');
     }
 }
