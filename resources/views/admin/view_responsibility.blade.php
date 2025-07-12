@@ -16,7 +16,6 @@
                 <div class="card">
                     <div class="card-body">
 
-                        {{-- Success messages --}}
                         @foreach (['success', 'update_msg', 'delete_msg'] as $msg)
                             @if (session($msg))
                                 <div
