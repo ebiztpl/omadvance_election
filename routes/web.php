@@ -61,7 +61,6 @@ Route::middleware('checklogin')->group(function () {
 
     Route::get('/admin/dashboard2', [AdminController::class, 'dashboard2_index'])->name('dashboard2.index');
     Route::post('/dashboard2.filter', [AdminController::class, 'dashboard2_filter'])->name('dashboard2.filter');
-    Route::post('/admin/dashboard2', [AdminController::class, 'dashboard2_download'])->name('dashboard2.download');
 
     Route::get('admin/birthdays', [AdminController::class, 'birthday_index'])->name('birthdays.index');
 
@@ -102,6 +101,12 @@ Route::middleware('checklogin')->group(function () {
     Route::get('admin/upload_voter', [AdminController::class, 'upload'])->name('upload.index');
     Route::get('admin/download-voters-alt', [AdminController::class, 'exportVoterExcel'])->name('voters.download');
     Route::post('/admin/upload-voter-sheet', [AdminController::class, 'uploadVoterData'])->name('voter.upload');
+
+    // view voter data routes
+    Route::get('/admin/voterlist', [AdminController::class, 'viewvoter'])->name('viewvoter.index');
+    Route::post('admin/voterlist', [AdminController::class, 'voterdata'])->name('voterdata.index');
+
+    // member data upload routes
 });
 
 
