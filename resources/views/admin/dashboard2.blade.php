@@ -36,15 +36,6 @@ $breadcrumbs = [
         <div class="col-12">
             <div class="card" id="table_card" style="display: none;">
                 <div class="card-body">
-
-                    <form method="post" action="{{ route('dashboard2.download') }}" class="mb-5">
-                        @csrf
-                        <input type="hidden" name="download_data_whr" id="download_data_whr" value="">
-                        <button type="submit" name="download" class="btn btn-danger pull-right">
-                            <i class="fa fa-download"></i> Download Filter Data
-                        </button>
-                    </form>
-
                     <div class="table-responsive" id="filtered_data">
                         <table class="display table table-bordered" style="min-width: 845px" id="example">
                             <thead>
@@ -85,7 +76,6 @@ $breadcrumbs = [
             }
 
             let where = whereClauses.join(" AND ");
-            $("#download_data_whr").val(where);
 
             $.ajax({
                 url: "{{ route('dashboard2.filter') }}",
@@ -114,24 +104,6 @@ $breadcrumbs = [
                     alert("Error loading data.");
                 }
             });
-        });
-
-        // Prevent download without filter
-        $("form[action='{{ route('dashboard2.download') }}']").submit(function (e) {
-            let whereClauses = [];
-
-            if ($("#main_mobile").val() !== "") {
-                whereClauses.push("B.mobile1='" + $("#main_mobile").val() + "'");
-            }
-
-            const whereStr = whereClauses.join(" AND ");
-            if (!whereStr) {
-                e.preventDefault();
-                alert("Please apply a filter before downloading.");
-                return;
-            }
-
-            $("#download_data_whr").val(whereStr);
         });
     });
 </script>

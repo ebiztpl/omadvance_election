@@ -347,20 +347,27 @@ class AdminController extends Controller
         $step3 = Step3::where('registration_id', $id)->first();
         $step4 = Step4::where('registration_id', $id)->first();
 
-        $vidhansabhaModel = VidhansabhaLoksabha::find($step2->vidhansabha);
-        $vidhansabha = $vidhansabhaModel ? $vidhansabhaModel->vidhansabha : null;
+        // $vidhansabhaModel = VidhansabhaLoksabha::find($step2->vidhansabha);
+        // $vidhansabha = $vidhansabhaModel ? $vidhansabhaModel->vidhansabha : 'NA';
 
-        $mandalModel = Mandal::find($step2->mandal);
-        $mandal = $mandalModel ? $mandalModel->mandal_name : null;
+        // $mandalModel = Mandal::find($step2->mandal);
+        // $mandal = $mandalModel ? $mandalModel->mandal_name : null;
 
-        $nagarModel = Nagar::find($step2->nagar);
-        $nagar = $nagarModel ? $nagarModel->nagar_name : null;
+        // $nagarModel = Nagar::find($step2->nagar);
+        // $nagar = $nagarModel ? $nagarModel->nagar_name : null;
 
-        $pollingModel = Polling::find($step2->matdan_kendra_name);
-        $polling = $pollingModel ? $pollingModel->polling_name : null;
+        // $pollingModel = Polling::find($step2->matdan_kendra_name);
+        // $polling = $pollingModel ? $pollingModel->polling_name : null;
 
-        $areaModel = Area::find($step2->area_id);
-        $area = $areaModel ? $areaModel->area_name : null;
+        // $areaModel = Area::find($step2->area_id);
+        // $area = $areaModel ? $areaModel->area_name : null;
+
+
+        $vidhansabha = optional(VidhansabhaLoksabha::find($step2->vidhansabha ?? null))->vidhansabha ?? 'N/A';
+        $mandal = optional(Mandal::find($step2->mandal ?? null))->mandal_name ?? 'N/A';
+        $nagar = optional(Nagar::find($step2->nagar ?? null))->nagar_name ?? 'N/A';
+        $polling = optional(Polling::find($step2->matdan_kendra_name ?? null))->polling_name ?? 'N/A';
+        $area = optional(Area::find($step2->area_id ?? null))->area_name ?? 'N/A';
 
         $divisions = DB::table('division_master')->get();
 
@@ -368,7 +375,8 @@ class AdminController extends Controller
 
         $districts = DB::table('district_master')->get();
 
-        $interests = explode(' ', $step3->intrest);
+        // $interests = explode(' ', $step3->intrest);
+        $interests = isset($step3->intrest) ? explode(' ', $step3->intrest) : [];
         $interestOptions = [
             'कृषि',
             'समाजसेवा',
@@ -1015,7 +1023,8 @@ class AdminController extends Controller
         ]);
 
         DB::table('registration_form')->where('registration_id', $request->member_id)
-            ->update(['position_id' => $request->position_id]);
+            ->update(['position_id' => $request->position_id,
+            'type' => 3]);
 
         return redirect()->back()->with('success', 'दायित्व सफलतापूर्वक जोड़ा गया।');
     }
@@ -1484,5 +1493,54 @@ class AdminController extends Controller
         }
 
         return back()->with('success', 'एक्सेल फ़ाइल सफलतापूर्वक संसाधित हो गई!');
+    }
+
+
+
+    // view voters data functions
+    public function viewvoter()
+    {
+        return view('admin/voterlist');
+    }
+
+    public function voterdata(Request $request)
+    {
+        $query = DB::table('registration_form')->where('type', 1);
+
+        if ($request->filled('mobile')) {
+            $query->where('mobile1', 'like', '%' . $request->mobile . '%');
+        }
+
+        $voters = $query->get()->map(function ($voter) {
+            $voter->age = $voter->dob ? \Carbon\Carbon::parse($voter->dob)->age : 'N/A';
+            return $voter;
+        });
+
+        $count = $voters->count();
+        $tableRows = '';
+        $i = 1;
+
+        foreach ($voters as $voter) {
+            $tableRows .= '
+            <tr>
+                <td>' . $i++ . '</td>
+                <td>' . $voter->member_id . '</td>
+                <td>' . $voter->name . '</td>
+                <td>' . $voter->mobile1 . '</td>
+                <td>' . $voter->mobile2 . '</td>
+                <td>' . $voter->gender . '</td>
+                <td>' . \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') . '</td>
+                <td  style="white-space: nowrap;">
+                    <a href="' . route('register.show', $voter->registration_id) . '" class="btn btn-sm btn-success">View</a>
+                    <a href="' . route('register.show', $voter->registration_id) . '" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="' . route('register.destroy', $voter->registration_id) . '" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>';
+        }
+
+        return response()->json([
+            'count' => $count,
+            'table_rows' => $tableRows
+        ]);
     }
 }
