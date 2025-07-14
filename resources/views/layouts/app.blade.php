@@ -14,7 +14,8 @@
     <link href="{{ asset('focus/assets/css/style.css') }}" rel="stylesheet">
     <link href="{{ asset('focus/assets/icons/simple-line-icons/css/simple-line-icons.css') }}" rel="stylesheet">
     <link href="{{ asset('focus/assets/icons/themify-icons/css/themify-icons.css') }}" rel="stylesheet">
-    <link href="{{ asset('focus/assets/icons/material-design-iconic-font/css/materialdesignicons.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('focus/assets/icons/material-design-iconic-font/css/materialdesignicons.min.css') }}"
+        rel="stylesheet">
     <link href="{{ asset('focus/assets/icons/font-awesome-old/css/font-awesome.min.css') }}" rel="stylesheet">
     <link href="{{ asset('focus/assets/vendor/datatables/css/jquery.dataTables.min.css') }}" rel="stylesheet">
 
@@ -29,7 +30,7 @@
         }
 
         label {
-            color:rgb(32, 38, 44);
+            color: rgb(32, 38, 44);
         }
 
         .error {
@@ -293,9 +294,8 @@
 
     {{-- <script src="{{ asset('focus/assets/js/dashboard/dashboard-1.js') }}"></script> --}}
     <script>
-        window.addEventListener('load', function() {
-            document.body.classList.add('loaded');
-        });
+        $("#loader-wrapper").show(); 
+        $(window).on('load', () => $("#loader-wrapper").hide());
     </script>
 
     @stack('scripts')

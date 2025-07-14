@@ -1579,6 +1579,14 @@ class AdminController extends Controller
                     throw new \Exception("No Polling Info");
                 }
 
+                if (!$house) {
+                    throw new \Exception("No house");
+                }
+
+                if (!preg_match('/^[a-zA-Z0-9\-\/ ]+$/', $house)) {
+                    throw new \Exception("Invalid house");
+                }
+
                 $registrationId = DB::table('registration_form')->insertGetId([
                     'reference_id'      => 0,
                     'member_id'         => 0,
@@ -1668,17 +1676,21 @@ class AdminController extends Controller
                     'Incorrect integer value' => 'Wrong data format',
                     'Invalid datetime format' => 'Invalid date format',
                     'SQLSTATE'               => 'Database error',
+                    'No house'               => 'House information is missing',
+                    'Invalid house'          => 'Invalid house value provided',
                 ];
 
-                $reason = 'Data processing error';
+                $matchedReasons = [];
 
                 foreach ($knownErrors as $key => $value) {
                     if (stripos($originalMessage, $key) !== false) {
-                        $reason = $value;
-                        break;
+                        $matchedReasons[] = $value;
                     }
                 }
 
+                if (empty($matchedReasons)) {
+                    $matchedReasons[] = 'Data processing error';
+                }
 
 
                 $failedRows[] = [
@@ -1689,7 +1701,7 @@ class AdminController extends Controller
                     'gender'     => $row['F'] ?? '',
                     'voter_id' => $voter_id,
                     'area' => $area_name,
-                    'reason'   => $reason,
+                    'reason'   => $matchedReasons,
                 ];
             }
         }
@@ -1776,8 +1788,8 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string',
             'membership' => 'required|string',
-            'mobile1' => 'required|digits:10',
-            'photo' => 'required|image|max:2048',
+            'mobile_1' => 'required|digits:10',
+            'file' => 'required|image|max:2048',
             'voter_front' => 'required|image|max:2048',
             'voter_back' => 'required|image|max:2048',
         ]);

@@ -108,10 +108,18 @@ class MemberController extends Controller
             'file_attach' => 'nullable|file|max:20480',
         ]);
 
-        $userId = session('registration_id'); 
+        $userId = session('registration_id');
 
         if (!$userId) {
             return back()->with('error', 'User session expired. Please log in again.');
+        }
+
+        $userAreaId = DB::table('step2')
+            ->where('registration_id', $userId)
+            ->value('area_id');
+
+        if ((int)$userAreaId !== (int)$request->txtarea) {
+            return back()->with('error', 'आप केवल अपने क्षेत्र के लिए ही शिकायत दर्ज कर सकते हैं।');
         }
 
         $vidhansabha = (int) $request->txtvidhansabha;
@@ -126,7 +134,7 @@ class MemberController extends Controller
         $rndno = date('dHi', $randomTimestamp);
         $complaint_number = 'BJS' . $ref . '-' . $rndno;
 
-       $attachment = '';
+        $attachment = '';
         if ($request->hasFile('file_attach')) {
             $file = $request->file('file_attach');
             $extension = $file->getClientOriginalExtension();
@@ -177,63 +185,63 @@ class MemberController extends Controller
     }
 
 
-public function messageSent($complaint_number, $mobile)
-{
-    if (!preg_match('/^[6-9][0-9]{9}$/', $mobile)) {
-        \Log::error('Invalid mobile format: ' . $mobile);
-        return 0;
+    public function messageSent($complaint_number, $mobile)
+    {
+        if (!preg_match('/^[6-9][0-9]{9}$/', $mobile)) {
+            \Log::error('Invalid mobile format: ' . $mobile);
+            return 0;
+        }
+
+        $senderId = "EBIZTL";
+        $flow_id = '686e28df91e9813c053cb273';
+
+        $recipients = [[
+            "mobiles" => "91" . $mobile,
+            "otp" => $complaint_number,
+        ]];
+
+        $postData = [
+            "sender" => $senderId,
+            "flow_id" => $flow_id,
+            "recipients" => $recipients
+        ];
+
+        \Log::info('Sending SMS with payload: ' . json_encode($postData));
+
+        $url = "http://api.msg91.com/api/v5/flow/";
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode($postData),
+            CURLOPT_HTTPHEADER => [
+                "authkey: 459517AVl7UerR686e26ffP1",
+                "content-type: application/json"
+            ],
+        ]);
+
+        $output = curl_exec($curl);
+        $err = curl_error($curl);
+        curl_close($curl);
+
+        \Log::info('MSG91 response: ' . $output);
+
+        if ($err) {
+            \Log::error('SMS send error: ' . $err);
+            return 0;
+        }
+
+        $response = json_decode($output, true);
+
+        if ($response && isset($response['type']) && $response['type'] === 'success') {
+            \Log::info("Complaint number sent to $mobile: $complaint_number");
+            return 1;
+        } else {
+            \Log::error("Failed to send complaint number to $mobile. Response: " . $output);
+            return 0;
+        }
     }
-
-    $senderId = "EBIZTL";
-    $flow_id = '686e28df91e9813c053cb273';
-
-    $recipients = [[
-        "mobiles" => "91" . $mobile,
-        "otp" => $complaint_number,
-    ]];
-
-    $postData = [
-        "sender" => $senderId,
-        "flow_id" => $flow_id,
-        "recipients" => $recipients
-    ];
-
-    \Log::info('Sending SMS with payload: ' . json_encode($postData));
-
-    $url = "http://api.msg91.com/api/v5/flow/";
-    $curl = curl_init();
-    curl_setopt_array($curl, [
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CUSTOMREQUEST => "POST",
-        CURLOPT_POSTFIELDS => json_encode($postData),
-        CURLOPT_HTTPHEADER => [
-            "authkey: 459517AVl7UerR686e26ffP1",
-            "content-type: application/json"
-        ],
-    ]);
-
-    $output = curl_exec($curl);
-    $err = curl_error($curl);
-    curl_close($curl);
-
-    \Log::info('MSG91 response: ' . $output);
-
-    if ($err) {
-        \Log::error('SMS send error: ' . $err);
-        return 0;
-    }
-
-    $response = json_decode($output, true);
-
-    if ($response && isset($response['type']) && $response['type'] === 'success') {
-        \Log::info("Complaint number sent to $mobile: $complaint_number");
-        return 1;
-    } else {
-        \Log::error("Failed to send complaint number to $mobile. Response: " . $output);
-        return 0;
-    }
-}
 
 
 
@@ -317,5 +325,4 @@ public function messageSent($complaint_number, $mobile)
         return redirect()->route('complaints.view', $id)
             ->with('success', 'जवाब प्रस्तुत किया गया और शिकायत अपडेट की गई');
     }
-
 }
