@@ -105,7 +105,7 @@
                                             </td>
                                             <td>{{ $assign->level_name ?? '' }}</td>
                                             <td>{{ $assign->position->position_name ?? '' }}</td>
-                                            <td>{{ $workarea_name }}</td>
+                                            <td>{!! $workarea_name ?? '' !!}</td>
                                             <td>
                                                 <div class="d-flex">
                                                     <a href="{{ route('register.show', $assign->member->registration_id) }}"
