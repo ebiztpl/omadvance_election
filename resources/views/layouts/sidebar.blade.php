@@ -17,6 +17,9 @@
                 <li><a href="{{ route('dashboard.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">सदस्यता फाॅर्म डेटा</span></a></li>
 
+                <li><a href="{{ route('membership.create') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">सदस्यता फाॅर्म</span></a></li>
+
                 <li><a href="{{ route('upload.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">मतदाता डेटा अपलोड</span></a></li>
 
