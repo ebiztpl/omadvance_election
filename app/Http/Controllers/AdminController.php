@@ -1023,8 +1023,10 @@ class AdminController extends Controller
         ]);
 
         DB::table('registration_form')->where('registration_id', $request->member_id)
-            ->update(['position_id' => $request->position_id,
-            'type' => 3]);
+            ->update([
+                'position_id' => $request->position_id,
+                'type' => 3
+            ]);
 
         return redirect()->back()->with('success', 'दायित्व सफलतापूर्वक जोड़ा गया।');
     }
@@ -1034,7 +1036,7 @@ class AdminController extends Controller
     {
         $districtId = $request->district_id;
 
-        $vidhansabhas = VidhansabhaLokSabha::where('district_id', $districtId)->get(['vidhansabha_id', 'vidhansabha']);
+        $vidhansabhas = VidhansabhaLokSabha::where('district_id', $districtId)->get(['vidhansabha_id', 'vidhansabha', 'loksabha']);
 
         return response()->json($vidhansabhas);
     }
@@ -1378,7 +1380,8 @@ class AdminController extends Controller
 
 
     // upload voters data functions
-    public function upload() {
+    public function upload()
+    {
         return view('admin/upload_voter');
     }
 
@@ -1387,28 +1390,41 @@ class AdminController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
+        // $headers = [
+        //     'name',
+        //     'membership',
+        //     'gender',
+        //     'dob',
+        //     'age',
+        //     'mobile1',
+        //     'mobile2',
+        //     'mobile1_whatsapp',
+        //     'mobile2_whatsapp',
+        //     'religion',
+        //     'caste',
+        //     'jati',
+        //     'education',
+        //     'business',
+        //     'position',
+        //     'voter_id',
+        //     'father_name',
+        //     'email',
+        //     'pincode',
+        //     'samagra_id',
+        //     'position_id',
+        // ];
+
         $headers = [
             'name',
-            'membership',
-            'gender',
-            'dob',
+            'guardian',
+            'house',
+
             'age',
-            'mobile1',
-            'mobile2',
-            'mobile1_whatsapp',
-            'mobile2_whatsapp',
-            'religion',
-            'caste',
-            'jati',
-            'education',
-            'business',
-            'position',
+            'gender',
             'voter_id',
-            'father_name',
-            'email',
-            'pincode',
-            'samagra_id',
-            'position_id',
+
+            'area_name',
+
         ];
 
         $sheet->fromArray($headers, null, 'A1');
@@ -1423,6 +1439,108 @@ class AdminController extends Controller
     }
 
 
+    // public function uploadVoterData(Request $request)
+    // {
+    //     $request->validate([
+    //         'voter_excel' => 'required|file|mimes:xlsx,xls,csv'
+    //     ]);
+
+    //     $file = $request->file('voter_excel');
+    //     $spreadsheet = IOFactory::load($file);
+    //     $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+
+    //     unset($sheetData[1]);
+
+    //     foreach ($sheetData as $row) {
+    //         $mobile1  = $row['F'] ?? null; 
+    //         $voter_id = $row['P'] ?? null; 
+
+    //         if (!$mobile1) {
+    //             continue;
+    //         }
+
+    //         $dobRaw = $row['D'] ?? null;
+    //         $dob = null;
+    //         if (!empty($dobRaw)) {
+    //             try {
+    //                 $dob = Carbon::parse($dobRaw)->format('Y-m-d');
+    //             } catch (\Exception $e) {
+    //                 $dob = null;
+    //             }
+    //         }
+
+    //         $data = [
+    //             'reference_id'      => 0,
+    //             'member_id'         => $mobile1,
+    //             'name'              => $row['A'] ?? null,
+    //             'membership'        => $row['B'] ?? null,
+    //             'gender'            => $row['C'] ?? null,
+    //             'dob'               => $dob,
+    //             'age'               => $row['E'] ?? null,
+    //             'mobile1'           => $mobile1,
+    //             'mobile2'           => $row['G'] ?? null,
+    //             'mobile1_whatsapp'  => $row['H'] ?? 0,
+    //             'mobile2_whatsapp'  => $row['I'] ?? null,
+    //             'religion'          => $row['J'] ?? null,
+    //             'caste'             => $row['K'] ?? null,
+    //             'jati'              => $row['L'] ?? null,
+    //             'education'         => $row['M'] ?? null,
+    //             'business'          => $row['N'] ?? null,
+    //             'position'          => $row['O'] ?? null,
+    //             'voter_id'          => $voter_id,
+    //             'father_name'       => $row['Q'] ?? null,
+    //             'email'             => $row['R'] ?? null,
+    //             'photo'             => 'NA',
+    //             'pincode'           => $row['S'] ?? null,
+    //             'samagra_id'        => $row['T'] ?? null,
+    //             'otp_recieved'      => 'NA',
+    //             'position_id'       => $row['U'] ?? 0,
+    //             'date_time'         => Carbon::now(),
+    //             'type'              => 1,
+    //         ];
+
+    //         $data = [
+    //             'reference_id'      => 0,
+    //             'member_id'         => 0,
+    //             'name'              => $row['A'] ?? null,
+    //             'membership'        => 'N/A',
+    //             'gender'            => $row['C'] ?? null,
+    //             'dob'               => 'N/A',
+    //             'age'               => $row['E'] ?? null,
+    //             'mobile1'           => 'N/A',
+    //             'mobile2'           => 'N/A',
+    //             'mobile1_whatsapp'  => 0,
+    //             'mobile2_whatsapp'  => 0,
+    //             'religion'          => 'N/A',
+    //             'caste'             => 'N/A',
+    //             'jati'              => 'N/A',
+    //             'education'         => 'N/A',
+    //             'business'          => 'N/A',
+    //             'position'          => 'N/A',
+    //             'voter_id'          => 'N/A',
+    //             'father_name'       => $row['Q'] ?? null,
+    //             'email'             => 'N/A',
+    //             'photo'             => 'NA',
+    //             'pincode'           => 'N/A',
+    //             'samagra_id'        => 'N/A',
+    //             'otp_recieved'      => 'NA',
+    //             'position_id'       => 'N/A',
+    //             'date_time'         => Carbon::now(),
+    //             'type'              => 1,
+    //         ];
+
+    //         $exists = DB::table('registration_form')->where('mobile1', $mobile1)->exists();
+
+    //         if ($exists) {
+    //             DB::table('registration_form')->where('mobile1', $mobile1)->update($data);
+    //         } else {
+    //             DB::table('registration_form')->insert($data);
+    //         }
+    //     }
+
+    //     return back()->with('success', 'एक्सेल फ़ाइल सफलतापूर्वक संसाधित हो गई!');
+    // }
+
     public function uploadVoterData(Request $request)
     {
         $request->validate([
@@ -1435,66 +1553,154 @@ class AdminController extends Controller
 
         unset($sheetData[1]);
 
-        foreach ($sheetData as $row) {
-            $mobile1  = $row['F'] ?? null; 
-            $voter_id = $row['P'] ?? null; 
+        $successCount = 0;
+        $failedRows = [];
 
-            if (!$mobile1) {
-                continue;
-            }
+        foreach ($sheetData as $index => $row) {
+            DB::beginTransaction();
 
-            $dobRaw = $row['D'] ?? null;
-            $dob = null;
-            if (!empty($dobRaw)) {
-                try {
-                    $dob = Carbon::parse($dobRaw)->format('Y-m-d');
-                } catch (\Exception $e) {
-                    $dob = null;
+            try {
+                $voter_id  = $row['G'] ?? null;
+                $area_name = $row['H'] ?? null;
+                $house     = $row['D'] ?? null;
+                $name      = $row['B'] ?? '-';
+
+                if (!$area_name) {
+                    throw new \Exception("Missing Area");
                 }
-            }
 
-            $data = [
-                'reference_id'      => 0,
-                'member_id'         => $mobile1,
-                'name'              => $row['A'] ?? null,
-                'membership'        => $row['B'] ?? null,
-                'gender'            => $row['C'] ?? null,
-                'dob'               => $dob,
-                'age'               => $row['E'] ?? null,
-                'mobile1'           => $mobile1,
-                'mobile2'           => $row['G'] ?? null,
-                'mobile1_whatsapp'  => $row['H'] ?? 0,
-                'mobile2_whatsapp'  => $row['I'] ?? null,
-                'religion'          => $row['J'] ?? null,
-                'caste'             => $row['K'] ?? null,
-                'jati'              => $row['L'] ?? null,
-                'education'         => $row['M'] ?? null,
-                'business'          => $row['N'] ?? null,
-                'position'          => $row['O'] ?? null,
-                'voter_id'          => $voter_id,
-                'father_name'       => $row['Q'] ?? null,
-                'email'             => $row['R'] ?? null,
-                'photo'             => 'NA',
-                'pincode'           => $row['S'] ?? null,
-                'samagra_id'        => $row['T'] ?? null,
-                'otp_recieved'      => 'NA',
-                'position_id'       => $row['U'] ?? 0,
-                'date_time'         => Carbon::now(),
-                'type'              => 1,
-            ];
+                $area = DB::table('area_master')->where('area_name', $area_name)->first();
+                if (!$area) {
+                    throw new \Exception("Invalid Area");
+                }
 
-            $exists = DB::table('registration_form')->where('mobile1', $mobile1)->exists();
+                $polling = DB::table('gram_polling')->where('gram_polling_id', $area->polling_id)->first();
+                if (!$polling) {
+                    throw new \Exception("No Polling Info");
+                }
 
-            if ($exists) {
-                DB::table('registration_form')->where('mobile1', $mobile1)->update($data);
-            } else {
-                DB::table('registration_form')->insert($data);
+                $registrationId = DB::table('registration_form')->insertGetId([
+                    'reference_id'      => 0,
+                    'member_id'         => 0,
+                    'name'              => $name,
+                    'membership'        => "N/A",
+                    'gender'            => $row['F'] ?? null,
+                    'dob'               => null,
+                    'age'               => $row['E'] ?? null,
+                    'mobile1'           => 'N/A',
+                    'mobile2'           => 'N/A',
+                    'mobile1_whatsapp'  => 0,
+                    'mobile2_whatsapp'  => 0,
+                    'religion'          => 'N/A',
+                    'caste'             => 'N/A',
+                    'jati'              => 'N/A',
+                    'education'         => 'N/A',
+                    'business'          => 'N/A',
+                    'position'          => 'N/A',
+                    'voter_id'          => $voter_id,
+                    'father_name'       => $row['C'] ?? null,
+                    'email'             => 'N/A',
+                    'photo'             => 'NA',
+                    'pincode'           => 'N/A',
+                    'samagra_id'        => 'N/A',
+                    'otp_recieved'      => 'NA',
+                    'position_id'       => 0,
+                    'date_time'         => "2025-10-12",
+                    'type'              => 1,
+                ]);
+
+                DB::table('step2')->updateOrInsert(
+                    ['registration_id' => $registrationId],
+                    [
+                        'division_id'        => 2,
+                        'district'           => 11,
+                        'vidhansabha'        => 49,
+                        'mandal_type'        => 1,
+                        'mandal'             => $polling->mandal_id,
+                        'nagar'              => $polling->nagar_id,
+                        'matdan_kendra_no'   => $polling->polling_no ?? '',
+                        'matdan_kendra_name' => $polling->polling_name,
+                        'area_id'            => $area->area_id,
+                        'loksabha'           => 'ग्वालियर',
+                        'voter_front'        => 'NA',
+                        'voter_back'         => 'NA',
+                        'voter_number'       => $voter_id,
+                        'house'              => $house,
+                        'post_date'          => now(),
+                    ]
+                );
+
+                DB::table('step3')->updateOrInsert(
+                    ['registration_id' => $registrationId],
+                    [
+                        'total_member'       => 0,
+                        'total_voter'        => 0,
+                        'member_job'         => 0,
+                        'member_name_1'      => 'NA',
+                        'member_mobile_1'    => 0,
+                        'member_name_2'      => 'NA',
+                        'member_mobile_2'    => 0,
+                        'friend_name_1'      => 'NA',
+                        'friend_mobile_1'    => 0,
+                        'friend_name_2'      => 'NA',
+                        'friend_mobile_2'    => 0,
+                        'intrest'            => 'NA',
+                        'vehicle1'           => 'NA',
+                        'vehicle2'           => 'NA',
+                        'vehicle3'           => 'NA',
+                        'permanent_address'  => 'NA',
+                        'temp_address'       => 'NA',
+                        'post_date'          => now(),
+                    ]
+                );
+
+                DB::commit();
+                $successCount++;
+            } catch (\Exception $e) {
+                DB::rollBack();
+
+                $originalMessage = $e->getMessage();
+
+                $knownErrors = [
+                    'No area'                => 'Area name is missing',
+                    'Invalid area'           => 'Area not found',
+                    'No polling'             => 'Polling info not found',
+                    'Incorrect integer value' => 'Wrong data format',
+                    'Invalid datetime format' => 'Invalid date format',
+                    'SQLSTATE'               => 'Database error',
+                ];
+
+                $reason = 'Data processing error';
+
+                foreach ($knownErrors as $key => $value) {
+                    if (stripos($originalMessage, $key) !== false) {
+                        $reason = $value;
+                        break;
+                    }
+                }
+
+
+
+                $failedRows[] = [
+                    'name'     => $name,
+                    'father_name' => $row['C'] ?? '',
+                    'house'     => $house,
+                    'age'     => $row['E'] ?? '',
+                    'gender'     => $row['F'] ?? '',
+                    'voter_id' => $voter_id,
+                    'area' => $area_name,
+                    'reason'   => $reason,
+                ];
             }
         }
 
-        return back()->with('success', 'एक्सेल फ़ाइल सफलतापूर्वक संसाधित हो गई!');
+        return response()->json([
+            'status'        => count($failedRows) ? 'partial' : 'success',
+            'success_count' => $successCount,
+            'failed_count'  => count($failedRows),
+            'errors'        => $failedRows
+        ]);
     }
-
 
 
     // view voters data functions
@@ -1507,12 +1713,12 @@ class AdminController extends Controller
     {
         $query = DB::table('registration_form')->where('type', 1);
 
-        if ($request->filled('mobile')) {
-            $query->where('mobile1', 'like', '%' . $request->mobile . '%');
+        if ($request->filled('voter_id')) {
+            $query->where('voter_id', 'like', '%' . $request->voter_id . '%');
         }
 
         $voters = $query->get()->map(function ($voter) {
-            $voter->age = $voter->dob ? \Carbon\Carbon::parse($voter->dob)->age : 'N/A';
+            //$voter->age = $voter->dob ? \Carbon\Carbon::parse($voter->dob)->age : 'N/A';
             return $voter;
         });
 
@@ -1521,19 +1727,23 @@ class AdminController extends Controller
         $i = 1;
 
         foreach ($voters as $voter) {
+            $step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
+            $area_name = DB::table('area_master')->where('area_id', $step2->area_id)->first();
             $tableRows .= '
             <tr>
                 <td>' . $i++ . '</td>
-                <td>' . $voter->member_id . '</td>
                 <td>' . $voter->name . '</td>
-                <td>' . $voter->mobile1 . '</td>
-                <td>' . $voter->mobile2 . '</td>
+				<td>' . $voter->father_name . '</td>
+                <td>' . $voter->age . '</td>
+                <td>' . $voter->voter_id . '</td>
                 <td>' . $voter->gender . '</td>
+				<td>' . $step2->house . '</td>
+				<td>' . $area_name->area_name . '</td>
                 <td>' . \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') . '</td>
                 <td  style="white-space: nowrap;">
-                    <a href="' . route('register.show', $voter->registration_id) . '" class="btn btn-sm btn-success">View</a>
-                    <a href="' . route('register.show', $voter->registration_id) . '" class="btn btn-sm btn-primary">Edit</a>
-                    <a href="' . route('register.destroy', $voter->registration_id) . '" class="btn btn-sm btn-danger">Delete</a>
+                    <a href="' . route('register.show', $voter->registration_id) . '" class="btn btn-xs btn-success">View</a>
+                    <a href="' . route('register.show', $voter->registration_id) . '" class="btn btn-xs btn-primary">Edit</a>
+                    <a href="' . route('register.destroy', $voter->registration_id) . '" class="btn btn-xs btn-danger">Delete</a>
                 </td>
             </tr>';
         }
@@ -1542,5 +1752,143 @@ class AdminController extends Controller
             'count' => $count,
             'table_rows' => $tableRows
         ]);
+    }
+
+
+    // member form functions
+    public function membercreate()
+    {
+        $divisions = Division::all();
+        return view('admin/membership_form', compact('divisions'));
+    }
+
+    public function getDistricts(Request $request)
+    {
+        $division_id = $request->division_id;
+
+        $districts = District::where('division_id', $division_id)->get();
+
+        return response()->json($districts);
+    }
+
+    public function memberstore(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'membership' => 'required|string',
+            'mobile1' => 'required|digits:10',
+            'photo' => 'required|image|max:2048',
+            'voter_front' => 'required|image|max:2048',
+            'voter_back' => 'required|image|max:2048',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            // 1. Save to registration_form
+            $registration = new RegistrationForm();
+            $registration->reference_id = $request->reference_id ?? 0;
+            $registration->member_id = $request->mobile_1;
+            $registration->name = $request->name;
+            $registration->membership = $request->membership;
+            $registration->gender = $request->gender;
+            $registration->dob = Carbon::createFromFormat('Y-m-d', "{$request->date}");
+            $registration->age = $request->age;
+            $registration->mobile1 = $request->mobile_1;
+            $registration->mobile2 = $request->mobile_2;
+            $registration->mobile1_whatsapp = $request->has('mobile_1_whatsapp') ? 1 : 0;
+            $registration->mobile2_whatsapp = $request->has('mobile_2_whatsapp') ? 1 : 0;
+            $registration->religion = $request->religion;
+            $registration->caste = $request->caste;
+            $registration->jati = $request->jati;
+            $registration->education = $request->education;
+            $registration->business = $request->business;
+            $registration->position = $request->position;
+            $registration->father_name = $request->father_name;
+            $registration->email = $request->email;
+            $registration->pincode = $request->pincode;
+            $registration->samagra_id = $request->samagra_id;
+            $registration->date_time = now();
+
+            // Upload photo
+            if ($request->hasFile('file')) {
+                $photoName = 'photo_' . time() . '.' . $request->file->extension();
+                $request->file->move(public_path('assets/upload'), $photoName);
+                $registration->photo = $photoName;
+            }
+
+            $registration->save();
+            $registration_id = $registration->registration_id;
+
+            // 2. Step 2
+            $step2 = new Step2();
+            $step2->registration_id = $registration_id;
+            $step2->division_id = $request->division_name;
+            $step2->district = $request->district;
+            $step2->vidhansabha = $request->vidhansabha;
+            $step2->mandal_type = $request->mandal_type;
+            $step2->mandal = $request->mandal;
+            $step2->nagar = $request->nagar;
+            $step2->matdan_kendra_no = $request->matdan_kendra_no;
+            $step2->matdan_kendra_name = $request->matdan_kendra_name;
+            $step2->area_id = $request->area_name;
+            $step2->loksabha = $request->loksabha;
+            $step2->voter_number = $request->voter_number;
+            $step2->post_date = now();
+
+            if ($request->hasFile('voter_front')) {
+                $frontName = 'front_' . time() . '.' . $request->voter_front->extension();
+                $request->voter_front->move(public_path('assets/upload/step2'), $frontName);
+                $step2->voter_front = $frontName;
+            }
+
+            if ($request->hasFile('voter_back')) {
+                $backName = 'back_' . time() . '.' . $request->voter_back->extension();
+                $request->voter_back->move(public_path('assets/upload/step2'), $backName);
+                $step2->voter_back = $backName;
+            }
+
+            $step2->save();
+
+            // 3. Step 3
+            $step3 = new Step3();
+            $step3->registration_id = $registration_id;
+            $step3->total_member = $request->total_member;
+            $step3->total_voter = $request->total_voter;
+            $step3->member_job = $request->member_job;
+            $step3->member_name_1 = $request->member_name_1;
+            $step3->member_mobile_1 = $request->member_mobile_1;
+            $step3->member_name_2 = $request->member_name_2;
+            $step3->member_mobile_2 = $request->member_mobile_2;
+            $step3->friend_name_1 = $request->friend_name_1;
+            $step3->friend_mobile_1 = $request->friend_mobile_1;
+            $step3->friend_name_2 = $request->friend_name_2;
+            $step3->friend_mobile_2 = $request->friend_mobile_2;
+            $step3->intrest = is_array($request->interest) ? implode(',', $request->interest) : '';
+            $step3->vehicle1 = $request->vehicle1;
+            $step3->vehicle2 = $request->vehicle2;
+            $step3->vehicle3 = $request->vehicle3;
+            $step3->permanent_address = $request->permanent_address;
+            $step3->temp_address = $request->temp_address;
+            $step3->post_date = now();
+            $step3->save();
+
+            // 4. Step 4
+            $step4 = new Step4();
+            $step4->registration_id = $registration_id;
+            $step4->party_name = $request->party_name;
+            $step4->present_post = $request->present_post;
+            $step4->reason_join = $request->reason_join;
+            $step4->post_date = now();
+            $step4->save();
+
+            DB::commit();
+            return redirect()->route('register.card', ['id' => $registration_id]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+
+        // return redirect()->route('membership.create')->with('success', 'सदस्यता सफलतापूर्वक सबमिट की गई!');
     }
 }

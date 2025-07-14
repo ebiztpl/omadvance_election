@@ -308,7 +308,7 @@
 
             $("#filter_data").click(function(e) {
                 e.preventDefault();
-                $(".loader").show();
+                $(".loader-wrapper").show();
 
                 const data = {
                     _token: '{{ csrf_token() }}',

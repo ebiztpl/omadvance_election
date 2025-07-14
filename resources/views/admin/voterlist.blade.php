@@ -18,8 +18,8 @@
                     <div id="rowGroup">
                         <div class="form-row align-items-end mb-2">
                             <div class="col-md-4">
-                                <label>मोबाइल नंबर <span class="text-danger">*</span></label>
-                                <input type="text" name="mobile" id="main_mobile" class="form-control">
+                                <label>मतदाता आईडी <span class="text-danger">*</span></label>
+                                <input type="text" name="voter_id" id="main_voter_id" class="form-control">
                             </div>
                             <div class="col-md-6 mt-2" style="color:rgb(55, 64, 75)">
                                 <br />
@@ -52,11 +52,13 @@
                                 <thead>
                                     <tr>
                                         <th>S.No.</th>
-                                        <th>Member ID</th>
                                         <th>Name</th>
-                                        <th>Mobile1</th>
-                                        <th>mobile2</th>
+                                        <th>Father/Husband</th>
+                                        <th>Age</th>
+                                        <th>VoterID</th>
                                         <th>Gender</th>
+                                        <th>House</th>
+                                        <th>Polling Area</th>
                                         <th>Entry Date</th>
                                         <th>Action</th>
                                     </tr>
@@ -74,32 +76,32 @@
     </div>
 
 
-@push('scripts')
-<script>
-    $(document).ready(function () {
-        $("#data-filter").click(function () {
-            let mobile = $('#main_mobile').val();
+    @push('scripts')
+        <script>
+            $(document).ready(function() {
+                $("#data-filter").click(function() {
+                    let voter_id = $('#main_voter_id').val();
 
-            $.ajax({
-                url: "{{ route('voterdata.index') }}",
-                method: "POST",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    mobile: mobile
-                },
-                success: function (response) {
-                    $('#voter-table-body').html(response.table_rows);
-                    $('#total').text(response.count);
-                    $('#table_card').show();
-                },
-                error: function () {
-                    alert("Something went wrong.");
-                }
+                    $.ajax({
+                        url: "{{ route('voterdata.index') }}",
+                        method: "POST",
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                            voter_id: voter_id
+                        },
+                        success: function(response) {
+                            $('#voter-table-body').html(response.table_rows);
+                            $('#total').text(response.count);
+                            $('#table_card').show();
+                        },
+                        error: function() {
+                            alert("Something went wrong.");
+                        }
+                    });
+                });
             });
-        });
-    });
-</script>
-@endpush
+        </script>
+    @endpush
 
 
 

@@ -77,9 +77,9 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/admin/fetch-responsibility/{registration_id}', [AdminController::class, 'fetchFullResponsibilityData']);
     Route::post('/admin/responsibility/update/{assign_position_id}', [AdminController::class, 'responsibility_update'])->name('responsibility.update');
     Route::get('/admin/get-vidhansabha/{district_id}', [AdminController::class, 'getVidhansabha']);
-    Route::get('/admin/get-mandal/{vidhansabha_id}', [AdminController::class, 'getMandal']);
-    Route::get('/admin/get-nagar/{mandal_id}', [AdminController::class, 'getNagar']);
-    Route::get('/admin/get-polling/{gram_id}', [AdminController::class, 'getPolling']);
+    Route::get('/admin/get-mandal/{vidhansabha_id}', [AdminController::class, 'getMandal'])->name('get.mandals');
+    Route::get('/admin/get-nagar/{mandal_id}', [AdminController::class, 'getNagar'])->name('get.nagars');
+    Route::get('/admin/get-polling/{gram_id}', [AdminController::class, 'getPolling'])->name('get.pollings');
     Route::get('/admin/get-area/{polling_id}', [AdminController::class, 'getArea']);
 
 
@@ -107,6 +107,10 @@ Route::middleware('checklogin')->group(function () {
     Route::post('admin/voterlist', [AdminController::class, 'voterdata'])->name('voterdata.index');
 
     // member data upload routes
+    Route::get('/admin/membership_form', [AdminController::class, 'membercreate'])->name('membership.create');
+    Route::post('/admin/membership_form', [AdminController::class, 'memberstore'])->name('membership.store');
+    Route::post('/get-districts', [AdminController::class, 'getDistricts'])->name('get.districts');
+    Route::post('/get-vidhansabhas', [AdminController::class, 'getVidhansabhasByDistrict'])->name('get.vidhansabhaD');
 });
 
 
