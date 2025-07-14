@@ -84,12 +84,12 @@
     @push('scripts')
         <script>
             document.getElementById('voter-upload-form').addEventListener('submit', function(e) {
+
+                $("#loader-wrapper").show();
                 e.preventDefault();
 
                 const form = e.target;
                 const formData = new FormData(form);
-
-                $(".loader-wrapper").show();
 
                 fetch(form.action, {
                         method: 'POST',
@@ -99,6 +99,7 @@
                         }
                     })
                     .then(async (res) => {
+                        $("#loader-wrapper").hide();
                         let data;
                         try {
                             data = await res.json();
@@ -123,6 +124,7 @@
                     .catch((error) => {
                         console.error('Upload error:', error);
                         alert('Upload failed');
+                        $("#loader-wrapper").hide();
                     });
             });
 

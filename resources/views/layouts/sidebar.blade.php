@@ -116,7 +116,7 @@
                 <li><a href="{{ route('complaint.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
 
-                <li><a href="{{ route('complaint.view') }}"><i class="icon icon-arrow-right"></i><span
+                <li><a href="{{ route('complaints.view') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्याएँ देखे</span></a></li>
             @endif
 
