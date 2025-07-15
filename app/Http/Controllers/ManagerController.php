@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Division;
 use App\Models\District;
 use App\Models\VidhansabhaLokSabha;
+use App\Models\RegistrationForm;
 use App\Models\Mandal;
 use App\Models\Nagar;
 use App\Models\Polling;
@@ -14,6 +15,7 @@ use App\Models\Level;
 use App\Models\Jati;
 use App\Models\Position;
 use App\Models\Complaint;
+use App\Models\Reply;
 use App\Models\JatiwiseVoter;
 use Illuminate\Support\Facades\DB;
 
@@ -776,5 +778,209 @@ class ManagerController extends Controller
     {
         $complaints = Complaint::where('type', 2)->get();
         return view('manager/operator_complaints', compact('complaints'));
+    }
+
+
+
+    public function messageSent($complaint_number, $mobile)
+    {
+        if (!preg_match('/^[6-9][0-9]{9}$/', $mobile)) {
+            \Log::error('Invalid mobile format: ' . $mobile);
+            return 0;
+        }
+
+        $senderId = "EBIZTL";
+        $flow_id = '686e28df91e9813c053cb273';
+
+        $recipients = [[
+            "mobiles" => "91" . $mobile,
+            "otp" => $complaint_number,
+        ]];
+
+        $postData = [
+            "sender" => $senderId,
+            "flow_id" => $flow_id,
+            "recipients" => $recipients
+        ];
+
+        \Log::info('Sending SMS with payload: ' . json_encode($postData));
+
+        $url = "http://api.msg91.com/api/v5/flow/";
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode($postData),
+            CURLOPT_HTTPHEADER => [
+                "authkey: 459517AVl7UerR686e26ffP1",
+                "content-type: application/json"
+            ],
+        ]);
+
+        $output = curl_exec($curl);
+        $err = curl_error($curl);
+        curl_close($curl);
+
+        \Log::info('MSG91 response: ' . $output);
+
+        if ($err) {
+            \Log::error('SMS send error: ' . $err);
+            return 0;
+        }
+
+        $response = json_decode($output, true);
+
+        if ($response && isset($response['type']) && $response['type'] === 'success') {
+            \Log::info("Complaint number sent to $mobile: $complaint_number");
+            return 1;
+        } else {
+            \Log::error("Failed to send complaint number to $mobile. Response: " . $output);
+            return 0;
+        }
+    }
+
+    public function allcomplaints_show($id)
+    {
+        $complaint = Complaint::with(
+            'replies',
+            'registration',
+            'division',
+            'district',
+            'vidhansabha',
+            'mandal',
+            'gram',
+            'polling',
+            'area'
+        )->findOrFail($id);
+
+        $divisions = Division::orderBy('division_name')->get();
+
+        return view('manager/details_complaints', [
+            'complaint' => $complaint,
+            'divisions' => $divisions
+        ]);
+    }
+
+    public function complaintsReply(Request $request, $id)
+    {
+        $request->validate([
+            'cmp_reply' => 'required|string',
+            'cmp_status' => 'required|in:1,2,3,4',
+            'cb_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
+            'ca_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
+            'c_video' => 'nullable|url|max:255',
+        ]);
+
+        $complaint = Complaint::findOrFail($id);
+
+        $reply = new Reply();
+        $reply->complaint_id = $id;
+        $reply->complaint_reply = $request->cmp_reply;
+        $reply->reply_from = auth()->id() ?? 2;
+        $reply->reply_date = now();
+
+        if ($request->filled('c_video')) {
+            $reply->c_video = $request->c_video;
+        }
+
+        $reply->save();
+
+        Complaint::where('complaint_id', $id)->update([
+            'complaint_status' => $request->cmp_status
+        ]);
+
+        if ($request->hasFile('cb_photo')) {
+            $before = $request->file('cb_photo')[0];
+            $beforeName = 'before_' . time() . '.' . $before->getClientOriginalExtension();
+            $destinationPath = public_path('assets/upload_complaint');
+            $before->move($destinationPath, $beforeName);
+            $reply->cb_photo = 'assets/upload_complaint/' . $beforeName;
+        }
+
+        if ($request->hasFile('ca_photo')) {
+            $after = $request->file('ca_photo')[0];
+            $afterName = 'after_' . time() . '.' . $after->getClientOriginalExtension();
+            $destinationPath = public_path('assets/upload_complaint');
+            $after->move($destinationPath, $afterName);
+            $reply->ca_photo = 'assets/upload_complaint/' . $afterName;
+        }
+
+        $reply->save();
+
+        if ($complaint->type == 1) {
+            return redirect()->route('commander.complaints.view', $id)
+                ->with('success', 'कमांडर शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।');
+        } else {
+            return redirect()->route('operator.complaints.view', $id)
+                ->with('success', 'ऑपरेटर शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।');
+        }
+    }
+
+
+
+    public function updateComplaint(Request $request, $id)
+    {
+        $request->validate([
+            'txtname' => 'required|string|max:255',
+            'voter' => 'required|string|max:255',
+            'division_id' => 'required|integer',
+            'txtdistrict_name' => 'required',
+            'txtvidhansabha' => 'required',
+            'txtmandal' => 'required',
+            'txtgram' => 'required',
+            'txtpolling' => 'required',
+            'txtarea' => 'required',
+            'type' => 'required|string',
+            'CharCounter' => 'required|string|max:100',
+            'NameText' => 'required|string|max:2000',
+            'department' => 'nullable',
+            'from_date' => 'nullable|date',
+            'program_date' => 'nullable|date',
+            'to_date' => 'nullable',
+        ]);
+
+        $complaint = Complaint::findOrFail($id);
+
+        $complaint_number = $complaint->complaint_number;
+
+
+        $complaint->complaint_type = $request->type;
+        $complaint->name = $request->txtname;
+        $complaint->mobile_number = $request->mobile;
+        $complaint->email = $request->mobile;
+        $complaint->voter_id = $request->voter;
+        $complaint->division_id = $request->division_id;
+        $complaint->district_id = $request->txtdistrict_name;
+        $complaint->vidhansabha_id = $request->txtvidhansabha;
+        $complaint->mandal_id = $request->txtmandal;
+        $complaint->gram_id = $request->txtgram;
+        $complaint->polling_id = $request->txtpolling;
+        $complaint->area_id = $request->txtarea;
+        $complaint->complaint_department = $request->department ?? '';
+        $complaint->issue_title = $request->CharCounter;
+        $complaint->issue_description = $request->NameText;
+        $complaint->news_date = $request->from_date;
+        $complaint->program_date = $request->program_date;
+        $complaint->news_time = $request->to_date;
+
+        if ($request->hasFile('file_attach')) {
+            $file = $request->file('file_attach');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('assets/upload/complaints'), $filename);
+            $complaint->issue_attachment = $filename;
+        }
+
+        $complaint->save();
+
+        if ($complaint->type == '1') {
+            $mobile = RegistrationForm::where('registration_id', $complaint->complaint_created_by)->value('mobile1');
+            $message = "आपकी शिकायत क्रमांक $complaint_number सफलतापूर्वक अपडेट कर दी गई है।";
+            $this->messageSent($message, $mobile);
+
+            return redirect()->route('commander.complaints.view')->with('success', 'कमांडर शिकायत सफलतापूर्वक अपडेट हुई और संदेश भेजा गया।');
+        } else {
+            return redirect()->route('operator.complaints.view')->with('success', 'ऑपरेटर शिकायत सफलतापूर्वक अपडेट हुई');
+        }
     }
 }

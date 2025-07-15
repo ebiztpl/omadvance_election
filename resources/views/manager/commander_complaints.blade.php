@@ -32,7 +32,7 @@
                                         <th>शिकायतकर्ता का मोबाइल</th>
                                         <th>मतदान केंद्र</th>
                                         <th>ग्राम चौपाल</th>
-                                        <th>अपलोड वीडियो</th>
+                                        <th>अपलोड फ़ाइल</th>
                                         <th>आगे देखें</th>
                                     </tr>
                                 </thead>
@@ -54,7 +54,7 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <a href="{{ route('complaint.show', $complaint->complaint_id) }}"
+                                                <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"
                                                     class="btn btn-sm btn-primary" style="white-space: nowrap;">
                                                     क्लिक करें
                                                 </a>
