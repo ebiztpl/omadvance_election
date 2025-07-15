@@ -767,6 +767,53 @@ class ManagerController extends Controller
         return response($html);
     }
 
+    public function getDistricts($division_id)
+    {
+        $districts = District::where('division_id', $division_id)->get();
+        return response()->json($districts->map(function ($d) {
+            return "<option value='{$d->district_id}'>{$d->district_name}</option>";
+        }));
+    }
+
+    public function getVidhansabhas($district_id)
+    {
+        $vidhansabhas = VidhansabhaLokSabha::where('district_id', $district_id)->get();
+        return response()->json($vidhansabhas->map(function ($v) {
+            return "<option value='{$v->vidhansabha_id}'>{$v->vidhansabha}</option>";
+        }));
+    }
+
+    public function getMandals($vidhansabha_id)
+    {
+        $mandals = Mandal::where('vidhansabha_id', $vidhansabha_id)->get();
+        return response()->json($mandals->map(function ($m) {
+            return "<option value='{$m->mandal_id}'>{$m->mandal_name}</option>";
+        }));
+    }
+
+    public function getNagars($mandal_id)
+    {
+        $nagars = Nagar::where('mandal_id', $mandal_id)->get();
+        return response()->json($nagars->map(function ($n) {
+            return "<option value='{$n->nagar_id}'>{$n->nagar_name}</option>";
+        }));
+    }
+
+    public function getPollings($mandal_id)
+    {
+        $pollings = Polling::where('mandal_id', $mandal_id)->get();
+        return response()->json($pollings->map(function ($p) {
+            return "<option value='{$p->gram_polling_id}'>{$p->polling_name} ({$p->polling_no})</option>";
+        }));
+    }
+
+    public function getAreas($polling_id)
+    {
+        $areas = Area::where('polling_id', $polling_id)->get();
+        return response()->json($areas->map(function ($a) {
+            return "<option value='{$a->area_id}'>{$a->area_name}</option>";
+        }));
+    }
 
     public function viewCommanderComplaints(Request $request)
     {

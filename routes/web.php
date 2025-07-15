@@ -212,6 +212,15 @@ Route::middleware('checklogin')->group(function () {
 
     Route::get('/manager/details_complaints/{id}', [ManagerController::class, 'allcomplaints_show'])->name('complaints_show.details');
     Route::post('/manager/complaints/{id}/reply', [ManagerController::class, 'complaintsReply'])->name('complaint_reply.reply');
+
+
+
+    Route::get('/manager/get-districts/{division_id}', [ManagerController::class, 'getDistricts']);
+    Route::get('/manager/get-vidhansabha/{district_id}', [ManagerController::class, 'getVidhansabhas']);
+    Route::get('/manager/get-mandal/{vidhansabha_id}', [ManagerController::class, 'getMandals']);
+    Route::get('/manager/get-nagar/{mandal_id}', [ManagerController::class, 'getNagars']);
+    Route::get('/manager/get-polling/{mandal_id}', [ManagerController::class, 'getPollings']);
+    Route::get('/manager/get-area/{polling_id}', [ManagerController::class, 'getAreas']);
 });
 
 

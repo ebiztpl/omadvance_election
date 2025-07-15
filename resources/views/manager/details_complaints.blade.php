@@ -357,31 +357,31 @@
                 if (complaint.division) {
                     $('#division_id').val(complaint.division).trigger("change");
 
-                    $.get('/operator/get-districts/' + complaint.division, function(data) {
+                    $.get('/manager/get-districts/' + complaint.division, function(data) {
                         $('#district_name').html(data);
                         $('#district_name').val(complaint.district).trigger("change");
 
-                        $.get('/operator/get-vidhansabha/' + complaint.district, function(data) {
+                        $.get('/manager/get-vidhansabha/' + complaint.district, function(data) {
                             $('#txtvidhansabha').html(data);
                             $('#txtvidhansabha').val(complaint.vidhansabha).trigger("change");
 
-                            $.get('/operator/get-mandal/' + complaint.vidhansabha, function(data) {
+                            $.get('/manager/get-mandal/' + complaint.vidhansabha, function(data) {
                                 $('#txtmandal').html(data);
                                 $('#txtmandal').val(complaint.mandal).trigger("change");
 
-                                $.get('/operator/get-nagar/' + complaint.mandal, function(
+                                $.get('/manager/get-nagar/' + complaint.mandal, function(
                                     data) {
                                     $('#txtgram').html(data);
                                     $('#txtgram').val(complaint.gram);
                                 });
 
-                                $.get('/operator/get-polling/' + complaint.mandal, function(
+                                $.get('/manager/get-polling/' + complaint.mandal, function(
                                     data) {
                                     $('#txtpolling').html(data);
                                     $('#txtpolling').val(complaint.polling).trigger(
                                         "change");
 
-                                    $.get('/operator/get-area/' + complaint.polling,
+                                    $.get('/manager/get-area/' + complaint.polling,
                                         function(data) {
                                             $('#txtarea').html(data);
                                             $('#txtarea').val(complaint.area);
@@ -395,7 +395,7 @@
                 $('#division_id').change(function() {
                     const divisionID = $(this).val();
                     $('#district_name').html('<option value="">Loading...</option>');
-                    $.get('/operator/get-districts/' + divisionID, function(data) {
+                    $.get('/manager/get-districts/' + divisionID, function(data) {
                         $('#district_name').html(data);
                     });
                 });
@@ -403,7 +403,7 @@
                 $('#district_name').change(function() {
                     const districtID = $(this).val();
                     $('#txtvidhansabha').html('<option value="">Loading...</option>');
-                    $.get('/operator/get-vidhansabha/' + districtID, function(data) {
+                    $.get('/manager/get-vidhansabha/' + districtID, function(data) {
                         $('#txtvidhansabha').html(data);
                     });
                 });
@@ -411,7 +411,7 @@
                 $('#txtvidhansabha').change(function() {
                     const vidhansabhaID = $(this).val();
                     $('#txtmandal').html('<option value="">Loading...</option>');
-                    $.get('/operator/get-mandal/' + vidhansabhaID, function(data) {
+                    $.get('/manager/get-mandal/' + vidhansabhaID, function(data) {
                         $('#txtmandal').html(data);
                     });
                 });
@@ -420,10 +420,10 @@
                     const mandalID = $(this).val();
                     $('#txtgram').html('<option value="">Loading Gram...</option>');
                     $('#txtpolling').html('<option value="">Loading Polling...</option>');
-                    $.get('/operator/get-nagar/' + mandalID, function(data) {
+                    $.get('/manager/get-nagar/' + mandalID, function(data) {
                         $('#txtgram').html(data);
                     });
-                    $.get('/operator/get-polling/' + mandalID, function(data) {
+                    $.get('/manager/get-polling/' + mandalID, function(data) {
                         $('#txtpolling').html(data);
                     });
                 });
@@ -431,7 +431,7 @@
                 $('#txtpolling').change(function() {
                     const pollingID = $(this).val();
                     $('#txtarea').html('<option value="">Loading...</option>');
-                    $.get('/operator/get-area/' + pollingID, function(data) {
+                    $.get('/manager/get-area/' + pollingID, function(data) {
                         $('#txtarea').html(data);
                     });
                 });
