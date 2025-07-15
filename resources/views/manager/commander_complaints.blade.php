@@ -1,13 +1,13 @@
 @php
-    $pageTitle = 'समस्याएँ देखे';
+    $pageTitle = 'कमांडर समस्याएँ';
     $breadcrumbs = [
         'मेंबर' => '#',
-        'समस्याएँ देखे' => '#',
+        'कमांडर समस्याएँ' => '#',
     ];
 @endphp
 
 @extends('layouts.app')
-@section('title', 'View Complaints')
+@section('title', 'View Member Complaints')
 
 @section('content')
     <div class="container">
@@ -15,7 +15,6 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-
                         @if (session('success'))
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
                                 {{ session('success') }}
@@ -42,8 +41,8 @@
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
                                             <td>{{ $complaint->mobile_number }}</td>
-                                            <td>{{ $complaint->polling->polling_name }}</td>
-                                            <td>{{ $complaint->area->area_name }}</td>
+                                            <td>{{ $complaint->polling->polling_name ?? 'N/A' }}</td>
+                                            <td>{{ $complaint->area->area_name ?? 'N/A' }}</td>
                                             <td>
                                                 @if (!empty($complaint->issue_attachment))
                                                     <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
@@ -65,6 +64,7 @@
                                 </tbody>
                             </table>
                         </div>
+
                     </div>
                 </div>
             </div>

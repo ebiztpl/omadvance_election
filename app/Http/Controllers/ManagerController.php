@@ -13,6 +13,7 @@ use App\Models\Area;
 use App\Models\Level;
 use App\Models\Jati;
 use App\Models\Position;
+use App\Models\Complaint;
 use App\Models\JatiwiseVoter;
 use Illuminate\Support\Facades\DB;
 
@@ -291,7 +292,7 @@ class ManagerController extends Controller
                 'mandal_type' => $mandalType,
                 'nagar_name' => $name,
                 'post_date' => $date,
-            ]); 
+            ]);
         }
 
         return redirect()->route('nagar.index')->with('success', 'नगर केंद्र/ग्राम केंद्र जोड़ा गया!');
@@ -762,5 +763,18 @@ class ManagerController extends Controller
         $html .= "</div>";
 
         return response($html);
+    }
+
+
+    public function viewCommanderComplaints(Request $request)
+    {
+        $complaints = Complaint::where('type', 1)->get();
+        return view('manager/commander_complaints', compact('complaints'));
+    }
+
+    public function viewOperatorComplaints(Request $request)
+    {
+        $complaints = Complaint::where('type', 2)->get();
+        return view('manager/operator_complaints', compact('complaints'));
     }
 }

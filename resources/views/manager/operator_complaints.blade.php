@@ -1,13 +1,13 @@
 @php
-    $pageTitle = 'समस्याएँ देखे';
+    $pageTitle = 'ऑपरेटर समस्याएँ';
     $breadcrumbs = [
         'मेंबर' => '#',
-        'समस्याएँ देखे' => '#',
+        'ऑपरेटर समस्याएँ' => '#',
     ];
 @endphp
 
 @extends('layouts.app')
-@section('title', 'View Complaints')
+@section('title', 'View User Complaints')
 
 @section('content')
     <div class="container">
@@ -30,6 +30,7 @@
                                 <thead>
                                     <tr>
                                         <th>क्रमांक</th>
+                                        <th>शिकायतकर्ता का नाम</th>
                                         <th>शिकायतकर्ता का मोबाइल</th>
                                         <th>मतदान केंद्र</th>
                                         <th>ग्राम चौपाल</th>
@@ -41,6 +42,7 @@
                                     @foreach ($complaints as $index => $complaint)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
+                                            <td>{{ $complaint->name }}</td>
                                             <td>{{ $complaint->mobile_number }}</td>
                                             <td>{{ $complaint->polling->polling_name }}</td>
                                             <td>{{ $complaint->area->area_name }}</td>

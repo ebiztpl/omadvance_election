@@ -1,7 +1,7 @@
 @php
 $pageTitle = 'समस्या पंजीयन करे';
 $breadcrumbs = [
-'मेंबर' => '#',
+'ऑपरेटर' => '#',
 'समस्या पंजीयन करे' => '#'
 ];
 @endphp
@@ -33,7 +33,7 @@ $breadcrumbs = [
 
     <div class="row page-titles mx-0">
         <div class="col-md-12 col-sm-12 col-xs-12">
-            <form method="POST" enctype="multipart/form-data" action="{{ route('complaint.store') }}">
+            <form method="POST" enctype="multipart/form-data" action="{{ route('operator_complaint.store') }}">
                 @csrf
                 {{-- Type Selector --}}
                     <div class="form-group row justify-content-center">

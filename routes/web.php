@@ -7,6 +7,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\OperatorController;
 
 Route::get('/', function () {
     return view('login');
@@ -85,7 +86,7 @@ Route::middleware('checklogin')->group(function () {
 
     Route::get('admin/view-responsibilities', [AdminController::class, 'viewResponsibilities'])->name('view_responsibility.index');
     Route::delete('admin/assign/{id}', [AdminController::class, 'assign_destroy'])->name('assign.destroy');
-    
+
 
 
     Route::get('admin/card_responsibiity_pdf', [AdminController::class, 'generate'])->name('generate.index');
@@ -203,12 +204,22 @@ Route::middleware('checklogin')->group(function () {
     Route::get('manager/jatiwise_members', [ManagerController::class, 'jatiwiseIndex'])->name('jatiwise.index');
     Route::post('manager/jatiwise_members/dropdown', [ManagerController::class, 'getDropdown'])->name('jatiwise.dropdown');
     Route::post('manager/jatiwise_members/filter', [ManagerController::class, 'searchJatiwise'])->name('jatiwise.filter');
+
+
+    Route::get('/manager/commander_complaints', [ManagerController::class, 'viewCommanderComplaints'])->name('commander.complaints.view');
+    Route::get('/manager/operator_complaints', [ManagerController::class, 'viewOperatorComplaints'])->name('operator.complaints.view');
 });
 
 
 
-// user routes
+// operator routes
 Route::middleware('checklogin')->group(function () {
+
+    Route::get('/operator/dashboard', function () {
+        return view('operator/dashboard');
+    })->name('operator.dashboard');
+    Route::get('/operator/complaints', [OperatorController::class, 'index'])->name('operator_complaint.index');
+    Route::post('/operator/complaints/store', [OperatorController::class, 'store'])->name('operator_complaint.store');
 });
 
 

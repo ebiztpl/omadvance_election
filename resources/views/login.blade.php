@@ -42,8 +42,8 @@
                                 <label class="form-check-label" for="role_manager">Manager</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="user_role" id="role_user" value="user">
-                                <label class="form-check-label" for="role_user">User</label>
+                                <input class="form-check-input" type="radio" name="user_role" id="role_user" value="operator">
+                                <label class="form-check-label" for="role_operator">Operator</label>
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="user_role" id="role_member" value="member">
