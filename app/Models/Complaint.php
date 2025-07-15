@@ -49,7 +49,9 @@ class Complaint extends Model
         'complaint_status',
         'posted_date',
         'news_date',
-        'program_date'
+        'program_date',
+        'complaint_created_by',
+        'type'
     ];
 
 
