@@ -35,7 +35,6 @@ $breadcrumbs = [
         <div class="col-md-12 col-sm-12 col-xs-12">
             <form method="POST" enctype="multipart/form-data" action="{{ route('operator_complaint.store') }}">
                 @csrf
-                {{-- Type Selector --}}
                     <div class="form-group row justify-content-center">
                         <div class="col-md-12 d-flex justify-content-center" style="padding-top:15px;">
                             <div id="type_row" class="d-flex justify-content-center flex-wrap">
@@ -63,10 +62,8 @@ $breadcrumbs = [
                     </div>
                 </div>
 
-                {{-- Dynamic Heading/Legend --}}
                 <div id="form_container" style="display: none; color: #000">
                     <fieldset class="scheduler-border mb-3">
-                        {{-- Name, Mobile, Address Info --}}
                         <div class="form-group row">
                             <div class="col-md-4 mb-3">
                                 <label><span class="data-text">नाम</span> <span class="error">*</span></label>
@@ -132,7 +129,7 @@ $breadcrumbs = [
                             <div class="form-group row department_row">
                                 <div class="col-md-6 mb-3">
                                     <label>विभाग <span class="error">*</span></label>
-                                    <select name="department" class="form-control" required}}>
+                                    <select name="department" class="form-control" required>
                                         <option value="">--चुने--</option>
                                         @foreach(['राजस्व विभाग', 'विद्युत विभाग', 'सहकारिता', 'पंचायत', 'पी.एच.ई.', 'नगरीय निकाय', 'पुलिस', 'सिंचाई', 'स्वास्थ्य विभाग', 'पी.डब्ल्यू.डी.', 'खाद्य'] as $dept)
                                         <option value="{{ $dept }}">{{ $dept }}</option>
@@ -195,7 +192,7 @@ $breadcrumbs = [
         $('#division_id').change(function() {
             let divisionID = $(this).val();
             $('#district_name').html('<option value="">Loading...</option>');
-            $.get('/get-districts/' + divisionID, function(data) {
+            $.get('/operator/get-districts/' + divisionID, function(data) {
                 $('#district_name').html(data);
             });
         });
@@ -203,7 +200,7 @@ $breadcrumbs = [
         $('#district_name').change(function() {
             let districtID = $(this).val();
             $('#txtvidhansabha').html('<option value="">Loading...</option>');
-            $.get('/get-vidhansabha/' + districtID, function(data) {
+            $.get('/operator/get-vidhansabha/' + districtID, function(data) {
                 $('#txtvidhansabha').html(data);
             });
         });
@@ -211,7 +208,7 @@ $breadcrumbs = [
         $('#txtvidhansabha').change(function() {
             let vidhansabhaID = $(this).val();
             $('#txtmandal').html('<option value="">Loading...</option>');
-            $.get('/get-mandal/' + vidhansabhaID, function(data) {
+            $.get('/operator/get-mandal/' + vidhansabhaID, function(data) {
                 $('#txtmandal').html(data);
             });
         });
@@ -219,10 +216,10 @@ $breadcrumbs = [
         $('#txtmandal').change(function() {
             let mandalID = $(this).val();
             $('#txtgram').html('<option value="">Loading...</option>');
-            $.get('/get-nagar/' + mandalID, function(data) {
+            $.get('/operator/get-nagar/' + mandalID, function(data) {
                 $('#txtgram').html(data);
             });
-            $.get('/get-polling/' + mandalID, function(data) {
+            $.get('/operator/get-polling/' + mandalID, function(data) {
                 $('#txtpolling').html(data);
             });
         });
@@ -230,7 +227,7 @@ $breadcrumbs = [
         $('#txtpolling').change(function() {
             let pollingID = $(this).val();
             $('#txtarea').html('<option value="">Loading...</option>');
-            $.get('/get-area/' + pollingID, function(data) {
+            $.get('/operator/get-area/' + pollingID, function(data) {
                 $('#txtarea').html(data);
             });
         });

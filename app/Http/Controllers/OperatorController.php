@@ -29,6 +29,13 @@ use Illuminate\Support\Facades\Response;
 
 class OperatorController extends Controller
 {
+    public function index()
+    {
+        $states = State::orderBy('name')->get();
+        $divisions = Division::orderBy('division_name')->get();
+        return view('operator/complaints', compact('states', 'divisions'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -94,12 +101,12 @@ class OperatorController extends Controller
             $attachment = $filename;
         }
 
-        $mobile = RegistrationForm::where('registration_id', $userId)->value('mobile1');
+        // $mobile = RegistrationForm::where('registration_id', $userId)->value('mobile1');
 
         $complaint = Complaint::create([
             'user_id' => session('user_id'),
             'name' => $request->txtname,
-            'mobile_number' => RegistrationForm::where('registration_id', session('registration_id'))->value('mobile1'),
+            'mobile_number' => $request->mobile,
             'email' => $request->mobile,
             'voter_id' => $request->voter,
             'complaint_type' => $request->type,
@@ -125,10 +132,76 @@ class OperatorController extends Controller
             'posted_date' => now(),
         ]);
 
-        $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaint_number;
-        $this->messageSent($complaint_number, $mobile);
+        // $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaint_number;
+        // $this->messageSent($complaint_number, $mobile);
 
-        return redirect()->route('complaint.index')->with('success', 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number);
+        return redirect()->route('operator_complaint.index')->with('success', 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number);
+    }
+
+    public function view_complaints()
+    {
+        $userId = session('user_id');
+
+        if (!$userId) {
+            return redirect()->route('login')->with('error', 'कृपया पहले लॉगिन करें।');
+        }
+
+
+        $complaints = Complaint::with(['polling', 'area'])
+            ->where('complaint_created_by', $userId)
+            ->where('type', 2)
+            ->get();
+
+        return view('operator/view_complaint', compact('complaints'));
+    }
+
+
+    public function getDistricts($division_id)
+    {
+        $districts = District::where('division_id', $division_id)->get();
+        return response()->json($districts->map(function ($d) {
+            return "<option value='{$d->district_id}'>{$d->district_name}</option>";
+        }));
+    }
+
+    public function getVidhansabhas($district_id)
+    {
+        $vidhansabhas = VidhansabhaLokSabha::where('district_id', $district_id)->get();
+        return response()->json($vidhansabhas->map(function ($v) {
+            return "<option value='{$v->vidhansabha_id}'>{$v->vidhansabha}</option>";
+        }));
+    }
+
+    public function getMandals($vidhansabha_id)
+    {
+        $mandals = Mandal::where('vidhansabha_id', $vidhansabha_id)->get();
+        return response()->json($mandals->map(function ($m) {
+            return "<option value='{$m->mandal_id}'>{$m->mandal_name}</option>";
+        }));
+    }
+
+    public function getNagars($mandal_id)
+    {
+        $nagars = Nagar::where('mandal_id', $mandal_id)->get();
+        return response()->json($nagars->map(function ($n) {
+            return "<option value='{$n->nagar_id}'>{$n->nagar_name}</option>";
+        }));
+    }
+
+    public function getPollings($mandal_id)
+    {
+        $pollings = Polling::where('mandal_id', $mandal_id)->get();
+        return response()->json($pollings->map(function ($p) {
+            return "<option value='{$p->gram_polling_id}'>{$p->polling_name} ({$p->polling_no})</option>";
+        }));
+    }
+
+    public function getAreas($polling_id)
+    {
+        $areas = Area::where('polling_id', $polling_id)->get();
+        return response()->json($areas->map(function ($a) {
+            return "<option value='{$a->area_id}'>{$a->area_name}</option>";
+        }));
     }
 
 
@@ -190,24 +263,7 @@ class OperatorController extends Controller
         }
     }
 
-
-    public function complaint_index()
-    {
-        $registrationId = session('registration_id');
-
-        if (!$registrationId) {
-            return redirect()->route('login')->with('error', 'कृपया पहले लॉगिन करें।');
-        }
-
-
-        $complaints = Complaint::with(['polling', 'area'])
-            ->where('complaint_created_by', $registrationId)
-            ->get();
-
-        return view('member/view_complaints', compact('complaints'));
-    }
-
-    public function complaint_show($id)
+    public function operator_complaints_show($id)
     {
         $complaint = Complaint::with(
             'replies',
@@ -221,12 +277,12 @@ class OperatorController extends Controller
             'area'
         )->findOrFail($id);
 
-        return view('member/details_complaints', [
+        return view('operator/details_complaints', [
             'complaint' => $complaint,
         ]);
     }
 
-    public function postReply(Request $request, $id)
+    public function operatorReply(Request $request, $id)
     {
         $request->validate([
             'cmp_reply' => 'required|string',
@@ -270,7 +326,7 @@ class OperatorController extends Controller
 
         $reply->save();
 
-        return redirect()->route('complaints.view', $id)
+        return redirect()->route('operator_complaint.view', $id)
             ->with('success', 'जवाब प्रस्तुत किया गया और शिकायत अपडेट की गई');
     }
 }

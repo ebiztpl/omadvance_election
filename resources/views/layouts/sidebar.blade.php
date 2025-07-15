@@ -109,6 +109,8 @@
                 <li class="nav-label" style="color: #c0bebe">ऑपरेटर टूल्स</li>
                 <li><a href="{{ route('operator_complaint.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
+                <li><a href="{{ route('operator_complaint.view') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">समस्याएँ देखे</span></a></li>
                 {{-- <li><a href=""><i class="icon icon-arrow-right"></i><span class="nav-text">कार्यक्रम</span></a>
                 </li>
                 <li><a href="#"><i class="icon icon-arrow-right"></i><span class="nav-text">सुचना</span></a></li>
