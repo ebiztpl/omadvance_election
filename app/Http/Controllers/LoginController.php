@@ -44,10 +44,10 @@ class LoginController extends Controller
         $request->validate([
             'username' => 'required|string',
             'password' => 'required|string',
-            'user_role' => 'required|in:admin,manager,user',
+            'user_role' => 'required|in:admin,manager,operator',
         ]);
 
-        $roleMap = ['admin' => 1, 'manager' => 2, 'user' => 3];
+        $roleMap = ['admin' => 1, 'manager' => 2, 'operator' => 3];
         $roleValue = $roleMap[$request->user_role];
 
         $user = User::where('admin_name', $request->username)
@@ -67,8 +67,8 @@ class LoginController extends Controller
                     return redirect('/admin/dashboard');
                 case 'manager':
                     return redirect('/manager/division_master');
-                case 'user':
-                    // return redirect('/user/home');
+                case 'operator':
+                    return redirect('/operator/dashboard');
             }
         }
 

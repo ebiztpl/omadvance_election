@@ -113,7 +113,7 @@ class MemberController extends Controller
         }
 
         $role = session('admin_role');
-        $type = ($role === 'member') ? 1 : 0;
+        $type = ($role === 'member') ? 1 : 2;
 
         $mobile = DB::table('registration_form')
             ->where('registration_id', $registrationId)

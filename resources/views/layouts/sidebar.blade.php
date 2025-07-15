@@ -88,6 +88,16 @@
                 <li><a href="{{ route('jatiwise.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">जातिगत मतदाता देखे</span></a></li>
 
+
+
+                <li><a class="has-arrow" href="#" aria-expanded="false"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">समस्याएँ देखे</span></a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('commander.complaints.view') }}">कमांडर समस्याएँ</a></li>
+                        <li><a href="{{ route('operator.complaints.view') }}">यूजर समस्याएँ</a></li>
+                    </ul>
+                </li>
+
                 <li><a href="{{ route('change_password.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">पासवर्ड बदलें</span></a></li>
             @endif
@@ -96,15 +106,17 @@
 
             {{-- User Panel --}}
             @if ($role == 3)
-                <li class="nav-label" style="color: #c0bebe">यूजर टूल्स</li>
-                <li><a href=""><i class="icon icon-arrow-right"></i><span class="nav-text">कार्यक्रम</span></a>
+                <li class="nav-label" style="color: #c0bebe">ऑपरेटर टूल्स</li>
+                <li><a href="{{ route('operator_complaint.index') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">समस्या पंजीयन करे</span></a></li>
+                {{-- <li><a href=""><i class="icon icon-arrow-right"></i><span class="nav-text">कार्यक्रम</span></a>
                 </li>
                 <li><a href="#"><i class="icon icon-arrow-right"></i><span class="nav-text">सुचना</span></a></li>
                 <li><a href="#"><i class="icon icon-arrow-right"></i><span class="nav-text">मीडिया</span></a></li>
                 <li><a href="#"><i class="icon icon-arrow-right"></i><span class="nav-text">फोटो गैलरी</span></a>
                 </li>
                 <li><a href="#"><i class="icon icon-arrow-right"></i><span class="nav-text">वीडियो
-                            गैलरी</span></a></li>
+                            गैलरी</span></a></li> --}}
                 <li><a href="{{ route('change_password.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">पासवर्ड बदलें</span></a></li>
             @endif
@@ -113,8 +125,8 @@
             {{-- Member Panel --}}
             @if (!in_array($role, [1, 2, 3]))
                 <li class="nav-label" style="color: #c0bebe">मेंबर टूल्स</li>
-                <li><a href="{{ route('complaint.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">समस्या पंजीयन करे</span></a></li>
+                {{-- <li><a href="{{ route('complaint.index') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">समस्या पंजीयन करे</span></a></li> --}}
 
                 <li><a href="{{ route('complaints.view') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्याएँ देखे</span></a></li>
