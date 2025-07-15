@@ -13,7 +13,7 @@
                 मैनेजर
                 पैनल</h4>
         @elseif ($role == 3)
-            <h4 class="text-white m-3">यूजर
+            <h4 class="text-white m-3">ऑपरेटर
                 पैनल</h4>
         @else
             <h4 class="text-white m-3">मेंबर
@@ -105,7 +105,7 @@
                     <div class="dropdown">
                         <a class="btn btn-danger text-black dropdown-toggle" href="#" role="button"
                             data-toggle="dropdown">
-                            {{ $role === 'member' ? $memberName ?? 'मेंबर' : $name ?? 'User' }}
+                            {{ $role === 'member' ? $memberName ?? 'मेंबर' : $name ?? 'Operator' }}
                         </a>
                         <div class="dropdown-menu dropdown-menu-right">
                             <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
