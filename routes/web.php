@@ -208,6 +208,10 @@ Route::middleware('checklogin')->group(function () {
 
     Route::get('/manager/commander_complaints', [ManagerController::class, 'viewCommanderComplaints'])->name('commander.complaints.view');
     Route::get('/manager/operator_complaints', [ManagerController::class, 'viewOperatorComplaints'])->name('operator.complaints.view');
+    Route::post('/manager/update-complaint/{id}', [ManagerController::class, 'updateComplaint'])->name('complaints.update');
+
+    Route::get('/manager/details_complaints/{id}', [ManagerController::class, 'allcomplaints_show'])->name('complaints_show.details');
+    Route::post('/manager/complaints/{id}/reply', [ManagerController::class, 'complaintsReply'])->name('complaint_reply.reply');
 });
 
 
@@ -220,6 +224,17 @@ Route::middleware('checklogin')->group(function () {
     })->name('operator.dashboard');
     Route::get('/operator/complaints', [OperatorController::class, 'index'])->name('operator_complaint.index');
     Route::post('/operator/complaints/store', [OperatorController::class, 'store'])->name('operator_complaint.store');
+    Route::get('/operator/view_complaint', [OperatorController::class, 'view_complaints'])->name('operator_complaint.view');
+    Route::get('/operator/details_complaint/{id}', [OperatorController::class, 'operator_complaints_show'])->name('operator_complaint.show');
+    Route::post('/operator/complaints/{id}/reply', [OperatorController::class, 'operatorReply'])->name('operator_complaint.reply');
+
+
+    Route::get('/operator/get-districts/{division_id}', [OperatorController::class, 'getDistricts']);
+    Route::get('/operator/get-vidhansabha/{district_id}', [OperatorController::class, 'getVidhansabhas']);
+    Route::get('/operator/get-mandal/{vidhansabha_id}', [OperatorController::class, 'getMandals']);
+    Route::get('/operator/get-nagar/{mandal_id}', [OperatorController::class, 'getNagars']);
+    Route::get('/operator/get-polling/{mandal_id}', [OperatorController::class, 'getPollings']);
+    Route::get('/operator/get-area/{polling_id}', [OperatorController::class, 'getAreas']);
 });
 
 

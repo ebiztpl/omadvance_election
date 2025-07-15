@@ -383,6 +383,7 @@ class MemberController extends Controller
 
         $complaints = Complaint::with(['polling', 'area']) 
             ->where('complaint_created_by', $registrationId)
+            ->where('type', 1)
             ->get();
 
         return view('member/view_complaints', compact('complaints'));
