@@ -29,6 +29,132 @@ use Illuminate\Support\Facades\Response;
 
 class MemberController extends Controller
 {
+    public function dashboard(Request $request)
+    {
+        $registrationId = session('registration_id');
+
+        $nagarId = DB::table('assign_position')
+            ->where('member_id', $registrationId)
+            ->latest('post_date')
+            ->value('refrence_id');
+
+        if (!$nagarId) {
+            return redirect()->back()->with('error', 'कोई नगर केंद्र नहीं मिला।');
+        }
+
+        $pollingCenters = DB::table('gram_polling')
+            ->where('nagar_id', $nagarId)
+            ->get();
+
+        return view('member/dashboard', compact('pollingCenters'));
+    }
+
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'polling_id' => 'required|integer',
+            'area_id' => 'required|integer',
+            'video' => 'required|file|mimetypes:video/*|max:204800',
+        ]);
+
+        $registrationId = session('registration_id');
+        if (!$registrationId) {
+            return back()->with('error', 'Session expired. Please log in again.');
+        }
+
+        $areaId = $request->area_id;
+        $pollingId = $request->polling_id;
+
+        $nagarId = DB::table('gram_polling')
+            ->where('gram_polling_id', $pollingId)
+            ->value('nagar_id');
+
+        if (!$nagarId) {
+            return back()->with('error', 'नगर नहीं मिला।');
+        }
+
+        $mandalId = DB::table('nagar_master')
+            ->where('nagar_id', $nagarId)
+            ->value('mandal_id');
+
+        $vidhansabhaId = DB::table('mandal')
+            ->where('mandal_id', $mandalId)
+            ->value('vidhansabha_id');
+
+        $vidhansabhaInfo = DB::table('vidhansabha_loksabha')
+            ->where('vidhansabha_id', $vidhansabhaId)
+            ->first();
+
+        $districtId = $vidhansabhaInfo->district_id ?? null;
+
+        $divisionId = DB::table('district_master')
+            ->where('district_id', $districtId)
+            ->value('division_id');
+
+        $ref = '00';
+        if ($vidhansabhaId == 50) $ref = '19';
+        elseif ($vidhansabhaId == 49) $ref = '18';
+
+        $rndno = date('dHi', mt_rand(strtotime('2018-01-01'), time()));
+        $complaintNumber = 'BJS' . $ref . '-' . $rndno;
+
+        $videoFilename = '';
+        if ($request->hasFile('video')) {
+            $file = $request->file('video');
+            $extension = $file->getClientOriginalExtension();
+
+            if (in_array(strtolower($extension), ['exe', 'php', 'js'])) {
+                return back()->with('error', 'This file type is not allowed.');
+            }
+
+            $videoFilename = time() . '_' . Str::random(6) . '.' . $extension;
+            $file->move(public_path('assets/upload/complaints'), $videoFilename);
+        }
+
+        $role = session('admin_role');
+        $type = ($role === 'member') ? 1 : 0;
+
+        $mobile = DB::table('registration_form')
+            ->where('registration_id', $registrationId)
+            ->value('mobile1');
+
+        Complaint::create([
+            'user_id' => 0,
+            'complaint_number' => $complaintNumber,
+            'video' => $videoFilename,
+            'polling_id' => $pollingId,
+            'area_id' => $areaId,
+            'mandal_id' => $mandalId,
+            'vidhansabha_id' => $vidhansabhaId,
+            'district_id' => $districtId,
+            'division_id' => $divisionId,
+            'mobile_number' => $mobile,
+            'complaint_type' => 'समस्या',
+            'type' => $type,
+            'complaint_created_by' => $registrationId,
+            'complaint_status' => '',
+            'issue_title' => '',
+            'issue_description' => '',
+            'issue_attachment' => $videoFilename,
+            'name' => '',
+            'email' => '',
+            'gram_id' => $nagarId ?? null,
+            'news_time' => null,
+            'posted_date' => now(),
+        ]);
+
+        $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaintNumber;
+        $this->messageSent($complaintNumber, $mobile);
+
+        return redirect()->route('member.dashboard')->with('success', $message);
+    }
+
+
+
+
+
+
     public function index()
     {
         $states = State::orderBy('name')->get();
@@ -84,105 +210,105 @@ class MemberController extends Controller
         }));
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'txtname' => 'required|string|max:255',
-            'mobile' => 'nullable|string|regex:/^[0-9]{10,15}$/',
-            'division_id' => 'required|integer',
-            'voter' => 'required|string|max:255',
-            'txtdistrict_name' => 'required|integer',
-            'txtvidhansabha' => 'required|integer',
-            'txtmandal' => 'required|integer',
-            'txtgram' => 'required|integer',
-            'txtpolling' => 'required|integer',
-            'txtarea' => 'required|integer',
-            'txtaddress' => 'nullable|string|max:1000',
-            'CharCounter' => 'required|string|max:100',
-            'NameText' => 'required|string|max:2000',
-            'type' => 'required|string',
-            'department' => 'nullable',
-            'from_date' => 'nullable|date',
-            'program_date' => 'nullable|date',
-            'to_date' => 'nullable',
-            'file_attach' => 'nullable|file|max:20480',
-        ]);
+    // public function store(Request $request)
+    // {
+    //     $request->validate([
+    //         'txtname' => 'required|string|max:255',
+    //         'mobile' => 'nullable|string|regex:/^[0-9]{10,15}$/',
+    //         'division_id' => 'required|integer',
+    //         'voter' => 'required|string|max:255',
+    //         'txtdistrict_name' => 'required|integer',
+    //         'txtvidhansabha' => 'required|integer',
+    //         'txtmandal' => 'required|integer',
+    //         'txtgram' => 'required|integer',
+    //         'txtpolling' => 'required|integer',
+    //         'txtarea' => 'required|integer',
+    //         'txtaddress' => 'nullable|string|max:1000',
+    //         'CharCounter' => 'required|string|max:100',
+    //         'NameText' => 'required|string|max:2000',
+    //         'type' => 'required|string',
+    //         'department' => 'nullable',
+    //         'from_date' => 'nullable|date',
+    //         'program_date' => 'nullable|date',
+    //         'to_date' => 'nullable',
+    //         'file_attach' => 'nullable|file|max:20480',
+    //     ]);
 
-        $userId = session('registration_id');
+    //     $userId = session('registration_id');
 
-        if (!$userId) {
-            return back()->with('error', 'User session expired. Please log in again.');
-        }
+    //     if (!$userId) {
+    //         return back()->with('error', 'User session expired. Please log in again.');
+    //     }
 
-        $userAreaId = DB::table('step2')
-            ->where('registration_id', $userId)
-            ->value('area_id');
+    //     $userAreaId = DB::table('step2')
+    //         ->where('registration_id', $userId)
+    //         ->value('area_id');
 
-        if ((int)$userAreaId !== (int)$request->txtarea) {
-            return back()->with('error', 'आप केवल अपने क्षेत्र के लिए ही शिकायत दर्ज कर सकते हैं।');
-        }
+    //     if ((int)$userAreaId !== (int)$request->txtarea) {
+    //         return back()->with('error', 'आप केवल अपने क्षेत्र के लिए ही शिकायत दर्ज कर सकते हैं।');
+    //     }
 
-        $vidhansabha = (int) $request->txtvidhansabha;
-        $ref = '00';
-        if ($vidhansabha === 50) {
-            $ref = '19';
-        } elseif ($vidhansabha === 49) {
-            $ref = '18';
-        }
+    //     $vidhansabha = (int) $request->txtvidhansabha;
+    //     $ref = '00';
+    //     if ($vidhansabha === 50) {
+    //         $ref = '19';
+    //     } elseif ($vidhansabha === 49) {
+    //         $ref = '18';
+    //     }
 
-        $randomTimestamp = mt_rand(strtotime('2018-01-01'), time());
-        $rndno = date('dHi', $randomTimestamp);
-        $complaint_number = 'BJS' . $ref . '-' . $rndno;
+    //     $randomTimestamp = mt_rand(strtotime('2018-01-01'), time());
+    //     $rndno = date('dHi', $randomTimestamp);
+    //     $complaint_number = 'BJS' . $ref . '-' . $rndno;
 
-        $attachment = '';
-        if ($request->hasFile('file_attach')) {
-            $file = $request->file('file_attach');
-            $extension = $file->getClientOriginalExtension();
-            $blocked = ['exe', 'php', 'js'];
+    //     $attachment = '';
+    //     if ($request->hasFile('file_attach')) {
+    //         $file = $request->file('file_attach');
+    //         $extension = $file->getClientOriginalExtension();
+    //         $blocked = ['exe', 'php', 'js'];
 
-            if (in_array(strtolower($extension), $blocked)) {
-                return back()->with('error', 'This file type is not allowed.');
-            }
+    //         if (in_array(strtolower($extension), $blocked)) {
+    //             return back()->with('error', 'This file type is not allowed.');
+    //         }
 
-            $filename = time() . '_' . Str::random(6) . '.' . $extension;
-            $file->move(public_path('assets/upload/complaints'), $filename);
-            $attachment = $filename;
-        }
+    //         $filename = time() . '_' . Str::random(6) . '.' . $extension;
+    //         $file->move(public_path('assets/upload/complaints'), $filename);
+    //         $attachment = $filename;
+    //     }
 
-        $mobile = RegistrationForm::where('registration_id', $userId)->value('mobile1');
+    //     $mobile = RegistrationForm::where('registration_id', $userId)->value('mobile1');
 
-        $complaint = Complaint::create([
-            'user_id' => session('registration_id'),
-            'name' => $request->txtname,
-            'mobile_number' => RegistrationForm::where('registration_id', session('registration_id'))->value('mobile1'),
-            'email' => $request->mobile,
-            'voter_id' => $request->voter,
-            'complaint_type' => $request->type,
-            'issue_title' => $request->CharCounter,
-            'issue_description' => $request->NameText,
-            'address' => $request->txtaddress,
-            'division_id' => $request->division_id,
-            'district_id' => $request->txtdistrict_name,
-            'vidhansabha_id' => $vidhansabha,
-            'mandal_id' => $request->txtmandal,
-            'gram_id' => $request->txtgram,
-            'polling_id' => $request->txtpolling,
-            'area_id' => $request->txtarea,
-            'issue_attachment' => $attachment,
-            'complaint_number' => $complaint_number,
-            'complaint_department' => $request->department ?? '',
-            'news_date' => $request->from_date,
-            'complaint_status' => 5,
-            'program_date' => $request->program_date,
-            'news_time' => $request->filled('to_date')  ? $request->to_date : '00:00',
-            'posted_date' => now(),
-        ]);
+    //     $complaint = Complaint::create([
+    //         'user_id' => session('registration_id'),
+    //         'name' => $request->txtname,
+    //         'mobile_number' => RegistrationForm::where('registration_id', session('registration_id'))->value('mobile1'),
+    //         'email' => $request->mobile,
+    //         'voter_id' => $request->voter,
+    //         'complaint_type' => $request->type,
+    //         'issue_title' => $request->CharCounter,
+    //         'issue_description' => $request->NameText,
+    //         'address' => $request->txtaddress,
+    //         'division_id' => $request->division_id,
+    //         'district_id' => $request->txtdistrict_name,
+    //         'vidhansabha_id' => $vidhansabha,
+    //         'mandal_id' => $request->txtmandal,
+    //         'gram_id' => $request->txtgram,
+    //         'polling_id' => $request->txtpolling,
+    //         'area_id' => $request->txtarea,
+    //         'issue_attachment' => $attachment,
+    //         'complaint_number' => $complaint_number,
+    //         'complaint_department' => $request->department ?? '',
+    //         'news_date' => $request->from_date,
+    //         'complaint_status' => 5,
+    //         'program_date' => $request->program_date,
+    //         'news_time' => $request->filled('to_date')  ? $request->to_date : '00:00',
+    //         'posted_date' => now(),
+    //     ]);
 
-        $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaint_number;
-        $this->messageSent($complaint_number, $mobile);
+    //     $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaint_number;
+    //     $this->messageSent($complaint_number, $mobile);
 
-        return redirect()->route('complaint.index')->with('success', 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number);
-    }
+    //     return redirect()->route('complaint.index')->with('success', 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number);
+    // }
 
 
     public function messageSent($complaint_number, $mobile)
@@ -255,7 +381,10 @@ class MemberController extends Controller
         }
 
 
-        $complaints = Complaint::where('user_id', $registrationId)->get();
+        $complaints = Complaint::with(['polling', 'area']) 
+            ->where('complaint_created_by', $registrationId)
+            ->get();
+
         return view('member/view_complaints', compact('complaints'));
     }
 

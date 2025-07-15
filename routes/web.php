@@ -215,7 +215,8 @@ Route::middleware('checklogin')->group(function () {
 
 // member routes
 Route::middleware('checkmember')->group(function () {
-    Route::get('member/dashboard', function () {return view('member/dashboard');})->name('member.dashboard');
+    Route::get('member/dashboard', [MemberController::class, 'dashboard'])->name('member.dashboard');
+
     Route::get('member/complaints', [MemberController::class, 'index'])->name('complaint.index');
     Route::post('member/complaints/store', [MemberController::class, 'store'])->name('complaint.store');
     Route::get('/get-districts/{division_id}', [MemberController::class, 'getDistricts']);
