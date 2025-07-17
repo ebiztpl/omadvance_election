@@ -39,6 +39,7 @@ class Complaint extends Model
         'district_id',
         'vidhansabha_id',
         'complaint_department',
+        'complaint_designation',
         'mandal_id',
         'gram_id',
         'area_id',
@@ -68,15 +69,29 @@ class Complaint extends Model
     public function statusText()
     {
         $statusLabels = [
-            1 => '<button class="btn btn-success">Opened</button>',
-            2 => '<button class="btn btn-warning">Processing</button>',
-            3 => '<button class="btn btn-danger">On Hold</button>',
-            4 => '<button class="btn btn-success">Closed</button>',
-            5 => '<button class="btn btn-danger">Cancel</button>',
+            1 => '<button class="btn btn-success">शिकायत दर्ज</button>',
+            2 => '<button class="btn btn-warning">प्रक्रिया में</button>',
+            3 => '<button class="btn btn-danger">स्थगित</button>',
+            4 => '<button class="btn btn-success">पूर्ण</button>',
+            5 => '<button class="btn btn-danger">रद्द</button>',
         ];
 
-        return $statusLabels[$this->complaint_status] ?? '<button class="btn btn-primary">Opened</button>';
+        return $statusLabels[$this->complaint_status] ?? '<button class="btn btn-primary">शिकायत दर्ज</button>';
     }
+
+    public function statusTextPlain()
+    {
+        $statusLabels = [
+            1 => 'शिकायत दर्ज',
+            2 => 'प्रक्रिया में',
+            3 => 'स्थगित',
+            4 => 'पूर्ण',
+            5 => 'रद्द',
+        ];
+
+        return $statusLabels[$this->complaint_status] ?? 'शिकायत दर्ज';
+    }
+    
     public function division()
     {
         return $this->belongsTo(Division::class, 'division_id', 'division_id');
@@ -115,5 +130,10 @@ class Complaint extends Model
     public function registration()
     {
         return $this->hasOne(RegistrationForm::class, 'mobile1', 'mobile_number');
+    }
+
+    public function registrationDetails()
+    {
+        return $this->belongsTo(RegistrationForm::class, 'complaint_created_by', 'registration_id');
     }
 }

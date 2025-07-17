@@ -36,7 +36,7 @@
             <div class="collapse navbar-collapse justify-content-between">
                 <div class="header-left">
                     @if (isset($pageTitle) && isset($breadcrumbs))
-                        <div class="row align-items-center" style="margin: 0; padding: 10px 15px;">
+                        <div class="row align-items-center ssd" style="margin: 0; padding: 10px 15px;">
                             <div class="col-sm-12">
                                 <h4 style="margin: 0; font-size: 18px;">{{ $pageTitle }}</h4>
                             </div>
@@ -45,7 +45,7 @@
                 </div>
 
                 <div class="navbar-nav header-right" style="justify-content: center; align-items: center">
-                    <div class="row page-titles" style="margin-bottom:0; margin-right: 8px">
+                    {{-- <div class="row page-titles page-titles2" style="margin-bottom:0; margin-right: 8px">
                         <ol class="breadcrumb">
                             @foreach ($breadcrumbs as $label => $link)
                                 @if ($loop->last)
@@ -56,7 +56,7 @@
                                 @endif
                             @endforeach
                         </ol>
-                    </div>
+                    </div> --}}
 
 
 
@@ -81,10 +81,11 @@
                         }
                     @endphp
 
-                    <div class="d-flex justify-content-center align-items-center w-100"
+                    <div class="d-flex justify-content-center align-items-center w-100 commhh"
                         style="position: absolute; left: 0; right: 0;">
                         @if ($nagarName)
-                            <h5 class="text-center" style="margin: 0; font-weight: bold; color: red; font-size: 24px;" >नगर केंद्र:
+                            <h5 class="text-center" style="margin: 0; font-weight: bold; color: red; font-size: 24px;">
+                                कमाण्ड ऐरिया:
                                 {{ $nagarName }}</h5>
                         @endif
                     </div>
