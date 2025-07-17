@@ -27,14 +27,18 @@
 
                         <div class="table-responsive">
                             <table id="example" style="min-width: 845px" class="display table-bordered">
-                                <thead>
+                                 <thead>
                                     <tr>
                                         <th>क्रमांक</th>
-                                        <th>शिकायतकर्ता का नाम</th>
-                                        <th>शिकायतकर्ता का मोबाइल</th>
+                                        <th>नाम</th>
+                                        <th>मोबाइल</th>
+                                        <th>विधानसभा</th>
+                                        <th>मंडल</th>
+                                        <th>नगर केंद्र</th>
                                         <th>मतदान केंद्र</th>
                                         <th>ग्राम चौपाल</th>
                                         <th>अपलोड फ़ाइल</th>
+                                        <th>स्टेटस</th>
                                         <th>आगे देखें</th>
                                     </tr>
                                 </thead>
@@ -42,10 +46,13 @@
                                     @foreach ($complaints as $index => $complaint)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td>{{ $complaint->name }}</td>
-                                            <td>{{ $complaint->mobile_number }}</td>
-                                            <td>{{ $complaint->polling->polling_name }}</td>
-                                            <td>{{ $complaint->area->area_name }}</td>
+                                            <td>{{ $complaint->admin_name }}</td>
+                                            <td>{{ $complaint->registrationDetails->mobile1 ?? '' }}</td>
+                                            <td>{{ $complaint->vidhansabha->vidhansabha ?? 'N/A' }}</td>
+                                            <td>{{ $complaint->mandal->mandal_name ?? 'N/A' }}</td>
+                                            <td>{{ $complaint->gram->nagar_name ?? 'N/A'  }}</td>
+                                            <td>{{ $complaint->polling->polling_name ?? 'N/A' }}</td>
+                                            <td>{{ $complaint->area->area_name ?? 'N/A' }}</td>
                                             <td>
                                                 @if (!empty($complaint->issue_attachment))
                                                     <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
@@ -56,6 +63,7 @@
                                                     <button class="btn btn-sm btn-secondary" disabled>No Attachment</button>
                                                 @endif
                                             </td>
+                                            <td>{!! $complaint->statusTextPlain() !!}</td>
                                             <td>
                                                 <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"
                                                     class="btn btn-sm btn-primary" style="white-space: nowrap;">

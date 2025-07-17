@@ -94,7 +94,7 @@
                             class="nav-text">समस्याएँ देखे</span></a>
                     <ul aria-expanded="false">
                         <li><a href="{{ route('commander.complaints.view') }}">कमांडर समस्याएँ</a></li>
-                        <li><a href="{{ route('operator.complaints.view') }}">यूजर समस्याएँ</a></li>
+                        <li><a href="{{ route('operator.complaints.view') }}">ऑपरेटर समस्याएँ</a></li>
                     </ul>
                 </li>
 
@@ -127,8 +127,8 @@
             {{-- Member Panel --}}
             @if (!in_array($role, [1, 2, 3]))
                 <li class="nav-label" style="color: #c0bebe">मेंबर टूल्स</li>
-                {{-- <li><a href="{{ route('complaint.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">समस्या पंजीयन करे</span></a></li> --}}
+                <li><a href="{{ route('member.complaint') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">समस्या पंजीयन करे</span></a></li>
 
                 <li><a href="{{ route('complaints.view') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्याएँ देखे</span></a></li>

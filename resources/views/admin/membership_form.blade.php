@@ -22,14 +22,14 @@
 
 
         @if ($errors->any())
-    <div class="alert alert-danger">
-        <ul>
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         <h2 class="mb-4 text-center">सदस्यता फॉर्म</h2>
         <div class="row page-titles mx-0">
@@ -849,6 +849,23 @@
                             .empty()
                             .append('<option value="">--ग्राम/वार्ड चुनें--</option>')
                             .prop('disabled', true);
+                    }
+                });
+
+
+
+                $('#permanent_address_check').on('change', function() {
+                    if ($(this).is(':checked')) {
+                        let permAddress = $('#permanent_address').val();
+                        $('#temp_address').val(permAddress).prop('disabled', true);
+                    } else {
+                        $('#temp_address').val('').prop('disabled', false);
+                    }
+                });
+
+                $('#permanent_address').on('input', function() {
+                    if ($('#permanent_address_check').is(':checked')) {
+                        $('#temp_address').val($(this).val());
                     }
                 });
 

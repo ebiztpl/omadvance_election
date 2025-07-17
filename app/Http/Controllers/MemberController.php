@@ -24,12 +24,12 @@ use Carbon\Carbon;
 use Intervention\Image\Facades\Image;
 use App\Models\Division;
 use Mpdf\Mpdf;
-use App\Models\VidhansabhaLoksabha;
+use App\Models\VidhansabhaLokSabha;
 use Illuminate\Support\Facades\Response;
 
 class MemberController extends Controller
 {
-    public function dashboard(Request $request)
+    public function complaint(Request $request)
     {
         $registrationId = session('registration_id');
 
@@ -44,18 +44,24 @@ class MemberController extends Controller
 
         $pollingCenters = DB::table('gram_polling')
             ->where('nagar_id', $nagarId)
+            ->pluck('gram_polling_id');
+
+        $areas = DB::table('area_master')
+            ->whereIn('polling_id', $pollingCenters)
             ->get();
 
-        return view('member/dashboard', compact('pollingCenters'));
+        return view('member/complaint', compact('areas'));
     }
 
 
     public function store(Request $request)
     {
         $request->validate([
-            'polling_id' => 'required|integer',
             'area_id' => 'required|integer',
-            'video' => 'required|file|mimetypes:video/*|max:204800',
+            'video' => 'required|file|mimetypes:video/*|max:2560000',
+        ], [
+            'video.max' => 'वीडियो फ़ाइल अधिकतम 2.5GB हो सकती है।',
+            'video.mimetypes' => 'केवल वीडियो फ़ॉर्मेट स्वीकार्य है।',
         ]);
 
         $registrationId = session('registration_id');
@@ -64,7 +70,10 @@ class MemberController extends Controller
         }
 
         $areaId = $request->area_id;
-        $pollingId = $request->polling_id;
+
+        $pollingId = DB::table('area_master')
+            ->where('area_id', $areaId)
+            ->value('polling_id');
 
         $nagarId = DB::table('gram_polling')
             ->where('gram_polling_id', $pollingId)
@@ -147,7 +156,15 @@ class MemberController extends Controller
         $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaintNumber;
         $this->messageSent($complaintNumber, $mobile);
 
-        return redirect()->route('member.dashboard')->with('success', $message);
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'redirect' => route('member.complaint'),
+            ]);
+        }
+
+        return redirect()->route('member.complaint')->with('success', $message);
     }
 
 
@@ -400,7 +417,8 @@ class MemberController extends Controller
             'mandal',
             'gram',
             'polling',
-            'area'
+            'area',
+            'registrationDetails'
         )->findOrFail($id);
 
         return view('member/details_complaints', [

@@ -247,7 +247,8 @@ class LoginController extends Controller
 
         $member->update(['otp' => null]);
 
-        return redirect('member/dashboard')->with('success', 'आप सफलतापूर्वक लॉग इन हो गए हैं!');
+        return redirect('member/complaint');
+        // return redirect('member/complaint')->with('success', 'आप सफलतापूर्वक लॉग इन हो गए हैं!');
     }
 
 

@@ -219,8 +219,18 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/manager/get-vidhansabha/{district_id}', [ManagerController::class, 'getVidhansabhas']);
     Route::get('/manager/get-mandal/{vidhansabha_id}', [ManagerController::class, 'getMandals']);
     Route::get('/manager/get-nagar/{mandal_id}', [ManagerController::class, 'getNagars']);
-    Route::get('/manager/get-polling/{mandal_id}', [ManagerController::class, 'getPollings']);
-    Route::get('/manager/get-area/{polling_id}', [ManagerController::class, 'getAreas']);
+    Route::get('/manager/get-pollings/{mandal_id}', [ManagerController::class, 'getPollings']);
+    Route::get('/manager/get-areas/{polling_id}', [ManagerController::class, 'getAreas']);
+
+    Route::get('/manager/get-parent-mandal/{nagar_id}', [ManagerController::class, 'getMandalFromNagar']);
+    Route::get('/manager/get-mandal-from-id/{mandal_id}', [ManagerController::class, 'getMandalOptionsFromId']);
+    Route::get('/manager/get-parent-vidhansabha/{mandal_id}', [ManagerController::class, 'getVidhansabhaFromMandal']);
+    Route::get('/manager/get-parent-district/{vidhansabha_id}', [ManagerController::class, 'getDistrictFromVidhansabha']);
+    Route::get('/manager/get-parent-division/{district_id}', [ManagerController::class, 'getDivisionFromDistrict']);
+
+    Route::get('/manager/get-vidhansabha-from-id/{vidhansabha_id}', [ManagerController::class, 'getVidhansabhaOptionsFromId']);
+    Route::get('/manager/get-district-from-id/{district_id}', [ManagerController::class, 'getDistrictOptionsFromId']);
+    Route::get('/manager/get-division-from-id/{division_id}', [ManagerController::class, 'getDivisionOptionsFromId']);
 });
 
 
@@ -242,15 +252,25 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/operator/get-vidhansabha/{district_id}', [OperatorController::class, 'getVidhansabhas']);
     Route::get('/operator/get-mandal/{vidhansabha_id}', [OperatorController::class, 'getMandals']);
     Route::get('/operator/get-nagar/{mandal_id}', [OperatorController::class, 'getNagars']);
-    Route::get('/operator/get-polling/{mandal_id}', [OperatorController::class, 'getPollings']);
-    Route::get('/operator/get-area/{polling_id}', [OperatorController::class, 'getAreas']);
+    Route::get('/operator/get-pollings/{mandal_id}', [OperatorController::class, 'getPollings']);
+    Route::get('/operator/get-areas/{polling_id}', [OperatorController::class, 'getAreas']);
+
+    Route::get('/operator/get-parent-mandal/{nagar_id}', [OperatorController::class, 'getMandalFromNagar']);
+    Route::get('/operator/get-mandal-from-id/{mandal_id}', [OperatorController::class, 'getMandalOptionsFromId']);
+    Route::get('/operator/get-parent-vidhansabha/{mandal_id}', [OperatorController::class, 'getVidhansabhaFromMandal']);
+    Route::get('/operator/get-parent-district/{vidhansabha_id}', [OperatorController::class, 'getDistrictFromVidhansabha']);
+    Route::get('/operator/get-parent-division/{district_id}', [OperatorController::class, 'getDivisionFromDistrict']);
+
+    Route::get('/operator/get-vidhansabha-from-id/{vidhansabha_id}', [OperatorController::class, 'getVidhansabhaOptionsFromId']);
+    Route::get('/operator/get-district-from-id/{district_id}', [OperatorController::class, 'getDistrictOptionsFromId']);
+    Route::get('/operator/get-division-from-id/{division_id}', [OperatorController::class, 'getDivisionOptionsFromId']);
 });
 
 
 
 // member routes
 Route::middleware('checkmember')->group(function () {
-    Route::get('member/dashboard', [MemberController::class, 'dashboard'])->name('member.dashboard');
+    Route::get('member/complaint', [MemberController::class, 'complaint'])->name('member.complaint');
 
     Route::get('member/complaints', [MemberController::class, 'index'])->name('complaint.index');
     Route::post('member/complaints/store', [MemberController::class, 'store'])->name('complaint.store');
@@ -265,3 +285,4 @@ Route::middleware('checkmember')->group(function () {
     Route::get('/member/details_complaint/{id}', [MemberController::class, 'complaint_show'])->name('complaint.show');
     Route::post('/member/complaints/{id}/reply', [MemberController::class, 'postReply'])->name('complaint.reply');
 });
+

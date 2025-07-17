@@ -14,7 +14,7 @@ class Mandal extends Model
 
     public function vidhansabha()
     {
-        return $this->belongsTo(VidhansabhaLoksabha::class, 'vidhansabha_id');
+        return $this->belongsTo(VidhansabhaLokSabha::class, 'vidhansabha_id');
     }
 
     public function nagars()

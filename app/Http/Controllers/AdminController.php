@@ -25,7 +25,7 @@ use Carbon\Carbon;
 use Intervention\Image\Facades\Image;
 use App\Models\Division;
 use Mpdf\Mpdf;
-use App\Models\VidhansabhaLoksabha;
+use App\Models\VidhansabhaLokSabha;
 use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -363,7 +363,7 @@ class AdminController extends Controller
         // $area = $areaModel ? $areaModel->area_name : null;
 
 
-        $vidhansabha = optional(VidhansabhaLoksabha::find($step2->vidhansabha ?? null))->vidhansabha ?? 'N/A';
+        $vidhansabha = optional(VidhansabhaLokSabha::find($step2->vidhansabha ?? null))->vidhansabha ?? 'N/A';
         $mandal = optional(Mandal::find($step2->mandal ?? null))->mandal_name ?? 'N/A';
         $nagar = optional(Nagar::find($step2->nagar ?? null))->nagar_name ?? 'N/A';
         $polling = optional(Polling::find($step2->matdan_kendra_name ?? null))->polling_name ?? 'N/A';
@@ -1223,7 +1223,7 @@ class AdminController extends Controller
             case 'मंडल':
                 $ref_id = $request->input('txtmandal');
                 break;
-            case 'नगर केंद्र/ग्राम केंद्र':
+            case 'कमाण्ड ऐरिया':
                 $ref_id = $request->input('txtgram');
                 break;
             case 'ग्राम/वार्ड चौपाल':
@@ -1356,7 +1356,7 @@ class AdminController extends Controller
                 return optional(District::find($refrence_id))->district_name;
 
             case 'विधानसभा':
-                return optional(VidhansabhaLoksabha::find($refrence_id))->vidhansabha;
+                return optional(VidhansabhaLokSabha::find($refrence_id))->vidhansabha;
 
             case 'मंडल':
                 return optional(Mandal::find($refrence_id))->mandal_name;
