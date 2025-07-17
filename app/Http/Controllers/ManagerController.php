@@ -395,7 +395,7 @@ class ManagerController extends Controller
         $polling = Polling::where('gram_polling_id', $id)->firstOrFail();
 
         $districts = District::all();
-        $vidhansabhas = VidhansabhaLoksabha::where('district_id', $polling->mandal->vidhansabha_id)->get();
+        $vidhansabhas = VidhansabhaLokSabha::where('district_id', $polling->mandal->vidhansabha_id)->get();
         $mandals = Mandal::where('vidhansabha_id', $polling->mandal->vidhansabha_id)->get();
         $nagars = Nagar::where('mandal_id', $polling->mandal_id)->get();
         return view('manager/edit_polling', compact('polling', 'districts', 'vidhansabhas', 'mandals', 'nagars'));
@@ -700,7 +700,7 @@ class ManagerController extends Controller
         $areas = Area::with('polling')->get();
         $districts = District::all();
         $jatis = Jati::all();
-        $vidhansabhas = VidhansabhaLoksabha::where('district_id', 11)->get();
+        $vidhansabhas = VidhansabhaLokSabha::where('district_id', 11)->get();
         return view('manager/jatiwise_members', compact('areas', 'districts', 'jatis', 'vidhansabhas'));
     }
 
@@ -708,7 +708,7 @@ class ManagerController extends Controller
     {
         switch ($request->type) {
             case 'vidhansabha':
-                return VidhansabhaLoksabha::where('district_id', $request->id)->get();
+                return VidhansabhaLokSabha::where('district_id', $request->id)->get();
             case 'mandal':
                 return Mandal::where('vidhansabha_id', $request->id)->get();
             case 'gram':
@@ -801,19 +801,104 @@ class ManagerController extends Controller
 
     public function getPollings($mandal_id)
     {
-        $pollings = Polling::where('mandal_id', $mandal_id)->get();
-        return response()->json($pollings->map(function ($p) {
-            return "<option value='{$p->gram_polling_id}'>{$p->polling_name} ({$p->polling_no})</option>";
-        }));
+        $pollings = Polling::where('mandal_id', $mandal_id)->get([
+            'gram_polling_id',
+            'polling_name',
+            'polling_no'
+        ]);
+
+        return response()->json($pollings);
     }
 
     public function getAreas($polling_id)
     {
-        $areas = Area::where('polling_id', $polling_id)->get();
-        return response()->json($areas->map(function ($a) {
-            return "<option value='{$a->area_id}'>{$a->area_name}</option>";
-        }));
+        $areas = Area::where('polling_id', $polling_id)->get([
+            'area_id',
+            'area_name'
+        ]);
+
+        return response()->json($areas);
     }
+
+    public function getMandalFromNagar($nagar_id)
+    {
+        $nagar = Nagar::find($nagar_id);
+
+        if (!$nagar) {
+            return response()->json([
+                'error' => 'Nagar not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'mandal_id' => $nagar->mandal_id
+        ]);
+    }
+
+    public function getVidhansabhaFromMandal($mandal_id)
+    {
+        $mandal = Mandal::find($mandal_id);
+
+        if (!$mandal) {
+            return response()->json(['error' => 'Mandal not found'], 404);
+        }
+
+        return response()->json([
+            'vidhansabha_id' => $mandal->vidhansabha_id
+        ]);
+    }
+
+    public function getDistrictFromVidhansabha($vidhansabha_id)
+    {
+        $vidhansabha = VidhansabhaLokSabha::find($vidhansabha_id);
+
+        if (!$vidhansabha) {
+            return response()->json(['error' => 'Vidhansabha not found'], 404);
+        }
+
+        return response()->json([
+            'district_id' => $vidhansabha->district_id
+        ]);
+    }
+
+    public function getDivisionFromDistrict($district_id)
+    {
+        $district = District::find($district_id);
+
+        if (!$district) {
+            return response()->json(['error' => 'District not found'], 404);
+        }
+
+        return response()->json([
+            'division_id' => $district->division_id
+        ]);
+    }
+
+
+    public function getMandalOptionsFromId($mandal_id)
+    {
+        $mandal = Mandal::find($mandal_id);
+        return response("<option value='{$mandal->mandal_id}' selected>{$mandal->mandal_name}</option>");
+    }
+
+    public function getVidhansabhaOptionsFromId($vidhansabha_id)
+    {
+        $vidhansabha = VidhansabhaLokSabha::find($vidhansabha_id);
+        return response("<option value='{$vidhansabha->vidhansabha_id}' selected>{$vidhansabha->vidhansabha}</option>");
+    }
+
+    public function getDistrictOptionsFromId($district_id)
+    {
+        $district = District::find($district_id);
+        return response("<option value='{$district->district_id}' selected>{$district->district_name}</option>");
+    }
+
+    public function getDivisionOptionsFromId($division_id)
+    {
+        $division = Division::find($division_id);
+        return response("<option value='{$division->division_id}' selected>{$division->division_name}</option>");
+    }
+
 
     public function viewCommanderComplaints(Request $request)
     {
@@ -824,6 +909,12 @@ class ManagerController extends Controller
     public function viewOperatorComplaints(Request $request)
     {
         $complaints = Complaint::where('type', 2)->get();
+
+        foreach ($complaints as $complaint) {
+            $admin = DB::table('admin_master')->where('admin_id', $complaint->complaint_created_by)->first();
+            $complaint->admin_name = $admin->admin_name ?? '';
+        }
+
         return view('manager/operator_complaints', compact('complaints'));
     }
 
@@ -898,14 +989,15 @@ class ManagerController extends Controller
             'mandal',
             'gram',
             'polling',
-            'area'
+            'area',
+            'registrationDetails'
         )->findOrFail($id);
 
-        $divisions = Division::orderBy('division_name')->get();
+        $nagars = Nagar::orderBy('nagar_name')->get();
 
         return view('manager/details_complaints', [
             'complaint' => $complaint,
-            'divisions' => $divisions
+            'nagars' => $nagars
         ]);
     }
 
@@ -955,6 +1047,12 @@ class ManagerController extends Controller
 
         $reply->save();
 
+        if ($request->ajax()) {
+            return response()->json([
+                'message' => 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।'
+            ]);
+        }
+
         if ($complaint->type == 1) {
             return redirect()->route('commander.complaints.view', $id)
                 ->with('success', 'कमांडर शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।');
@@ -982,6 +1080,7 @@ class ManagerController extends Controller
             'CharCounter' => 'required|string|max:100',
             'NameText' => 'required|string|max:2000',
             'department' => 'nullable',
+            'post' => 'nullable',
             'from_date' => 'nullable|date',
             'program_date' => 'nullable|date',
             'to_date' => 'nullable',
@@ -1005,6 +1104,7 @@ class ManagerController extends Controller
         $complaint->polling_id = $request->txtpolling;
         $complaint->area_id = $request->txtarea;
         $complaint->complaint_department = $request->department ?? '';
+        $complaint->complaint_designation = $request->post ?? '';
         $complaint->issue_title = $request->CharCounter;
         $complaint->issue_description = $request->NameText;
         $complaint->news_date = $request->from_date;
@@ -1020,14 +1120,22 @@ class ManagerController extends Controller
 
         $complaint->save();
 
-        if ($complaint->type == '1') {
+        $message = "आपकी शिकायत क्रमांक $complaint_number सफलतापूर्वक अपडेट कर दी गई है।";
+        if ($complaint->type == 1) {
             $mobile = RegistrationForm::where('registration_id', $complaint->complaint_created_by)->value('mobile1');
-            $message = "आपकी शिकायत क्रमांक $complaint_number सफलतापूर्वक अपडेट कर दी गई है।";
             $this->messageSent($message, $mobile);
+        }
 
-            return redirect()->route('commander.complaints.view')->with('success', 'कमांडर शिकायत सफलतापूर्वक अपडेट हुई और संदेश भेजा गया।');
+        if ($request->ajax()) {
+            return response()->json(['message' => $message]);
+        }
+
+        if ($complaint->type == 1) {
+            return redirect()->route('commander.complaints.view')
+                ->with('success', 'कमांडर शिकायत सफलतापूर्वक अपडेट हुई और संदेश भेजा गया।');
         } else {
-            return redirect()->route('operator.complaints.view')->with('success', 'ऑपरेटर शिकायत सफलतापूर्वक अपडेट हुई');
+            return redirect()->route('operator.complaints.view')
+                ->with('success', 'ऑपरेटर शिकायत सफलतापूर्वक अपडेट हुई');
         }
     }
 }

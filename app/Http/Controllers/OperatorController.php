@@ -24,7 +24,7 @@ use Carbon\Carbon;
 use Intervention\Image\Facades\Image;
 use App\Models\Division;
 use Mpdf\Mpdf;
-use App\Models\VidhansabhaLoksabha;
+use App\Models\VidhansabhaLokSabha;
 use Illuminate\Support\Facades\Response;
 
 class OperatorController extends Controller
@@ -32,8 +32,8 @@ class OperatorController extends Controller
     public function index()
     {
         $states = State::orderBy('name')->get();
-        $divisions = Division::orderBy('division_name')->get();
-        return view('operator/complaints', compact('states', 'divisions'));
+        $nagars = Nagar::orderBy('nagar_name')->get();
+        return view('operator/complaints', compact('states', 'nagars'));
     }
 
     public function store(Request $request)
@@ -54,6 +54,7 @@ class OperatorController extends Controller
             'NameText' => 'required|string|max:2000',
             'type' => 'required|string',
             'department' => 'nullable',
+            'post' => 'nullable',
             'from_date' => 'nullable|date',
             'program_date' => 'nullable|date',
             'to_date' => 'nullable',
@@ -123,8 +124,9 @@ class OperatorController extends Controller
             'issue_attachment' => $attachment,
             'complaint_number' => $complaint_number,
             'complaint_department' => $request->department ?? '',
+            'complaint_designation' => $request->post ?? '',
             'news_date' => $request->from_date,
-            'complaint_status' => 5,
+            'complaint_status' => 1,
             'program_date' => $request->program_date,
             'complaint_created_by'  => session('user_id'),
             'type' => 2,
@@ -135,7 +137,16 @@ class OperatorController extends Controller
         // $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaint_number;
         // $this->messageSent($complaint_number, $mobile);
 
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number,
+            ]);
+        }
+
         return redirect()->route('operator_complaint.index')->with('success', 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number);
+
+        // return redirect()->route('operator_complaint.index')->with('success', 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number);
     }
 
     public function view_complaints()
@@ -190,20 +201,103 @@ class OperatorController extends Controller
 
     public function getPollings($mandal_id)
     {
-        $pollings = Polling::where('mandal_id', $mandal_id)->get();
-        return response()->json($pollings->map(function ($p) {
-            return "<option value='{$p->gram_polling_id}'>{$p->polling_name} ({$p->polling_no})</option>";
-        }));
+        $pollings = Polling::where('mandal_id', $mandal_id)->get([
+            'gram_polling_id',
+            'polling_name',
+            'polling_no'
+        ]);
+
+        return response()->json($pollings);
     }
 
     public function getAreas($polling_id)
     {
-        $areas = Area::where('polling_id', $polling_id)->get();
-        return response()->json($areas->map(function ($a) {
-            return "<option value='{$a->area_id}'>{$a->area_name}</option>";
-        }));
+        $areas = Area::where('polling_id', $polling_id)->get([
+            'area_id',
+            'area_name'
+        ]);
+
+        return response()->json($areas);
     }
 
+    public function getMandalFromNagar($nagar_id)
+    {
+        $nagar = Nagar::find($nagar_id);
+
+        if (!$nagar) {
+            return response()->json([
+                'error' => 'Nagar not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'mandal_id' => $nagar->mandal_id
+        ]);
+    }
+
+    public function getVidhansabhaFromMandal($mandal_id)
+    {
+        $mandal = Mandal::find($mandal_id);
+
+        if (!$mandal) {
+            return response()->json(['error' => 'Mandal not found'], 404);
+        }
+
+        return response()->json([
+            'vidhansabha_id' => $mandal->vidhansabha_id
+        ]);
+    }
+
+    public function getDistrictFromVidhansabha($vidhansabha_id)
+    {
+        $vidhansabha = VidhansabhaLokSabha::find($vidhansabha_id);
+
+        if (!$vidhansabha) {
+            return response()->json(['error' => 'Vidhansabha not found'], 404);
+        }
+
+        return response()->json([
+            'district_id' => $vidhansabha->district_id
+        ]);
+    }
+
+    public function getDivisionFromDistrict($district_id)
+    {
+        $district = District::find($district_id);
+
+        if (!$district) {
+            return response()->json(['error' => 'District not found'], 404);
+        }
+
+        return response()->json([
+            'division_id' => $district->division_id
+        ]);
+    }
+
+
+    public function getMandalOptionsFromId($mandal_id)
+    {
+        $mandal = Mandal::find($mandal_id);
+        return response("<option value='{$mandal->mandal_id}' selected>{$mandal->mandal_name}</option>");
+    }
+
+    public function getVidhansabhaOptionsFromId($vidhansabha_id)
+    {
+        $vidhansabha = VidhansabhaLokSabha::find($vidhansabha_id);
+        return response("<option value='{$vidhansabha->vidhansabha_id}' selected>{$vidhansabha->vidhansabha}</option>");
+    }
+
+    public function getDistrictOptionsFromId($district_id)
+    {
+        $district = District::find($district_id);
+        return response("<option value='{$district->district_id}' selected>{$district->district_name}</option>");
+    }
+
+    public function getDivisionOptionsFromId($division_id)
+    {
+        $division = Division::find($division_id);
+        return response("<option value='{$division->division_id}' selected>{$division->division_name}</option>");
+    }
 
     public function messageSent($complaint_number, $mobile)
     {
@@ -274,7 +368,8 @@ class OperatorController extends Controller
             'mandal',
             'gram',
             'polling',
-            'area'
+            'area',
+            'registrationDetails'
         )->findOrFail($id);
 
         return view('operator/details_complaints', [
