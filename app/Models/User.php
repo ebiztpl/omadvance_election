@@ -32,4 +32,9 @@ class User extends Authenticatable
     {
         return $this->admin_pass;
     }
+
+    public function getRouteKeyName()
+    {
+        return 'admin_id';
+    }
 }

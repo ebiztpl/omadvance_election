@@ -41,6 +41,13 @@
                 <li><a href="{{ route('view_responsibility.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">दायित्व कार्यकर्ता देखे</span></a></li>
 
+                <li>
+                    <a href="{{ route('user.create') }}">
+                        <i class="icon icon-arrow-right"></i>
+                        <span class="nav-text">मैनेजर/यूज़र बनाएँ</span>
+                    </a>
+                </li>
+
                 {{-- <li><a href="{{ route('generate.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">दायित्व कार्यकर्ता प्रिंट करे</span></a></li> --}}
 
