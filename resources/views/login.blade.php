@@ -34,27 +34,27 @@
                         <div class="form-group mt-3">
                             <label><strong>Select Role</strong></label><br>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="user_role" id="role_admin" value="admin" checked>
-                                <label class="form-check-label" for="role_admin">Admin</label>
+                                <input class="form-check-input" type="radio" name="user_role" id="role_admin" value="एडमिन" checked>
+                                <label class="form-check-label" for="role_admin">एडमिन</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="user_role" id="role_manager" value="manager">
-                                <label class="form-check-label" for="role_manager">Manager</label>
+                                <input class="form-check-input" type="radio" name="user_role" id="role_manager" value="मैनेजर">
+                                <label class="form-check-label" for="role_manager">मैनेजर</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="user_role" id="role_user" value="operator">
-                                <label class="form-check-label" for="role_operator">Operator</label>
+                                <input class="form-check-input" type="radio" name="user_role" id="role_user" value="कार्यालय">
+                                <label class="form-check-label" for="role_operator">कार्यालय</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="user_role" id="role_member" value="member">
-                                <label class="form-check-label" for="role_member">Member (OTP)</label>
+                                <input class="form-check-input" type="radio" name="user_role" id="role_member" value="फ़ील्ड">
+                                <label class="form-check-label" for="role_member">फ़ील्ड</label>
                             </div>
                         </div>
 
                         {{-- Normal Login Form --}}
                         <form method="POST" action="/login" id="normal-login-form">
                             @csrf
-                            <input type="hidden" name="user_role" id="user_role_hidden" value="admin"> {{-- ✅ Role sent here --}}
+                            <input type="hidden" name="user_role" id="user_role_hidden" value="एडमिन"> {{-- ✅ Role sent here --}}
                             <div class="form-group">
                                 <label><strong>Username</strong></label>
                                 <input type="text" name="username" class="form-control">

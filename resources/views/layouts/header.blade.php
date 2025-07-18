@@ -13,10 +13,10 @@
                 मैनेजर
                 पैनल</h4>
         @elseif ($role == 3)
-            <h4 class="text-white m-3">ऑपरेटर
+            <h4 class="text-white m-3">कार्यालय
                 पैनल</h4>
         @else
-            <h4 class="text-white m-3">मेंबर
+            <h4 class="text-white m-3">फ़ील्ड
                 पैनल</h4>
         @endif
     </a>
@@ -65,7 +65,7 @@
                         $registrationId = session('registration_id');
                         $nagarName = null;
 
-                        if ($role === 'member' && $registrationId) {
+                        if ($role === 'फ़ील्ड' && $registrationId) {
                             $position = \DB::table('assign_position')
                                 ->where('member_id', $registrationId)
                                 ->latest('post_date')
@@ -96,7 +96,7 @@
                         $registrationId = session('registration_id');
 
                         $memberName = null;
-                        if ($role === 'member' && $registrationId) {
+                        if ($role === 'फ़ील्ड' && $registrationId) {
                             $memberName = \App\Models\RegistrationForm::where(
                                 'registration_id',
                                 $registrationId,
@@ -106,7 +106,7 @@
                     <div class="dropdown">
                         <a class="btn btn-danger text-black dropdown-toggle" href="#" role="button"
                             data-toggle="dropdown">
-                            {{ $role === 'member' ? $memberName ?? 'मेंबर' : $name ?? 'Operator' }}
+                            {{ $role === 'फ़ील्ड' ? $memberName ?? 'फ़ील्ड' : $name ?? 'कार्यालय' }}
                         </a>
                         <div class="dropdown-menu dropdown-menu-right">
                             <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
