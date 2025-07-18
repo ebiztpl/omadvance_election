@@ -12,6 +12,13 @@
 @section('content')
     <div class="container">
 
+         <div id="success-alert" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+            <span id="success-message"></span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between">
                 <h5>{{ $complaint->complaint_number }}</h5>
@@ -138,13 +145,13 @@
         <div class="card">
             <div class="card-header" style="color: #000">Reply to {{ $complaint->complaint_number }}</div>
             <div class="card-body">
-                <form method="POST" action="{{ route('operator_complaint.reply', $complaint->complaint_id) }}"
+                <form id="replyForm" method="POST" action="{{ route('operator_complaint.reply', $complaint->complaint_id) }}"
                     enctype="multipart/form-data">
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-8">
                             <label class="form-label">समस्या/समाधान में प्रगति</label>
-                            <textarea name="cmp_reply" id="cmp_reply" class="form-control" rows="6" required></textarea>
+                            <textarea name="cmp_reply" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें" id="cmp_reply" class="form-control" rows="6" required></textarea>
                         </div>
 
                         <div class="col-md-2">
@@ -189,12 +196,43 @@
 
     @push('scripts')
         <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                pramukhIME.enable({
-                    language: 'hindi',
-                    elements: ["cmp_reply"]
+               $(document).ready(function() {
+                $('#replyForm').on('submit', function(e) {
+                    e.preventDefault();
+
+                    $("#loader-wrapper").show();
+                    var form = $(this)[0];
+                    var formData = new FormData(form);
+
+                    $.ajax({
+                        url: $(form).attr('action'),
+                        method: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            $("#loader-wrapper").hide();
+                            $('#success-message').text(response.message);
+
+                            $('#success-alert').removeClass('d-none');
+                             window.scrollTo({
+                                    top: 0,
+                                    behavior: 'smooth'
+                                });
+                            $('#replyForm')[0].reset();
+
+                            setTimeout(function() {
+                                $('#success-alert').addClass('d-none');
+                            }, 5000);
+                        },
+                        error: function(xhr) {
+                            $("#loader-wrapper").hide();
+                            alert('अपडेट करते समय एक त्रुटि हुई।');
+                        }
+                    });
                 });
             });
+           
         </script>
     @endpush
 @endsection

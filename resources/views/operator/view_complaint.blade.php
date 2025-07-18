@@ -31,7 +31,7 @@
                                     <tr>
                                         <th>क्रमांक</th>
                                         <th>नाम</th>
-                                        <th>मोबाइल</th>
+                                        {{-- <th>मोबाइल</th> --}}
                                         <th>विधानसभा</th>
                                         <th>मंडल</th>
                                         <th>नगर केंद्र</th>
@@ -46,8 +46,8 @@
                                     @foreach ($complaints as $index => $complaint)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td>{{ $complaint->registrationDetails->name ?? 'N/A' }}</td>
-                                            <td>{{ $complaint->registrationDetails->mobile1 ?? 'N/A' }}</td>
+                                            <td>{{ $complaint->admin->admin_name ?? 'N/A' }}</td>
+                                            {{-- <td>{{ $complaint->registrationDetails->mobile1 ?? 'N/A' }}</td> --}}
                                             <td>{{ $complaint->vidhansabha->vidhansabha ?? 'N/A' }}</td>
                                            <td>{{ $complaint->mandal->mandal_name ?? 'N/A' }}</td>
                                             <td>{{ $complaint->gram->nagar_name ?? 'N/A'  }}</td>
