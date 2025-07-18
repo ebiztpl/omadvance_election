@@ -158,7 +158,7 @@ class OperatorController extends Controller
         }
 
 
-        $complaints = Complaint::with(['polling', 'area'])
+        $complaints = Complaint::with(['polling', 'area', 'admin'])
             ->where('complaint_created_by', $userId)
             ->where('type', 2)
             ->get();
@@ -421,7 +421,13 @@ class OperatorController extends Controller
 
         $reply->save();
 
+        if ($request->ajax()) {
+            return response()->json([
+                'message' => 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।'
+            ]);
+        }
+
         return redirect()->route('operator_complaint.view', $id)
-            ->with('success', 'जवाब प्रस्तुत किया गया और शिकायत अपडेट की गई');
+            ->with('success','शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।');
     }
 }
