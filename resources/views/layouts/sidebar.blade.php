@@ -44,7 +44,7 @@
                 <li>
                     <a href="{{ route('user.create') }}">
                         <i class="icon icon-arrow-right"></i>
-                        <span class="nav-text">मैनेजर/यूज़र बनाएँ</span>
+                        <span class="nav-text">मैनेजर/कार्यालय बनाएँ</span>
                     </a>
                 </li>
 
@@ -101,7 +101,7 @@
                             class="nav-text">समस्याएँ देखे</span></a>
                     <ul aria-expanded="false">
                         <li><a href="{{ route('commander.complaints.view') }}">कमांडर समस्याएँ</a></li>
-                        <li><a href="{{ route('operator.complaints.view') }}">ऑपरेटर समस्याएँ</a></li>
+                        <li><a href="{{ route('operator.complaints.view') }}">कार्यालय समस्याएँ</a></li>
                     </ul>
                 </li>
 
@@ -113,7 +113,7 @@
 
             {{-- User Panel --}}
             @if ($role == 3)
-                <li class="nav-label" style="color: #c0bebe">ऑपरेटर टूल्स</li>
+                <li class="nav-label" style="color: #c0bebe">कार्यालय टूल्स</li>
                 <li><a href="{{ route('operator_complaint.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
                 <li><a href="{{ route('operator_complaint.view') }}"><i class="icon icon-arrow-right"></i><span
@@ -133,7 +133,7 @@
 
             {{-- Member Panel --}}
             @if (!in_array($role, [1, 2, 3]))
-                <li class="nav-label" style="color: #c0bebe">मेंबर टूल्स</li>
+                <li class="nav-label" style="color: #c0bebe">फ़ील्ड टूल्स</li>
                 <li><a href="{{ route('member.complaint') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
 

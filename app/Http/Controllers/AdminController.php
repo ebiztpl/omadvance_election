@@ -1617,30 +1617,50 @@ class AdminController extends Controller
 
             try {
                 $voter_id  = $row['G'] ?? null;
-                $polling_name = $row['H'] ?? null;
+                $area_name = $row['H'] ?? null;
                 $house        = $row['D'] ?? null;
                 $name         = $row['B'] ?? '-';
+                $jati   =   $row['I'] ?? 'N/A';
+                $polling_no      = $row['J'] ?? 0;
+                $total_family   =  $row['K'] ?? '';
+                $mukhiya_mobile  =  $row['L'] ?? '';
 
-                if (!$polling_name) {
-                    throw new \Exception("Missing Polling");
+                if (!$area_name) {
+                    throw new \Exception("Missing Area");
                 }
 
-                $polling = DB::table('gram_polling')->where('polling_name', $polling_name)->first();
-                if (!$polling) {
+                $area = DB::table('area_master')->where('area_name', $area_name)->first();
+                if (!$area) {
                     throw new \Exception("Invalid Area");
                 }
 
-                $area = DB::table('area_master')->where('area_id', $polling->gram_polling_id)->first();
-                if (!$area) {
-                    throw new \Exception("No Area Info");
+                $polling = DB::table('gram_polling')->where('gram_polling_id', $area->polling_id)->first();
+                if (!$polling) {
+                    throw new \Exception("Polling info not found");
                 }
 
                 if (!$house) {
-                    throw new \Exception("No house");
+                    throw new \Exception("House information is missing");
                 }
 
-                if (!preg_match('/^[a-zA-Z0-9\-\/ ]+$/', $house)) {
+                if (!preg_match('/^[\p{L}\p{N}\/\- ]+$/u', $house)) {
                     throw new \Exception("Invalid house");
+                }
+
+                if (!$jati) {
+                    throw new \Exception("Caste (jati) is required");
+                }
+
+                if (!is_numeric($polling_no)) {
+                    throw new \Exception("Invalid polling number");
+                }
+
+                if (!is_numeric($total_family)) {
+                    throw new \Exception("Invalid total family number");
+                }
+
+                if (!empty($mukhiya_mobile) && !preg_match('/^\d{10}$|^\d{12}$/', $mukhiya_mobile)) {
+                    throw new \Exception("Invalid Mukhiya mobile number (must be 10 or 12 digits)");
                 }
 
                 $registrationId = DB::table('registration_form')->insertGetId([
@@ -1657,7 +1677,7 @@ class AdminController extends Controller
                     'mobile2_whatsapp'  => 0,
                     'religion'          => 'N/A',
                     'caste'             => 'N/A',
-                    'jati'              => $row['I'] ?? 'N/A',
+                    'jati'              => $jati,
                     'education'         => 'N/A',
                     'business'          => 'N/A',
                     'position'          => 'N/A',
@@ -1683,9 +1703,9 @@ class AdminController extends Controller
                         'mandal_type'        => 1,
                         'mandal'             => $polling->mandal_id,
                         'nagar'              => $polling->nagar_id,
-                        'matdan_kendra_no'   => $row['J'] ?? 0,
-                        'matdan_kendra_name' => $polling->gram_polling_id,
-                        'area_id'            => $area->area_name,
+                        'matdan_kendra_no'   => $polling_no,
+                        'matdan_kendra_name' => $polling->polling_name,
+                        'area_id'            => $area->area_id,
                         'loksabha'           => 'ग्वालियर',
                         'voter_front'        => 'NA',
                         'voter_back'         => 'NA',
@@ -1698,7 +1718,7 @@ class AdminController extends Controller
                 DB::table('step3')->updateOrInsert(
                     ['registration_id' => $registrationId],
                     [
-                        'total_member'       => $row['K'] ?? 0,
+                        'total_member'       => $total_family,
                         'total_voter'        => 0,
                         'member_job'         => 0,
                         'member_name_1'      => 'NA',
@@ -1716,7 +1736,7 @@ class AdminController extends Controller
                         'permanent_address'  => 'NA',
                         'temp_address'       => 'NA',
                         'post_date'          => now(),
-                        'mukhiya_mobile'     => $row['L'] ?? ''
+                        'mukhiya_mobile'     => $mukhiya_mobile
                     ]
                 );
 
@@ -1728,38 +1748,43 @@ class AdminController extends Controller
                 $originalMessage = $e->getMessage();
 
                 $knownErrors = [
-                    'No area'                => 'Area name is missing',
-                    'Invalid area'           => 'Area not found',
-                    'No polling'             => 'Polling info not found',
-                    'Incorrect integer value' => 'Wrong data format',
-                    'Invalid datetime format' => 'Invalid date format',
-                    'SQLSTATE'               => 'Database error',
-                    'No house'               => 'House information is missing',
-                    'Invalid house'          => 'Invalid house value provided',
+                    'Missing Area'               => 'Area name is missing',
+                    'Invalid Area'               => 'Area not found',
+                    'Polling info not found'     => 'Polling info not found',
+                    'House information is missing' => 'House is required',
+                    'Invalid house format'       => 'Invalid house format',
+                    'Caste (jati) is required'   => 'Caste is required',
+                    'Invalid polling number'     => 'Polling number should be numeric',
+                    'Invalid total family number' => 'Family count should be numeric',
+                    'Invalid Mukhiya mobile number' => 'Mukhiya mobile must be 10 digits',
+                    'Incorrect integer value'    => 'Wrong number format',
+                    'Invalid datetime format'    => 'Invalid date format',
+                    // 'SQLSTATE'                   => 'Database error'
                 ];
 
-                $matchedReasons = [];
+                $simpleReason = 'Data processing error';
 
                 foreach ($knownErrors as $key => $value) {
                     if (stripos($originalMessage, $key) !== false) {
-                        $matchedReasons[] = $value;
+                        $simpleReason = $value;
+                        break;
                     }
                 }
 
-                if (empty($matchedReasons)) {
-                    $matchedReasons[] = 'Data processing error';
-                }
-
-
                 $failedRows[] = [
-                    'name'     => $name,
-                    'father_name' => $row['C'] ?? '',
-                    'house'     => $house,
-                    'age'     => $row['E'] ?? '',
-                    'gender'     => $row['F'] ?? '',
-                    'voter_id' => $voter_id,
-                    'area' => $area_name,
-                    'reason'   => $matchedReasons,
+                    'name'         => $name,
+                    'father_name'  => $row['C'] ?? '',
+                    'house'        => $house,
+                    'age'          => $row['E'] ?? '',
+                    'gender'       => $row['F'] ?? '',
+                    'voter_id'     => $voter_id,
+                    'area'         => $area_name,
+                    'jati'         => $jati,
+                    'polling_no'   => $polling_no,
+                    'family_count' => $total_family,
+                    'mukhiya_mobile' => $mukhiya_mobile,
+                    'death/left' =>  $row['M'] ?? '',
+                    'reason'   => $simpleReason,
                 ];
             }
         }
