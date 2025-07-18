@@ -136,4 +136,9 @@ class Complaint extends Model
     {
         return $this->belongsTo(RegistrationForm::class, 'complaint_created_by', 'registration_id');
     }
+
+    public function admin()
+    {
+        return $this->belongsTo(User::class, 'complaint_created_by', 'admin_id');
+    }
 }

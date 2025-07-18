@@ -90,6 +90,11 @@
 
                                 $('#success-alert').removeClass('d-none');
 
+                                 window.scrollTo({
+                                    top: 0,
+                                    behavior: 'smooth'
+                                });
+
                                 $('#complaintForm')[0].reset();
                             }
 

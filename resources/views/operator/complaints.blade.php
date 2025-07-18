@@ -77,29 +77,6 @@
 
 
                                 <div class="col-md-4 mb-3">
-                                    <label>संभाग का नाम <span class="error">*</span></label>
-                                    <select class="form-control" name="division_id" id="division_id" required>
-                                    </select>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label>जिले का नाम <span class="error">*</span></label>
-                                    <select class="form-control" name="txtdistrict_name" id="district_name"
-                                        required></select>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label>विधानसभा का नाम <span class="error">*</span></label>
-                                    <select name="txtvidhansabha" class="form-control" id="txtvidhansabha"
-                                        required></select>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label>मंडल का नाम <span class="error">*</span></label>
-                                    <select name="txtmandal" class="form-control" id="txtmandal" required></select>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
                                     <label>नगर केंद्र/ग्राम केंद्र का नाम <span class="error">*</span></label>
                                     <select name="txtgram" class="form-control" id="txtgram" required>
                                         <option value="">--चुने--</option>
@@ -111,6 +88,37 @@
                                 </div>
 
                                 <div class="col-md-4 mb-3">
+                                    <label>मंडल का नाम <span class="error">*</span></label>
+                                    <select name="txtmandal" class="form-control" id="txtmandal" required></select>
+                                </div>
+
+
+                                <div class="col-md-4 mb-3">
+                                    <label>विधानसभा का नाम <span class="error">*</span></label>
+                                    <select name="txtvidhansabha" class="form-control" id="txtvidhansabha"
+                                        required></select>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label>जिले का नाम <span class="error">*</span></label>
+                                    <select class="form-control" name="txtdistrict_name" id="district_name"
+                                        required></select>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label>संभाग का नाम <span class="error">*</span></label>
+                                    <select class="form-control" name="division_id" id="division_id" required>
+                                    </select>
+                                </div>
+
+
+
+
+
+
+
+
+                                <div class="col-md-4 mb-3">
                                     <label>मतदान केंद्र का नाम/क्रमांक <span class="error">*</span></label>
                                     <select name="txtpolling" class="form-control" id="txtpolling" required></select>
                                 </div>
@@ -118,6 +126,11 @@
                                 <div class="col-md-4 mb-3">
                                     <label>ग्राम चौपाल/वार्ड चौपाल का नाम <span class="error">*</span></label>
                                     <select name="txtarea" class="form-control" id="txtarea" required></select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>फाइल अपलोड करें</label>
+                                    <input type="file" class="form-control" name="file_attach">
                                 </div>
                             </div>
 
@@ -166,19 +179,18 @@
                                 <div class="form-group row">
                                     <div class="col-md-12 mb-3">
                                         <label>विषय <span class="error">*</span></label>
-                                        <input type="text" class="form-control" id="transliterateTextarea"
-                                            name="CharCounter" maxlength="100" required>
+                                        <input type="text" class="form-control"
+                                            placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें"
+                                            id="transliterateTextarea" name="CharCounter" maxlength="100" required>
                                     </div>
 
                                     <div class="col-md-12 mb-3">
                                         <label>विवरण <span class="error">*</span></label>
-                                        <textarea class="form-control" name="NameText" id="NameText" rows="5" maxlength="2000" required></textarea>
+                                        <textarea class="form-control" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें" name="NameText"
+                                            id="NameText" rows="5" maxlength="2000" required></textarea>
                                     </div>
 
-                                    <div class="col-md-6 mb-3">
-                                        <label>फाइल अपलोड करें</label>
-                                        <input type="file" class="form-control" name="file_attach">
-                                    </div>
+
                                 </div>
                             </fieldset>
                         </fieldset>
@@ -217,6 +229,10 @@
                                 $('#success-message').text(response.message);
 
                                 $('#success-alert').removeClass('d-none');
+                                window.scrollTo({
+                                    top: 0,
+                                    behavior: 'smooth'
+                                });
 
                                 $('#complaintForm')[0].reset();
 
