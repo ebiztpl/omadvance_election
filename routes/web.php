@@ -16,15 +16,15 @@ Route::get('/', function () {
 
 
 // temporary for admin created
-Route::get('/create-admin', function () {
-    User::create([
-        'admin_name' => 'admin1',
-        'admin_pass' => 'pranjal',
-        'role'       => 1,
-        'posted_date' => now(),
-    ]);
-    return 'Admin created.';
-});
+// Route::get('/create-admin', function () {
+//     User::create([
+//         'admin_name' => 'admin1',
+//         'admin_pass' => 'pranjal',
+//         'role'       => 1,
+//         'posted_date' => now(),
+//     ]);
+//     return 'Admin created.';
+// });
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
@@ -47,6 +47,15 @@ Route::post('/logout', function () {
 
 // admin routes
 Route::middleware('checklogin')->group(function () {
+
+    Route::get('admin/users/create', [AdminController::class, 'usercreate'])->name('user.create');
+    Route::post('admin/users', [AdminController::class, 'userstore'])->name('admin.store');
+    Route::post('admin/users/{user}', [AdminController::class, 'userupdate'])->name('admin.update');
+    Route::delete('admin/users/{user}', [AdminController::class, 'userdestroy'])->name('admin.destroy');
+
+
+
+
     Route::get('admin/dashboard', [AdminController::class, 'index'])->name('dashboard.index');
     Route::post('admin/dashboard/download', [AdminController::class, 'download'])->name('dashboard.download');
     Route::post('admin/dashboard', [AdminController::class, 'filter'])->name('dashboard.filter');
@@ -285,4 +294,3 @@ Route::middleware('checkmember')->group(function () {
     Route::get('/member/details_complaint/{id}', [MemberController::class, 'complaint_show'])->name('complaint.show');
     Route::post('/member/complaints/{id}/reply', [MemberController::class, 'postReply'])->name('complaint.reply');
 });
-

@@ -24,6 +24,8 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use Carbon\Carbon;
 use Intervention\Image\Facades\Image;
 use App\Models\Division;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Mpdf\Mpdf;
 use App\Models\VidhansabhaLokSabha;
 use Illuminate\Support\Facades\Response;
@@ -31,6 +33,60 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
+    public function usercreate()
+    {
+        $admins = User::all();
+        return view('admin/create_user', compact('admins'));
+    }
+
+    public function userstore(Request $request)
+    {
+        $request->validate([
+            'admin_name' => 'required|string|max:255',
+            'admin_pass' => 'required|string|min:4',
+            'role' => 'required|in:1,2,3',
+        ]);
+
+        User::create([
+            'admin_name' => $request->admin_name,
+            'admin_pass' => Hash::make($request->admin_pass),
+            'role' => $request->role,
+            'posted_date' => now(),
+        ]);
+
+        if ($request->ajax()) {
+            return response()->json(['message' => 'एडमिन जोड़ा गया।']);
+        }
+
+        return redirect()->route('user.create')->with('success', 'एडमिन जोड़ा गया।');
+    }
+
+    public function userupdate(Request $request, User $user)
+    {
+        $request->validate([
+            'admin_name' => 'required|string|max:255',
+            'admin_pass' => 'nullable|string|min:4',
+            'role' => 'required|in:2,3',
+        ]);
+
+        $user->admin_name = $request->admin_name;
+
+        if ($request->filled('admin_pass')) {
+            $user->admin_pass = $request->admin_pass;
+        }
+
+        $user->modify_at = now();
+        $user->save();
+
+        return redirect()->route('user.create')->with('success', 'एडमिन अपडेट हुआ।');
+    }
+
+    public function userdestroy(User $user)
+    {
+        $user->delete();
+        return redirect()->route('user.create')->with('success', 'एडमिन हटाया गया।');
+    }
+
     public function index()
     {
         $districts = District::all();
@@ -1561,22 +1617,22 @@ class AdminController extends Controller
 
             try {
                 $voter_id  = $row['G'] ?? null;
-                $area_name = $row['H'] ?? null;
-                $house     = $row['D'] ?? null;
-                $name      = $row['B'] ?? '-';
+                $polling_name = $row['H'] ?? null;
+                $house        = $row['D'] ?? null;
+                $name         = $row['B'] ?? '-';
 
-                if (!$area_name) {
-                    throw new \Exception("Missing Area");
+                if (!$polling_name) {
+                    throw new \Exception("Missing Polling");
                 }
 
-                $area = DB::table('area_master')->where('area_name', $area_name)->first();
-                if (!$area) {
+                $polling = DB::table('gram_polling')->where('polling_name', $polling_name)->first();
+                if (!$polling) {
                     throw new \Exception("Invalid Area");
                 }
 
-                $polling = DB::table('gram_polling')->where('gram_polling_id', $area->polling_id)->first();
-                if (!$polling) {
-                    throw new \Exception("No Polling Info");
+                $area = DB::table('area_master')->where('area_id', $polling->gram_polling_id)->first();
+                if (!$area) {
+                    throw new \Exception("No Area Info");
                 }
 
                 if (!$house) {
@@ -1601,7 +1657,7 @@ class AdminController extends Controller
                     'mobile2_whatsapp'  => 0,
                     'religion'          => 'N/A',
                     'caste'             => 'N/A',
-                    'jati'              => 'N/A',
+                    'jati'              => $row['I'] ?? 'N/A',
                     'education'         => 'N/A',
                     'business'          => 'N/A',
                     'position'          => 'N/A',
@@ -1615,6 +1671,7 @@ class AdminController extends Controller
                     'position_id'       => 0,
                     'date_time'         => "2025-10-12",
                     'type'              => 1,
+                    'death/left'        => $row['M'] ?? ''
                 ]);
 
                 DB::table('step2')->updateOrInsert(
@@ -1626,9 +1683,9 @@ class AdminController extends Controller
                         'mandal_type'        => 1,
                         'mandal'             => $polling->mandal_id,
                         'nagar'              => $polling->nagar_id,
-                        'matdan_kendra_no'   => $polling->polling_no ?? '',
-                        'matdan_kendra_name' => $polling->polling_name,
-                        'area_id'            => $area->area_id,
+                        'matdan_kendra_no'   => $row['J'] ?? 0,
+                        'matdan_kendra_name' => $polling->gram_polling_id,
+                        'area_id'            => $area->area_name,
                         'loksabha'           => 'ग्वालियर',
                         'voter_front'        => 'NA',
                         'voter_back'         => 'NA',
@@ -1641,7 +1698,7 @@ class AdminController extends Controller
                 DB::table('step3')->updateOrInsert(
                     ['registration_id' => $registrationId],
                     [
-                        'total_member'       => 0,
+                        'total_member'       => $row['K'] ?? 0,
                         'total_voter'        => 0,
                         'member_job'         => 0,
                         'member_name_1'      => 'NA',
@@ -1659,6 +1716,7 @@ class AdminController extends Controller
                         'permanent_address'  => 'NA',
                         'temp_address'       => 'NA',
                         'post_date'          => now(),
+                        'mukhiya_mobile'     => $row['L'] ?? ''
                     ]
                 );
 
@@ -1714,6 +1772,181 @@ class AdminController extends Controller
         ]);
     }
 
+
+    // public function uploadVoterData(Request $request)
+    // {
+    //     $request->validate([
+    //         'voter_excel' => 'required|file|mimes:xlsx,xls,csv'
+    //     ]);
+
+    //     $file = $request->file('voter_excel');
+    //     $spreadsheet = IOFactory::load($file);
+    //     $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+
+    //     unset($sheetData[1]);
+
+    //     $successCount = 0;
+    //     $failedRows = [];
+
+    //     foreach ($sheetData as $index => $row) {
+    //         DB::beginTransaction();
+
+    //         try {
+    //             $voter_id  = $row['G'] ?? null;
+    //             $area_name = $row['H'] ?? null;
+    //             $house     = $row['D'] ?? null;
+    //             $name      = $row['B'] ?? '-';
+
+    //             if (!$area_name) {
+    //                 throw new \Exception("Missing Area");
+    //             }
+
+    //             $area = DB::table('area_master')->where('area_name', $area_name)->first();
+    //             if (!$area) {
+    //                 throw new \Exception("Invalid Area");
+    //             }
+
+    //             $polling = DB::table('gram_polling')->where('gram_polling_id', $area->polling_id)->first();
+    //             if (!$polling) {
+    //                 throw new \Exception("No Polling Info");
+    //             }
+
+    //             if (!$house) {
+    //                 throw new \Exception("No house");
+    //             }
+
+    //             if (!preg_match('/^[a-zA-Z0-9\-\/ ]+$/', $house)) {
+    //                 throw new \Exception("Invalid house");
+    //             }
+
+    //             $registrationId = DB::table('registration_form')->insertGetId([
+    //                 'reference_id'      => 0,
+    //                 'member_id'         => 0,
+    //                 'name'              => $name,
+    //                 'membership'        => "N/A",
+    //                 'gender'            => $row['F'] ?? null,
+    //                 'dob'               => null,
+    //                 'age'               => $row['E'] ?? null,
+    //                 'mobile1'           => 'N/A',
+    //                 'mobile2'           => 'N/A',
+    //                 'mobile1_whatsapp'  => 0,
+    //                 'mobile2_whatsapp'  => 0,
+    //                 'religion'          => 'N/A',
+    //                 'caste'             => 'N/A',
+    //                 'jati'              => $row['I'] ?? 'N/A',
+    //                 'education'         => 'N/A',
+    //                 'business'          => 'N/A',
+    //                 'position'          => 'N/A',
+    //                 'voter_id'          => $voter_id,
+    //                 'father_name'       => $row['C'] ?? null,
+    //                 'email'             => 'N/A',
+    //                 'photo'             => 'NA',
+    //                 'pincode'           => 'N/A',
+    //                 'samagra_id'        => 'N/A',
+    //                 'otp_recieved'      => 'NA',
+    //                 'position_id'       => 0,
+    //                 'date_time'         => "2025-10-12",
+    //                 'type'              => 1,
+    //                 'death/left'        => $row['M'] ?? ''
+    //             ]);
+
+    //             DB::table('step2')->updateOrInsert(
+    //                 ['registration_id' => $registrationId],
+    //                 [
+    //                     'division_id'        => 2,
+    //                     'district'           => 11,
+    //                     'vidhansabha'        => 49,
+    //                     'mandal_type'        => 1,
+    //                     'mandal'             => $polling->mandal_id,
+    //                     'nagar'              => $polling->nagar_id,
+    //                     'matdan_kendra_no'   => $row['J'] ?? 0,
+    //                     'matdan_kendra_name' => $polling->polling_name,
+    //                     'area_id'            => $area->area_id,
+    //                     'loksabha'           => 'ग्वालियर',
+    //                     'voter_front'        => 'NA',
+    //                     'voter_back'         => 'NA',
+    //                     'voter_number'       => $voter_id,
+    //                     'house'              => $house,
+    //                     'post_date'          => now(),
+    //                 ]
+    //             );
+
+    //             DB::table('step3')->updateOrInsert(
+    //                 ['registration_id' => $registrationId],
+    //                 [
+    //                     'total_member'       => $row['K'] ?? 0,
+    //                     'total_voter'        => 0,
+    //                     'member_job'         => 0,
+    //                     'member_name_1'      => 'NA',
+    //                     'member_mobile_1'    => 0,
+    //                     'member_name_2'      => 'NA',
+    //                     'member_mobile_2'    => 0,
+    //                     'friend_name_1'      => 'NA',
+    //                     'friend_mobile_1'    => 0,
+    //                     'friend_name_2'      => 'NA',
+    //                     'friend_mobile_2'    => 0,
+    //                     'intrest'            => 'NA',
+    //                     'vehicle1'           => 'NA',
+    //                     'vehicle2'           => 'NA',
+    //                     'vehicle3'           => 'NA',
+    //                     'permanent_address'  => 'NA',
+    //                     'temp_address'       => 'NA',
+    //                     'post_date'          => now(),
+    //                     'mukhiya_mobile'     => $row['L'] ?? ''
+    //                 ]
+    //             );
+
+    //             DB::commit();
+    //             $successCount++;
+    //         } catch (\Exception $e) {
+    //             DB::rollBack();
+
+    //             $originalMessage = $e->getMessage();
+
+    //             $knownErrors = [
+    //                 'No area'                => 'Area name is missing',
+    //                 'Invalid area'           => 'Area not found',
+    //                 'No polling'             => 'Polling info not found',
+    //                 'Incorrect integer value' => 'Wrong data format',
+    //                 'Invalid datetime format' => 'Invalid date format',
+    //                 'SQLSTATE'               => 'Database error',
+    //                 'No house'               => 'House information is missing',
+    //                 'Invalid house'          => 'Invalid house value provided',
+    //             ];
+
+    //             $matchedReasons = [];
+
+    //             foreach ($knownErrors as $key => $value) {
+    //                 if (stripos($originalMessage, $key) !== false) {
+    //                     $matchedReasons[] = $value;
+    //                 }
+    //             }
+
+    //             if (empty($matchedReasons)) {
+    //                 $matchedReasons[] = 'Data processing error';
+    //             }
+
+
+    //             $failedRows[] = [
+    //                 'name'     => $name,
+    //                 'father_name' => $row['C'] ?? '',
+    //                 'house'     => $house,
+    //                 'age'     => $row['E'] ?? '',
+    //                 'gender'     => $row['F'] ?? '',
+    //                 'voter_id' => $voter_id,
+    //                 'area' => $area_name,
+    //                 'reason'   => $matchedReasons,
+    //             ];
+    //         }
+    //     }
+
+    //     return response()->json([
+    //         'status'        => count($failedRows) ? 'partial' : 'success',
+    //         'success_count' => $successCount,
+    //         'failed_count'  => count($failedRows),
+    //         'errors'        => $failedRows
+    //     ]);
+    // }
 
     // view voters data functions
     public function viewvoter()
