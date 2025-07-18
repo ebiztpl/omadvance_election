@@ -42,32 +42,28 @@ class Handler extends ExceptionHandler
 
     // public function render($request, Throwable $exception)
     // {
-    //     // Optional: force Laravel to use your views even if APP_DEBUG=true
-    //     config(['app.debug' => false]);
-
-    //     // Handle JSON/API requests separately
+    //     // Handle JSON requests (like AJAX/API)
     //     if ($request->expectsJson()) {
     //         $statusCode = $exception instanceof HttpExceptionInterface
     //             ? $exception->getStatusCode()
     //             : 500;
 
     //         return response()->json([
-    //             'error' => 'Something went wrong.',
+    //             'error' => true,
     //             'message' => config('app.debug') ? $exception->getMessage() : 'Server Error',
     //         ], $statusCode);
     //     }
 
-    //     // Determine status code
-    //     $statusCode = $exception instanceof HttpExceptionInterface
-    //         ? $exception->getStatusCode()
-    //         : 500;
+    //     // Handle normal web (HTML) requests
+    //     if ($exception instanceof HttpExceptionInterface) {
+    //         $statusCode = $exception->getStatusCode();
 
-    //     // If there's a custom view for this status code, show it
-    //     if (view()->exists("errors.{$statusCode}")) {
-    //         return response()->view("errors.{$statusCode}", ['exception' => $exception], $statusCode);
+    //         if (view()->exists("errors.{$statusCode}")) {
+    //             return response()->view("errors.{$statusCode}", ['exception' => $exception], $statusCode);
+    //         }
     //     }
 
-    //     // Default fallback
+    //     // Fallback to 500 error view
     //     return response()->view("errors.500", ['exception' => $exception], 500);
     // }
 }
