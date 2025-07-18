@@ -44,10 +44,10 @@ class LoginController extends Controller
         $request->validate([
             'username' => 'required|string',
             'password' => 'required|string',
-            'user_role' => 'required|in:admin,manager,operator',
+            'user_role' => 'required|in:एडमिन,मैनेजर,कार्यालय',
         ]);
 
-        $roleMap = ['admin' => 1, 'manager' => 2, 'operator' => 3];
+        $roleMap = ['एडमिन' => 1, 'मैनेजर' => 2, 'कार्यालय' => 3];
         $roleValue = $roleMap[$request->user_role];
 
         $user = User::where('admin_name', $request->username)
@@ -63,11 +63,11 @@ class LoginController extends Controller
             ]);
 
             switch ($request->user_role) {
-                case 'admin':
+                case 'एडमिन':
                     return redirect('/admin/dashboard');
-                case 'manager':
+                case 'मैनेजर':
                     return redirect('/manager/division_master');
-                case 'operator':
+                case 'कार्यालय':
                     return redirect('/operator/dashboard');
             }
         }
@@ -241,7 +241,7 @@ class LoginController extends Controller
         Session::put([
             'registration_id' => $member->registration_id,
             'admin_name' => $member->name ?? '',
-            'admin_role' => 'member',
+            'admin_role' => 'फ़ील्ड',
             'log_id' => $logId,
         ]);
 

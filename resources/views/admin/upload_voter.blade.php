@@ -22,26 +22,17 @@
         @endif
 
 
-        {{-- <div class="row page-titles mx-0">
-            <div class="col-md-12 col-sm-12 col-xs-12">
-                <a href="{{ route('voters.download') }}" class="btn btn-info">
-                    <i class="fa fa-download"></i> Download Sample
-                </a>
-            </div>
-        </div> --}}
-
-
         <div class="row page-titles mx-0">
             <div class="col-md-12 col-sm-12 col-xs-12">
                 <form action="{{ route('voter.upload') }}" method="POST" id="voter-upload-form"
                     enctype="multipart/form-data">
                     @csrf
                     <div class="form-group">
-                        <label for="voter_excel">Upload Filled Excel File</label>
+                        <label for="voter_excel">भरा हुआ एक्सेल फ़ाइल अपलोड करें </label>
                         <input type="file" name="voter_excel" id="voter_excel" class="form-control"
                             accept=".xlsx,.xls,.csv" required>
                     </div>
-                    <button type="submit" class="btn btn-success mt-2">Upload</button>
+                    <button type="submit" class="btn btn-success mt-2">अपलोड करें</button>
                 </form>
             </div>
         </div>
@@ -67,6 +58,11 @@
                                         <th>Gender</th>
                                         <th>Voter ID</th>
                                         <th>Area</th>
+                                        <th>Jati</th>
+                                        <th>Polling No.</th>
+                                        <th>Total Member</th>
+                                        <th>Mukhiya Mobile</th>
+                                        <th>Death/Left</th>
                                         <th>Reason</th>
                                     </tr>
                                 </thead>
@@ -111,6 +107,14 @@
                         const success = data.success_count || 0;
                         const failed = data.failed_count || 0;
 
+                        if (success > 0 && failed > 0) {
+                            toastr.warning(` सफलता: ${success} रिकॉर्ड सफल, ${failed} रिकॉर्ड असफल।`);
+                        } else if (success > 0) {
+                            toastr.success(`${success} रिकॉर्ड सफलतापूर्वक अपलोड किए गए।`);
+                        } else if (failed > 0) {
+                            toastr.error(`कोई भी रिकॉर्ड अपलोड नहीं हुआ। कुल ${failed} त्रुटियाँ मिलीं।`);
+                        }
+
                         if (Array.isArray(data.errors) && data.errors.length > 0) {
                             showUploadErrors(data.errors);
                         } else {
@@ -120,6 +124,8 @@
                         document.getElementById('upload-summary').style.display = 'block';
                         document.getElementById('success-count').innerText = `Success: ${success}`;
                         document.getElementById('failed-count').innerText = `Failed: ${failed}`;
+
+                        form.reset();
                     })
                     .catch((error) => {
                         console.error('Upload error:', error);
@@ -145,6 +151,11 @@
                     <td>${escapeHtml(err.gender)}</td>
                     <td>${escapeHtml(err.voter_id)}</td>
                     <td>${escapeHtml(err.area)}</td>
+                    <td>${escapeHtml(err.jati)}</td>
+                    <td>${escapeHtml(err.polling_no)}</td>
+                    <td>${escapeHtml(err.family_count)}</td>
+                    <td>${escapeHtml(err.mukhiya_mobile)}</td>
+                    <td>${escapeHtml(err['death/left'])}</td>
                     <td>${escapeHtml(err.reason)}</td>
                 </tr>`;
                     body.insertAdjacentHTML('beforeend', row);
@@ -178,6 +189,13 @@
                     .replace(/"/g, "&quot;")
                     .replace(/'/g, "&#039;");
             }
+
+            toastr.options = {
+                "closeButton": true,
+                "progressBar": true,
+                "positionClass": "toast-top-center",
+                "timeOut": "5000"
+            };
         </script>
     @endpush
 

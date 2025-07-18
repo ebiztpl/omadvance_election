@@ -11,7 +11,7 @@
 
 @section('content')
     <div class="container">
-        <h3>ऑपरेटर/मैनेजर बनाएँ</h3>
+        <h3>मैनेजर/कार्यालय बनाएँ</h3>
         <div id="success-alert" class="alert alert-success alert-dismissible fade show d-none" role="alert">
             <span id="success-message"></span>
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -47,7 +47,7 @@
                             <select name="role" class="form-control" required>
                                 <option value="">-- चुने --</option>
                                 <option value="2">मैनेजर</option>
-                                <option value="3">ऑपरेटर</option>
+                                <option value="3">कार्यालय</option>
                             </select>
                         </div>
                     </div>
@@ -61,62 +61,57 @@
             </div>
 
             <div class="col-md-7">
-                <div class="card" id="table_card">
-                    <div class="card-body">
-                        <div id="filtered_data" class="table-responsive">
-                            <table class="display table table-bordered" style="min-width: 845px" id="data">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>नाम</th>
-                                        <th>भूमिका</th>
-                                        <th>पोस्ट तिथि</th>
-                                        <th>क्रिया</th>
-                                    </tr>
+                <div id="filtered_data" class="table-responsive">
+                    <table class="display table table-bordered" style="min-width: 845px" id="data">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>नाम</th>
+                                <th>भूमिका</th>
+                                <th>पोस्ट तिथि</th>
+                                <th>क्रिया</th>
+                            </tr>
 
-                                </thead>
-                                <tbody>
-                                    @foreach ($admins as $admin)
-                                        <tr>
-                                            <td>{{ $admin->admin_id }}</td>
-                                            <td>{{ $admin->admin_name }}</td>
-                                            <td>
-                                                @if ($admin->role == 1)
-                                                    एडमिन
-                                                @elseif ($admin->role == 2)
-                                                    मैनेजर
-                                                @elseif ($admin->role == 3)
-                                                    ऑपरेटर
-                                                @else
-                                                    ''
-                                                @endif
-                                            </td>
-                                            {{-- <td>{{ $admin->admin_pass }}</td> --}}
-                                            <td>{{ $admin->posted_date }}</td>
-                                            <td>
+                        </thead>
+                        <tbody>
+                            @foreach ($admins as $admin)
+                                <tr>
+                                    <td>{{ $admin->admin_id }}</td>
+                                    <td>{{ $admin->admin_name }}</td>
+                                    <td>
+                                        @if ($admin->role == 1)
+                                            एडमिन
+                                        @elseif ($admin->role == 2)
+                                            मैनेजर
+                                        @elseif ($admin->role == 3)
+                                            कार्यालय
+                                        @else
+                                            ''
+                                        @endif
+                                    </td>
+                                    {{-- <td>{{ $admin->admin_pass }}</td> --}}
+                                    <td>{{ $admin->posted_date }}</td>
+                                    <td>
 
-                                                <button type="button" class="btn btn-success btn-sm mr-2 editBtn"
-                                                    data-toggle="modal" data-target="#editModal"
-                                                    data-id="{{ $admin->admin_id }}" data-name="{{ $admin->admin_name }}"
-                                                    data-role="{{ $admin->role }}">
-                                                    अपडेट
-                                                </button>
+                                        <button type="button" class="btn btn-success btn-sm mr-2 editBtn"
+                                            data-toggle="modal" data-target="#editModal" data-id="{{ $admin->admin_id }}"
+                                            data-name="{{ $admin->admin_name }}" data-role="{{ $admin->role }}">
+                                            अपडेट
+                                        </button>
 
-                                                <form method="POST" action="{{ route('admin.destroy', $admin->admin_id) }}"
-                                                    style="display:inline;">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm mr-2"
-                                                        onclick="return confirm('हटाना निश्चित है?')">हटाएं</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                                        <form method="POST" action="{{ route('admin.destroy', $admin->admin_id) }}"
+                                            style="display:inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm mr-2"
+                                                onclick="return confirm('हटाना निश्चित है?')">हटाएं</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>  
             </div>
         </div>
 
@@ -150,7 +145,7 @@
                                 <label>भूमिका:</label>
                                 <select name="role" class="form-control" id="edit_role" required>
                                     <option value="2">मैनेजर</option>
-                                    <option value="3">ऑपरेटर</option>
+                                    <option value="3">कार्यालय</option>
                                 </select>
                             </div>
                         </div>

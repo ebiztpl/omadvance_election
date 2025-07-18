@@ -1058,7 +1058,7 @@ class ManagerController extends Controller
                 ->with('success', 'कमांडर शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।');
         } else {
             return redirect()->route('operator.complaints.view', $id)
-                ->with('success', 'ऑपरेटर शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।');
+                ->with('success', 'कार्यालय शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।');
         }
     }
 
@@ -1135,7 +1135,7 @@ class ManagerController extends Controller
                 ->with('success', 'कमांडर शिकायत सफलतापूर्वक अपडेट हुई और संदेश भेजा गया।');
         } else {
             return redirect()->route('operator.complaints.view')
-                ->with('success', 'ऑपरेटर शिकायत सफलतापूर्वक अपडेट हुई');
+                ->with('success', 'कार्यालय शिकायत सफलतापूर्वक अपडेट हुई');
         }
     }
 }
