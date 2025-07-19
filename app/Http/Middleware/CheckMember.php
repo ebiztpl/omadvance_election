@@ -9,7 +9,7 @@ class CheckMember
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!session()->has('registration_id') || session('admin_role') !== 'member') {
+        if (!session()->has('registration_id') || session('admin_role') !== 'फ़ील्ड') {
             return redirect('/login')->with('error', 'कृपया पहले मेंबर लॉगिन करें।');
         }
 
