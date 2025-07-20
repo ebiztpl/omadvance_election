@@ -28,6 +28,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Mpdf\Mpdf;
 use App\Models\VidhansabhaLokSabha;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -1597,205 +1598,220 @@ class AdminController extends Controller
     //     return back()->with('success', 'एक्सेल फ़ाइल सफलतापूर्वक संसाधित हो गई!');
     // }
 
-    public function uploadVoterData(Request $request)
-    {
-        $request->validate([
-            'voter_excel' => 'required|file|mimes:xlsx,xls,csv'
-        ]);
+    // public function uploadVoterData(Request $request)
+    // {
+    //     $request->validate([
+    //         'voter_excel' => 'required|file|mimes:xlsx,xls'
+    //     ]);
 
-        $file = $request->file('voter_excel');
-        $spreadsheet = IOFactory::load($file);
-        $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+    //     $file = $request->file('voter_excel');
+    //     $spreadsheet = IOFactory::load($file);
+    //     $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
 
-        unset($sheetData[1]);
+    //     unset($sheetData[1]);
 
-        $successCount = 0;
-        $failedRows = [];
+    //     $successCount = 0;
+    //     $failedRows = [];
+    //     $repeatCount = 0;
 
-        foreach ($sheetData as $index => $row) {
-            DB::beginTransaction();
+    //     foreach ($sheetData as $index => $row) {
+    //         DB::beginTransaction();
 
-            try {
-                $voter_id  = $row['G'] ?? null;
-                $area_name = $row['H'] ?? null;
-                $house        = $row['D'] ?? null;
-                $name         = $row['B'] ?? '-';
-                $jati   =   $row['I'] ?? 'N/A';
-                $polling_no      = $row['J'] ?? 0;
-                $total_family   =  $row['K'] ?? '';
-                $mukhiya_mobile  =  $row['L'] ?? '';
+    //         try {
+    //             $voter_id  = $row['G'] ?? null;
+    //             $area_name = $row['H'] ?? null;
+    //             $house        = $row['D'] ?? '';
+    //             $name         = $row['B'] ?? '-';
+    //             $jati   =   $row['I'] ?? 'N/A';
+    //             $polling_no      = $row['J'] ?? 0;
+    //             $total_family   =  $row['K'] ?? 0;
+    //             $mukhiya_mobile  =  $row['L'] ?? '';
 
-                if (!$area_name) {
-                    throw new \Exception("Missing Area");
-                }
+    //             if (!$voter_id) throw new \Exception("Missing voter_id");
 
-                $area = DB::table('area_master')->where('area_name', $area_name)->first();
-                if (!$area) {
-                    throw new \Exception("Invalid Area");
-                }
+    //             if (DB::table('registration_form')->where('voter_id', $voter_id)->exists()) {
+    //                 DB::rollBack();
+    //                 $repeatCount++;
+    //                 continue;
+    //             }
 
-                $polling = DB::table('gram_polling')->where('gram_polling_id', $area->polling_id)->first();
-                if (!$polling) {
-                    throw new \Exception("Polling info not found");
-                }
+    //             if (!$area_name) {
+    //                 throw new \Exception("Missing Area");
+    //             }
 
-                if (!$house) {
-                    throw new \Exception("House information is missing");
-                }
+    //             $area = DB::table('area_master')->where('area_name', $area_name)->first();
+    //             if (!$area) {
+    //                 throw new \Exception("Invalid Area");
+    //             }
 
-                if (!preg_match('/^[\p{L}\p{N}\/\- ]+$/u', $house)) {
-                    throw new \Exception("Invalid house");
-                }
+    //             $polling = DB::table('gram_polling')->where('gram_polling_id', $area->polling_id)->first();
+    //             if (!$polling) {
+    //                 throw new \Exception("Polling info not found");
+    //             }
 
-                if (!$jati) {
-                    throw new \Exception("Caste (jati) is required");
-                }
+    //             // if (!$house) {
+    //             //     throw new \Exception("House information is missing");
+    //             // }
 
-                if (!is_numeric($polling_no)) {
-                    throw new \Exception("Invalid polling number");
-                }
+    //             $house = trim($house);
 
-                if (!is_numeric($total_family)) {
-                    throw new \Exception("Invalid total family number");
-                }
+    //             if (!preg_match('/^[\p{L}0-9\x{0966}-\x{096F}\/\- ]+$/u', $house)) {
+    //                 throw new \Exception("Invalid house format");
+    //             }
+    //             if (!$jati) {
+    //                 throw new \Exception("Caste (jati) is required");
+    //             }
 
-                if (!empty($mukhiya_mobile) && !preg_match('/^\d{10}$|^\d{12}$/', $mukhiya_mobile)) {
-                    throw new \Exception("Invalid Mukhiya mobile number (must be 10 or 12 digits)");
-                }
+    //             if (!is_numeric($polling_no)) {
+    //                 throw new \Exception("Invalid polling number");
+    //             }
 
-                $registrationId = DB::table('registration_form')->insertGetId([
-                    'reference_id'      => 0,
-                    'member_id'         => 0,
-                    'name'              => $name,
-                    'membership'        => "N/A",
-                    'gender'            => $row['F'] ?? null,
-                    'dob'               => null,
-                    'age'               => $row['E'] ?? null,
-                    'mobile1'           => 'N/A',
-                    'mobile2'           => 'N/A',
-                    'mobile1_whatsapp'  => 0,
-                    'mobile2_whatsapp'  => 0,
-                    'religion'          => 'N/A',
-                    'caste'             => 'N/A',
-                    'jati'              => $jati,
-                    'education'         => 'N/A',
-                    'business'          => 'N/A',
-                    'position'          => 'N/A',
-                    'voter_id'          => $voter_id,
-                    'father_name'       => $row['C'] ?? null,
-                    'email'             => 'N/A',
-                    'photo'             => 'NA',
-                    'pincode'           => 'N/A',
-                    'samagra_id'        => 'N/A',
-                    'otp_recieved'      => 'NA',
-                    'position_id'       => 0,
-                    'date_time'         => "2025-10-12",
-                    'type'              => 1,
-                    'death/left'        => $row['M'] ?? ''
-                ]);
+    //             if (!is_numeric($total_family)) {
+    //                 throw new \Exception("Invalid total family number");
+    //             }
 
-                DB::table('step2')->updateOrInsert(
-                    ['registration_id' => $registrationId],
-                    [
-                        'division_id'        => 2,
-                        'district'           => 11,
-                        'vidhansabha'        => 49,
-                        'mandal_type'        => 1,
-                        'mandal'             => $polling->mandal_id,
-                        'nagar'              => $polling->nagar_id,
-                        'matdan_kendra_no'   => $polling_no,
-                        'matdan_kendra_name' => $polling->polling_name,
-                        'area_id'            => $area->area_id,
-                        'loksabha'           => 'ग्वालियर',
-                        'voter_front'        => 'NA',
-                        'voter_back'         => 'NA',
-                        'voter_number'       => $voter_id,
-                        'house'              => $house,
-                        'post_date'          => now(),
-                    ]
-                );
+    //             if (!empty($mukhiya_mobile) && !preg_match('/^\d{10}$|^\d{12}$/', $mukhiya_mobile)) {
+    //                 throw new \Exception("Invalid Mukhiya mobile number (must be 10 or 12 digits)");
+    //             }
 
-                DB::table('step3')->updateOrInsert(
-                    ['registration_id' => $registrationId],
-                    [
-                        'total_member'       => $total_family,
-                        'total_voter'        => 0,
-                        'member_job'         => 0,
-                        'member_name_1'      => 'NA',
-                        'member_mobile_1'    => 0,
-                        'member_name_2'      => 'NA',
-                        'member_mobile_2'    => 0,
-                        'friend_name_1'      => 'NA',
-                        'friend_mobile_1'    => 0,
-                        'friend_name_2'      => 'NA',
-                        'friend_mobile_2'    => 0,
-                        'intrest'            => 'NA',
-                        'vehicle1'           => 'NA',
-                        'vehicle2'           => 'NA',
-                        'vehicle3'           => 'NA',
-                        'permanent_address'  => 'NA',
-                        'temp_address'       => 'NA',
-                        'post_date'          => now(),
-                        'mukhiya_mobile'     => $mukhiya_mobile
-                    ]
-                );
+    //             $registrationId = DB::table('registration_form')->insertGetId([
+    //                 'reference_id'      => 0,
+    //                 'member_id'         => 0,
+    //                 'name'              => $name,
+    //                 'membership'        => "N/A",
+    //                 'gender'            => $row['F'] ?? null,
+    //                 'dob'               => null,
+    //                 'age'               => $row['E'] ?? null,
+    //                 'mobile1'           => 'N/A',
+    //                 'mobile2'           => 'N/A',
+    //                 'mobile1_whatsapp'  => 0,
+    //                 'mobile2_whatsapp'  => 0,
+    //                 'religion'          => 'N/A',
+    //                 'caste'             => 'N/A',
+    //                 'jati'              => $jati,
+    //                 'education'         => 'N/A',
+    //                 'business'          => 'N/A',
+    //                 'position'          => 'N/A',
+    //                 'voter_id'          => $voter_id,
+    //                 'father_name'       => $row['C'] ?? null,
+    //                 'email'             => 'N/A',
+    //                 'photo'             => 'NA',
+    //                 'pincode'           => 'N/A',
+    //                 'samagra_id'        => 'N/A',
+    //                 'otp_recieved'      => 'NA',
+    //                 'position_id'       => 0,
+    //                 'date_time'         => now(),
+    //                 'type'              => 1,
+    //                 'death/left'        => $row['M'] ?? ''
+    //             ]);
 
-                DB::commit();
-                $successCount++;
-            } catch (\Exception $e) {
-                DB::rollBack();
+    //             DB::table('step2')->updateOrInsert(
+    //                 ['registration_id' => $registrationId],
+    //                 [
+    //                     'division_id'        => 2,
+    //                     'district'           => 11,
+    //                     'vidhansabha'        => 49,
+    //                     'mandal_type'        => 1,
+    //                     'mandal'             => $polling->mandal_id,
+    //                     'nagar'              => $polling->nagar_id,
+    //                     'matdan_kendra_no'   => $polling_no,
+    //                     'matdan_kendra_name' => $polling->polling_name,
+    //                     'area_id'            => $area->area_id,
+    //                     'loksabha'           => 'ग्वालियर',
+    //                     'voter_front'        => 'NA',
+    //                     'voter_back'         => 'NA',
+    //                     'voter_number'       => $voter_id,
+    //                     'house'              => $house,
+    //                     'post_date'          => now(),
+    //                 ]
+    //             );
 
-                $originalMessage = $e->getMessage();
+    //             DB::table('step3')->updateOrInsert(
+    //                 ['registration_id' => $registrationId],
+    //                 [
+    //                     'total_member'       => $total_family,
+    //                     'total_voter'        => 0,
+    //                     'member_job'         => 0,
+    //                     'member_name_1'      => 'NA',
+    //                     'member_mobile_1'    => 0,
+    //                     'member_name_2'      => 'NA',
+    //                     'member_mobile_2'    => 0,
+    //                     'friend_name_1'      => 'NA',
+    //                     'friend_mobile_1'    => 0,
+    //                     'friend_name_2'      => 'NA',
+    //                     'friend_mobile_2'    => 0,
+    //                     'intrest'            => 'NA',
+    //                     'vehicle1'           => 'NA',
+    //                     'vehicle2'           => 'NA',
+    //                     'vehicle3'           => 'NA',
+    //                     'permanent_address'  => 'NA',
+    //                     'temp_address'       => 'NA',
+    //                     'post_date'          => now(),
+    //                     'mukhiya_mobile'     => $mukhiya_mobile
+    //                 ]
+    //             );
 
-                $knownErrors = [
-                    'Missing Area'               => 'Area name is missing',
-                    'Invalid Area'               => 'Area not found',
-                    'Polling info not found'     => 'Polling info not found',
-                    'House information is missing' => 'House is required',
-                    'Invalid house format'       => 'Invalid house format',
-                    'Caste (jati) is required'   => 'Caste is required',
-                    'Invalid polling number'     => 'Polling number should be numeric',
-                    'Invalid total family number' => 'Family count should be numeric',
-                    'Invalid Mukhiya mobile number' => 'Mukhiya mobile must be 10 digits',
-                    'Incorrect integer value'    => 'Wrong number format',
-                    'Invalid datetime format'    => 'Invalid date format',
-                    // 'SQLSTATE'                   => 'Database error'
-                ];
+    //             DB::commit();
+    //             $successCount++;
+    //         } catch (\Exception $e) {
+    //             DB::rollBack();
 
-                $simpleReason = 'Data processing error';
+    //             $originalMessage = strtolower($e->getMessage());
 
-                foreach ($knownErrors as $key => $value) {
-                    if (stripos($originalMessage, $key) !== false) {
-                        $simpleReason = $value;
-                        break;
-                    }
-                }
+    //             $knownErrors = [
+    //                 'missing area'                  => 'Area name is missing',
+    //                 'invalid area'                  => 'Area not found',
+    //                 'polling info not found'        => 'Polling info not found',
+    //                 'house information is missing'  => 'House is required',
+    //                 'invalid house'                 => 'Invalid house format',
+    //                 'caste (jati) is required'      => 'Caste is required',
+    //                 'invalid polling number'        => 'Polling number should be numeric',
+    //                 'invalid total family number'   => 'Family count should be numeric',
+    //                 'invalid mukhiya mobile number' => 'Mukhiya mobile must be 10 or 12 digits',
+    //                 'incorrect integer value'       => 'Wrong number format',
+    //                 'invalid datetime format'       => 'Invalid date format',
+    //                 'duplicate voter id'            => 'Duplicate voter ID'
+    //             ];
 
-                $failedRows[] = [
-                    'name'         => $name,
-                    'father_name'  => $row['C'] ?? '',
-                    'house'        => $house,
-                    'age'          => $row['E'] ?? '',
-                    'gender'       => $row['F'] ?? '',
-                    'voter_id'     => $voter_id,
-                    'area'         => $area_name,
-                    'jati'         => $jati,
-                    'polling_no'   => $polling_no,
-                    'family_count' => $total_family,
-                    'mukhiya_mobile' => $mukhiya_mobile,
-                    'death/left' =>  $row['M'] ?? '',
-                    'reason'   => $simpleReason,
-                ];
-            }
-        }
+    //             $simpleReason = 'Data Processing Error';
 
-        return response()->json([
-            'status'        => count($failedRows) ? 'partial' : 'success',
-            'success_count' => $successCount,
-            'failed_count'  => count($failedRows),
-            'errors'        => $failedRows
-        ]);
-    }
+    //             foreach ($knownErrors as $key => $value) {
+    //                 if (Str::contains($originalMessage, strtolower($key))) {
+    //                     $simpleReason = $value;
+    //                     break;
+    //                 }
+    //             }
+
+    //             // if (!$simpleReason) {
+    //             //     $simpleReason = $e->getMessage(); 
+    //             // }
+
+    //             $failedRows[] = [
+    //                 'name'         => $name,
+    //                 'father_name'  => $row['C'] ?? '',
+    //                 'house'        => $house,
+    //                 'age'          => $row['E'] ?? '',
+    //                 'gender'       => $row['F'] ?? '',
+    //                 'voter_id'     => $voter_id,
+    //                 'area'         => $area_name,
+    //                 'jati'         => $jati,
+    //                 'polling_no'   => $polling_no,
+    //                 'family_count' => $total_family,
+    //                 'mukhiya_mobile' => $mukhiya_mobile,
+    //                 'death/left' =>  $row['M'] ?? '',
+    //                 'reason'   => $simpleReason,
+    //             ];
+    //         }
+    //     }
+
+    //     return response()->json([
+    //         'status'        => count($failedRows) ? 'partial' : 'success',
+    //         'repeat_count'  => $repeatCount,
+    //         'success_count' => $successCount,
+    //         'failed_count'  => count($failedRows),
+    //         'errors'        => $failedRows
+    //     ]);
+    // }
 
 
     // public function uploadVoterData(Request $request)
@@ -1972,6 +1988,221 @@ class AdminController extends Controller
     //         'errors'        => $failedRows
     //     ]);
     // }
+
+
+
+
+
+
+
+    public function uploadVoterData(Request $request)
+    {
+        $request->validate([
+            'voter_excel' => 'required|file|mimes:xlsx,xls'
+        ]);
+
+        $file = $request->file('voter_excel');
+        $spreadsheet = IOFactory::load($file);
+        $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+
+        unset($sheetData[1]); 
+
+        $successCount = 0;
+        $updateCount = 0;
+        $failedRows = [];
+
+        foreach ($sheetData as $index => $row) {
+            DB::beginTransaction();
+
+            try {
+                $voter_id       = $row['G'] ?? '';
+                $area_name      = $row['H'] ?? '';
+                $house          = trim($row['D'] ?? '');
+                $name           = $row['B'] ?? '-';
+                $father_name    = $row['C'] ?? '';
+                $age            = $row['E'] ?? '';
+                $gender         = $row['F'] ?? '';
+                $jati           = $row['I'] ?? 'N/A';
+                $polling_no     = $row['J'] ?? 0;
+                $total_family   = $row['K'] ?? 0;
+                $mukhiya_mobile = $row['L'] ?? '';
+                $death_or_left  = $row['M'] ?? '';
+
+                if (!$voter_id) throw new \Exception("Missing voter_id");
+                if (!$area_name) throw new \Exception("Missing area");
+
+                $area = DB::table('area_master')->where('area_name', $area_name)->first();
+                if (!$area) throw new \Exception("Invalid area");
+
+                $polling = DB::table('gram_polling')->where('gram_polling_id', $area->polling_id)->first();
+                if (!$polling) throw new \Exception("Polling info not found");
+
+                if (!empty($house) && !preg_match('/^[\p{L}0-9\x{0966}-\x{096F}\/\- ]+$/u', $house)) {
+                    throw new \Exception("Invalid house format");
+                }
+
+                if (!is_numeric($polling_no)) throw new \Exception("Invalid polling number");
+                if (!is_numeric($total_family)) throw new \Exception("Invalid total family number");
+                if (!empty($mukhiya_mobile) && !preg_match('/^\d{10}$|^\d{12}$/', $mukhiya_mobile)) {
+                    throw new \Exception("Invalid Mukhiya mobile");
+                }
+
+                $registrationData = [
+                    'reference_id'      => 0,
+                    'member_id'         => 0,
+                    'name'              => $name,
+                    'membership'        => "N/A",
+                    'gender'            => $gender,
+                    'dob'               => null,
+                    'age'               => $age,
+                    'mobile1'           => 'N/A',
+                    'mobile2'           => 'N/A',
+                    'mobile1_whatsapp'  => 0,
+                    'mobile2_whatsapp'  => 0,
+                    'religion'          => 'N/A',
+                    'caste'             => 'N/A',
+                    'jati'              => $jati,
+                    'education'         => 'N/A',
+                    'business'          => 'N/A',
+                    'position'          => 'N/A',
+                    'father_name'       => $father_name,
+                    'email'             => 'N/A',
+                    'photo'             => 'NA',
+                    'pincode'           => 'N/A',
+                    'samagra_id'        => 'N/A',
+                    'otp_recieved'      => 'NA',
+                    'position_id'       => 0,
+                    'date_time'         => now(),
+                    'type'              => 1,
+                    'death/left'        => $death_or_left
+                ];
+
+                $existing = DB::table('registration_form')->where('voter_id', $voter_id)->first();
+
+                DB::table('registration_form')->updateOrInsert(
+                    ['voter_id' => $voter_id],
+                    $registrationData
+                );
+
+                $registrationId = DB::table('registration_form')
+                    ->where('voter_id', $voter_id)
+                    ->value('registration_id');
+
+                // Count logic
+                if ($existing) {
+                    $updateCount++;
+                } else {
+                    $successCount++;
+                }
+
+                DB::table('step2')->updateOrInsert(
+                    ['registration_id' => $registrationId],
+                    [
+                        'division_id'        => 2,
+                        'district'           => 11,
+                        'vidhansabha'        => 49,
+                        'mandal_type'        => 1,
+                        'mandal'             => $polling->mandal_id,
+                        'nagar'              => $polling->nagar_id,
+                        'matdan_kendra_no'   => $polling_no,
+                        'matdan_kendra_name' => $polling->polling_name,
+                        'area_id'            => $area->area_id,
+                        'loksabha'           => 'ग्वालियर',
+                        'voter_front'        => 'NA',
+                        'voter_back'         => 'NA',
+                        'voter_number'       => $voter_id,
+                        'house'              => $house,
+                        'post_date'          => now(),
+                    ]
+                );
+
+                DB::table('step3')->updateOrInsert(
+                    ['registration_id' => $registrationId],
+                    [
+                        'total_member'       => $total_family,
+                        'total_voter'        => 0,
+                        'member_job'         => 0,
+                        'member_name_1'      => 'NA',
+                        'member_mobile_1'    => 0,
+                        'member_name_2'      => 'NA',
+                        'member_mobile_2'    => 0,
+                        'friend_name_1'      => 'NA',
+                        'friend_mobile_1'    => 0,
+                        'friend_name_2'      => 'NA',
+                        'friend_mobile_2'    => 0,
+                        'intrest'            => 'NA',
+                        'vehicle1'           => 'NA',
+                        'vehicle2'           => 'NA',
+                        'vehicle3'           => 'NA',
+                        'permanent_address'  => 'NA',
+                        'temp_address'       => 'NA',
+                        'post_date'          => now(),
+                        'mukhiya_mobile'     => $mukhiya_mobile
+                    ]
+                );
+
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+
+
+                $originalMessage = strtolower($e->getMessage());
+
+                            $knownErrors = [
+                                'missing area'                  => 'Area name is missing',
+                                'invalid area'                  => 'Area not found',
+                                'polling info not found'        => 'Polling info not found',
+                                'house information is missing'  => 'House is required',
+                                'invalid house'                 => 'Invalid house format',
+                                'caste (jati) is required'      => 'Caste is required',
+                                'invalid polling number'        => 'Polling number should be numeric',
+                                'invalid total family number'   => 'Family count should be numeric',
+                                'invalid mukhiya mobile number' => 'Mukhiya mobile must be 10 or 12 digits',
+                                'incorrect integer value'       => 'Wrong number format',
+                                'invalid datetime format'       => 'Invalid date format',
+                                'duplicate voter id'            => 'Duplicate voter ID'
+                            ];
+
+                            $simpleReason = 'Data Processing Error';
+
+                            foreach ($knownErrors as $key => $value) {
+                                if (Str::contains($originalMessage, strtolower($key))) {
+                                    $simpleReason = $value;
+                                    break;
+                                }
+                            }
+
+                            // if (!$simpleReason) {
+                            //     $simpleReason = $e->getMessage(); 
+                            // }
+
+                $failedRows[] = [
+                    'name'         => $name,
+                    'father_name'  => $father_name,
+                    'house'        => $house,
+                    'age'          => $age,
+                    'gender'       => $gender,
+                    'voter_id'     => $voter_id,
+                    'area'         => $area_name,
+                    'jati'         => $jati,
+                    'polling_no'   => $polling_no,
+                    'family_count' => $total_family,
+                    'mukhiya_mobile' => $mukhiya_mobile,
+                    'death/left'   => $death_or_left,
+                    'reason'       => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'status'         => count($failedRows) ? 'partial' : 'success',
+            'success_count' => $successCount,
+            'repeat_count'  => $updateCount,
+            'failed_count'   => count($failedRows),
+            'errors'         => $failedRows
+        ]);
+    }
+
 
     // view voters data functions
     public function viewvoter()
