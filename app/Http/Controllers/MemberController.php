@@ -140,6 +140,7 @@ class MemberController extends Controller
             'division_id' => $divisionId,
             'mobile_number' => $mobile,
             'complaint_type' => 'समस्या',
+            'complaint_designation' => '',
             'type' => $type,
             'complaint_created_by' => $registrationId,
             'complaint_status' => '',
@@ -398,7 +399,7 @@ class MemberController extends Controller
         }
 
 
-        $complaints = Complaint::with(['polling', 'area']) 
+        $complaints = Complaint::with(['polling', 'area'])
             ->where('complaint_created_by', $registrationId)
             ->where('type', 1)
             ->get();
