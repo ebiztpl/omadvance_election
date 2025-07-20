@@ -54,11 +54,12 @@
                             <label for="video">वीडियो अपलोड करें:</label>
                             <input type="file" name="video" id="video" class="form-control" accept="video/*"
                                 required>
+                            <span class="text-danger small" id="video-error"></span>
                         </div>
 
                         <div class="col-md-2 mt-2">
                             <br />
-                            <button type="submit" class="btn btn-primary">Upload</button>
+                            <button type="submit" class="btn btn-primary">अपलोड करें</button>
                         </div>
                     </div>
                 </form>
@@ -90,7 +91,7 @@
 
                                 $('#success-alert').removeClass('d-none');
 
-                                 window.scrollTo({
+                                window.scrollTo({
                                     top: 0,
                                     behavior: 'smooth'
                                 });
@@ -104,18 +105,30 @@
                         },
                         error: function(xhr) {
                             $("#loader-wrapper").hide();
-                            alert('त्रुटि: शिकायत दर्ज नहीं की जा सकी।');
+                            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                                if (xhr.responseJSON.errors.video) {
+                                    $('#video-error').text(xhr.responseJSON.errors.video[0]);
+                                }
+                                if (xhr.responseJSON.errors.area_id) {
+                                    alert(xhr.responseJSON.errors.area_id[
+                                    0]); 
+                                }
+                            } else {
+                                alert('त्रुटि: शिकायत दर्ज नहीं की जा सकी।');
+                            }
                         }
                     });
                 });
 
                 $('#video').on('change', function() {
                     const file = this.files[0];
+                    const maxSize = 2.5 * 1024 * 1024 * 1024;
+                    $('#video-error').text('');
+
                     if (!file) return;
 
-                    const maxSize = 2560 * 1024 * 1024;
                     if (file.size > maxSize) {
-                        alert('वीडियो फ़ाइल अधिकतम 2.5GB हो सकती है।');
+                        $('#video-error').text('वीडियो फ़ाइल अधिकतम 2.5GB हो सकती है।');
                         $(this).val('');
                     }
                 });

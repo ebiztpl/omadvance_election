@@ -149,7 +149,7 @@ class OperatorController extends Controller
         // return redirect()->route('operator_complaint.index')->with('success', 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number);
     }
 
-    public function view_complaints()
+    public function view_complaints(Request $request)
     {
         $userId = session('user_id');
 
@@ -158,10 +158,42 @@ class OperatorController extends Controller
         }
 
 
-        $complaints = Complaint::with(['polling', 'area', 'admin'])
+        $query = Complaint::with(['polling', 'area', 'admin', 'vidhansabha', 'mandal', 'gram'])
             ->where('complaint_created_by', $userId)
-            ->where('type', 2)
-            ->get();
+            ->where('type', 2);
+
+        if ($request->filled('complaint_status')) {
+            $query->where('complaint_status', $request->complaint_status);
+        }
+
+        $complaints = $query->get();
+
+        if ($request->ajax()) {
+            $html = '';
+            foreach ($complaints as $index => $complaint) {
+                $html .= '<tr>
+                <td>' . ($index + 1) . '</td>
+                <td>' . ($complaint->admin->admin_name ?? 'N/A') . '</td>
+                <td>' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '</td>
+                <td>' . ($complaint->mandal->mandal_name ?? 'N/A') . '</td>
+                <td>' . ($complaint->gram->nagar_name ?? 'N/A') . '</td>
+                <td>' . ($complaint->polling->polling_name ?? 'N/A') . '</td>
+                <td>' . ($complaint->area->area_name ?? 'N/A') . '</td>
+                <td>';
+                if (!empty($complaint->issue_attachment)) {
+                    $html .= '<a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a>';
+                } else {
+                    $html .= '<button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं है</button>';
+                }
+                $html .= '</td>
+                <td>' . $complaint->statusTextPlain() . '</td>
+                <td><a href="' . route('operator_complaint.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a></td>
+            </tr>';
+            }
+
+            return response()->json(['tbody' => $html, 'count' => count($complaints)]);
+        }
+
 
         return view('operator/view_complaint', compact('complaints'));
     }
