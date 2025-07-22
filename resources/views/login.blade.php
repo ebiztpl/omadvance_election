@@ -7,7 +7,7 @@
                 <div class="row no-gutters">
                     <div class="col-xl-12">
                         <div class="auth-form">
-                            <h4 class="text-center mb-4">Sign in your account</h4>
+                            <h4 class="text-center mb-4">अपने खाते में साइन इन करें</h4>
 
                             {{-- Success --}}
                             @if (session('success'))
@@ -32,7 +32,7 @@
 
                             {{-- Role Selection --}}
                             <div class="form-group mt-3">
-                                <label><strong>Select Role</strong></label><br>
+                                <label><strong>भूमिका चुनें</strong></label><br>
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="radio" name="user_role" id="role_admin"
                                         value="एडमिन" checked>
@@ -59,17 +59,24 @@
                             <form method="POST" action="/login" id="normal-login-form">
                                 @csrf
                                 <input type="hidden" name="user_role" id="user_role_hidden" value="एडमिन">
-                                {{-- ✅ Role sent here --}}
+
                                 <div class="form-group">
-                                    <label><strong>Username</strong></label>
+                                    <label><strong>यूज़रनेम</strong></label>
                                     <input type="text" name="username" class="form-control">
                                 </div>
                                 <div class="form-group">
-                                    <label><strong>Password</strong></label>
+                                    <label><strong>पासवर्ड</strong></label>
                                     <input type="password" name="password" class="form-control">
                                 </div>
+
+
+                                <div class="form-group">
+                                    <div class="g-recaptcha" style="margin-top: 6px; margin-bottom: 8px"
+                                        data-sitekey={{ config('services.recaptcha.key') }}></div>
+                                </div>
+
                                 <div class="text-center">
-                                    <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                                    <button type="submit" class="btn btn-primary btn-block">साइन इन करें</button>
                                 </div>
                             </form>
 
@@ -77,22 +84,29 @@
                             <form method="POST" action="/verify_otp" id="otp-login-form" style="display: none;">
                                 @csrf
                                 <div class="form-group">
-                                    <label><strong>Registered Mobile</strong></label>
+                                    <label><strong>पंजीकृत मोबाइल नंबर</strong></label>
                                     <input type="text" name="mobile" id="mobile" class="form-control"
-                                        placeholder="Enter Registered Mobile">
+                                        placeholder="पंजीकृत मोबाइल नंबर दर्ज करें">
                                 </div>
                                 <div class="text-center mb-3">
-                                    <button type="button" id="send-otp-btn" class="btn btn-primary btn-block">Send
-                                        OTP</button>
+                                    <button type="button" id="send-otp-btn" class="btn btn-primary btn-block">ओटीपी भेजें</button>
                                 </div>
 
                                 <div id="otp-section" style="display: none;">
                                     <div class="form-group">
-                                        <label><strong>OTP</strong></label>
-                                        <input type="text" name="otp" class="form-control" placeholder="Enter OTP">
+                                        <label><strong>ओटीपी</strong></label>
+                                        <input type="text" name="otp" class="form-control" placeholder="ओटीपी दर्ज करें">
                                     </div>
+
+                                    <div class="form-group">
+                                        <div id="otp-recaptcha" class="g-recaptcha"
+                                            style="margin-top: 6px; margin-bottom: 8px"
+                                            data-sitekey="{{ config('services.recaptcha.key') }}"></div>
+                                    </div>
+
                                     <div class="text-center">
-                                        <button type="submit" class="btn btn-success btn-block">Verify OTP</button>
+                                        <button type="submit" class="btn btn-success btn-block">ओटीपी सत्यापित
+                                            करें</button>
                                     </div>
                                 </div>
 
@@ -106,6 +120,7 @@
     </div>
 
     {{-- JS --}}
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const roleRadios = document.querySelectorAll('input[name="user_role"]');
