@@ -404,6 +404,15 @@ class MemberController extends Controller
             ->where('type', 1)
             ->get();
 
+
+        foreach ($complaints as $complaint) {
+            if (!in_array($complaint->complaint_status, [4, 5])) {
+                $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+            } else {
+                $complaint->pending_days = 0;
+            }
+        }
+
         return view('member/view_complaints', compact('complaints'));
     }
 

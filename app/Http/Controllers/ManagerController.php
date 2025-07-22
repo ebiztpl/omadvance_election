@@ -20,6 +20,7 @@ use App\Models\Level;
 use App\Models\Jati;
 use App\Models\Position;
 use App\Models\Complaint;
+use Carbon\Carbon;
 use App\Models\Reply;
 use App\Models\JatiwiseVoter;
 use Illuminate\Support\Facades\DB;
@@ -908,6 +909,15 @@ class ManagerController extends Controller
     public function viewCommanderComplaints(Request $request)
     {
         $complaints = Complaint::where('type', 1)->get();
+
+        foreach ($complaints as $complaint) {
+            if (!in_array($complaint->complaint_status, [4, 5])) {
+                $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+            } else {
+                $complaint->pending_days = 0;
+            }
+        }
+
         return view('manager/commander_complaints', compact('complaints'));
     }
 
@@ -918,6 +928,14 @@ class ManagerController extends Controller
         foreach ($complaints as $complaint) {
             $admin = DB::table('admin_master')->where('admin_id', $complaint->complaint_created_by)->first();
             $complaint->admin_name = $admin->admin_name ?? '';
+        }
+
+        foreach ($complaints as $complaint) {
+            if (!in_array($complaint->complaint_status, [4, 5])) {
+                $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+            } else {
+                $complaint->pending_days = 0;
+            }
         }
 
         return view('manager/operator_complaints', compact('complaints'));
@@ -1281,7 +1299,7 @@ class ManagerController extends Controller
         ]);
 
         $subject = subject::findOrFail($id);
-        $subject->update([  
+        $subject->update([
             'department_id' => $request->department_id,
             'subject' => $request->subject
         ]);
