@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
@@ -45,7 +46,20 @@ class LoginController extends Controller
             'username' => 'required|string',
             'password' => 'required|string',
             'user_role' => 'required|in:एडमिन,मैनेजर,कार्यालय',
+            'g-recaptcha-response' => 'required'
         ]);
+
+        // Verify reCAPTCHA
+        $recaptcha = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+            'secret' => env('RECAPTCHA_SECRET_KEY'),
+            'response' => $request->input('g-recaptcha-response'),
+            'remoteip' => $request->ip(),
+        ]);
+
+        if (!($recaptcha->json()['success'] ?? false)) {
+            return back()->withErrors(['g-recaptcha-response' => 'Please confirm you are not a robot.'])->withInput();
+        }
+
 
         $roleMap = ['एडमिन' => 1, 'मैनेजर' => 2, 'कार्यालय' => 3];
         $roleValue = $roleMap[$request->user_role];
@@ -219,8 +233,20 @@ class LoginController extends Controller
     {
         $request->validate([
             'mobile' => 'required',
-            'otp' => 'required|digits:6'
+            'otp' => 'required|digits:6',
+            'g-recaptcha-response' => 'required'
         ]);
+
+        $recaptcha = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+            'secret' => config('services.recaptcha.secret'),
+            'response' => $request->input('g-recaptcha-response'),
+            'remoteip' => $request->ip(),
+        ]);
+
+        if (!($recaptcha->json()['success'] ?? false)) {
+            return back()->withErrors(['g-recaptcha-response' => 'Please confirm you are not a robot.'])->withInput();
+        }
+        
 
         $member = RegistrationForm::where('mobile1', $request->mobile)
             ->where('otp', $request->otp)

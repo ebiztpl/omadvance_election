@@ -95,19 +95,11 @@
                             <li><a href="{{ route('designation.master') }}"><i class="icon icon-arrow-right"></i><span
                             class=" nav-text">पद जोड़े</span></a></li>
 
-                             <li><a href="{{ route('complaintSubject.master') }}"><i class="icon icon-arrow-right"></i><span
-                            class=" nav-text">शिकायत का विषय जोड़े</span></a></li>
-
-                             <li><a href="{{ route('complaintReply.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class=" nav-text">शिकायत का जवाब जोड़े</span></a></li>
-
                 <li><a href="{{ route('jati_polling.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">जातिगत मतदाता प्रविष्टि</span></a></li>
 
                 <li><a href="{{ route('jatiwise.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">जातिगत मतदाता देखे</span></a></li>
-
-
 
                 <li><a class="has-arrow" href="#" aria-expanded="false"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्याएँ देखे</span></a>
@@ -128,6 +120,7 @@
                 <li class="nav-label" style="color: #c0bebe">कार्यालय टूल्स</li>
                 <li><a href="{{ route('operator_complaint.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
+
                 <li><a href="{{ route('operator_complaint.view') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्याएँ देखे</span></a></li>
                 {{-- <li><a href=""><i class="icon icon-arrow-right"></i><span class="nav-text">कार्यक्रम</span></a>
@@ -153,6 +146,12 @@
                             class="nav-text">समस्याएँ देखे</span></a></li>
             @endif
 
+
+
+            {{-- Common Links --}}
+            <!-- <li class="nav-label">Logout</li>
+            <li><a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="icon icon-single-copy-06"></i><span class="nav-text">Logout</span></a></li>
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">@csrf</form> -->
         </ul>
     </div>
 </div>
