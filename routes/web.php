@@ -242,6 +242,13 @@ Route::middleware('checklogin')->group(function () {
     Route::post('manager/reply/update/{id}', [ManagerController::class, 'complaintReplyUpdate'])->name('complaintReply.update');
 
 
+    // adhikari routes
+    Route::get('manager/create_adhikari_master', [ManagerController::class, 'adhikariIndex'])->name('adhikari.index');
+    Route::post('manager/create_adhikari_master/store', [ManagerController::class, 'adhikariStore'])->name('adhikari.store');
+    Route::get('manager/create_adhikari_master/edit/{id}', [ManagerController::class, 'adhikariEdit'])->name('adhikari.edit');
+    Route::post('manager/create_adhikari_master/update/{id}', [ManagerController::class, 'adhikariUpdate'])->name('adhikari.update');
+    Route::post('manager/ajax/designation', [ManagerController::class, 'getDesignation'])->name('ajax.designation');
+
     Route::get('/manager/commander_complaints', [ManagerController::class, 'viewCommanderComplaints'])->name('commander.complaints.view');
     Route::get('/manager/operator_complaints', [ManagerController::class, 'viewOperatorComplaints'])->name('operator.complaints.view');
     Route::post('/manager/update-complaint/{id}', [ManagerController::class, 'updateComplaint'])->name('complaints.update');

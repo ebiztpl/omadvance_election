@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Division;
 use App\Models\Department;
 use App\Models\ComplaintReply;
+use App\Models\Adhikari;
 use App\Models\Subject;
 use App\Models\Designation;
 use App\Models\District;
@@ -1246,7 +1247,7 @@ class ManagerController extends Controller
             ->orderBy('d.department_id')
             ->get();
 
-        return view('manager/complaint_reply_master', compact('departments', 'subjects'));
+        return view('manager/complaint_subject_master', compact('departments', 'subjects'));
     }
 
     public function complaintSubjectStore(Request $request)
@@ -1261,7 +1262,7 @@ class ManagerController extends Controller
             'subject' => $request->subject
         ]);
 
-        return redirect()->route('complaintSubject.index')->with('success', 'शिकायत का विषय जोड़ा गया!');
+        return redirect()->route('complaintSubject.master')->with('success', 'शिकायत का विषय जोड़ा गया!');
     }
 
     public function complaintSubjectEdit($id)
@@ -1280,7 +1281,7 @@ class ManagerController extends Controller
         ]);
 
         $subject = subject::findOrFail($id);
-        $subject->update([
+        $subject->update([  
             'department_id' => $request->department_id,
             'subject' => $request->subject
         ]);
@@ -1324,5 +1325,88 @@ class ManagerController extends Controller
         $reply->update(['reply' => $request->reply]);
 
         return redirect()->route('complaintReply.index')->with('update_msg', 'शिकायत का जवाब अपडेट किया गया!');
+    }
+
+
+
+    // create adhikari master controller functions
+    public function adhikariIndex()
+    {
+        $departments = Department::all();
+        $records = Adhikari::with(['department', 'designation'])->get();
+
+        return view('manager.create_adhikari_master', compact('departments', 'records'));
+    }
+
+    public function adhikariStore(Request $request)
+    {
+        $request->validate([
+            'department_id' => 'required|exists:department_master,department_id',
+            'designation_id' => 'required|exists:designation_master,designation_id',
+            'name' => 'required|string|max:255',
+            'mobile' => 'required|digits:10'
+        ]);
+
+        $exists = DB::table('create_adhikari_master')
+            ->where('department_id', $request->department_id)
+            ->where('designation_id', $request->designation_id)
+            ->where('mobile', $request->mobile)
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()->with('error', 'यह अधिकारी पहले से मौजूद है');
+        }
+
+        DB::table('create_adhikari_master')->insert([
+            'department_id' => $request->department_id,
+            'designation_id' => $request->designation_id,
+            'name' => $request->name,
+            'mobile' => $request->mobile,
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('adhikari.index')->with('success', 'अधिकारी सफलतापूर्वक जोड़ा गया!');
+    }
+
+    public function adhikariEdit($id)
+    {
+        $adhikari = Adhikari::findOrFail($id);
+        $departments = Department::all();
+        $designations = Designation::where('department_id', $adhikari->department_id)->get();
+
+        return view('manager/edit_adhikari', compact('adhikari', 'departments', 'designations'));
+    }
+
+    public function adhikariUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'department_id' => 'required|exists:department_master,department_id',
+            'designation_id' => 'required|exists:designation_master,designation_id',
+            'name' => 'required|string|max:255',
+            'mobile' => 'required|digits:10'
+        ]);
+
+        $adhikari = Adhikari::findOrFail($id);
+
+        $adhikari->update([
+            'department_id' => $request->department_id,
+            'designation_id' => $request->designation_id,
+            'name' => $request->name,
+            'mobile' => $request->mobile
+        ]);
+
+        return redirect()->route('adhikari.index')->with('update_msg', 'अधिकारी अपडेट किया गया!');
+    }
+
+    public function getDesignation(Request $request)
+    {
+        $designations = Designation::where('department_id', $request->id)->get();
+
+        $options = "<option value=''>--Select Designation--</option>";
+        foreach ($designations as $v) {
+            $options .= '<option value="' . $v->designation_id . '">' . $v->designation_name . '</option>';
+        }
+
+        return response()->json(['options' => $options]);
     }
 }

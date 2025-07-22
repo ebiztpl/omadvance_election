@@ -18,7 +18,7 @@ $breadcrumbs = [
                 @csrf
                 <div class="item form-group row">
                     <div class="col-md-3 col-sm-3 col-xs-12">
-                        <label>विभाग नाम<span class="text-danger">*</span></label>
+                        <label>विभाग<span class="text-danger">*</span></label>
                         <select name="department_id" class="form-control" required>
                             <option value="">-- Select department --</option>
                             @foreach($departments as $department)
@@ -28,7 +28,7 @@ $breadcrumbs = [
                     </div>
 
                     <div class="col-md-3 col-sm-3 col-xs-12">
-                        <label>जिला नाम <span class="text-danger">*</span></label>
+                        <label>पद<span class="text-danger">*</span></label>
                         <input type="text" name="designation_name" class="form-control" required>
                     </div>
 
