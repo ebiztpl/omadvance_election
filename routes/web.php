@@ -264,6 +264,8 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/manager/get-nagar/{mandal_id}', [ManagerController::class, 'getNagars']);
     Route::get('/manager/get-pollings/{mandal_id}', [ManagerController::class, 'getPollings']);
     Route::get('/manager/get-areas/{polling_id}', [ManagerController::class, 'getAreas']);
+    Route::get('/manager/get-subjects/{department_id}', [ManagerController::class, 'getSubjects']);
+    Route::get('/manager/get-gram_pollings/{mandal_id}', [ManagerController::class, 'getgramPollings']);
 
     Route::get('/manager/get-parent-mandal/{nagar_id}', [ManagerController::class, 'getMandalFromNagar']);
     Route::get('/manager/get-mandal-from-id/{mandal_id}', [ManagerController::class, 'getMandalOptionsFromId']);
