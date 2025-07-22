@@ -865,6 +865,15 @@ class AdminController extends Controller
     public function complaint_index()
     {
         $complaints = Complaint::all();
+        
+        foreach ($complaints as $complaint) {
+            if (!in_array($complaint->complaint_status, [4, 5])) {
+                $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+            } else {
+                $complaint->pending_days = 0;
+            }
+        }
+
         return view('admin/view_complaint', compact('complaints'));
     }
 

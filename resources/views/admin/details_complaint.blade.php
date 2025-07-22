@@ -19,29 +19,30 @@
             </div>
             <div class="card-body row g-3">
                 @php
-                     @php
-            $fields = [
-            'शिकायतकर्ता का नाम' => $complaint->name,
-            'शिकायतकर्ता का मोबाइल' => $complaint->email,
-            'पदाधिकारी का मोबाइल' => $complaint->mobile_number,
-            'मतदाता पहचान' => $complaint->voter_id,
-            'संभाग का नाम' => $complaint->division->division_name ?? '',
-            'जिले का नाम' => $complaint->district->district_name ?? '',
-            'विधानसभा का नाम' => $complaint->vidhansabha->vidhansabha ?? '',
-            'मंडल का नाम' => $complaint->mandal->mandal_name ?? '',
-            'नगर केंद्र/ग्राम केंद्र' => $complaint->gram->nagar_name ?? '',
-            'मतदान केंद्र' => ($complaint->polling->polling_name ?? '') . '-' . $complaint->polling->polling_no,
-            'ग्राम चौपाल/वार्ड चौपाल' => $complaint->area->area_name ?? '',
-            'Gender' => $complaint->registration->gender ?? '',
-            'Religion' => $complaint->registration->religion ?? '',
-            'Caste' => $complaint->registration->caste ?? '',
-            'Jati' => $complaint->registration->jati ?? '',
-            'Education' => $complaint->registration->education ?? '',
-            'Business' => $complaint->registration->business ?? '',
-            'Position' => $complaint->registration->position ?? '',
-            'शिकायत का दिनांक' => $complaint->posted_date,
-            ];
-            @endphp
+
+                    $fields = [
+                        'शिकायतकर्ता का नाम' => $complaint->name,
+                        'शिकायतकर्ता का मोबाइल' => $complaint->email,
+                        'पदाधिकारी का मोबाइल' => $complaint->mobile_number,
+                        'मतदाता पहचान' => $complaint->voter_id,
+                        'संभाग का नाम' => $complaint->division->division_name ?? '',
+                        'जिले का नाम' => $complaint->district->district_name ?? '',
+                        'विधानसभा का नाम' => $complaint->vidhansabha->vidhansabha ?? '',
+                        'मंडल का नाम' => $complaint->mandal->mandal_name ?? '',
+                        'नगर केंद्र/ग्राम केंद्र' => $complaint->gram->nagar_name ?? '',
+                        'मतदान केंद्र' =>
+                            ($complaint->polling->polling_name ?? '') . '-' . $complaint->polling->polling_no,
+                        'ग्राम चौपाल/वार्ड चौपाल' => $complaint->area->area_name ?? '',
+                        'Gender' => $complaint->registration->gender ?? '',
+                        'Religion' => $complaint->registration->religion ?? '',
+                        'Caste' => $complaint->registration->caste ?? '',
+                        'Jati' => $complaint->registration->jati ?? '',
+                        'Education' => $complaint->registration->education ?? '',
+                        'Business' => $complaint->registration->business ?? '',
+                        'Position' => $complaint->registration->position ?? '',
+                        'शिकायत का दिनांक' => $complaint->posted_date,
+                    ];
+                @endphp
 
                 @foreach ($fields as $label => $value)
                     <div class="col-md-4" style="margin-top: 8px;">
