@@ -27,18 +27,17 @@
 
                         <div class="table-responsive">
                             <table id="example" style="min-width: 845px" class="display table-bordered">
-                                 <thead>
+                                <thead>
                                     <tr>
-                                        <th>क्रमांक</th>
-                                        <th>नाम</th>
-                                        <th>मोबाइल</th>
-                                        <th>विधानसभा</th>
-                                        <th>मंडल</th>
-                                        <th>नगर केंद्र</th>
-                                        <th>मतदान केंद्र</th>
-                                        <th>ग्राम चौपाल</th>
-                                        <th>अपलोड फ़ाइल</th>
-                                        <th>स्टेटस</th>
+                                        <th>क्र.</th>
+                                        <th>शिकायतकर्ता-मोबाइल</th>
+                                        <th style="min-width: 100px;">क्षेत्र</th>
+                                        <th>विभाग</th>
+                                        <th>शिकायत की तिथि</th>
+                                        <th>से बकाया</th>
+                                        <th>स्थिति</th>
+                                        <th>आवेदक</th>
+                                        <th>फ़ाइल देखें</th>
                                         <th>आगे देखें</th>
                                     </tr>
                                 </thead>
@@ -46,13 +45,55 @@
                                     @foreach ($complaints as $index => $complaint)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
+                                            <td> {{ $complaint->name ?? 'N/A' }}
+                                                {{ $complaint->mobile_number ?? '' }}
+                                            </td>
+
+                                            <td
+                                                title="
+                                                
+                                                
+विभाग:  {{ $complaint->division->division_name ?? 'N/A' }}
+जिला:  {{ $complaint->district->district_name ?? 'N/A' }}
+विधानसभा:  {{ $complaint->vidhansabha->vidhansabha ?? 'N/A' }}
+मंडल:  {{ $complaint->mandal->mandal_name ?? 'N/A' }}
+नगर/ग्राम:  {{ $complaint->gram->nagar_name ?? 'N/A' }}
+मतदान केंद्र:  {{ $complaint->polling->polling_name ?? 'N/A' }} ({{ $complaint->polling->polling_no ?? 'N/A'}})
+क्षेत्र:  {{ $complaint->area->area_name ?? 'N/A' }}
+">
+                                                {{ $complaint->division->division_name ?? 'N/A' }}<br>
+                                                {{ $complaint->district->district_name ?? 'N/A' }}<br>
+                                                {{ $complaint->vidhansabha->vidhansabha ?? 'N/A' }}<br>
+                                                {{ $complaint->mandal->mandal_name ?? 'N/A' }}<br>
+                                                {{ $complaint->gram->nagar_name ?? 'N/A' }}<br>
+                                                {{ $complaint->polling->polling_name ?? 'N/A' }}
+                                                ({{ $complaint->polling->polling_no ?? 'N/A'}})
+                                                <br>
+                                                {{ $complaint->area->area_name ?? 'N/A' }}
+                                            </td>
+
+                                            <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y') }}</td>
+                                            {{-- <td>
+                                                @if (!in_array($complaint->complaint_status, [4, 5]))
+                                                    {{ $complaint->pending_days }} दिन
+                                                @else
+                                                @endif
+                                            </td> --}}
+
+                                            <td>
+                                                @if ($complaint->complaint_status == 4)
+                                                    पूर्ण
+                                                @elseif ($complaint->complaint_status == 5)
+                                                    रद्द
+                                                @else
+                                                    {{ $complaint->pending_days }} दिन
+                                                @endif
+                                            </td>
+
+                                            <td>{!! $complaint->statusTextPlain() !!}</td>
                                             <td>{{ $complaint->admin_name }}</td>
-                                            <td>{{ $complaint->registrationDetails->mobile1 ?? '' }}</td>
-                                            <td>{{ $complaint->vidhansabha->vidhansabha ?? 'N/A' }}</td>
-                                            <td>{{ $complaint->mandal->mandal_name ?? 'N/A' }}</td>
-                                            <td>{{ $complaint->gram->nagar_name ?? 'N/A'  }}</td>
-                                            <td>{{ $complaint->polling->polling_name ?? 'N/A' }}</td>
-                                            <td>{{ $complaint->area->area_name ?? 'N/A' }}</td>
+                                            {{-- <td>{{ $complaint->registrationDetails->mobile1 ?? '' }}</td> --}}
                                             <td>
                                                 @if (!empty($complaint->issue_attachment))
                                                     <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
@@ -63,7 +104,6 @@
                                                     <button class="btn btn-sm btn-secondary" disabled>No Attachment</button>
                                                 @endif
                                             </td>
-                                            <td>{!! $complaint->statusTextPlain() !!}</td>
                                             <td>
                                                 <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"
                                                     class="btn btn-sm btn-primary" style="white-space: nowrap;">

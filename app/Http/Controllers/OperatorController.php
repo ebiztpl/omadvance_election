@@ -166,30 +166,102 @@ class OperatorController extends Controller
             $query->where('complaint_status', $request->complaint_status);
         }
 
+
+
         $complaints = $query->get();
+
+        foreach ($complaints as $complaint) {
+            if (!in_array($complaint->complaint_status, [4, 5])) {
+                $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+            } else {
+                $complaint->pending_days = 0;
+            }
+        }
 
         if ($request->ajax()) {
             $html = '';
+
             foreach ($complaints as $index => $complaint) {
-                $html .= '<tr>
-                <td>' . ($index + 1) . '</td>
-                <td>' . ($complaint->admin->admin_name ?? 'N/A') . '</td>
-                <td>' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '</td>
-                <td>' . ($complaint->mandal->mandal_name ?? 'N/A') . '</td>
-                <td>' . ($complaint->gram->nagar_name ?? 'N/A') . '</td>
-                <td>' . ($complaint->polling->polling_name ?? 'N/A') . '</td>
-                <td>' . ($complaint->area->area_name ?? 'N/A') . '</td>
-                <td>';
+                $html .= '<tr>';
+                $html .= '<td>' . ($index + 1) . '</td>';
+
+                // Name + Mobile (if available)
+                $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
+
+                // Area Column with Tooltip
+                $areaTooltip = "विभाग: " . ($complaint->division->division_name ?? 'N/A') . "\n" .
+                    "जिला: " . ($complaint->district->district_name ?? 'N/A') . "\n" .
+                    "विधानसभा: " . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . "\n" .
+                    "मंडल: " . ($complaint->mandal->mandal_name ?? 'N/A') . "\n" .
+                    "नगर/ग्राम: " . ($complaint->gram->nagar_name ?? 'N/A') . "\n" .
+                    "मतदान केंद्र: " . ($complaint->polling->polling_name ?? 'N/A') . " (" . ($complaint->polling->polling_no ?? 'N/A') . ")\n" .
+                    "क्षेत्र: " . ($complaint->area->area_name ?? 'N/A');
+
+                $html .= '<td title="' . htmlspecialchars($areaTooltip) . '">';
+                $html .= ($complaint->division->division_name ?? 'N/A') . '<br>';
+                $html .= ($complaint->district->district_name ?? 'N/A') . '<br>';
+                $html .= ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '<br>';
+                $html .= ($complaint->mandal->mandal_name ?? 'N/A') . '<br>';
+                $html .= ($complaint->gram->nagar_name ?? 'N/A') . '<br>';
+                $html .= ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')<br>';
+                $html .= ($complaint->area->area_name ?? 'N/A');
+                $html .= '</td>';
+
+                // Department
+                $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
+
+                // Complaint Date
+                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y') . '</td>';
+
+                // Pending Days
+                if (in_array($complaint->complaint_status, [4, 5])) {
+                    $html .= '<td></td>';
+                } else {
+                    $pendingDays = \Carbon\Carbon::parse($complaint->posted_date)->diffInDays(now());
+                    $html .= '<td>' . $pendingDays . ' दिन</td>';
+                }
+
+                // Status (with Hindi label)
+                $html .= '<td>' . $complaint->statusTextPlain() . '</td>';
+
+                // Applicant
+                $html .= '<td>' . ($complaint->admin->admin_name ?? 'N/A') . '</td>';
+
+                // Attachment
+                $html .= '<td>';
                 if (!empty($complaint->issue_attachment)) {
                     $html .= '<a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a>';
                 } else {
                     $html .= '<button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं है</button>';
                 }
-                $html .= '</td>
-                <td>' . $complaint->statusTextPlain() . '</td>
-                <td><a href="' . route('operator_complaint.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a></td>
-            </tr>';
+                $html .= '</td>';
+
+                // Action
+                $html .= '<td><a href="' . route('operator_complaint.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+
+                $html .= '</tr>';
             }
+
+            // foreach ($complaints as $index => $complaint) {
+            //     $html .= '<tr>
+            //     <td>' . ($index + 1) . '</td>
+            //     <td>' . ($complaint->admin->admin_name ?? 'N/A') . '</td>
+            //     <td>' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '</td>
+            //     <td>' . ($complaint->mandal->mandal_name ?? 'N/A') . '</td>
+            //     <td>' . ($complaint->gram->nagar_name ?? 'N/A') . '</td>
+            //     <td>' . ($complaint->polling->polling_name ?? 'N/A') . '</td>
+            //     <td>' . ($complaint->area->area_name ?? 'N/A') . '</td>
+            //     <td>';
+            //     if (!empty($complaint->issue_attachment)) {
+            //         $html .= '<a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a>';
+            //     } else {
+            //         $html .= '<button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं है</button>';
+            //     }
+            //     $html .= '</td>
+            //     <td>' . $complaint->statusTextPlain() . '</td>
+            //     <td><a href="' . route('operator_complaint.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a></td>
+            // </tr>';
+            // }
 
             return response()->json(['tbody' => $html, 'count' => count($complaints)]);
         }
@@ -460,6 +532,6 @@ class OperatorController extends Controller
         }
 
         return redirect()->route('operator_complaint.view', $id)
-            ->with('success','शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।');
+            ->with('success', 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।');
     }
 }
