@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Division;
+use App\Models\Department;
+use App\Models\ComplaintReply;
+use App\Models\Subject;
+use App\Models\Designation;
 use App\Models\District;
 use App\Models\VidhansabhaLokSabha;
 use App\Models\RegistrationForm;
@@ -1137,5 +1141,188 @@ class ManagerController extends Controller
             return redirect()->route('operator.complaints.view')
                 ->with('success', 'कार्यालय शिकायत सफलतापूर्वक अपडेट हुई');
         }
+    }
+
+    // department master functions
+    public function department_index()
+    {
+        $departments = Department::all();
+        return view('manager/department_master', compact('departments'));
+    }
+
+    public function department_store(Request $request)
+    {
+        $request->validate([
+            'department_name' => 'required|unique:department_master,department_name'
+        ]);
+
+        Department::create(['department_name' => $request->department_name]);
+
+        return redirect()->back()->with('insert_msg', 'विभाग जोड़ा गया!');
+    }
+
+    public function department_edit($id)
+    {
+        $department = Department::findOrFail($id);
+        return view('manager/edit_department', compact('department'));
+    }
+
+    public function department_update(Request $request, $id)
+    {
+        $request->validate([
+            'department_name' => 'required|unique:department_master,department_name,' . $id . ',department_id'
+        ]);
+
+        $department = Department::findOrFail($id);
+        $department->update(['department_name' => $request->department_name]);
+
+        return redirect()->route('department.index')->with('update_msg', 'विभाग अपडेट किया गया!');
+    }
+
+
+
+    // designation master controller functions
+    public function indexDesignation()
+    {
+        $departments = DB::table('department_master')->get();
+
+        $designations = DB::table('designation_master as d')
+            ->leftJoin('department_master as v', 'v.department_id', '=', 'd.department_id')
+            ->select('d.designation_id', 'd.designation_name', 'v.department_name')
+            ->orderBy('d.department_id')
+            ->get();
+
+        return view('manager/designation_master', compact('departments', 'designations'));
+    }
+
+    public function designationStore(Request $request)
+    {
+        $request->validate([
+            'department_id' => 'required|exists:department_master,department_id',
+            'designation_name' => 'required|string|max:255'
+        ]);
+
+        DB::table('designation_master')->insert([
+            'department_id' => $request->department_id,
+            'designation_name' => $request->designation_name
+        ]);
+
+        return redirect()->route('designation.master')->with('success', 'पद जोड़ा गया!');
+    }
+
+    public function designationEdit($id)
+    {
+        $designation = Designation::findOrFail($id);
+        $departments = Department::all();
+
+        return view('manager/edit_designation', compact('designation', 'departments'));
+    }
+
+    public function designationUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'department_id' => 'required|exists:department_master,department_id',
+            'designation_name' => 'required|string|max:255'
+        ]);
+
+        $designation = Designation::findOrFail($id);
+        $designation->update([
+            'department_id' => $request->department_id,
+            'designation_name' => $request->designation_name
+        ]);
+
+        return redirect()->route('designation.master')->with('update_msg', 'पद अपडेट किया गया!');
+    }
+
+
+    // subject master controller functions
+    public function indexComplaint()
+    {
+        $departments = DB::table('department_master')->get();
+
+        $subjects = DB::table('complaint_subject_master as d')
+            ->leftJoin('department_master as v', 'v.department_id', '=', 'd.department_id')
+            ->select('d.subject_id', 'd.subject', 'v.department_name')
+            ->orderBy('d.department_id')
+            ->get();
+
+        return view('manager/complaint_reply_master', compact('departments', 'subjects'));
+    }
+
+    public function complaintSubjectStore(Request $request)
+    {
+        $request->validate([
+            'department_id' => 'required|exists:department_master,department_id',
+            'subject' => 'required|string|max:255'
+        ]);
+
+        DB::table('complaint_subject_master')->insert([
+            'department_id' => $request->department_id,
+            'subject' => $request->subject
+        ]);
+
+        return redirect()->route('complaintSubject.index')->with('success', 'शिकायत का विषय जोड़ा गया!');
+    }
+
+    public function complaintSubjectEdit($id)
+    {
+        $subject = Subject::findOrFail($id);
+        $departments = Department::all();
+
+        return view('manager/edit_complaint_subject', compact('subject', 'departments'));
+    }
+
+    public function complaintSubjectUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'department_id' => 'required|exists:department_master,department_id',
+            'subject' => 'required|string|max:255'
+        ]);
+
+        $subject = subject::findOrFail($id);
+        $subject->update([
+            'department_id' => $request->department_id,
+            'subject' => $request->subject
+        ]);
+
+        return redirect()->route('complaintReply.index')->with('update_msg', 'शिकायत का विषय अपडेट किया गया!');
+    }
+
+
+
+    // complaint reply master functions
+    public function complaintReplyIndex()
+    {
+        $replies = ComplaintReply::all();
+        return view('manager/complaint_reply_master', compact('replies'));
+    }
+
+    public function complaintReplyStore(Request $request)
+    {
+        $request->validate([
+            'reply' => 'required|unique:complaint_reply_master,reply'
+        ]);
+
+        ComplaintReply::create(['reply' => $request->reply]);
+
+        return redirect()->back()->with('insert_msg', 'शिकायत का जवाब जोड़ा गया!');
+    }
+
+    public function complaintReplyEdit($id)
+    {
+        $reply = ComplaintReply::findOrFail($id);
+        return view('manager/edit_complaint_reply', compact('reply'));
+    }
+
+    public function complaintReplyUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'reply' => 'required|unique:complaint_reply_master,reply,' . $id . ',reply_id'
+        ]);
+
+        $reply = ComplaintReply::findOrFail($id);
+        $reply->update(['reply' => $request->reply]);
+
+        return redirect()->route('complaintReply.index')->with('update_msg', 'शिकायत का जवाब अपडेट किया गया!');
     }
 }
