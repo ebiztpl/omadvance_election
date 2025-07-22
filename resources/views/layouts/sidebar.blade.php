@@ -95,14 +95,16 @@
                             <li><a href="{{ route('designation.master') }}"><i class="icon icon-arrow-right"></i><span
                             class=" nav-text">पद जोड़े</span></a></li>
 
+                             <li><a href="{{ route('adhikari.index') }}"><i class="icon icon-arrow-right"></i><span
+                            class=" nav-text">अधिकारी जोड़ें</span></a></li>
+
                              <li><a href="{{ route('complaintSubject.master') }}"><i class="icon icon-arrow-right"></i><span
                             class=" nav-text">शिकायत का विषय जोड़े</span></a></li>
 
                             <li><a href="{{ route('complaintReply.index') }}"><i class="icon icon-arrow-right"></i><span
                             class=" nav-text">शिकायत का जवाब जोड़े</span></a></li>
 
-                             <li><a href="{{ route('adhikari.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class=" nav-text">अधिकारी जोड़ें</span></a></li>
+                            
 
                 <li><a href="{{ route('jati_polling.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">जातिगत मतदाता प्रविष्टि</span></a></li>

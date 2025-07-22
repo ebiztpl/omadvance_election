@@ -921,26 +921,199 @@ class ManagerController extends Controller
         return view('manager/commander_complaints', compact('complaints'));
     }
 
+    // public function viewOperatorComplaints(Request $request)
+    // {
+    //     $complaints = Complaint::where('type', 2)->get();
+
+    //     foreach ($complaints as $complaint) {
+    //         $admin = DB::table('admin_master')->where('admin_id', $complaint->complaint_created_by)->first();
+    //         $complaint->admin_name = $admin->admin_name ?? '';
+    //     }
+
+    //     foreach ($complaints as $complaint) {
+    //         if (!in_array($complaint->complaint_status, [4, 5])) {
+    //             $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+    //         } else {
+    //             $complaint->pending_days = 0;
+    //         }
+    //     }
+
+    //     return view('manager/operator_complaints', compact('complaints'));
+    // }
+
     public function viewOperatorComplaints(Request $request)
     {
-        $complaints = Complaint::where('type', 2)->get();
+        // $vidhansabhaId = 49;
+        // $districtId = 11;
+        // $divisionId = 2;
 
-        foreach ($complaints as $complaint) {
-            $admin = DB::table('admin_master')->where('admin_id', $complaint->complaint_created_by)->first();
-            $complaint->admin_name = $admin->admin_name ?? '';
+        $query = Complaint::where('type', 2);
+        // ->where('district_id', $districtId)
+        // ->where('vidhansabha_id', $vidhansabhaId);
+
+        // Filters
+
+        if ($request->filled('complaint_status')) {
+            $query->where('complaint_status', $request->complaint_status);
         }
 
-        foreach ($complaints as $complaint) {
-            if (!in_array($complaint->complaint_status, [4, 5])) {
-                $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
-            } else {
-                $complaint->pending_days = 0;
+        if ($request->filled('complaint_type')) {
+            $query->where('complaint_type', $request->complaint_type);
+        } else {
+            // Apply default filter for initial load or sabhi
+            $query->where('complaint_type', 'समस्या');
+        }
+
+        // if ($request->filled('department_id')) {
+        //     $query->where('complaint_department', $request->department_id);
+        // }
+
+        // if ($request->filled('subject_id')) {
+        //     $query->where('issue_title', $request->subject_id);
+        // }
+
+        if ($request->filled('department_id')) {
+            $department = Department::find($request->department_id);
+            if ($department) {
+                $query->where('complaint_department', $department->department_name);
             }
         }
 
-        return view('manager/operator_complaints', compact('complaints'));
+        if ($request->filled('subject_id')) {
+            $subject = Subject::find($request->subject_id);
+            if ($subject) {
+                $query->where('issue_title', $subject->subject);
+            }
+        }
+
+        if ($request->filled('mandal_id')) {
+            $query->where('mandal_id', $request->mandal_id);
+        }
+
+        if ($request->filled('gram_id')) {
+            $query->where('gram_id', $request->gram_id);
+        }
+
+        if ($request->filled('polling_id')) {
+            $query->where('polling_id', $request->polling_id);
+        }
+
+        if ($request->filled('area_id')) {
+            $query->where('area_id', $request->area_id);
+        }
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('posted_date', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('posted_date', '<=', $request->to_date);
+        }
+
+        $complaints = $query->orderBy('posted_date', 'desc')->get();
+
+        // Add extra data to each complaint
+        foreach ($complaints as $complaint) {
+            $admin = DB::table('admin_master')->where('admin_id', $complaint->complaint_created_by)->first();
+            $complaint->admin_name = $admin->admin_name ?? '';
+            $complaint->pending_days = in_array($complaint->complaint_status, [4, 5])
+                ? 0
+                : \Carbon\Carbon::parse($complaint->posted_date)->diffInDays(now());
+        }
+
+        if ($request->ajax()) {
+            $html = '';
+
+            foreach ($complaints as $index => $complaint) {
+                $html .= '<tr>';
+                $html .= '<td>' . ($index + 1) . '</td>';
+                $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
+
+                $html .= '<td title="
+            विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
+            जिला: ' . ($complaint->district->district_name ?? 'N/A') . '
+            विधानसभा: ' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '
+            मंडल: ' . ($complaint->mandal->mandal_name ?? 'N/A') . '
+            नगर/ग्राम: ' . ($complaint->gram->nagar_name ?? 'N/A') . '
+            मतदान केंद्र: ' . ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')
+            क्षेत्र: ' . ($complaint->area->area_name ?? 'N/A') . '">
+            ' . ($complaint->division->division_name ?? 'N/A') . '<br>' .
+                    ($complaint->district->district_name ?? 'N/A') . '<br>' .
+                    ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '<br>' .
+                    ($complaint->mandal->mandal_name ?? 'N/A') . '<br>' .
+                    ($complaint->gram->nagar_name ?? 'N/A') . '<br>' .
+                    ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')<br>' .
+                    ($complaint->area->area_name ?? 'N/A') .
+                    '</td>';
+
+                $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
+                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y') . '</td>';
+
+                // Pending Days or Status
+                if (in_array($complaint->complaint_status, [4, 5])) {
+                    $html .= '<td>0 दिन</td>';
+                } else {
+                    $html .= '<td>' . $complaint->pending_days . ' दिन</td>';
+                }
+
+                // Status Text
+                $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
+                $html .= '<td>' . ($complaint->admin_name ?? '') . '</td>';
+
+                // Attachment
+                if (!empty($complaint->issue_attachment)) {
+                    $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
+                } else {
+                    $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
+                }
+
+                // Action Button
+                $html .= '<td><a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+
+                $html .= '</tr>';
+            }
+
+            return response()->json([
+                'html' => $html,
+                'count' => $complaints->count(),
+            ]);
+        }
+
+        $mandals = Mandal::where('vidhansabha_id', 49)->get();
+        $grams = $request->mandal_id ? Nagar::where('mandal_id', $request->mandal_id)->get() : collect();
+        $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
+        $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
+        $departments = Department::all();
+        $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
+
+        return view('manager.operator_complaints', compact(
+            'complaints',
+            'mandals',
+            'grams',
+            'pollings',
+            'areas',
+            'departments',
+            'subjects'
+        ));
     }
 
+    public function getSubjects($department_id)
+    {
+        $subjects = Subject::where('department_id', $department_id)->get(['subject_id', 'subject']);
+        return response()->json($subjects);
+    }
+
+
+    public function getgramPollings($nagar_id)
+    {
+        $pollings = Polling::where('nagar_id', $nagar_id)->get([
+            'gram_polling_id',
+            'polling_name',
+            'polling_no'
+        ]);
+
+        return response()->json($pollings);
+    }
 
 
     public function messageSent($complaint_number, $mobile)
