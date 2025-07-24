@@ -74,7 +74,9 @@ Route::middleware('checklogin')->group(function () {
 
     Route::get('admin/birthdays', [AdminController::class, 'birthday_index'])->name('birthdays.index');
 
-    Route::get('/admin/view_complaint', [AdminController::class, 'complaint_index'])->name('complaints.index');
+    // Route::get('/admin/view_complaint', [AdminController::class, 'complaint_index'])->name('complaints.index');
+    Route::get('/admin/commander_complaints', [AdminController::class, 'CommanderComplaints'])->name('commander.complaint.view');
+    Route::get('/admin/operator_complaints', [AdminController::class, 'OperatorComplaints'])->name('operator.complaint.view');
     Route::get('/admin/details_complaint/{id}', [AdminController::class, 'complaint_show'])->name('complaints.show');
     Route::post('/admin/complaints/{id}/reply', [AdminController::class, 'postReply'])->name('complaints.reply');
 
@@ -121,6 +123,15 @@ Route::middleware('checklogin')->group(function () {
     Route::post('/admin/membership_form', [AdminController::class, 'memberstore'])->name('membership.store');
     Route::post('/get-districts', [AdminController::class, 'getDistricts'])->name('get.districts');
     Route::post('/get-vidhansabhas', [AdminController::class, 'getVidhansabhasByDistrict'])->name('get.vidhansabhaD');
+
+     Route::get('/admin/get-districts/{division_id}', [AdminController::class, 'districtsfetch']);
+    Route::get('/admin/get-vidhansabha/{district_id}', [AdminController::class, 'vidhansabhafetch']);
+    Route::get('/admin/get-mandal/{vidhansabha_id}', [AdminController::class, 'getMandals']);
+    Route::get('/admin/get-nagar/{mandal_id}', [AdminController::class, 'getNagars']);
+    Route::get('/admin/get-pollings/{mandal_id}', [AdminController::class, 'getPollings']);
+    Route::get('/admin/get-areas/{polling_id}', [AdminController::class, 'getAreas']);
+     Route::get('/admin/get-gram_pollings/{mandal_id}', [AdminController::class, 'getgramPollings']);
+    Route::get('/admin/get-subjects/{department_id}', [AdminController::class, 'getSubjects']);
 });
 
 
@@ -266,6 +277,9 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/manager/get-areas/{polling_id}', [ManagerController::class, 'getAreas']);
     Route::get('/manager/get-subjects/{department_id}', [ManagerController::class, 'getSubjects']);
     Route::get('/manager/get-gram_pollings/{mandal_id}', [ManagerController::class, 'getgramPollings']);
+    Route::get('/manager/get-pollings-gram/{mandal_id}', [ManagerController::class, 'getPollingsByNagar']);
+    Route::get('/get-designations/{department_name}', [ManagerController::class, 'getDesignations']);
+    Route::get('/manager/get-subjects-department/{departmentName}', [ManagerController::class, 'getSubjectsByDepartment']);
 
     Route::get('/manager/get-parent-mandal/{nagar_id}', [ManagerController::class, 'getMandalFromNagar']);
     Route::get('/manager/get-mandal-from-id/{mandal_id}', [ManagerController::class, 'getMandalOptionsFromId']);
@@ -300,12 +314,19 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/operator/get-nagar/{mandal_id}', [OperatorController::class, 'getNagars']);
     Route::get('/operator/get-pollings/{mandal_id}', [OperatorController::class, 'getPollings']);
     Route::get('/operator/get-areas/{polling_id}', [OperatorController::class, 'getAreas']);
+    Route::get('/operator/get-gram_pollings/{mandal_id}', [OperatorController::class, 'getgramPollings']);
+    Route::get('/operator/get-subjects/{department_id}', [OperatorController::class, 'getSubjects']);
 
     Route::get('/operator/get-parent-mandal/{nagar_id}', [OperatorController::class, 'getMandalFromNagar']);
     Route::get('/operator/get-mandal-from-id/{mandal_id}', [OperatorController::class, 'getMandalOptionsFromId']);
     Route::get('/operator/get-parent-vidhansabha/{mandal_id}', [OperatorController::class, 'getVidhansabhaFromMandal']);
     Route::get('/operator/get-parent-district/{vidhansabha_id}', [OperatorController::class, 'getDistrictFromVidhansabha']);
     Route::get('/operator/get-parent-division/{district_id}', [OperatorController::class, 'getDivisionFromDistrict']);
+
+    Route::get('/get-polling-area/{nagarId}', [OperatorController::class, 'getPollingAndArea']);
+    Route::get('/get-designations/{department_name}', [OperatorController::class, 'getDesignations'])->name('get.designations');
+    Route::post('operator/ajax/designation', [OperatorController::class, 'getDesignation'])->name('ajax.designation');
+    Route::get('/operator/get-subjects-department/{departmentName}', [OperatorController::class, 'getSubjectsByDepartment']);
 
     Route::get('/operator/get-vidhansabha-from-id/{vidhansabha_id}', [OperatorController::class, 'getVidhansabhaOptionsFromId']);
     Route::get('/operator/get-district-from-id/{district_id}', [OperatorController::class, 'getDistrictOptionsFromId']);
@@ -326,6 +347,11 @@ Route::middleware('checkmember')->group(function () {
     Route::get('/get-nagar/{mandal_id}', [MemberController::class, 'getNagars']);
     Route::get('/get-polling/{mandal_id}', [MemberController::class, 'getPollings']);
     Route::get('/get-area/{polling_id}', [MemberController::class, 'getAreas']);
+    Route::get('/member/get-pollings/{mandal_id}', [MemberController::class, 'pollingsfetch']);
+    Route::get('/member/get-areas/{polling_id}', [MemberController::class, 'areasfetch']);
+    Route::get('/member/get-gram_pollings/{mandal_id}', [MemberController::class, 'getgramPollings']);
+    Route::get('/member/get-subjects/{department_id}', [MemberController::class, 'getSubjects']);
+
 
     Route::get('/member/view_complaint', [MemberController::class, 'complaint_index'])->name('complaints.view');
     Route::get('/member/details_complaint/{id}', [MemberController::class, 'complaint_show'])->name('complaint.show');

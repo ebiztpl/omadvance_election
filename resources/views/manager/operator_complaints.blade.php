@@ -31,7 +31,6 @@
                         <div class="col-md-2">
                             <label>शिकायत प्रकार</label>
                             <select name="complaint_type" id="complaint_type" class="form-control">
-                                <option value="">-- सभी --</option>
                                 <option value="शुभ सुचना">शुभ सुचना</option>
                                 <option value="अशुभ सुचना">अशुभ सुचना</option>
                                 <option value="समस्या" selected>समस्या</option>
@@ -86,7 +85,8 @@
                             <select name="polling_id" id="polling_id" class="form-control">
                                 <option value="">-- सभी --</option>
                                 @foreach ($pollings as $p)
-                                    <option value="{{ $p->gram_polling_id }}">{{ $p->polling_name }} ({{ $p->polling_no }})
+                                    <option value="{{ $p->gram_polling_id }}">{{ $p->polling_name }}
+                                        ({{ $p->polling_no }})
                                     </option>
                                 @endforeach
                             </select>
@@ -98,6 +98,16 @@
                                 <option value="">-- सभी --</option>
                                 @foreach ($areas as $a)
                                     <option value="{{ $a->area_id }}">{{ $a->area_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>उत्तर</label>
+                            <select name="reply_id" id="reply_id" class="form-control">
+                                <option value="">-- सभी --</option>
+                                @foreach ($replyOptions as $option)
+                                    <option value="{{ $option->reply_id }}">{{ $option->reply }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -117,13 +127,15 @@
                             <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर लागू करें</button>
                         </div>
                     </div>
+                </div>
 
-                    {{-- <div class="row mt-3">
-                        
-                    </div> --}}
+                <div class="text-center mt-2">
+                    <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
+                        title="फ़िल्टर छुपाएं"></i>
                 </div>
             </div>
         </div>
+
         <div class="row">
             <div class="col-12">
                 <div class="card">
@@ -147,7 +159,7 @@
                                 <thead>
                                     <tr>
                                         <th>क्र.</th>
-                                        <th>शिकायतकर्ता-मोबाइल</th>
+                                        <th>शिकायतकर्ता</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
                                         <th>विभाग</th>
                                         <th>शिकायत की तिथि</th>
@@ -162,7 +174,8 @@
                                     @foreach ($complaints as $index => $complaint)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td> {{ $complaint->name ?? 'N/A' }}
+                                            <td> {{ $complaint->complaint_number ?? 'N/A' }} <br>
+                                                {{ $complaint->name ?? 'N/A' }} <br>
                                                 {{ $complaint->mobile_number ?? '' }}
                                             </td>
 
@@ -190,7 +203,8 @@
                                             </td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                           <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i') }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i') }}
+                                            </td>
                                             {{-- <td>
                                                 @if (!in_array($complaint->complaint_status, [4, 5]))
                                                     {{ $complaint->pending_days }} दिन
@@ -215,10 +229,11 @@
                                                 @if (!empty($complaint->issue_attachment))
                                                     <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
                                                         target="_blank" class="btn btn-sm btn-success">
-                                                        {{ $complaint->issue_attachment }}
+                                                        देखें
                                                     </a>
-                                                @else
-                                                    <button class="btn btn-sm btn-secondary" disabled>No Attachment</button>
+                                                    {{-- @else
+                                                    <button class="btn btn-sm btn-secondary" disabled>No 
+                                                        Attachment</button> --}}
                                                 @endif
                                             </td>
                                             <td>
@@ -305,7 +320,7 @@
                     $('#subject_id').html('<option value="">विषय</option>');
 
                     if (departmentId) {
-                        $.get('/manager/get-subjects/' + departmentId, function(data) {
+                        $.get('/admin/get-subjects/' + departmentId, function(data) {
                             let html = '<option value="">विषय</option>';
                             data.forEach(function(subject) {
                                 html +=
@@ -328,7 +343,8 @@
                         polling_id: $('#polling_id').val(),
                         area_id: $('#area_id').val(),
                         from_date: $('#from_date').val(),
-                        to_date: $('#to_date').val()
+                        to_date: $('#to_date').val(),
+                        reply_id: $('#reply_id').val()
                     };
 
                     $.ajax({
@@ -341,6 +357,38 @@
                         },
                         error: function() {
                             alert('कुछ गड़बड़ हो गई। कृपया पुनः प्रयास करें।');
+                        }
+                    });
+                });
+
+
+
+                const filterForm = $('#complaintFilterForm');
+                const toggleIcon = $('#toggleFilterIcon');
+
+                // Check saved state on page load
+                const isHidden = localStorage.getItem('filterHidden') === 'true';
+
+                if (isHidden) {
+                    filterForm.hide();
+                    toggleIcon.removeClass('fa-angle-up').addClass('fa-angle-down').attr('title', 'फ़िल्टर दिखाएं');
+                }
+
+                // Toggle on icon click
+                toggleIcon.on('click', function() {
+                    filterForm.slideToggle(300, function() {
+                        const isVisible = filterForm.is(':visible');
+
+                        // Save state
+                        localStorage.setItem('filterHidden', !isVisible);
+
+                        // Toggle icon direction and tooltip
+                        if (isVisible) {
+                            toggleIcon.removeClass('fa-angle-down').addClass('fa-angle-up').attr(
+                                'title', 'फ़िल्टर छुपाएं');
+                        } else {
+                            toggleIcon.removeClass('fa-angle-up').addClass('fa-angle-down').attr(
+                                'title', 'फ़िल्टर दिखाएं');
                         }
                     });
                 });
