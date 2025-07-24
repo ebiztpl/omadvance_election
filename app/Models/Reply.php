@@ -16,6 +16,7 @@ class Reply extends Model
         'complaint_id',
         'complaint_reply',
         'c_video',
+        'selected_reply',
         'cb_photo',
         'ca_photo',
         'reply_from',
@@ -49,5 +50,11 @@ class Reply extends Model
                 'post_date' => now(),
             ]);
         }
+    }
+
+
+    public function predefinedReply()
+    {
+        return $this->belongsTo(ComplaintReply::class, 'selected_reply', 'reply_id');
     }
 }

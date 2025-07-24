@@ -28,4 +28,9 @@ class Polling extends Model
     {
         return $this->hasMany(Area::class, 'polling_id', 'gram_polling_id');
     }
+
+    public function area()
+    {
+        return $this->hasOne(Area::class, 'polling_id', 'gram_polling_id');
+    }
 }

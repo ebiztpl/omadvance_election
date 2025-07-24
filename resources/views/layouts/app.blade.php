@@ -26,7 +26,6 @@
 
 
     <style>
-        
         .form-control {
             border: 1px solid gray;
         }
@@ -240,6 +239,42 @@
         .icon-arrow-right {
             font-size: 11px !important;
         }
+
+
+        @media (min-width: 601px) {
+            .nav-header {
+                height: 50px;
+                width: 205px;
+            }
+
+            .quixnav {
+                width: 205px;
+            }
+
+            .header {
+                height: 50px;
+            }
+            
+            .quixnav {
+                top: 3rem;
+            }
+
+            [data-header-position="fixed"] .content-body {
+                padding-top: 2.5rem;
+            }
+
+            .header .header-content {
+                padding-left: 0.3125rem;
+            }
+
+            .content-body {
+                margin-left: 11.1875rem;
+            }
+
+            .content-body .container-fluid {
+                padding-right: 0px;
+            }
+        }
     </style>
 
 </head>
@@ -296,7 +331,7 @@
 
     {{-- <script src="{{ asset('focus/assets/js/dashboard/dashboard-1.js') }}"></script> --}}
     <script>
-        $("#loader-wrapper").show(); 
+        $("#loader-wrapper").show();
         $(window).on('load', () => $("#loader-wrapper").hide());
     </script>
 

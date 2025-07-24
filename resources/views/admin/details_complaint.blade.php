@@ -12,6 +12,14 @@
 @section('content')
     <div class="container">
 
+
+        <div id="success-alert" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+            <span id="success-message"></span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between">
                 <h5>{{ $complaint->complaint_number }}</h5>
@@ -28,11 +36,19 @@
                         'संभाग का नाम' => $complaint->division->division_name ?? '',
                         'जिले का नाम' => $complaint->district->district_name ?? '',
                         'विधानसभा का नाम' => $complaint->vidhansabha->vidhansabha ?? '',
-                        'मंडल का नाम' => $complaint->mandal->mandal_name ?? '',
-                        'नगर केंद्र/ग्राम केंद्र' => $complaint->gram->nagar_name ?? '',
-                        'मतदान केंद्र' =>
-                            ($complaint->polling->polling_name ?? '') . '-' . $complaint->polling->polling_no,
-                        'ग्राम चौपाल/वार्ड चौपाल' => $complaint->area->area_name ?? '',
+                        'नगर/मंडल' =>
+                            ($complaint->gram->nagar_name ?? '-') . ' - ' . ($complaint->mandal->mandal_name ?? '-'),
+                        'मतदान केंद्र/ग्राम/वार्ड' =>
+                            ($complaint->polling->polling_name ?? '-') .
+                            ' (' .
+                            ($complaint->polling->polling_no ?? '-') .
+                            ') - ' .
+                            ($complaint->area->area_name ?? '-'),
+                        // 'मंडल का नाम' => $complaint->mandal->mandal_name ?? '',
+                        // 'नगर केंद्र/ग्राम केंद्र' => $complaint->gram->nagar_name ?? '',
+                        // 'मतदान केंद्र' =>
+                        //     ($complaint->polling->polling_name ?? '') . '-' . $complaint->polling->polling_no,
+                        // 'ग्राम चौपाल/वार्ड चौपाल' => $complaint->area->area_name ?? '',
                         'Gender' => $complaint->registration->gender ?? '',
                         'Religion' => $complaint->registration->religion ?? '',
                         'Caste' => $complaint->registration->caste ?? '',
@@ -45,42 +61,46 @@
                 @endphp
 
                 @foreach ($fields as $label => $value)
-                    <div class="col-md-4" style="margin-top: 8px;">
-                        <label class="form-label">{{ $label }}</label>
+                    <div class="col-md-4 d-flex align-items-center mb-2">
+                        <label class="form-label me-2 mr-2 mb-0"
+                            style="white-space: nowrap; min-width: 140px;">{{ $label }}:</label>
                         <input type="text" class="form-control" value="{{ $value }}" disabled>
                     </div>
                 @endforeach
 
-                <div class="col-md-6" style="margin-top: 8px;">
-                    <label class="form-label">पूरा पता</label>
-                    <textarea class="form-control" rows="4" disabled>{{ $complaint->address }}</textarea>
-                </div>
-
-                <div class="col-md-6" style="margin-top: 8px;">
-                    <label class="form-label">समस्या का विषय</label>
-                    <textarea class="form-control" rows="4" disabled>{{ $complaint->issue_title }}</textarea>
-                </div>
-
-                <div class="col-md-12" style="margin-top: 8px;">
-                    <label class="form-label">समस्या</label>
-                    <textarea class="form-control" rows="5" disabled>{{ $complaint->issue_description }}</textarea>
-                </div>
-
-                <div class="col-md-12" style="margin-top: 10px;">
-                    <label class="form-label">Attachment</label>
+                <div class="col-md-4" style="justify-content: center; align-items:center">
+                    <label class="form-label">फ़ाइल अटैचमेंट</label>
                     @if (!empty($complaint->issue_attachment))
                         <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
-                            class="btn btn-primary" target="_blank">Open Attachment</a>
+                            class="btn btn-primary" target="_blank">अटैचमेंट खोलें</a>
                     @else
-                        <p>No attachment</p>
+                        <button class="btn btn-sm btn-secondary" disabled>कोई अटैचमेंट नहीं है</button>
                     @endif
+                </div>
+
+
+                <div class="col-md-4 d-flex align-items-start mt-3">
+                    <label class="form-label mr-2 me-2" style="white-space: nowrap; min-width: 120px;">पूरा पता:</label>
+                    <textarea class="form-control" rows="3" style="flex: 1;" disabled>{{ $complaint->address }}</textarea>
+                </div>
+
+
+                <div class="col-md-4 d-flex align-items-start mt-3" style="margin-top: 8px;">
+                    <label class="form-label mr-2 me-2" style="white-space: nowrap; min-width: 120px;">समस्या का
+                        विषय</label>
+                    <textarea class="form-control" rows="3" disabled>{{ $complaint->issue_title }}</textarea>
+                </div>
+
+                <div class="col-md-4 d-flex align-items-start mt-3" style="margin-top: 8px;">
+                    <label class="form-label mr-2 me-2" style="white-space: nowrap; min-width: 120px;">समस्या</label>
+                    <textarea class="form-control" rows="3" disabled>{{ $complaint->issue_description }}</textarea>
                 </div>
 
             </div>
         </div>
 
         {{-- Reply History --}}
-        <div class="card container" style="color: #000; ">
+        {{-- <div class="card container" style="color: #000; ">
             <h5 class="my-3">Reply History for {{ $complaint->complaint_number }}</h5>
             <div class="row">
                 @foreach ($complaint->replies as $reply)
@@ -120,11 +140,72 @@
                     </div>
                 @endforeach
             </div>
+        </div> --}}
+        <div class="card container" style="color: #000;">
+            <h5 class="my-3">Reply History for {{ $complaint->complaint_number }}</h5>
+
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>समस्या/समाधान</th>
+                            <th>दिनांक</th>
+                            <th>प्रतिक्रिया देने वाला</th>
+                            <th>निर्धारित उत्तर</th>
+                            <th>पूर्व स्थिति की तस्वीर</th>
+                            <th>बाद की तस्वीर</th>
+                            <th>यूट्यूब लिंक</th>
+                        </tr>
+                    </thead>
+                    <tbody style="color: #000;">
+                        @forelse ($complaint->replies as $reply)
+                            @php
+                                $replyFromName =
+                                    $reply->reply_from == 1 ? $reply->complaint->user->name ?? 'User' : 'BJS Team';
+                            @endphp
+                            <tr>
+                                <td>{{ $reply->complaint_reply }}</td>
+                                <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i') : 'N/A' }}
+                                </td>
+                                <td>{{ $replyFromName }}</td>
+                                <td>{{ $reply->predefinedReply->reply ?? '-' }}</td>
+                                <td>
+                                    @if (!empty($reply->cb_photo))
+                                        <a href="{{ asset($reply->cb_photo) }}" class="btn btn-sm btn-primary"
+                                            target="_blank">खोलें</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td>
+                                    @if (!empty($reply->ca_photo))
+                                        <a href="{{ asset($reply->ca_photo) }}" class="btn btn-sm btn-primary"
+                                            target="_blank">खोलें</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td>
+                                    @if (!empty($reply->c_video))
+                                        <a href="{{ $reply->c_video }}" class="btn btn-sm btn-primary"
+                                            target="_blank">लिंक</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center">कोई जवाब उपलब्ध नहीं है।</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-
         {{-- Reply Form --}}
-        <div class="card">
+        {{-- <div class="card">
             <div class="card-header" style="color: #000">Reply to {{ $complaint->complaint_number }}</div>
             <div class="card-body">
                 <form method="POST" action="{{ route('complaints.reply', $complaint->complaint_id) }}"
@@ -163,6 +244,151 @@
                     </div>
                 </form>
             </div>
+        </div> --}}
+
+        <div class="card">
+            <div class="card-header" style="color: #000">Reply to {{ $complaint->complaint_number }}</div>
+            <div class="card-body">
+                <form id="replyForm" method="POST" action="{{ route('complaints.reply', $complaint->complaint_id) }}"
+                    enctype="multipart/form-data">
+                    @csrf
+
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label ">शिकायत की स्थिति: <span class="tx-danger"
+                                    style="color: red;">*</span></label>
+                            <select name="cmp_status" class="form-control" required>
+                                <option value="">--चुने--</option>
+                                <option value="1" {{ $complaint->complaint_status == 1 ? 'selected' : '' }}>शिकायत
+                                    दर्ज
+                                </option>
+                                <option value="2" {{ $complaint->complaint_status == 2 ? 'selected' : '' }}>प्रक्रिया
+                                    में
+                                </option>
+                                <option value="3" {{ $complaint->complaint_status == 3 ? 'selected' : '' }}>स्थगित
+                                </option>
+                                <option value="4" {{ $complaint->complaint_status == 4 ? 'selected' : '' }}>पूर्ण
+                                </option>
+                                <option value="5" {{ $complaint->complaint_status == 5 ? 'selected' : '' }}>रद्द
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">पूर्व निर्धारित उत्तर चुनें:</label>
+                            <select name="selected_reply" id="selected_reply" class="form-control">
+                                <option value="">--चयन करें--</option>
+                                @foreach ($replyOptions as $option)
+                                    <option value="{{ $option->reply_id }}">{{ $option->reply }}</option>
+                                @endforeach
+                                <option value="अन्य">अन्य</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">समस्या/समाधान में प्रगति</label>
+                            <textarea name="cmp_reply" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें" class="form-control"
+                                rows="6" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <label class="form-label">पूर्व स्थिति की तस्वीर</label>
+                            <input type="file" name="cb_photo[]" class="form-control" multiple accept="image/*">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">बाद की तस्वीर</label>
+                            <input type="file" name="ca_photo[]" class="form-control" multiple accept="image/*">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">यूट्यूब लिंक</label>
+                            <input type="url" name="c_video" class="form-control">
+                        </div>
+                    </div>
+
+
+                    {{-- <div class="col-md-2">
+                        <label class="form-label">पूर्व स्थिति की तस्वीर</label>
+                        <input type="file" name="cb_photo[]" class="form-control" multiple accept="image/*">
+                        <label class="form-label mt-3">बाद की तस्वीर</label>
+                        <input type="file" name="ca_photo[]" class="form-control" multiple accept="image/*">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">यूट्यूब लिंक</label>
+                        <input type="url" name="c_video" class="form-control">
+                        <label class="form-label mt-3">शिकायत की स्थिति: <span class="tx-danger"
+                                style="font-size: 11px; color: red;">*</span></label>
+                        <select name="cmp_status" class="form-control" required>
+                            <option value="">--चुने--</option>
+                            <option value="1" {{ $complaint->complaint_status == 1 ? 'selected' : '' }}>शिकायत
+                                दर्ज
+                            </option>
+                            <option value="2" {{ $complaint->complaint_status == 2 ? 'selected' : '' }}>प्रक्रिया
+                                में
+                            </option>
+                            <option value="3" {{ $complaint->complaint_status == 3 ? 'selected' : '' }}>स्थगित
+                            </option>
+                            <option value="4" {{ $complaint->complaint_status == 4 ? 'selected' : '' }}>पूर्ण
+                            </option>
+                            <option value="5" {{ $complaint->complaint_status == 5 ? 'selected' : '' }}>रद्द
+                            </option>
+                        </select>
+                    </div> --}}
+
+                    <div class="col-12 mt-3">
+                        <button type="submit" class="btn btn-primary">शिकायत दर्ज करें</button>
+                    </div>
+
+                </form>
+            </div>
         </div>
     </div>
+
+
+    @push('scripts')
+        <script>
+            $(document).ready(function() {
+                $('#replyForm').on('submit', function(e) {
+                    e.preventDefault();
+
+                    $("#loader-wrapper").show();
+                    var form = $(this)[0];
+                    var formData = new FormData(form);
+
+                    $.ajax({
+                        url: $(form).attr('action'),
+                        method: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            $("#loader-wrapper").hide();
+                            $('#success-message').text(response.message);
+
+                            $('#success-alert').removeClass('d-none');
+                            window.scrollTo({
+                                top: 0,
+                                behavior: 'smooth'
+                            });
+                            $('#replyForm')[0].reset();
+
+                            setTimeout(function() {
+                                $('#success-alert').addClass('d-none');
+                            }, 5000);
+                        },
+                        error: function(xhr) {
+                            $("#loader-wrapper").hide();
+                            alert('अपडेट करते समय एक त्रुटि हुई।');
+                        }
+                    });
+                });
+            });
+        </script>
+    @endpush
 @endsection

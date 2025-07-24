@@ -32,8 +32,17 @@
                 <li><a href="{{ route('birthdays.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">सदस्य जन्मदिन</span></a></li>
 
-                <li><a href="{{ route('complaints.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">समस्याएँ देखे</span></a></li>
+
+                <li><a class="has-arrow" href="#" aria-expanded="false"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">समस्याएँ देखे</span></a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('commander.complaint.view') }}">कमांडर समस्याएँ</a></li>
+                        <li><a href="{{ route('operator.complaint.view') }}">कार्यालय समस्याएँ</a></li>
+                    </ul>
+                </li>
+
+                {{-- <li><a href="{{ route('complaints.index') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">समस्याएँ देखे</span></a></li> --}}
 
                 <li><a href="{{ route('responsibility.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">दायित्व नियुक्त करना</span></a></li>
@@ -92,19 +101,19 @@
                 <li><a href="{{ route('department.index') }}"><i class=" icon icon-arrow-right"></i><span
                             class="nav-text">विभाग जोड़े</span></a></li>
 
-                            <li><a href="{{ route('designation.master') }}"><i class="icon icon-arrow-right"></i><span
+                <li><a href="{{ route('designation.master') }}"><i class="icon icon-arrow-right"></i><span
                             class=" nav-text">पद जोड़े</span></a></li>
 
-                             <li><a href="{{ route('adhikari.index') }}"><i class="icon icon-arrow-right"></i><span
+                <li><a href="{{ route('adhikari.index') }}"><i class="icon icon-arrow-right"></i><span
                             class=" nav-text">अधिकारी जोड़ें</span></a></li>
 
-                             <li><a href="{{ route('complaintSubject.master') }}"><i class="icon icon-arrow-right"></i><span
+                <li><a href="{{ route('complaintSubject.master') }}"><i class="icon icon-arrow-right"></i><span
                             class=" nav-text">शिकायत का विषय जोड़े</span></a></li>
 
-                            <li><a href="{{ route('complaintReply.index') }}"><i class="icon icon-arrow-right"></i><span
+                <li><a href="{{ route('complaintReply.index') }}"><i class="icon icon-arrow-right"></i><span
                             class=" nav-text">शिकायत का जवाब जोड़े</span></a></li>
 
-                            
+
 
                 <li><a href="{{ route('jati_polling.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">जातिगत मतदाता प्रविष्टि</span></a></li>
@@ -114,8 +123,8 @@
 
 
 
-                <li><a class="has-arrow" href="#" aria-expanded="false"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">समस्याएँ देखे</span></a>
+                <li><a class="has-arrow" href="#" aria-expanded="false"><i
+                            class="icon icon-arrow-right"></i><span class="nav-text">समस्याएँ देखे</span></a>
                     <ul aria-expanded="false">
                         <li><a href="{{ route('commander.complaints.view') }}">कमांडर समस्याएँ</a></li>
                         <li><a href="{{ route('operator.complaints.view') }}">कार्यालय समस्याएँ</a></li>

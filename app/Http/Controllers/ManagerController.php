@@ -908,7 +908,69 @@ class ManagerController extends Controller
 
     public function viewCommanderComplaints(Request $request)
     {
-        $complaints = Complaint::where('type', 1)->get();
+        $query = Complaint::where('type', 1);
+
+        if ($request->filled('complaint_status')) {
+            $query->where('complaint_status', $request->complaint_status);
+        }
+
+        if ($request->filled('complaint_type')) {
+            $query->where('complaint_type', $request->complaint_type);
+        } 
+
+        // if ($request->filled('department_id')) {
+        //     $query->where('complaint_department', $request->department_id);
+        // }
+
+        // if ($request->filled('subject_id')) {
+        //     $query->where('issue_title', $request->subject_id);
+        // }
+
+        if ($request->filled('department_id')) {
+            $department = Department::find($request->department_id);
+            if ($department) {
+                $query->where('complaint_department', $department->department_name);
+            }
+        }
+
+        if ($request->filled('reply_id')) {
+            $query->whereHas('replies', function ($q) use ($request) {
+                $q->where('selected_reply', $request->reply_id);
+            });
+        }
+
+        if ($request->filled('subject_id')) {
+            $subject = Subject::find($request->subject_id);
+            if ($subject) {
+                $query->where('issue_title', $subject->subject);
+            }
+        }
+
+        if ($request->filled('mandal_id')) {
+            $query->where('mandal_id', $request->mandal_id);
+        }
+
+        if ($request->filled('gram_id')) {
+            $query->where('gram_id', $request->gram_id);
+        }
+
+        if ($request->filled('polling_id')) {
+            $query->where('polling_id', $request->polling_id);
+        }
+
+        if ($request->filled('area_id')) {
+            $query->where('area_id', $request->area_id);
+        }
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('posted_date', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('posted_date', '<=', $request->to_date);
+        }
+
+        $complaints = $query->orderBy('posted_date', 'desc')->get();
 
         foreach ($complaints as $complaint) {
             if (!in_array($complaint->complaint_status, [4, 5])) {
@@ -918,7 +980,81 @@ class ManagerController extends Controller
             }
         }
 
-        return view('manager/commander_complaints', compact('complaints'));
+        if ($request->ajax()) {
+            $html = '';
+
+            foreach ($complaints as $index => $complaint) {
+                $html .= '<tr>';
+                $html .= '<td>' . ($index + 1) . '</td>';
+                $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
+
+                $html .= '<td title="
+            विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
+            जिला: ' . ($complaint->district->district_name ?? 'N/A') . '
+            विधानसभा: ' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '
+            मंडल: ' . ($complaint->mandal->mandal_name ?? 'N/A') . '
+            नगर/ग्राम: ' . ($complaint->gram->nagar_name ?? 'N/A') . '
+            मतदान केंद्र: ' . ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')
+            क्षेत्र: ' . ($complaint->area->area_name ?? 'N/A') . '">
+            ' . ($complaint->division->division_name ?? 'N/A') . '<br>' .
+                    ($complaint->district->district_name ?? 'N/A') . '<br>' .
+                    ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '<br>' .
+                    ($complaint->mandal->mandal_name ?? 'N/A') . '<br>' .
+                    ($complaint->gram->nagar_name ?? 'N/A') . '<br>' .
+                    ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')<br>' .
+                    ($complaint->area->area_name ?? 'N/A') .
+                    '</td>';
+
+                $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
+                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y') . '</td>';
+
+                // Pending Days or Status
+                if (in_array($complaint->complaint_status, [4, 5])) {
+                    $html .= '<td>0 दिन</td>';
+                } else {
+                    $html .= '<td>' . $complaint->pending_days . ' दिन</td>';
+                }
+
+                // Status Text
+                $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
+                $html .= '<td>' . ($complaint->registrationDetails->name ?? '') . '</td>';
+
+                // Attachment
+                if (!empty($complaint->issue_attachment)) {
+                    $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
+                } else {
+                    $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
+                }
+
+                // Action Button
+                $html .= '<td><a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+
+                $html .= '</tr>';
+            }
+
+            return response()->json([
+                'html' => $html,
+                'count' => $complaints->count(),
+            ]);
+        }
+
+        $mandals = Mandal::where('vidhansabha_id', 49)->get();
+        $grams = $request->mandal_id ? Nagar::where('mandal_id', $request->mandal_id)->get() : collect();
+        $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
+        $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
+        $departments = Department::all();
+        $replyOptions = ComplaintReply::all();
+        $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
+
+        return view('manager/commander_complaints', compact(
+            'complaints',
+            'mandals',
+            'grams',
+            'pollings',
+            'areas',
+            'departments',
+            'subjects',
+            'replyOptions'));
     }
 
     // public function viewOperatorComplaints(Request $request)
@@ -947,7 +1083,7 @@ class ManagerController extends Controller
         // $districtId = 11;
         // $divisionId = 2;
 
-        $query = Complaint::where('type', 2);
+        $query = Complaint::with('registrationDetails')->where('type', 2);
         // ->where('district_id', $districtId)
         // ->where('vidhansabha_id', $vidhansabhaId);
 
@@ -977,6 +1113,12 @@ class ManagerController extends Controller
             if ($department) {
                 $query->where('complaint_department', $department->department_name);
             }
+        }
+
+        if ($request->filled('reply_id')) {
+            $query->whereHas('replies', function ($q) use ($request) {
+                $q->where('selected_reply', $request->reply_id);
+            });
         }
 
         if ($request->filled('subject_id')) {
@@ -1027,7 +1169,8 @@ class ManagerController extends Controller
             foreach ($complaints as $index => $complaint) {
                 $html .= '<tr>';
                 $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
+                $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
+
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -1047,11 +1190,11 @@ class ManagerController extends Controller
                     '</td>';
 
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
-                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y') . '</td>';
+                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i') . '</td>';
 
                 // Pending Days or Status
                 if (in_array($complaint->complaint_status, [4, 5])) {
-                    $html .= '<td>0 दिन</td>';
+                    $html .= '<td></td>';
                 } else {
                     $html .= '<td>' . $complaint->pending_days . ' दिन</td>';
                 }
@@ -1084,6 +1227,7 @@ class ManagerController extends Controller
         $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
         $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
         $departments = Department::all();
+        $replyOptions = ComplaintReply::all();
         $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
 
         return view('manager.operator_complaints', compact(
@@ -1093,7 +1237,8 @@ class ManagerController extends Controller
             'pollings',
             'areas',
             'departments',
-            'subjects'
+            'subjects',
+            'replyOptions'
         ));
     }
 
@@ -1177,7 +1322,7 @@ class ManagerController extends Controller
     public function allcomplaints_show($id)
     {
         $complaint = Complaint::with(
-            'replies',
+            'replies.predefinedReply',
             'registration',
             'division',
             'district',
@@ -1189,11 +1334,21 @@ class ManagerController extends Controller
             'registrationDetails'
         )->findOrFail($id);
 
-        $nagars = Nagar::orderBy('nagar_name')->get();
+        $mandals = Mandal::where('vidhansabha_id', $complaint->vidhansabha_id)->pluck('mandal_id');
+
+        // 2. Fetch nagars that belong to those mandals, and eager load the related mandal
+        $nagars = Nagar::with('mandal')
+            ->whereIn('mandal_id', $mandals)
+            ->orderBy('nagar_name')
+            ->get();
+        $replyOptions = ComplaintReply::all();
+        $departments = Department::all();
 
         return view('manager/details_complaints', [
             'complaint' => $complaint,
-            'nagars' => $nagars
+            'nagars' => $nagars,
+            'replyOptions' => $replyOptions,
+            'departments' => $departments
         ]);
     }
 
@@ -1201,7 +1356,15 @@ class ManagerController extends Controller
     {
         $request->validate([
             'cmp_reply' => 'required|string',
-            'cmp_status' => 'required|in:1,2,3,4',
+            'cmp_status' => 'required|in:1,2,3,4,5',
+            'selected_reply' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    if ($value !== null && $value !== 'अन्य' && !\App\Models\ComplaintReply::where('reply_id', $value)->exists()) {
+                        $fail('The selected reply is invalid.');
+                    }
+                }
+            ],
             'cb_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'ca_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'c_video' => 'nullable|url|max:255',
@@ -1212,6 +1375,7 @@ class ManagerController extends Controller
         $reply = new Reply();
         $reply->complaint_id = $id;
         $reply->complaint_reply = $request->cmp_reply;
+        $reply->selected_reply = $request->selected_reply !== 'अन्य' ? $request->selected_reply : null;
         $reply->reply_from = auth()->id() ?? 2;
         $reply->reply_date = now();
 
@@ -1258,7 +1422,45 @@ class ManagerController extends Controller
         }
     }
 
+    public function getPollingsByNagar($nagarId)
+    {
+        $pollings = Polling::where('nagar_id', $nagarId)->with('area')->get();
 
+        $result = $pollings->map(function ($p) {
+            return [
+                'id' => $p->gram_polling_id,
+                'label' => "{$p->polling_name} ({$p->polling_no}) - " . ($p->area->area_name ?? '')
+            ];
+        });
+
+        return response()->json($result);
+    }
+
+    public function getDesignations($department_name)
+    {
+        $department = Department::where('department_name', $department_name)->first();
+
+        if (!$department) {
+            return response()->json([]);
+        }
+
+        $designations = Designation::where('department_id', $department->department_id)->get();
+
+        return response()->json($designations);
+    }
+
+    public function getSubjectsByDepartment($departmentName)
+    {
+        $department = Department::where('department_name', $departmentName)->first();
+
+        if (!$department) {
+            return response()->json([]);
+        }
+
+        $subjects = Subject::where('department_id', $department->department_id)->get(['subject']);
+
+        return response()->json($subjects);
+    }
 
     public function updateComplaint(Request $request, $id)
     {
@@ -1268,10 +1470,10 @@ class ManagerController extends Controller
             'division_id' => 'required|integer',
             'txtdistrict_name' => 'required',
             'txtvidhansabha' => 'required',
-            'txtmandal' => 'required',
+            // 'txtmandal' => 'required',
             'txtgram' => 'required',
             'txtpolling' => 'required',
-            'txtarea' => 'required',
+            // 'txtarea' => 'required',
             'type' => 'required|string',
             'CharCounter' => 'required|string|max:100',
             'NameText' => 'required|string|max:2000',
@@ -1287,6 +1489,12 @@ class ManagerController extends Controller
         $complaint_number = $complaint->complaint_number;
 
 
+        $nagar = Nagar::with('mandal')->find($request->txtgram);
+        $mandal_id = $nagar?->mandal?->mandal_id;
+
+        $polling = Polling::with('area')->where('gram_polling_id', $request->txtpolling)->first();
+        $area_id = $polling?->area?->area_id;
+
         $complaint->complaint_type = $request->type;
         $complaint->name = $request->txtname;
         $complaint->mobile_number = $request->mobile;
@@ -1295,10 +1503,10 @@ class ManagerController extends Controller
         $complaint->division_id = $request->division_id;
         $complaint->district_id = $request->txtdistrict_name;
         $complaint->vidhansabha_id = $request->txtvidhansabha;
-        $complaint->mandal_id = $request->txtmandal;
+        $complaint->mandal_id = $mandal_id;
         $complaint->gram_id = $request->txtgram;
         $complaint->polling_id = $request->txtpolling;
-        $complaint->area_id = $request->txtarea;
+        $complaint->area_id = $area_id;
         $complaint->complaint_department = $request->department ?? '';
         $complaint->complaint_designation = $request->post ?? '';
         $complaint->issue_title = $request->CharCounter;

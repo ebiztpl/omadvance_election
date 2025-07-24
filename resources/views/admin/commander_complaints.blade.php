@@ -1,13 +1,13 @@
 @php
-    $pageTitle = 'समस्याएँ देखे';
+    $pageTitle = 'कमांडर समस्याएँ';
     $breadcrumbs = [
         'एडमिन' => '#',
-        'समस्याएँ देखे' => '#',
+        'कमांडर समस्याएँ' => '#',
     ];
 @endphp
 
 @extends('layouts.app')
-@section('title', 'View Complaints')
+@section('title', 'View Member Complaints')
 
 @section('content')
     <div class="container">
@@ -31,7 +31,6 @@
                         <div class="col-md-2">
                             <label>शिकायत प्रकार</label>
                             <select name="complaint_type" id="complaint_type" class="form-control">
-                                <option value="">-- सभी --</option>
                                 <option value="शुभ सुचना">शुभ सुचना</option>
                                 <option value="अशुभ सुचना">अशुभ सुचना</option>
                                 <option value="समस्या" selected>समस्या</option>
@@ -142,7 +141,6 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-
                         @if (session('success'))
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
                                 {{ session('success') }}
@@ -157,7 +155,6 @@
                             <span
                                 style="margin-bottom: 8px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
                                 शिकायत - <span id="complaint-count">{{ $complaints->count() }}</span></span>
-
 
                             <table id="example" style="min-width: 845px" class="display table-bordered">
                                 <thead>
@@ -178,8 +175,7 @@
                                     @foreach ($complaints as $index => $complaint)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td>
-                                                {{ $complaint->complaint_number ?? 'N/A' }} <br>
+                                            <td> {{ $complaint->complaint_number ?? 'N/A' }} <br>
                                                 {{ $complaint->name ?? 'N/A' }} <br>
                                                 {{ $complaint->mobile_number ?? '' }}
                                             </td>
@@ -227,20 +223,12 @@
                                             </td>
 
                                             <td>{!! $complaint->statusTextPlain() !!}</td>
-                                            <td>
-                                                @if ($complaint->type == 1)
-                                                    {{ $complaint->registration->name ?? '' }}
-                                                @elseif ($complaint->type == 2 && $complaint->admin && $complaint->admin->role == 3)
-                                                    {{ $complaint->admin_name ?? '' }}
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
+                                            <td>{{ $complaint->registrationDetails->name ?? '' }}</td>
                                             <td>
                                                 @if (!empty($complaint->issue_attachment))
                                                     <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
                                                         target="_blank" class="btn btn-sm btn-success">
-                                                        View
+                                                        देखें
                                                     </a>
                                                     {{-- @else
                                                     <button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं
@@ -259,12 +247,12 @@
                                 </tbody>
                             </table>
                         </div>
+
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
 
     @push('scripts')
         <script>
@@ -344,6 +332,7 @@
                     }
                 });
 
+                // Apply Filters
                 $('#applyFilters').click(function() {
                     let data = {
                         complaint_status: $('#complaint_status').val(),
@@ -360,7 +349,7 @@
                     };
 
                     $.ajax({
-                        url: "{{ route('complaints.index') }}",
+                        url: "{{ route('commander.complaint.view') }}",
                         type: 'GET',
                         data: data,
                         success: function(response) {
