@@ -57,113 +57,184 @@
                     <div id="form_container" style="color: #000;">
                         <fieldset class="scheduler-border mb-3">
                             <div class="form-group row">
-                                <div class="col-md-4 mb-3">
-                                    <label><span class="data-text">नाम</span> <span class="error">*</span></label>
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        <span class="data-text">नाम</span> <span class="error">*</span>
+                                    </label>
                                     <input type="text" class="form-control" name="txtname"
                                         value="{{ old('txtname', $complaint->name) }}" required>
                                 </div>
 
-                                <div class="col-md-4 mb-3">
-                                    <label><span class="mobile-label">मोबाइल</span></label>
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        <span class="mobile-label">मोबाइल</span>
+                                    </label>
                                     <input type="text" class="form-control" name="mobile"
                                         value="{{ old('mobile', $complaint->mobile_number) }}">
                                 </div>
 
-                                <div class="col-md-4 mb-3">
-                                    <label>मतदाता पहचान<span class="error">*</span></label>
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        मतदाता पहचान <span class="error">*</span>
+                                    </label>
                                     <input type="text" class="form-control" name="voter"
                                         value="{{ old('voter', $complaint->voter_id) }}" required>
                                 </div>
 
+
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">संभाग का नाम <span
+                                            class="error">*</span></label>
+                                    <select class="form-control bg-light text-muted" name="division_id" id="division_id"
+                                        disabled required>
+                                        <option value="{{ $complaint->division_id }}">
+                                            {{ $complaint->division->division_name ?? 'Current' }}
+                                        </option>
+                                    </select>
+                                    <input type="hidden" name="division_id" value="2">
+                                </div>
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">जिले का नाम <span
+                                            class="error">*</span></label>
+                                    <select class="form-control bg-light text-muted" name="txtdistrict_name"
+                                        id="district_name" disabled required>
+                                        <option value="{{ $complaint->district_id }}">
+                                            {{ $complaint->district->district_name ?? 'Current' }}
+                                        </option>
+                                    </select>
+                                    <input type="hidden" name="txtdistrict_name" value="11">
+                                </div>
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">विधानसभा <span
+                                            class="error">*</span></label>
+                                    <select name="txtvidhansabha" class="form-control bg-light text-muted"
+                                        id="txtvidhansabha" disabled required>
+                                        <option value="{{ $complaint->vidhansabha_id }}">
+                                            {{ $complaint->vidhansabha->vidhansabha ?? 'Current' }}
+                                        </option>
+                                    </select>
+                                    <input type="hidden" name="txtvidhansabha" value="49">
+                                </div>
+
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">नगर/मंडल<span
+                                            class="error">*</span></label>
+                                    <select name="txtgram" class="form-control" id="txtgram" required>
+                                        <option value="">--चुने--</option>
+                                        @foreach ($nagars as $nagar)
+                                            <option value="{{ $nagar->nagar_id }}"
+                                                {{ $nagar->nagar_id == $complaint->gram_id ? 'selected' : '' }}>
+                                                {{ $nagar->nagar_name }} - {{ $nagar->mandal->mandal_name ?? '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">मतदान
+                                        केंद्र/ग्राम/वार्ड<span class="error">*</span></label>
+                                    <select name="txtpolling" class="form-control" id="txtpolling" required>
+                                        <option value="{{ $complaint->polling_id }}">
+                                            {{ $complaint->polling->polling_name ?? '' }}
+                                            ({{ $complaint->polling->polling_no ?? '' }}) -
+                                            {{ $complaint->polling->area->area_name ?? '' }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                {{-- <div class="col-md-4 mb-3">
+                                    <label>नगर/ग्राम <span class="error">*</span></label>
+                                    <select name="txtgram" class="form-control" id="txtgram" required>
+                                        <option value="{{ $complaint->gram_id }}">
+                                            {{ $complaint->gram->nagar_name ?? 'Current' }}
+                                        </option>
+                                        <option value="">--चुने--</option>
+                                        @foreach ($nagars as $nagar)
+                                            <option value="{{ $nagar->nagar_id }}"
+                                                {{ $nagar->nagar_id == $complaint->gram_id ? 'selected' : '' }}>
+                                                {{ $nagar->nagar_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
                                 <div class="col-md-4 mb-3">
-                                <label>नगर/ग्राम <span class="error">*</span></label>
-                                <select name="txtgram" class="form-control" id="txtgram" required>
-                                    <option value="{{ $complaint->gram_id }}">
-                                        {{ $complaint->gram->nagar_name ?? 'Current' }}
-                                    </option>
-                                    <option value="">--चुने--</option>
-                                    @foreach ($nagars as $nagar)
-                                    <option value="{{ $nagar->nagar_id }}"
-                                        {{ $nagar->nagar_id == $complaint->gram_id ? 'selected' : '' }}>
-                                        {{ $nagar->nagar_name }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                            </div>
+                                    <label>मंडल <span class="error">*</span></label>
+                                    <select name="txtmandal" class="form-control" id="txtmandal" required>
+                                        <option value="{{ $complaint->mandal_id }}">
+                                            {{ $complaint->mandal->mandal_name ?? 'Current' }}
+                                        </option>
+                                    </select>
+                                </div> --}}
 
-                            <div class="col-md-4 mb-3">
-                                <label>मंडल <span class="error">*</span></label>
-                                <select name="txtmandal" class="form-control" id="txtmandal" required>
-                                    <option value="{{ $complaint->mandal_id }}">
-                                        {{ $complaint->mandal->mandal_name ?? 'Current' }}
-                                    </option>
-                                </select>
-                            </div>
+                                {{-- <div class="col-md-4 mb-3">
+                                    <label>विधानसभा <span class="error">*</span></label>
+                                    <select name="txtvidhansabha" class="form-control" id="txtvidhansabha" required>
+                                        <option value="{{ $complaint->vidhansabha_id }}">
+                                            {{ $complaint->vidhansabha->vidhansabha ?? 'Current' }}
+                                        </option>
+                                    </select>
+                                </div>
 
-                            <div class="col-md-4 mb-3">
-                                <label>विधानसभा <span class="error">*</span></label>
-                                <select name="txtvidhansabha" class="form-control" id="txtvidhansabha" required>
-                                    <option value="{{ $complaint->vidhansabha_id }}">
-                                        {{ $complaint->vidhansabha->vidhansabha ?? 'Current' }}
-                                    </option>
-                                </select>
-                            </div>
-
-
-                            <div class="col-md-4 mb-3">
-                                <label>जिले का नाम <span class="error">*</span></label>
-                                <select class="form-control" name="txtdistrict_name" id="district_name" required>
-                                    <option value="{{ $complaint->district_id }}">
-                                        {{ $complaint->district->district_name ?? 'Current' }}
-                                    </option>
-                                </select>
-                            </div>
-
-
-                            <div class="col-md-4 mb-3">
-                                <label>संभाग का नाम <span class="error">*</span></label>
-                                <select class="form-control" name="division_id" id="division_id" required>
-                                    <option value="{{ $complaint->division_id }}">
-                                        {{ $complaint->division->division_name ?? 'Current' }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <label>मतदान केंद्र <span class="error">*</span></label>
-                                <select name="txtpolling" class="form-control" id="txtpolling" required>
-                                    <option value="{{ $complaint->polling_id }}">
-                                        {{ $complaint->polling->polling_name ?? '' }} -
-                                        {{ $complaint->polling->polling_no ?? '' }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <label>ग्राम/वार्ड चौपाल <span class="error">*</span></label>
-                                <select name="txtarea" class="form-control" id="txtarea" required>
-                                    <option value="{{ $complaint->area_id }}">
-                                        {{ $complaint->area->area_name ?? 'Current' }}
-                                    </option>
-                                </select>
-                            </div>
 
                                 <div class="col-md-4 mb-3">
-                                    <label>
+                                    <label>जिले का नाम <span class="error">*</span></label>
+                                    <select class="form-control" name="txtdistrict_name" id="district_name" required>
+                                        <option value="{{ $complaint->district_id }}">
+                                            {{ $complaint->district->district_name ?? 'Current' }}
+                                        </option>
+                                    </select>
+                                </div>
+
+
+                                <div class="col-md-4 mb-3">
+                                    <label>संभाग का नाम <span class="error">*</span></label>
+                                    <select class="form-control" name="division_id" id="division_id" required>
+                                        <option value="{{ $complaint->division_id }}">
+                                            {{ $complaint->division->division_name ?? 'Current' }}
+                                        </option>
+                                    </select>
+                                </div> --}}
+
+                                {{-- <div class="col-md-4 mb-3">
+                                    <label>मतदान केंद्र <span class="error">*</span></label>
+                                    <select name="txtpolling" class="form-control" id="txtpolling" required>
+                                        <option value="{{ $complaint->polling_id }}">
+                                            {{ $complaint->polling->polling_name ?? '' }} -
+                                            {{ $complaint->polling->polling_no ?? '' }}
+                                        </option>
+                                    </select>
+                                </div> --}}
+
+                                {{-- <div class="col-md-4 mb-3">
+                                    <label>ग्राम/वार्ड चौपाल <span class="error">*</span></label>
+                                    <select name="txtarea" class="form-control" id="txtarea" required>
+                                        <option value="{{ $complaint->area_id }}">
+                                            {{ $complaint->area->area_name ?? 'Current' }}
+                                        </option>
+                                    </select>
+                                </div> --}}
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         @if ($complaint->type == 1)
                                             कमांडर द्वारा भेजा गया वीडियो
                                         @else
                                             कार्यालय द्वारा भेजी गई फ़ाइल
                                         @endif
-                                    </label><br>
+                                    </label>
 
                                     @if ($complaint->issue_attachment)
                                         <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
-                                            class="btn btn-sm btn-info mb-2" target="_blank">अटैचमेंट खोलें</a>
+                                            class="btn btn-sm btn-info" target="_blank">अटैचमेंट खोलें</a>
                                     @else
                                         <button class="btn btn-sm btn-secondary" disabled>कोई अटैचमेंट नहीं है</button>
                                     @endif
-                                    {{-- <input type="file" class="form-control" name="file_attach"> --}}
                                 </div>
                             </div>
 
@@ -173,41 +244,71 @@
 
                                 {{-- Department --}}
                                 <div class="form-group row department_row">
-                                    <div class="col-md-6 mb-3">
-                                        <label>विभाग <span class="error">*</span></label>
-                                        <select name="department" class="form-control" id="department-select" required>
+                                    <div class="col-md-4 d-flex align-items-center">
+                                        <label for="department-select" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">विभाग <span class="error">*</span></label>
+                                        <select name="department" id="department-select" class="form-control">
                                             <option value="">--चुने--</option>
-                                            @foreach (['राजस्व विभाग', 'विद्युत विभाग', 'सहकारिता', 'पंचायत', 'पी.एच.ई.', 'नगरीय निकाय', 'पुलिस', 'सिंचाई', 'स्वास्थ्य विभाग', 'पी.डब्ल्यू.डी.', 'खाद्य', 'शिक्षा विभाग', 'कृषि विभाग', 'पशु चिकित्सा', 'एम.बी.वी', 'जनजातीय विभाग', 'वन विभाग'] as $dept)
-                                                <option value="{{ $dept }}">
-                                                    {{ $dept }}</option>
+                                            @foreach ($departments as $department)
+                                                <option value="{{ $department->department_name }}"
+                                                    {{ old('department', $complaint->complaint_department ?? '') == $department->department_name ? 'selected' : '' }}>
+                                                    {{ $department->department_name }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
 
-                                    <div class="col-md-6 mb-3">
-                                        <label>पद <span class="error">*</span></label>
+                                    <div class="col-md-4 d-flex align-items-center">
+                                        <label for="post-select" class="me-2 mr-2 mb-0" style="white-space: nowrap;">पद
+                                            <span class="error">*</span></label>
                                         <select name="post" class="form-control" id="post-select" required>
-                                            <option value="">--चुने--</option>
+                                            @if (!empty($complaint->complaint_designation))
+                                                <option value="{{ $complaint->complaint_designation }}" selected>
+                                                    {{ $complaint->complaint_designation }}
+                                                </option>
+                                            @else
+                                                <option value="">--चुने--</option>
+                                            @endif
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-4 d-flex align-items-center">
+                                        <label for="subject-select" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">विषय
+                                            <span class="error">*</span></label>
+                                        <select placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें"
+                                            name="CharCounter" id="subject-select" class="form-control" required>
+                                            @if (!empty($complaint->issue_title))
+                                                <option value="{{ $complaint->issue_title }}" selected>
+                                                    {{ $complaint->issue_title }}
+                                                </option>
+                                            @else
+                                                <option value="">--चुने--</option>
+                                            @endif
+                                              <option value="अन्य">अन्य</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 {{-- Dates --}}
                                 <div class="form-group row date_row">
-                                    <div class="col-md-4 mb-3">
-                                        <label>सूचना दिनांक</label>
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="from_date" class="me-2 mr-2 mb-0" style="white-space: nowrap;">सूचना
+                                            दिनांक</label>
                                         <input type="date" class="form-control" name="from_date"
                                             value="{{ old('from_date', $complaint->news_date) }}">
                                     </div>
 
-                                    <div class="col-md-4 mb-3">
-                                        <label>कार्यक्रम दिनांक</label>
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="program_date" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">कार्यक्रम दिनांक</label>
                                         <input type="date" class="form-control" name="program_date"
                                             value="{{ old('program_date', $complaint->program_date) }}">
                                     </div>
 
-                                    <div class="col-md-4 mb-3">
-                                        <label>कार्यक्रम समय</label>
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="to_date" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">कार्यक्रम समय</label>
                                         <input type="time" class="form-control" name="to_date"
                                             value="{{ old('to_date', $complaint->news_time) }}">
                                     </div>
@@ -215,16 +316,18 @@
 
                                 {{-- Subject, Description, File --}}
                                 <div class="form-group row">
-                                    <div class="col-md-12 mb-3">
+                                    {{-- <div class="col-md-12 mb-3">
                                         <label>विषय</label>
                                         <input type="text" class="form-control" name="CharCounter"
-                                            value="{{ old('CharCounter', $complaint->issue_title) }}" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें" maxlength="100"
-                                            required>
-                                    </div>
+                                            value="{{ old('CharCounter', $complaint->issue_title) }}"
+                                            placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें"
+                                            maxlength="100" required>
+                                    </div> --}}
 
                                     <div class="col-md-12 mb-3">
                                         <label>विवरण</label>
-                                        <textarea class="form-control" name="NameText" rows="5" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें" maxlength="2000" required>{{ old('NameText', $complaint->issue_description) }}</textarea>
+                                        <textarea class="form-control" name="NameText" rows="5"
+                                            placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें" maxlength="2000" required>{{ old('NameText', $complaint->issue_description) }}</textarea>
                                     </div>
 
                                     {{-- <div class="col-md-6 mb-3">
@@ -247,7 +350,7 @@
         </div>
 
         {{-- Reply History --}}
-        <div class="card container" style="color: #000; ">
+        {{-- <div class="card container" style="color: #000; ">
             <h5 class="my-3">Reply History for {{ $complaint->complaint_number }}</h5>
             <div class="row">
                 @foreach ($complaint->replies as $reply)
@@ -288,6 +391,70 @@
                     </div>
                 @endforeach
             </div>
+        </div> --}}
+
+
+        <div class="card container" style="color: #000;">
+            <h5 class="my-3">Reply History for {{ $complaint->complaint_number }}</h5>
+
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>समस्या/समाधान</th>
+                            <th>दिनांक</th>
+                            <th>प्रतिक्रिया देने वाला</th>
+                            <th>निर्धारित उत्तर</th>
+                            <th>पूर्व स्थिति की तस्वीर</th>
+                            <th>बाद की तस्वीर</th>
+                            <th>यूट्यूब लिंक</th>
+                        </tr>
+                    </thead>
+                    <tbody style="color: #000;">
+                        @forelse ($complaint->replies as $reply)
+                            @php
+                                $replyFromName =
+                                    $reply->reply_from == 1 ? $reply->complaint->user->name ?? 'User' : 'BJS Team';
+                            @endphp
+                            <tr>
+                                <td>{{ $reply->complaint_reply }}</td>
+                                <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i') : 'N/A' }}
+                                </td>
+                                <td>{{ $replyFromName }}</td>
+                                <td>{{ $reply->predefinedReply->reply ?? '-' }}</td>
+                                <td>
+                                    @if (!empty($reply->cb_photo))
+                                        <a href="{{ asset($reply->cb_photo) }}" class="btn btn-sm btn-primary"
+                                            target="_blank">खोलें</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td>
+                                    @if (!empty($reply->ca_photo))
+                                        <a href="{{ asset($reply->ca_photo) }}" class="btn btn-sm btn-primary"
+                                            target="_blank">खोलें</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td>
+                                    @if (!empty($reply->c_video))
+                                        <a href="{{ $reply->c_video }}" class="btn btn-sm btn-primary"
+                                            target="_blank">लिंक</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center">कोई जवाब उपलब्ध नहीं है।</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
 
@@ -299,24 +466,11 @@
                     action="{{ route('complaint_reply.reply', $complaint->complaint_id) }}"
                     enctype="multipart/form-data">
                     @csrf
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            <label class="form-label">समस्या/समाधान में प्रगति</label>
-                            <textarea name="cmp_reply" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें" class="form-control" rows="6" required></textarea>
-                        </div>
 
-                        <div class="col-md-2">
-                            <label class="form-label">पूर्व स्थिति की तस्वीर</label>
-                            <input type="file" name="cb_photo[]" class="form-control" multiple accept="image/*">
-                            <label class="form-label mt-3">बाद की तस्वीर</label>
-                            <input type="file" name="ca_photo[]" class="form-control" multiple accept="image/*">
-                        </div>
-
-                        <div class="col-md-2">
-                            <label class="form-label">यूट्यूब लिंक</label>
-                            <input type="url" name="c_video" class="form-control">
-                            <label class="form-label mt-3">शिकायत की स्थिति: <span class="tx-danger"
-                                    style="font-size: 11px; color: red;">*</span></label>
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label ">शिकायत की स्थिति: <span class="tx-danger"
+                                    style="color: red;">*</span></label>
                             <select name="cmp_status" class="form-control" required>
                                 <option value="">--चुने--</option>
                                 <option value="1" {{ $complaint->complaint_status == 1 ? 'selected' : '' }}>शिकायत
@@ -334,10 +488,77 @@
                             </select>
                         </div>
 
-                        <div class="col-12 mt-3">
-                            <button type="submit" class="btn btn-primary">शिकायत दर्ज करें</button>
+                        <div class="col-md-3">
+                            <label class="form-label">पूर्व निर्धारित उत्तर चुनें:</label>
+                            <select name="selected_reply" id="selected_reply" class="form-control">
+                                <option value="">--चयन करें--</option>
+                                @foreach ($replyOptions as $option)
+                                    <option value="{{ $option->reply_id }}">{{ $option->reply }}</option>
+                                @endforeach
+                                <option value="अन्य">अन्य</option>
+                            </select>
                         </div>
                     </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">समस्या/समाधान में प्रगति</label>
+                            <textarea name="cmp_reply" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें"
+                                class="form-control" rows="6" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <label class="form-label">पूर्व स्थिति की तस्वीर</label>
+                            <input type="file" name="cb_photo[]" class="form-control" multiple accept="image/*">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">बाद की तस्वीर</label>
+                            <input type="file" name="ca_photo[]" class="form-control" multiple accept="image/*">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">यूट्यूब लिंक</label>
+                            <input type="url" name="c_video" class="form-control">
+                        </div>
+                    </div>
+
+
+                    {{-- <div class="col-md-2">
+                        <label class="form-label">पूर्व स्थिति की तस्वीर</label>
+                        <input type="file" name="cb_photo[]" class="form-control" multiple accept="image/*">
+                        <label class="form-label mt-3">बाद की तस्वीर</label>
+                        <input type="file" name="ca_photo[]" class="form-control" multiple accept="image/*">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">यूट्यूब लिंक</label>
+                        <input type="url" name="c_video" class="form-control">
+                        <label class="form-label mt-3">शिकायत की स्थिति: <span class="tx-danger"
+                                style="font-size: 11px; color: red;">*</span></label>
+                        <select name="cmp_status" class="form-control" required>
+                            <option value="">--चुने--</option>
+                            <option value="1" {{ $complaint->complaint_status == 1 ? 'selected' : '' }}>शिकायत
+                                दर्ज
+                            </option>
+                            <option value="2" {{ $complaint->complaint_status == 2 ? 'selected' : '' }}>प्रक्रिया
+                                में
+                            </option>
+                            <option value="3" {{ $complaint->complaint_status == 3 ? 'selected' : '' }}>स्थगित
+                            </option>
+                            <option value="4" {{ $complaint->complaint_status == 4 ? 'selected' : '' }}>पूर्ण
+                            </option>
+                            <option value="5" {{ $complaint->complaint_status == 5 ? 'selected' : '' }}>रद्द
+                            </option>
+                        </select>
+                    </div> --}}
+
+                    <div class="col-12 mt-3">
+                        <button type="submit" class="btn btn-primary">शिकायत दर्ज करें</button>
+                    </div>
+
                 </form>
             </div>
         </div>
@@ -365,10 +586,10 @@
 
                             $('#success-alert').removeClass('d-none');
 
-                             window.scrollTo({
-                                    top: 0,
-                                    behavior: 'smooth'
-                                });
+                            window.scrollTo({
+                                top: 0,
+                                behavior: 'smooth'
+                            });
 
 
                             setTimeout(function() {
@@ -402,11 +623,11 @@
 
                             $('#success-alert').removeClass('d-none');
 
-                             window.scrollTo({
-                                    top: 0,
-                                    behavior: 'smooth'
-                                });
-                                
+                            window.scrollTo({
+                                top: 0,
+                                behavior: 'smooth'
+                            });
+
                             $('#replyForm')[0].reset();
 
                             setTimeout(function() {
@@ -419,6 +640,7 @@
                         }
                     });
                 });
+
 
 
                 $(".check").change(function() {
@@ -463,140 +685,76 @@
                     $(".check:checked").trigger("change");
                 }
 
-                const postsByDepartment = {
-                    'राजस्व विभाग': ['पटवारी', 'आर.आई', 'तहसीलदार', 'एस.डी.एम'],
-                    'विद्युत विभाग': ['जेई', 'ऐई', 'डीजीएम', 'एस.ई'],
-                    'सहकारिता': ['बिक्रीकर्ता', 'जेडी', 'सचिव'],
-                    'पंचायत': ['जीआरएस', 'सचिव', 'सीओ', 'जेपी-सीओ'],
-                    'पी.एच.ई.': ['जेई', 'ऐई', 'डीजीएम'],
-                    'नगरीय निकाय': [],
-                    'पुलिस': ['एस.ओ(टी.आई)', 'एस.डी.ओ.पी', 'ए.डी.एस.पी', 'एस.पी'],
-                    'सिंचाई': ['एस.डी.ओ', 'ई.ई', 'एस.ई'],
-                    'स्वास्थ्य विभाग': [],
-                    'पी.डब्ल्यू.डी.': [],
-                    'खाद्य': ['एफ.आई', 'एफ.सी'],
-                    'शिक्षा विभाग': ['बीआरसी', 'बीईओ', 'डीईओ', 'जेडी'],
-                    'कृषि विभाग': ['एस.ए.डी.ओ', 'एस.डी.ओ', 'डी.डी.ए', 'जे.डी.ए'],
-                    'पशु चिकित्सा': ['डीडी', 'जेडी'],
-                    'एम.बी.वी': ['सुपरवाइज़र', 'सी.डी.पी.ओ', 'डी.पी.ओ', 'जेडी'],
-                    'जनजातीय विभाग': ['सहायक', 'जनजातीय आयुक्त'],
-                    'वन विभाग': ['क्षेत्रपाल', 'एस.डी.ओ', 'डी.एफ.ओ']
-                };
-
-                const selectedDept = "{{ old('department', $complaint->complaint_department) }}";
-                const selectedPost = "{{ old('post', $complaint->complaint_designation) }}";
-
-                function populatePosts(department, selected = null) {
+                $('#department-select').on('change', function() {
+                    const departmentName = $(this).val();
                     const $postSelect = $('#post-select');
-                    $postSelect.empty().append('<option value="">--चुने--</option>');
 
-                    if (department && postsByDepartment[department]) {
-                        postsByDepartment[department].forEach(function(post) {
-                            const isSelected = post === selected ? 'selected' : '';
-                            $postSelect.append(`<option value="${post}" ${isSelected}>${post}</option>`);
+                    $postSelect.html('<option value="">लोड हो रहा है...</option>');
+
+                    if (departmentName) {
+                        $.ajax({
+                            url: '/get-designations/' + encodeURIComponent(departmentName),
+                            method: 'GET',
+                            success: function(data) {
+                                let options = '<option value="">--चुने--</option>';
+                                data.forEach(function(designation) {
+                                    options +=
+                                        `<option value="${designation.designation_name}">${designation.designation_name}</option>`;
+                                });
+                                $postSelect.html(options);
+                            },
+                            error: function() {
+                                $postSelect.html('<option value="">लोड करने में त्रुटि</option>');
+                            }
                         });
+                    } else {
+                        $postSelect.html('<option value="">--चुने--</option>');
                     }
-                }
-
-                $(document).ready(function() {
-                    if (selectedDept) {
-                        $('#department-select').val(selectedDept);
-                        populatePosts(selectedDept, selectedPost);
-                    }
-
-                    $('#department-select').on('change', function() {
-                        const dept = $(this).val();
-                        populatePosts(dept);
-                    });
                 });
 
 
+                $('#department-select').on('change', function() {
+                    const departmentName = $(this).val();
+                    const $subjectSelect = $('#subject-select');
+                    $subjectSelect.html('<option value="">लोड हो रहा है...</option>');
 
-
-
+                    if (departmentName) {
+                        $.ajax({
+                            url: '/manager/get-subjects-department/' + encodeURIComponent(
+                                departmentName),
+                            method: 'GET',
+                            success: function(data) {
+                                let options = '<option value="">--चुने--</option>';
+                                data.forEach(function(subject) {
+                                    options +=
+                                        `<option value="${subject.subject}">${subject.subject}</option>`;
+                                });
+                                $subjectSelect.html(options);
+                            },
+                            error: function() {
+                                $subjectSelect.html(
+                                    '<option value="">लोड करने में त्रुटि</option>');
+                            }
+                        });
+                    } else {
+                        $subjectSelect.html('<option value="">--चुने--</option>');
+                    }
+                });
 
                 $('#txtgram').change(function() {
-                    let nagarID = $(this).val();
-                    if (!nagarID) return;
+                    const nagarId = $(this).val();
+                    if (!nagarId) return;
 
-                    $('#txtmandal, #txtvidhansabha, #district_name, #division_id, #txtpolling, #txtarea').html(
-                        '<option value="">--चुने--</option>');
+                    $('#txtpolling').html('<option value="">लोड हो रहा है...</option>');
 
-                    $.get('/manager/get-parent-mandal/' + nagarID, function(data) {
-                        let mandalID = data.mandal_id;
-                        if (!mandalID) return;
-
-                        $.get('/manager/get-mandal-from-id/' + mandalID, function(mandalOptions) {
-                            $('#txtmandal').html(mandalOptions);
-                            $('#txtmandal').val(mandalID).trigger('change');
-                        });
-
-                        $.get('/manager/get-pollings/' + mandalID, function(pollings) {
-                            let options = '<option value="">--चुने--</option>';
-                            pollings.forEach(function(p) {
-                                options +=
-                                    `<option value="${p.gram_polling_id}">${p.polling_name} (${p.polling_no})</option>`;
-                            });
-                            $('#txtpolling').html(options);
-                        });
-
-                        $.get('/manager/get-parent-vidhansabha/' + mandalID, function(data2) {
-                            let vidhansabhaID = data2.vidhansabha_id;
-                            if (!vidhansabhaID) return;
-
-                            $.get('/manager/get-vidhansabha-from-id/' + vidhansabhaID,
-                                function(vidhansabhaOptions) {
-                                    $('#txtvidhansabha').html(vidhansabhaOptions);
-                                    $('#txtvidhansabha').val(vidhansabhaID).trigger(
-                                        'change');
-                                });
-
-                            $.get('/manager/get-parent-district/' + vidhansabhaID, function(
-                                data3) {
-                                let districtID = data3.district_id;
-                                if (!districtID) return;
-
-                                $.get('/manager/get-district-from-id/' + districtID,
-                                    function(districtOptions) {
-                                        $('#district_name').html(districtOptions);
-                                        $('#district_name').val(districtID).trigger(
-                                            'change');
-                                    });
-
-                                $.get('/manager/get-parent-division/' + districtID,
-                                    function(data4) {
-                                        let divisionID = data4.division_id;
-                                        if (!divisionID) return;
-
-                                        $.get('/manager/get-division-from-id/' +
-                                            divisionID,
-                                            function(divisionOptions) {
-                                                $('#division_id').html(
-                                                    divisionOptions);
-                                                $('#division_id').val(
-                                                    divisionID);
-                                            });
-                                    });
-                            });
-                        });
-                    });
-                });
-
-                $('#txtpolling').change(function() {
-                    let pollingID = $(this).val();
-                    if (!pollingID) return;
-
-                    $('#txtarea').html('<option value="">लोड हो रहा है...</option>');
-                    $.get('/manager/get-areas/' + pollingID, function(areas) {
+                    $.get('/manager/get-pollings-gram/' + nagarId, function(data) {
                         let options = '<option value="">--चुने--</option>';
-                        areas.forEach(function(a) {
-                            options += `<option value="${a.area_id}">${a.area_name}</option>`;
+                        data.forEach(function(item) {
+                            options += `<option value="${item.id}">${item.label}</option>`;
                         });
-                        $('#txtarea').html(options);
+                        $('#txtpolling').html(options);
                     });
                 });
-
-
 
 
 
