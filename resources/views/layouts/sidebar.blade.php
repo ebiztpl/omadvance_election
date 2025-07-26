@@ -14,11 +14,12 @@
             {{-- Admin Panel --}}
             @if ($role == 1)
                 <li class="nav-label" style="color: #c0bebe">एडमिन टूल्स</li>
-                <li><a href="{{ route('dashboard.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">सदस्यता फाॅर्म डेटा</span></a></li>
 
                 <li><a href="{{ route('membership.create') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">सदस्यता फाॅर्म</span></a></li>
+
+                <li><a href="{{ route('dashboard.index') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">सदस्यता फाॅर्म डेटा</span></a></li>
 
                 <li><a href="{{ route('upload.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">मतदाता डेटा अपलोड</span></a></li>
@@ -27,7 +28,7 @@
                             class="nav-text">मतदाता डेटा</span></a></li>
 
                 <li><a href="{{ route('dashboard2.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">सदस्य द्वारा जोड़े गए सदस्य</span></a></li>
+                            class="nav-text">सदस्य द्वारा जोड़े सदस्य</span></a></li>
 
                 <li><a href="{{ route('birthdays.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">सदस्य जन्मदिन</span></a></li>
@@ -67,8 +68,83 @@
             {{-- Manager Panel --}}
             @if ($role == 2)
                 <li class="nav-label" style="color: #c0bebe">मैनेजर टूल्स</li>
+            
+                <li><a class="has-arrow" href="#" aria-expanded="false"> <i class="icon icon-arrow-right"></i><span class="nav-text">क्षेत्र</span></a>
+                    <ul class="" aria-expanded="false">
+                        <li><a href="{{ route('division.index') }}">संभाग जोड़े</a></li>
 
-                <li><a href="{{ route('division.index') }}"><i class=" icon icon-arrow-right"></i><span
+                        <li><a href="{{ route('city.master') }}">जिला जोड़े</a></li>
+
+                        <li><a href="{{ route('vidhansabha.index') }}">विधान/लोकसभा जोड़े</a></li>
+
+                        <li><a href="{{ route('mandal.index') }}">मंडल जोड़े</a></li>
+
+                        <li><a href="{{ route('nagar.index') }}">नगर/ग्राम केंद्र जोड़े</a></li>
+
+                        <li><a href="{{ route('polling.index') }}">मतदान केंद्र/क्रमांक जोड़े</a></li>
+
+                        <li><a href="{{ route('area.index') }}">मतदान क्षेत्र जोड़े</a></li>
+                    </ul>
+                </li>
+
+                <li><a class="has-arrow" href="#" aria-expanded="false"> <i
+                            class="icon icon-arrow-right"></i><span class="nav-text">दायित्व</span></a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('level.index') }}">कार्य क्षेत्र</a></li>
+
+                        <li><a href="{{ route('positions.index') }}">दायित्व</a></li>
+                    </ul>
+                </li>
+
+                <li><a class="has-arrow" href="#" aria-expanded="false"> <i
+                            class="icon icon-arrow-right"></i><span class="nav-text">समस्या</span></a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('department.index') }}">विभाग जोड़े</a></li>
+
+                        <li><a href="{{ route('designation.master') }}">पद जोड़े</a></li>
+
+                        <li><a href="{{ route('adhikari.index') }}">अधिकारी जोड़ें</a></li>
+
+                        <li><a href="{{ route('complaintSubject.master') }}">शिकायत का विषय जोड़े</a></li>
+
+                        <li><a href="{{ route('complaintReply.index') }}">शिकायत का जवाब जोड़े</a></li>
+                    </ul>
+                </li>
+
+                <li><a class="has-arrow" href="#" aria-expanded="false"> <i
+                            class="icon icon-arrow-right"></i><span class="nav-text">जनसंख्या</span></a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('jati.index') }}">जाति जोड़े</a></li>
+                        <li><a href="#">शिक्षा जोड़े</a></li>
+                        <li><a href="#">व्यवसाय जोड़े</a></li>
+                        <li><a href="#">धर्म जोड़े</a></li>
+                        <li><a href="#">श्रेणी जोड़े</a></li>
+                        <li><a href="#">राजनीतिक/सामाजिक सक्रियता</a></li>
+                        <li><a href="#">रुचि जोड़े</a></li>
+                    </ul>
+                </li>
+
+                <li><a class="has-arrow" href="#" aria-expanded="false"> <i
+                            class="icon icon-arrow-right"></i><span class="nav-text">मतदाता सूची</span></a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('jati_polling.index') }}">जातिगत मतदाता प्रविष्टि</a></li>
+
+                        <li><a href="{{ route('jatiwise.index') }}">जातिगत मतदाता देखे</a></li>
+                    </ul>
+                </li>
+
+                <li><a class="has-arrow" href="#" aria-expanded="false"><i
+                            class="icon icon-arrow-right"></i><span class="nav-text">समस्याएँ देखे</span></a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('commander.complaints.view') }}">कमांडर समस्याएँ</a></li>
+                        <li><a href="{{ route('operator.complaints.view') }}">कार्यालय समस्याएँ</a></li>
+                    </ul>
+                </li>
+                
+                <li><a href="{{ route('change_password.index') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">पासवर्ड बदलें</span></a></li>
+
+                {{-- <li><a href="{{ route('division.index') }}"><i class=" icon icon-arrow-right"></i><span
                             class="nav-text">संभाग जोड़े</span></a></li>
 
                 <li><a href="{{ route('city.master') }}"><i class="icon icon-arrow-right"></i><span
@@ -87,18 +163,18 @@
                             class="nav-text">मतदान केंद्र/क्रमांक जोड़े</span></a></li>
 
                 <li><a href="{{ route('area.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">मतदान क्षेत्र जोड़े</span></a></li>
+                            class="nav-text">मतदान क्षेत्र जोड़े</span></a></li> --}}
 
-                <li><a href="{{ route('level.index') }}"><i class="icon icon-arrow-right"></i><span
+                {{-- <li><a href="{{ route('level.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">कार्य क्षेत्र</span></a></li>
 
                 <li><a href="{{ route('positions.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">दायित्व</span></a></li>
+                            class="nav-text">दायित्व</span></a></li> --}}
 
-                <li><a href="{{ route('jati.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">जाति मास्टर</span></a></li>
+                {{-- <li><a href="{{ route('jati.index') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">जाति मास्टर</span></a></li> --}}
 
-                <li><a href="{{ route('department.index') }}"><i class=" icon icon-arrow-right"></i><span
+                {{-- <li><a href="{{ route('department.index') }}"><i class=" icon icon-arrow-right"></i><span
                             class="nav-text">विभाग जोड़े</span></a></li>
 
                 <li><a href="{{ route('designation.master') }}"><i class="icon icon-arrow-right"></i><span
@@ -111,28 +187,15 @@
                             class=" nav-text">शिकायत का विषय जोड़े</span></a></li>
 
                 <li><a href="{{ route('complaintReply.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class=" nav-text">शिकायत का जवाब जोड़े</span></a></li>
+                            class=" nav-text">शिकायत का जवाब जोड़े</span></a></li> --}}
 
 
 
-                <li><a href="{{ route('jati_polling.index') }}"><i class="icon icon-arrow-right"></i><span
+                {{-- <li><a href="{{ route('jati_polling.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">जातिगत मतदाता प्रविष्टि</span></a></li>
 
                 <li><a href="{{ route('jatiwise.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">जातिगत मतदाता देखे</span></a></li>
-
-
-
-                <li><a class="has-arrow" href="#" aria-expanded="false"><i
-                            class="icon icon-arrow-right"></i><span class="nav-text">समस्याएँ देखे</span></a>
-                    <ul aria-expanded="false">
-                        <li><a href="{{ route('commander.complaints.view') }}">कमांडर समस्याएँ</a></li>
-                        <li><a href="{{ route('operator.complaints.view') }}">कार्यालय समस्याएँ</a></li>
-                    </ul>
-                </li>
-
-                <li><a href="{{ route('change_password.index') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">पासवर्ड बदलें</span></a></li>
+                            class="nav-text">जातिगत मतदाता देखे</span></a></li> --}}
             @endif
 
 

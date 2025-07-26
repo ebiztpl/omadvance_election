@@ -201,7 +201,7 @@
                                             </td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i') }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}</td>
                                             {{-- <td>
                                                 @if (!in_array($complaint->complaint_status, [4, 5]))
                                                     {{ $complaint->pending_days }} दिन

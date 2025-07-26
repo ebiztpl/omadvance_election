@@ -7,6 +7,7 @@ use App\Models\Division;
 use App\Models\Department;
 use App\Models\ComplaintReply;
 use App\Models\Adhikari;
+use App\Models\User;
 use App\Models\Subject;
 use App\Models\Designation;
 use App\Models\District;
@@ -1343,12 +1344,14 @@ class ManagerController extends Controller
             ->get();
         $replyOptions = ComplaintReply::all();
         $departments = Department::all();
+        $managers = User::where('role', 2)->get();
 
         return view('manager/details_complaints', [
             'complaint' => $complaint,
             'nagars' => $nagars,
             'replyOptions' => $replyOptions,
-            'departments' => $departments
+            'departments' => $departments,
+            'managers' => $managers,
         ]);
     }
 
@@ -1357,6 +1360,7 @@ class ManagerController extends Controller
         $request->validate([
             'cmp_reply' => 'required|string',
             'cmp_status' => 'required|in:1,2,3,4,5',
+            'forwarded_to' => 'nullable|exists:admin_master,admin_id',
             'selected_reply' => [
                 'nullable',
                 function ($attribute, $value, $fail) {
@@ -1381,6 +1385,10 @@ class ManagerController extends Controller
 
         if ($request->filled('c_video')) {
             $reply->c_video = $request->c_video;
+        }
+
+        if ($request->filled('forwarded_to')) {
+            $reply->forwarded_to = $request->forwarded_to;
         }
 
         $reply->save();

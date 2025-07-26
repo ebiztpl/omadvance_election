@@ -57,4 +57,9 @@ class Reply extends Model
     {
         return $this->belongsTo(ComplaintReply::class, 'selected_reply', 'reply_id');
     }
+
+    public function forwardedToManager()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'forwarded_to', 'admin_id');
+    }
 }

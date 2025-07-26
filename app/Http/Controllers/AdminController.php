@@ -593,7 +593,28 @@ class AdminController extends Controller
 
     public function dashboard2_index()
     {
-        return view('admin/dashboard2');
+        $query = DB::table('registration_form as A')
+            ->join('registration_form as B', 'A.registration_id', '=', 'B.reference_id')
+            ->join('step2 as st', 'st.registration_id', '=', 'A.registration_id')
+            ->join('step3 as st3', 'st3.registration_id', '=', 'A.registration_id')
+            ->join('step4 as st4', 'st4.registration_id', '=', 'A.registration_id')
+            ->select(
+                'A.*',
+                'B.name',
+                'B.member_id',
+                'B.mobile1 as mbl',
+                'B.mobile2',
+                'B.gender',
+                'B.date_time as pdate',
+                'A.registration_id as member',
+                'B.registration_id as added_member_id'
+            )
+            ->whereNotNull('A.mobile1')
+            ->where('A.mobile1', '!=', '');
+
+        $registrations = $query->get();
+
+        return view('admin/dashboard2', compact('registrations'));
     }
 
     public function dashboard2_filter(Request $request)
@@ -1132,7 +1153,7 @@ class AdminController extends Controller
                     '</td>';
 
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
-                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y') . '</td>';
+                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</td>';
 
                 // Pending Days or Status
                 if (in_array($complaint->complaint_status, [4, 5])) {
@@ -1149,11 +1170,14 @@ class AdminController extends Controller
                 if (!empty($complaint->issue_attachment)) {
                     $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
                 } else {
-                    $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
+                    $html .= '<td><button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं है</button></td>';
                 }
 
                 // Action Button
-                $html .= '<td><a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+                $html .= '<td style="white-space: nowrap;">
+                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" >क्लिक करें</a>
+                    <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
+                </td>';
 
                 $html .= '</tr>';
             }
@@ -1182,6 +1206,21 @@ class AdminController extends Controller
             'subjects',
             'replyOptions'
         ));
+    }
+
+    public function complaintDestroy($id)
+    {
+        $complaint = Complaint::find($id);
+
+        if (!$complaint) {
+            return response()->json(['error' => 'शिकायत नहीं मिली।'], 404);
+        }
+        
+        $complaint->replies()->delete();
+
+        $complaint->delete();
+
+        return response()->json(['success' => 'शिकायत सफलतापूर्वक हटा दी गई।']);
     }
 
     public function OperatorComplaints(Request $request)
@@ -1296,7 +1335,7 @@ class AdminController extends Controller
                     '</td>';
 
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
-                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y') . '</td>';
+                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</td>';
 
                 // Pending Days or Status
                 if (in_array($complaint->complaint_status, [4, 5])) {
@@ -1313,11 +1352,14 @@ class AdminController extends Controller
                 if (!empty($complaint->issue_attachment)) {
                     $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
                 } else {
-                    $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
+                    $html .= '<td><button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं है</button></td>';
                 }
 
                 // Action Button
-                $html .= '<td><a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+                $html .= '<td style="white-space: nowrap;">
+                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" >क्लिक करें</a>
+                    <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
+                </td>';
 
                 $html .= '</tr>';
             }
@@ -1352,6 +1394,7 @@ class AdminController extends Controller
     {
         $complaint = Complaint::with(
             'replies.predefinedReply',
+            'replies.forwardedToManager',
             'registration',
             'division',
             'district',
@@ -1363,10 +1406,12 @@ class AdminController extends Controller
         )->findOrFail($id);
 
         $replyOptions = ComplaintReply::all();
+        $managers = User::where('role', 2)->get();
 
         return view('admin/details_complaint', [
             'complaint' => $complaint,
             'replyOptions' => $replyOptions,
+            'managers' => $managers,
         ]);
     }
 
@@ -1375,6 +1420,7 @@ class AdminController extends Controller
         $request->validate([
             'cmp_reply' => 'required|string',
             'cmp_status' => 'required|in:1,2,3,4,5',
+            'forwarded_to' => 'nullable|exists:admin_master,admin_id',
             'selected_reply' => [
                 'nullable',
                 function ($attribute, $value, $fail) {
@@ -1397,6 +1443,10 @@ class AdminController extends Controller
 
         if ($request->filled('c_video')) {
             $reply->c_video = $request->c_video;
+        }
+
+        if ($request->filled('forwarded_to')) {
+            $reply->forwarded_to = $request->forwarded_to;
         }
 
         $reply->save();
@@ -2705,8 +2755,22 @@ class AdminController extends Controller
     // view voters data functions
     public function viewvoter()
     {
-        return view('admin/voterlist');
+        $voters = DB::table('registration_form')
+            ->where('type', 1)
+            ->get()
+            ->map(function ($voter) {
+                $voter->step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
+                $voter->step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
+                $voter->area_name = DB::table('area_master')
+                    ->where('area_id', optional($voter->step2)->area_id)
+                    ->value('area_name');
+                return $voter;
+            });
+        $total = $voters->count();
+
+        return view('admin.voterlist', compact('voters', 'total'));
     }
+
 
     public function voterdata(Request $request)
     {
@@ -2727,23 +2791,34 @@ class AdminController extends Controller
 
         foreach ($voters as $voter) {
             $step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
+            $step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
+
             $area_name = DB::table('area_master')->where('area_id', $step2->area_id)->first();
             $tableRows .= '
             <tr>
                 <td>' . $i++ . '</td>
                 <td>' . $voter->name . '</td>
 				<td>' . $voter->father_name . '</td>
+                <td>' . $step2->house . '</td>
                 <td>' . $voter->age . '</td>
-                <td>' . $voter->voter_id . '</td>
                 <td>' . $voter->gender . '</td>
-				<td>' . $step2->house . '</td>
+				<td>' . $voter->voter_id . '</td>
 				<td>' . $area_name->area_name . '</td>
+                <td>' . $voter->jati . '</td>
+                <td>' . $step2->matdan_kendra_no . '</td>
+                <td>' . $step3->total_member . '</td>
+                <td>' . $step3->mukhiya_mobile . '</td>
+                <td>' . $voter->{'death/left'} . '</td>
                 <td>' . \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') . '</td>
-                <td  style="white-space: nowrap;">
-                    <a href="' . route('register.show', $voter->registration_id) . '" class="btn btn-xs btn-success">View</a>
-                    <a href="' . route('register.show', $voter->registration_id) . '" class="btn btn-xs btn-primary">Edit</a>
-                    <a href="' . route('register.destroy', $voter->registration_id) . '" class="btn btn-xs btn-danger">Delete</a>
-                </td>
+                <td style="white-space: nowrap;">
+    <a href="' . route('register.show', $voter->registration_id) . '" class="btn btn-xs btn-success">View</a>
+
+    <form action="' . route('register.destroy', $voter->registration_id) . '" method="POST" style="display:inline-block;" onsubmit="return confirm(\'क्या आप वाकई रिकॉर्ड हटाना चाहते हैं?\')">
+        ' . csrf_field() . '
+        ' . method_field('DELETE') . '
+        <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+    </form>
+</td>
             </tr>';
         }
 
