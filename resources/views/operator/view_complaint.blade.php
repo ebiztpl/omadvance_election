@@ -149,9 +149,9 @@
                             </div>
                         @endif
 
-                       <span
-                                style="margin-bottom: 8px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
-                                शिकायत - <span id="complaint-count">{{ $complaints->count() }}</span></span>
+                        <span
+                            style="margin-bottom: 8px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
+                            शिकायत - <span id="complaint-count">{{ $complaints->count() }}</span></span>
 
                         <div class="table-responsive">
                             <table id="example" style="min-width: 845px" class="display table-bordered">
@@ -169,7 +169,7 @@
                                         <th>आगे देखें</th>
                                     </tr>
                                 </thead>
-                               <tbody id="complaintsTableBody">
+                                <tbody id="complaintsTableBody">
                                     @foreach ($complaints as $index => $complaint)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
@@ -201,7 +201,7 @@
                                             </td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                            <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i') }}
+                                            <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}
                                             </td>
                                             {{-- <td>
                                                 @if (!in_array($complaint->complaint_status, [4, 5]))
@@ -384,6 +384,11 @@
                         success: function(response) {
                             $('#complaintsTableBody').html(response.html);
                             $('#complaint-count').text(response.count);
+
+                            if ($.fn.DataTable.isDataTable('#example')) {
+                                $('#example').DataTable().clear().destroy();
+                            }
+
                         },
                         error: function() {
                             alert('कुछ गड़बड़ हो गई। कृपया पुनः प्रयास करें।');

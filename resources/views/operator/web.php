@@ -16,15 +16,15 @@ Route::get('/', function () {
 
 
 // temporary for admin created
-// Route::get('/create-admin', function () {
-//     User::create([
-//         'admin_name' => 'admin1',
-//         'admin_pass' => 'pranjal',
-//         'role'       => 1,
-//         'posted_date' => now(),
-//     ]);
-//     return 'Admin created.';
-// });
+Route::get('/create-admin', function () {
+    User::create([
+        'admin_name' => 'admin1',
+        'admin_pass' => 'pranjal',
+        'role'       => 1,
+        'posted_date' => now(),
+    ]);
+    return 'Admin created.';
+});
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
@@ -47,14 +47,10 @@ Route::post('/logout', function () {
 
 // admin routes
 Route::middleware('checklogin')->group(function () {
-
     Route::get('admin/users/create', [AdminController::class, 'usercreate'])->name('user.create');
     Route::post('admin/users', [AdminController::class, 'userstore'])->name('admin.store');
     Route::post('admin/users/{user}', [AdminController::class, 'userupdate'])->name('admin.update');
     Route::delete('admin/users/{user}', [AdminController::class, 'userdestroy'])->name('admin.destroy');
-
-
-
 
     Route::get('admin/dashboard', [AdminController::class, 'index'])->name('dashboard.index');
     Route::post('admin/dashboard/download', [AdminController::class, 'download'])->name('dashboard.download');
@@ -78,8 +74,7 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/admin/commander_complaints', [AdminController::class, 'CommanderComplaints'])->name('commander.complaint.view');
     Route::get('/admin/operator_complaints', [AdminController::class, 'OperatorComplaints'])->name('operator.complaint.view');
     Route::get('/admin/details_complaint/{id}', [AdminController::class, 'complaint_show'])->name('complaints.show');
-    Route::post('/admin/complaints/{id}/reply', [AdminController::class, 'postReply'])->name('complaints.reply');
-    Route::delete('/complaints/{id}', [AdminController::class, 'complaintDestroy'])->name('complaints.destroy');
+    Route::post('admin/complaints/{id}/reply', [AdminController::class, 'postReply'])->name('complaints.reply');
 
     Route::get('admin/assign_responsibility', [AdminController::class, 'reponsibility_index'])->name('responsibility.index');
     Route::post('admin/assign_responsibility', [AdminController::class, 'responsibility_filter'])->name('responsibility.filter');
@@ -87,18 +82,22 @@ Route::middleware('checklogin')->group(function () {
     Route::post('admin/assign-position/save', [AdminController::class, 'responsibility_store'])->name('responsibility.store');
     Route::get('/get-vidhansabhas', [AdminController::class, 'getVidhansabhasByDistrict'])->name('get.vidhansabhas');
     Route::get('/admin/fetch-location/{registration_id}', [AdminController::class, 'fetchLocationData']);
+
+
     Route::get('/admin/fetch-responsibility/{registration_id}', [AdminController::class, 'fetchFullResponsibilityData']);
     Route::post('/admin/responsibility/update/{assign_position_id}', [AdminController::class, 'responsibility_update'])->name('responsibility.update');
+
+    
     Route::get('/admin/get-vidhansabha/{district_id}', [AdminController::class, 'getVidhansabha']);
-    Route::get('/admin/get-mandal/{vidhansabha_id}', [AdminController::class, 'getMandal'])->name('get.mandals');
-    Route::get('/admin/get-nagar/{mandal_id}', [AdminController::class, 'getNagar'])->name('get.nagars');
-    Route::get('/admin/get-polling/{gram_id}', [AdminController::class, 'getPolling'])->name('get.pollings');
+    Route::get('/admin/get-mandal/{vidhansabha_id}', [AdminController::class, 'getMandal']);
+    Route::get('/admin/get-nagar/{mandal_id}', [AdminController::class, 'getNagar']);
+    Route::get('/admin/get-polling/{gram_id}', [AdminController::class, 'getPolling']);
     Route::get('/admin/get-area/{polling_id}', [AdminController::class, 'getArea']);
 
 
     Route::get('admin/view-responsibilities', [AdminController::class, 'viewResponsibilities'])->name('view_responsibility.index');
     Route::delete('admin/assign/{id}', [AdminController::class, 'assign_destroy'])->name('assign.destroy');
-
+    
 
 
     Route::get('admin/card_responsibiity_pdf', [AdminController::class, 'generate'])->name('generate.index');
@@ -107,8 +106,8 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/change-password', [LoginController::class, 'showChangePasswordForm'])->name('change_password.index');
     Route::post('/change-password', [LoginController::class, 'changePassword'])->name('change-password');
 
-
     Route::post('admin/view-responsibilities/store', [AdminController::class, 'nagarStore'])->name('nagaradd.store');
+
 
     // data upload routes
     Route::get('admin/upload_voter', [AdminController::class, 'upload'])->name('upload.index');
@@ -119,19 +118,20 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/admin/voterlist', [AdminController::class, 'viewvoter'])->name('viewvoter.index');
     Route::post('admin/voterlist', [AdminController::class, 'voterdata'])->name('voterdata.index');
 
+
     // member data upload routes
     Route::get('/admin/membership_form', [AdminController::class, 'membercreate'])->name('membership.create');
     Route::post('/admin/membership_form', [AdminController::class, 'memberstore'])->name('membership.store');
     Route::post('/get-districts', [AdminController::class, 'getDistricts'])->name('get.districts');
     Route::post('/get-vidhansabhas', [AdminController::class, 'getVidhansabhasByDistrict'])->name('get.vidhansabhaD');
 
-     Route::get('/admin/get-districts/{division_id}', [AdminController::class, 'districtsfetch']);
+    Route::get('/admin/get-districts/{division_id}', [AdminController::class, 'districtsfetch']);
     Route::get('/admin/get-vidhansabha/{district_id}', [AdminController::class, 'vidhansabhafetch']);
     Route::get('/admin/get-mandal/{vidhansabha_id}', [AdminController::class, 'getMandals']);
     Route::get('/admin/get-nagar/{mandal_id}', [AdminController::class, 'getNagars']);
     Route::get('/admin/get-pollings/{mandal_id}', [AdminController::class, 'getPollings']);
     Route::get('/admin/get-areas/{polling_id}', [AdminController::class, 'getAreas']);
-     Route::get('/admin/get-gram_pollings/{mandal_id}', [AdminController::class, 'getgramPollings']);
+    Route::get('/admin/get-gram_pollings/{mandal_id}', [AdminController::class, 'getgramPollings']);
     Route::get('/admin/get-subjects/{department_id}', [AdminController::class, 'getSubjects']);
 });
 
@@ -158,9 +158,6 @@ Route::middleware('checklogin')->group(function () {
     Route::get('manager/vidhansabha-loksabha/edit/{id}', [ManagerController::class, 'editVidhansabha'])->name('vidhansabha.edit');
     Route::post('manager/vidhansabha-loksabha/update/{id}', [ManagerController::class, 'updateVidhansabha'])->name('vidhansabha.update');
 
-    // sansadiya chetra routes
-    Route::get('manager/sansadiya', [ManagerController::class, 'indexSansadiya'])->name('sansadiya.index');
-    Route::post('manager/sansadiya/store', [ManagerController::class, 'storeSansadiya'])->name('sansadiya.store');
     // mandal routes 
     Route::get('manager/mandal-master', [ManagerController::class, 'mandalindex'])->name('mandal.index');
     Route::post('manager/mandal-master', [ManagerController::class, 'mandalstore'])->name('mandal.store');
@@ -226,6 +223,7 @@ Route::middleware('checklogin')->group(function () {
     Route::post('manager/jatiwise_members/dropdown', [ManagerController::class, 'getDropdown'])->name('jatiwise.dropdown');
     Route::post('manager/jatiwise_members/filter', [ManagerController::class, 'searchJatiwise'])->name('jatiwise.filter');
 
+
     // department routes
     Route::get('manager/department_master', [ManagerController::class, 'department_index'])->name('department.index');
     Route::post('manager/department_master', [ManagerController::class, 'department_store'])->name('department.store');
@@ -239,6 +237,7 @@ Route::middleware('checklogin')->group(function () {
     Route::post('manager/designation_master/store', [ManagerController::class, 'designationStore'])->name('designation.store');
     Route::get('manager/designation_master/edit/{id}', [ManagerController::class, 'designationEdit'])->name('designation.edit');
     Route::post('manager/designation_master/update/{id}', [ManagerController::class, 'designationUpdate'])->name('designation.update');
+
 
     // complaint subject routes
     Route::get('manager/complaint_master', [ManagerController::class, 'indexComplaint'])->name('complaintSubject.master');
@@ -261,13 +260,13 @@ Route::middleware('checklogin')->group(function () {
     Route::post('manager/create_adhikari_master/update/{id}', [ManagerController::class, 'adhikariUpdate'])->name('adhikari.update');
     Route::post('manager/ajax/designation', [ManagerController::class, 'getDesignation'])->name('ajax.designation');
 
+    
     Route::get('/manager/commander_complaints', [ManagerController::class, 'viewCommanderComplaints'])->name('commander.complaints.view');
     Route::get('/manager/operator_complaints', [ManagerController::class, 'viewOperatorComplaints'])->name('operator.complaints.view');
     Route::post('/manager/update-complaint/{id}', [ManagerController::class, 'updateComplaint'])->name('complaints.update');
 
     Route::get('/manager/details_complaints/{id}', [ManagerController::class, 'allcomplaints_show'])->name('complaints_show.details');
     Route::post('/manager/complaints/{id}/reply', [ManagerController::class, 'complaintsReply'])->name('complaint_reply.reply');
-
 
 
     Route::get('/manager/get-districts/{division_id}', [ManagerController::class, 'getDistricts']);
@@ -291,7 +290,6 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/manager/get-vidhansabha-from-id/{vidhansabha_id}', [ManagerController::class, 'getVidhansabhaOptionsFromId']);
     Route::get('/manager/get-district-from-id/{district_id}', [ManagerController::class, 'getDistrictOptionsFromId']);
     Route::get('/manager/get-division-from-id/{division_id}', [ManagerController::class, 'getDivisionOptionsFromId']);
-
 });
 
 
@@ -308,7 +306,6 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/operator/details_complaint/{id}', [OperatorController::class, 'operator_complaints_show'])->name('operator_complaint.show');
     Route::post('/operator/complaints/{id}/reply', [OperatorController::class, 'operatorReply'])->name('operator_complaint.reply');
 
-
     Route::get('/operator/get-districts/{division_id}', [OperatorController::class, 'getDistricts']);
     Route::get('/operator/get-vidhansabha/{district_id}', [OperatorController::class, 'getVidhansabhas']);
     Route::get('/operator/get-mandal/{vidhansabha_id}', [OperatorController::class, 'getMandals']);
@@ -324,6 +321,7 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/operator/get-parent-district/{vidhansabha_id}', [OperatorController::class, 'getDistrictFromVidhansabha']);
     Route::get('/operator/get-parent-division/{district_id}', [OperatorController::class, 'getDivisionFromDistrict']);
 
+
     Route::get('/get-polling-area/{nagarId}', [OperatorController::class, 'getPollingAndArea']);
     Route::get('/get-designations/{department_name}', [OperatorController::class, 'getDesignations'])->name('get.designations');
     Route::post('operator/ajax/designation', [OperatorController::class, 'getDesignation'])->name('ajax.designation');
@@ -335,11 +333,9 @@ Route::middleware('checklogin')->group(function () {
 });
 
 
-
 // member routes
 Route::middleware('checkmember')->group(function () {
     Route::get('member/complaint', [MemberController::class, 'complaint'])->name('member.complaint');
-
     Route::get('member/complaints', [MemberController::class, 'index'])->name('complaint.index');
     Route::post('member/complaints/store', [MemberController::class, 'store'])->name('complaint.store');
     Route::get('/get-districts/{division_id}', [MemberController::class, 'getDistricts']);
@@ -353,8 +349,9 @@ Route::middleware('checkmember')->group(function () {
     Route::get('/member/get-gram_pollings/{mandal_id}', [MemberController::class, 'getgramPollings']);
     Route::get('/member/get-subjects/{department_id}', [MemberController::class, 'getSubjects']);
 
-
     Route::get('/member/view_complaint', [MemberController::class, 'complaint_index'])->name('complaints.view');
     Route::get('/member/details_complaint/{id}', [MemberController::class, 'complaint_show'])->name('complaint.show');
-    Route::post('/member/complaints/{id}/reply', [MemberController::class, 'postReply'])->name('complaint.reply');
+    Route::post('member/complaints/{id}/reply', [MemberController::class, 'postReply'])->name('complaint.reply');
 });
+
+
