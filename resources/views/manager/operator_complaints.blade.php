@@ -14,7 +14,7 @@
 
         <div class="row page-titles mx-0">
             <div class="col-md-12 col-sm-12 col-xs-12">
-                <div id="complaintFilterForm">
+                <form method="GET" id="complaintFilterForm">
                     <div class="row mt-3">
                         <div class="col-md-2">
                             <label>स्थिति</label>
@@ -127,7 +127,7 @@
                             <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर लागू करें</button>
                         </div>
                     </div>
-                </div>
+                </form>
 
                 <div class="text-center mt-2">
                     <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
@@ -354,6 +354,37 @@
                         success: function(response) {
                             $('#complaintsTableBody').html(response.html);
                             $('#complaint-count').text(response.count);
+
+                            if ($.fn.DataTable.isDataTable('#example')) {
+                                $('#example').DataTable().destroy();
+                            }
+
+                            $('#example').DataTable({
+                                dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
+                                    '<"row"<"col-sm-12"tr>>' +
+                                    '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+                                buttons: [{
+                                        extend: "csv",
+                                        exportOptions: {
+                                            modifier: {
+                                                page: "all"
+                                            },
+                                        },
+                                    },
+                                    {
+                                        extend: "excel",
+                                        exportOptions: {
+                                            modifier: {
+                                                page: "all"
+                                            },
+                                        },
+                                    }
+                                ],
+                                lengthMenu: [
+                                    [10, 25, 50, 100, 500, -1],
+                                    [10, 25, 50, 100, 500, "All"],
+                                ],
+                            });
                         },
                         error: function() {
                             alert('कुछ गड़बड़ हो गई। कृपया पुनः प्रयास करें।');
@@ -393,6 +424,15 @@
                     });
                 });
             });
+
+
+            if (performance.navigation.type === 1) {
+                $('#complaintFilterForm')[0].reset();
+
+                if (window.location.search) {
+                    window.location.href = window.location.origin + window.location.pathname;
+                }
+            }
         </script>
     @endpush
 @endsection
