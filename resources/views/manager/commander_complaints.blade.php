@@ -12,9 +12,9 @@
 @section('content')
     <div class="container">
 
-          <div class="row page-titles mx-0">
+        <div class="row page-titles mx-0">
             <div class="col-md-12 col-sm-12 col-xs-12">
-                <div id="complaintFilterForm">
+                <form method="GET" id="complaintFilterForm">
                     <div class="row mt-3">
                         <div class="col-md-2">
                             <label>स्थिति</label>
@@ -127,7 +127,7 @@
                             <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर लागू करें</button>
                         </div>
                     </div>
-                </div>
+                </form>
 
                 <div class="text-center mt-2">
                     <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
@@ -151,10 +151,10 @@
                         @endif
 
                         <div class="table-responsive">
-                             <span
+                            <span
                                 style="margin-bottom: 8px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
                                 शिकायत - <span id="complaint-count">{{ $complaints->count() }}</span></span>
-                            <table id="example" style="min-width: 845px" class="display table-bordered">
+                            <table id="example" class="display table-bordered">
                                 <thead>
                                     <tr>
                                         <th>क्र.</th>
@@ -186,7 +186,7 @@
 विधानसभा:  {{ $complaint->vidhansabha->vidhansabha ?? 'N/A' }}
 मंडल:  {{ $complaint->mandal->mandal_name ?? 'N/A' }}
 नगर/ग्राम:  {{ $complaint->gram->nagar_name ?? 'N/A' }}
-मतदान केंद्र:  {{ $complaint->polling->polling_name ?? 'N/A' }} ({{ $complaint->polling->polling_no ?? 'N/A'}})
+मतदान केंद्र:  {{ $complaint->polling->polling_name ?? 'N/A' }} ({{ $complaint->polling->polling_no ?? 'N/A' }})
 क्षेत्र:  {{ $complaint->area->area_name ?? 'N/A' }}
 ">
                                                 {{ $complaint->division->division_name ?? 'N/A' }}<br>
@@ -195,13 +195,14 @@
                                                 {{ $complaint->mandal->mandal_name ?? 'N/A' }}<br>
                                                 {{ $complaint->gram->nagar_name ?? 'N/A' }}<br>
                                                 {{ $complaint->polling->polling_name ?? 'N/A' }}
-                                                ({{ $complaint->polling->polling_no ?? 'N/A'}})
+                                                ({{ $complaint->polling->polling_no ?? 'N/A' }})
                                                 <br>
                                                 {{ $complaint->area->area_name ?? 'N/A' }}
                                             </td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}
+                                            </td>
                                             {{-- <td>
                                                 @if (!in_array($complaint->complaint_status, [4, 5]))
                                                     {{ $complaint->pending_days }} दिन
@@ -225,9 +226,9 @@
                                                 @if (!empty($complaint->issue_attachment))
                                                     <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
                                                         target="_blank" class="btn btn-sm btn-success">
-                                                      देखें
+                                                        देखें
                                                     </a>
-                                                {{-- @else
+                                                    {{-- @else
                                                     <button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं
                                                         है</button> --}}
                                                 @endif
@@ -252,7 +253,7 @@
     </div>
 
 
-      @push('scripts')
+    @push('scripts')
         <script>
             $(document).ready(function() {
                 // Mandal → Gram
@@ -332,6 +333,7 @@
 
                 // Apply Filters
                 $('#applyFilters').click(function() {
+                    // e.preventDefault();
                     let data = {
                         complaint_status: $('#complaint_status').val(),
                         complaint_type: $('#complaint_type').val(),
@@ -353,6 +355,37 @@
                         success: function(response) {
                             $('#complaintsTableBody').html(response.html);
                             $('#complaint-count').text(response.count);
+
+                            if ($.fn.DataTable.isDataTable('#example')) {
+                                $('#example').DataTable().destroy();
+                            }
+
+                            $('#example').DataTable({
+                                dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
+                                    '<"row"<"col-sm-12"tr>>' +
+                                    '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+                                buttons: [{
+                                        extend: "csv",
+                                        exportOptions: {
+                                            modifier: {
+                                                page: "all"
+                                            },
+                                        },
+                                    },
+                                    {
+                                        extend: "excel",
+                                        exportOptions: {
+                                            modifier: {
+                                                page: "all"
+                                            },
+                                        },
+                                    }
+                                ],
+                                lengthMenu: [
+                                    [10, 25, 50, 100, 500, -1],
+                                    [10, 25, 50, 100, 500, "All"],
+                                ],
+                            });
                         },
                         error: function() {
                             alert('कुछ गड़बड़ हो गई। कृपया पुनः प्रयास करें।');
@@ -392,6 +425,14 @@
                     });
                 });
             });
+
+            if (performance.navigation.type === 1) {
+                $('#complaintFilterForm')[0].reset();
+
+                if (window.location.search) {
+                    window.location.href = window.location.origin + window.location.pathname;
+                }
+            }
         </script>
     @endpush
 @endsection
