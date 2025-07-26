@@ -13,7 +13,11 @@
 
             {{-- Admin Panel --}}
             @if ($role == 1)
-                <li class="nav-label" style="color: #c0bebe">एडमिन टूल्स</li>
+                <li class="nav-label">
+                    <a href="{{ route('admin.page') }}" style="color: #c0bebe;">
+                        एडमिन टूल्स
+                    </a>
+                </li>
 
                 <li><a href="{{ route('membership.create') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">सदस्यता फाॅर्म</span></a></li>
@@ -67,9 +71,14 @@
 
             {{-- Manager Panel --}}
             @if ($role == 2)
-                <li class="nav-label" style="color: #c0bebe">मैनेजर टूल्स</li>
-            
-                <li><a class="has-arrow" href="#" aria-expanded="false"> <i class="icon icon-arrow-right"></i><span class="nav-text">क्षेत्र</span></a>
+                <li class="nav-label">
+                    <a href="{{ route('manager.dashboard') }}" style="color: #c0bebe;">
+                        मैनेजर टूल्स
+                    </a>
+                </li>
+
+                <li><a class="has-arrow" href="#" aria-expanded="false"> <i
+                            class="icon icon-arrow-right"></i><span class="nav-text">क्षेत्र</span></a>
                     <ul class="" aria-expanded="false">
                         <li><a href="{{ route('division.index') }}">संभाग जोड़े</a></li>
 
@@ -140,7 +149,7 @@
                         <li><a href="{{ route('operator.complaints.view') }}">कार्यालय समस्याएँ</a></li>
                     </ul>
                 </li>
-                
+
                 <li><a href="{{ route('change_password.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">पासवर्ड बदलें</span></a></li>
 
@@ -202,7 +211,12 @@
 
             {{-- User Panel --}}
             @if ($role == 3)
-                <li class="nav-label" style="color: #c0bebe">कार्यालय टूल्स</li>
+                <li class="nav-label">
+                    <a href="{{ route('operator.dashboard') }}" style="color: #c0bebe;">
+                        कार्यालय टूल्स
+                    </a>
+                </li>
+                
                 <li><a href="{{ route('operator_complaint.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
                 <li><a href="{{ route('operator_complaint.view') }}"><i class="icon icon-arrow-right"></i><span
@@ -222,7 +236,9 @@
 
             {{-- Member Panel --}}
             @if (!in_array($role, [1, 2, 3]))
-                <li class="nav-label" style="color: #c0bebe">फ़ील्ड टूल्स</li>
+                <li class="nav-label">
+                    <a href="{{ route('member.dashboard') }}" style="color: #c0bebe;"> फ़ील्ड टूल्स </a>
+                </li>
                 <li><a href="{{ route('member.complaint') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
 

@@ -39,6 +39,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
+    public function page()
+    {
+        return view('admin/page');
+    }
+
     public function usercreate()
     {
         $admins = User::all();

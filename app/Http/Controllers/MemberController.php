@@ -35,6 +35,11 @@ use Illuminate\Support\Facades\Response;
 
 class MemberController extends Controller
 {
+    public function dashboard()
+    {
+        return view('member/dashboard');
+    }
+
     public function complaint(Request $request)
     {
         $registrationId = session('registration_id');

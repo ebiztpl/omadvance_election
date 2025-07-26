@@ -35,6 +35,11 @@ use Illuminate\Support\Facades\Response;
 
 class OperatorController extends Controller
 {
+    public function dashboard()
+    {
+        return view('operator/dashboard');
+    }
+
     public function index()
     {
         $states = State::orderBy('name')->get();
