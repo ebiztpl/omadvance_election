@@ -203,7 +203,7 @@
                                             </td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                            <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i') }}
+                                            <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}
                                             </td>
                                             {{-- <td>
                                                 @if (!in_array($complaint->complaint_status, [4, 5]))
@@ -237,10 +237,18 @@
                                                 @endif
                                             </td>
                                             <td>
-                                               <a href="{{ route('complaints.show', $complaint->complaint_id) }}"
-                                                    class="btn btn-sm btn-primary" style="white-space: nowrap;">
-                                                    क्लिक करें
-                                                </a>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <a href="{{ route('complaints.show', $complaint->complaint_id) }}"
+                                                        class="btn btn-sm btn-primary" style="white-space: nowrap;">
+                                                        क्लिक करें
+                                                    </a>
+
+                                                    <button type="button" class="btn btn-sm btn-danger delete-complaint"
+                                                        data-id="{{ $complaint->complaint_id }}"
+                                                        style="white-space: nowrap; margin-left: 5px;">
+                                                        हटाएं
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -392,6 +400,33 @@
                         }
                     });
                 });
+            });
+
+            $(document).on('click', '.delete-complaint', function(e) {
+                e.preventDefault();
+
+                let complaintId = $(this).data('id');
+
+                if (confirm('क्या आप वाकई इस शिकायत को हटाना चाहते हैं?')) {
+                    $.ajax({
+                        url: '/complaints/' + complaintId,
+                        type: 'DELETE',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            alert(response.success);
+                            location.reload();
+                        },
+                        error: function(xhr) {
+                            if (xhr.responseJSON && xhr.responseJSON.error) {
+                                alert(xhr.responseJSON.error);
+                            } else {
+                                alert('कुछ गलत हो गया, कृपया पुनः प्रयास करें।');
+                            }
+                        }
+                    });
+                }
             });
         </script>
     @endpush

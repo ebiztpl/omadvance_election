@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\District;
 use App\Models\Department;
 use App\Models\ComplaintReply;
+use App\Models\User;
 use App\Models\Adhikari;
 use App\Models\Subject;
 use App\Models\Designation;
@@ -549,7 +550,7 @@ class MemberController extends Controller
                     '</td>';
 
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
-                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i') . '</td>';
+                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</td>';
 
                 // Pending Days or Status
                 if (in_array($complaint->complaint_status, [4, 5])) {
@@ -603,6 +604,7 @@ class MemberController extends Controller
     {
         $complaint = Complaint::with(
             'replies.predefinedReply',
+            'replies.forwardedToManager',
             'registration',
             'division',
             'district',
@@ -615,10 +617,12 @@ class MemberController extends Controller
         )->findOrFail($id);
 
         $replyOptions = ComplaintReply::all();
+        $managers = User::where('role', 2)->get();
 
         return view('member/details_complaints', [
             'complaint' => $complaint,
             'replyOptions' => $replyOptions,
+            'managers' => $managers,
         ]);
     }
 
@@ -627,6 +631,7 @@ class MemberController extends Controller
         $request->validate([
             'cmp_reply' => 'required|string',
             'cmp_status' => 'required|in:1,2,3,4,5',
+            'forwarded_to' => 'nullable|exists:admin_master,admin_id',
             'selected_reply' => [
                 'nullable',
                 function ($attribute, $value, $fail) {
@@ -649,6 +654,10 @@ class MemberController extends Controller
 
         if ($request->filled('c_video')) {
             $reply->c_video = $request->c_video;
+        }
+
+        if ($request->filled('forwarded_to')) {
+            $reply->forwarded_to = $request->forwarded_to;
         }
 
         $reply->save();

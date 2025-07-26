@@ -285,7 +285,7 @@
                                             @else
                                                 <option value="">--चुने--</option>
                                             @endif
-                                              <option value="अन्य">अन्य</option>
+                                            <option value="अन्य">अन्य</option>
                                         </select>
                                     </div>
                                 </div>
@@ -350,51 +350,7 @@
         </div>
 
         {{-- Reply History --}}
-        {{-- <div class="card container" style="color: #000; ">
-            <h5 class="my-3">Reply History for {{ $complaint->complaint_number }}</h5>
-            <div class="row">
-                @foreach ($complaint->replies as $reply)
-                    <div class="col-md-4 mb-4">
-                        <div class="card h-100" style="border: 1px solid black">
-                            <div class="card-body">
-
-                                <p><strong>समस्या/समाधान:</strong> {{ $reply->complaint_reply }}</p>
-                                <p><strong>दिनांक:</strong>
-                                    {{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y') : 'N/A' }}
-                                </p>
-                                @php
-                                    $replyFromName =
-                                        $reply->reply_from == 1 ? $reply->complaint->user->name ?? 'User' : 'BJS Team';
-                                @endphp
-
-                                <p><strong>प्रतिक्रिया देने वाला:</strong> {{ $replyFromName }}</p>
-
-                                @if (!empty($reply->cb_photo))
-                                    <label class="form-label mr-3"><strong>पूर्व स्थिति की तस्वीर: </strong> </label>
-                                    <a href="{{ asset($reply->cb_photo) }}" class="btn btn-primary mb-3"
-                                        target="_blank">अटैचमेंट खोलें</a>
-                                @endif
-
-                                @if (!empty($reply->ca_photo))
-                                    <label class="form-label mr-4"><strong>बाद की तस्वीर: </strong></label>
-                                    <a href="{{ asset($reply->ca_photo) }}" class="btn btn-primary"
-                                        target="_blank">अटैचमेंट खोलें</a>
-                                @endif
-
-                                @if (!empty($reply->c_video))
-                                    <label class="form-label mr-4"><strong>यूट्यूब लिंक: </strong></label>
-                                    <a href="{{ asset($reply->c_video) }}" class="btn btn-primary"
-                                        target="_blank">{{ $reply->c_video }}</a>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div> --}}
-
-
-        <div class="card container" style="color: #000;">
+        {{-- <div class="card container" style="color: #000;">
             <h5 class="my-3">Reply History for {{ $complaint->complaint_number }}</h5>
 
             <div class="table-responsive">
@@ -418,7 +374,7 @@
                             @endphp
                             <tr>
                                 <td>{{ $reply->complaint_reply }}</td>
-                                <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i') : 'N/A' }}
+                                <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') : 'N/A' }}
                                 </td>
                                 <td>{{ $replyFromName }}</td>
                                 <td>{{ $reply->predefinedReply->reply ?? '-' }}</td>
@@ -455,8 +411,135 @@
                     </tbody>
                 </table>
             </div>
+        </div> --}}
+
+
+        <div class="card container" style="color: #000;">
+            <h5 class="my-3">Reply History for {{ $complaint->complaint_number }}</h5>
+
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>निर्धारित उत्तर</th>
+                            <th>स्थिति</th>
+                            <th>दिनांक</th>
+                            <th>भेजा गया</th>
+                            <th>विवरण देखें</th>
+                        </tr>
+                    </thead>
+                    <tbody style="color: #000;">
+                        @forelse ($complaint->replies as $reply)
+                            <tr>
+                                <td>{{ $reply->predefinedReply->reply ?? '-' }}</td>
+                                <td>{!! $complaint->statusTextPlain() !!}</td>
+                                <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') : 'N/A' }}
+                                </td>
+                                <td> {{ $reply->forwardedToManager?->admin_name ?? '' }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-info view-details-btn"
+                                        data-id="{{ $reply->complaint_id }}" data-toggle="modal"
+                                        data-target="#detailsModal">
+                                        देखें
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center">कोई जवाब उपलब्ध नहीं है।</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
+        <div class="modal fade" id="detailsModal" tabindex="-1" role="dialog" aria-labelledby="detailsModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">शिकायत विवरण</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="modal-body-content">
+                        <div class="container-fluid">
+
+                            <div class="border p-2 rounded mb-4 bg-light">
+                                <h5 class="fs-5 mb-3">समस्या / समाधान</h5>
+                                <p class="mb-0">{{ $reply->complaint_reply }}</p>
+                            </div>
+
+                            <div class="border p-2 rounded mb-4">
+                                <h5 class="fs-5 mb-3">उत्तर विवरण</h5>
+                                <div class="table-responsive">
+                                    <table style="color: black" class="table table-bordered text-center align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>पूर्वनिर्धारित उत्तर</th>
+                                                <th>स्थिति</th>
+                                                <th>उत्तर की तिथि</th>
+                                                <th>जिसे भेजा गया</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>{{ $reply->predefinedReply->reply ?? '—' }}</td>
+                                                <td>{!! $complaint->statusTextPlain() !!}</td>
+                                                <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') : '—' }}
+                                                </td>
+                                                <td>{{ $reply->forwardedToManager?->admin_name ?? '—' }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="border p-3 rounded mb-3 bg-light">
+                                <h5 class="fs-5 mb-4 text-center fw-bold">अटैचमेंट्स</h5>
+
+                                <div class="d-flex flex-wrap justify-content-center">
+                                    <div class="card p-3 mr-2 border-0 shadow rounded text-center"
+                                        style="width: 200px; background-color: #ffffff;">
+                                        <div class="fw-semibold mb-2">पूर्व स्थिति की तस्वीर</div>
+                                        @if (!empty($reply->cb_photo))
+                                            <a href="{{ asset($reply->cb_photo) }}" target="_blank"
+                                                class="btn btn-sm btn-outline-primary">खोलें</a>
+                                        @else
+                                            <button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं है</button>
+                                        @endif
+                                    </div>
+
+                                    <div class="card mr-2 p-3 border-0 shadow rounded text-center"
+                                        style="width: 200px; background-color: #ffffff;">
+                                        <div class="fw-semibold mb-2">बाद की तस्वीर</div>
+                                        @if (!empty($reply->ca_photo))
+                                            <a href="{{ asset($reply->ca_photo) }}" target="_blank"
+                                                class="btn btn-sm btn-outline-primary">खोलें</a>
+                                        @else
+                                            <button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं है</button>
+                                        @endif
+                                    </div>
+
+                                    <div class="card mr-2 p-3 border-0 shadow rounded text-center"
+                                        style="width: 200px; background-color: #ffffff;">
+                                        <div class="fw-semibold mb-2">यूट्यूब लिंक</div>
+                                        @if (!empty($reply->c_video))
+                                            <a href="{{ $reply->c_video }}" target="_blank"
+                                                class="btn btn-sm btn-outline-primary">लिंक</a>
+                                        @else
+                                            <button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं है</button>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         {{-- Reply Form --}}
         <div class="card">
@@ -496,6 +579,16 @@
                                     <option value="{{ $option->reply_id }}">{{ $option->reply }}</option>
                                 @endforeach
                                 <option value="अन्य">अन्य</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">अधिकारी चुनें (आगे भेजे)</label>
+                            <select name="forwarded_to" id="managers" class="form-control">
+                                <option value="">--चयन करें--</option>
+                                @foreach ($managers as $manager)
+                                    <option value="{{ $manager->admin_id }}">{{ $manager->admin_name }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
