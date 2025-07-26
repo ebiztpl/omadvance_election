@@ -48,6 +48,8 @@ Route::post('/logout', function () {
 // admin routes
 Route::middleware('checklogin')->group(function () {
 
+    Route::get('/admin/page', [AdminController::class, 'page'])->name('admin.page');
+
     Route::get('admin/users/create', [AdminController::class, 'usercreate'])->name('user.create');
     Route::post('admin/users', [AdminController::class, 'userstore'])->name('admin.store');
     Route::post('admin/users/{user}', [AdminController::class, 'userupdate'])->name('admin.update');
@@ -139,6 +141,12 @@ Route::middleware('checklogin')->group(function () {
 
 // manager routes
 Route::middleware('checklogin')->group(function () {
+
+    // dashboard routes
+    Route::get('/manager/dashboard', [ManagerController::class, 'dashboard'])->name('manager.dashboard');
+
+
+
     // division routes
     Route::get('manager/division_master', [ManagerController::class, 'index'])->name('division.index');
     Route::post('manager/division_master', [ManagerController::class, 'store'])->name('division.store');
@@ -299,9 +307,8 @@ Route::middleware('checklogin')->group(function () {
 // operator routes
 Route::middleware('checklogin')->group(function () {
 
-    Route::get('/operator/dashboard', function () {
-        return view('operator/dashboard');
-    })->name('operator.dashboard');
+    Route::get('/operator/dashboard', [OperatorController::class, 'dashboard'])->name('operator.dashboard');
+
     Route::get('/operator/complaints', [OperatorController::class, 'index'])->name('operator_complaint.index');
     Route::post('/operator/complaints/store', [OperatorController::class, 'store'])->name('operator_complaint.store');
     Route::get('/operator/view_complaint', [OperatorController::class, 'view_complaints'])->name('operator_complaint.view');
@@ -338,6 +345,8 @@ Route::middleware('checklogin')->group(function () {
 
 // member routes
 Route::middleware('checkmember')->group(function () {
+    Route::get('/member/dashboard', [MemberController::class, 'dashboard'])->name('member.dashboard');
+
     Route::get('member/complaint', [MemberController::class, 'complaint'])->name('member.complaint');
 
     Route::get('member/complaints', [MemberController::class, 'index'])->name('complaint.index');
