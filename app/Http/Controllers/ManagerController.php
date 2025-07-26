@@ -28,6 +28,13 @@ use Illuminate\Support\Facades\DB;
 
 class ManagerController extends Controller
 {
+    // dashboard functions
+    public function dashboard()
+    {
+        return view('manager/dashboard');
+    }
+
+
     // division master controller functions
     public function index()
     {

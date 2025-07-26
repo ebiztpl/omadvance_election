@@ -80,7 +80,7 @@ class LoginController extends Controller
                 case 'एडमिन':
                     return redirect('/admin/dashboard');
                 case 'मैनेजर':
-                    return redirect('/manager/division_master');
+                    return redirect('/manager/dashboard');
                 case 'कार्यालय':
                     return redirect('/operator/dashboard');
             }
