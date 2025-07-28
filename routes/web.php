@@ -144,7 +144,12 @@ Route::middleware('checklogin')->group(function () {
 
     // dashboard routes
     Route::get('/manager/dashboard', [ManagerController::class, 'dashboard'])->name('manager.dashboard');
-
+    Route::get('/calendar-data', [ManagerController::class, 'getCalendarData']);
+    Route::get('/complaint-summary', [ManagerController::class, 'getComplaintSummary']);
+    Route::get('/fetch-suchna', [ManagerController::class, 'fetchSuchna']);
+    Route::get('/fetch-vibhaag-count', [ManagerController::class, 'fetchVibhaagWiseCount']);
+    Route::get('/fetch-status', [ManagerController::class, 'fetchStatus']);
+    Route::get('/dashboard/stats', [ManagerController::class, 'fetchDashboardStats']);
 
 
     // division routes

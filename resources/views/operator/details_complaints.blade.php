@@ -183,9 +183,14 @@
                                 </td>
                                 <td> {{ $reply->forwardedToManager?->admin_name ?? '' }}</td>
                                 <td>
-                                    <button type="button" class="btn btn-sm btn-info view-details-btn"
-                                        data-id="{{ $reply->complaint_id }}" data-toggle="modal"
-                                        data-target="#detailsModal">
+                                    <button type="button" class="btn btn-sm btn-info view-details-btn" data-toggle="modal"
+                                        data-target="#detailsModal" data-reply="{{ $reply->complaint_reply }}"
+                                        data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
+                                        data-status="{{ strip_tags($complaint->statusTextPlain()) }}"
+                                        data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
+                                        data-predefined="{{ $reply->predefinedReply->reply ?? '-' }}"
+                                        data-cb-photo="{{ $reply->cb_photo }}" data-ca-photo="{{ $reply->ca_photo }}"
+                                        data-video="{{ $reply->c_video }}">
                                         देखें
                                     </button>
                                 </td>
@@ -229,92 +234,77 @@
             aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
+
                     <div class="modal-header">
-                        <h5 class="modal-title">शिकायत विवरण</h5>
+                        <h5 class="modal-title">जवाब विवरण</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
+                            <span>&times;</span>
                         </button>
                     </div>
-                    <div class="modal-body" id="modal-body-content">
-                        <div class="container-fluid">
 
-                            <div class="border p-2 rounded mb-4 bg-light">
-                                <h5 class="fs-5 mb-3">समस्या / समाधान</h5>
-                                <p class="mb-0">{{ $reply->complaint_reply }}</p>
-                            </div>
-
-                            <div class="border p-2 rounded mb-4">
-                                <h5 class="fs-5 mb-3">उत्तर विवरण</h5>
-                                <div class="table-responsive">
-                                    <table style="color: black" class="table table-bordered text-center align-middle">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>पूर्वनिर्धारित उत्तर</th>
-                                                <th>स्थिति</th>
-                                                <th>उत्तर की तिथि</th>
-                                                <th>जिसे भेजा गया</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>{{ $reply->predefinedReply->reply ?? '—' }}</td>
-                                                <td>{!! $complaint->statusTextPlain() !!}</td>
-                                                <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') : '—' }}
-                                                </td>
-                                                <td>{{ $reply->forwardedToManager?->admin_name ?? '—' }}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="border p-3 rounded mb-3 bg-light">
-                                <h5 class="fs-5 mb-4 text-center fw-bold">अटैचमेंट्स</h5>
-
-                                <div class="d-flex flex-wrap justify-content-center">
-                                    <div class="card p-3 mr-2 border-0 shadow rounded text-center"
-                                        style="width: 200px; background-color: #ffffff;">
-                                        <div class="fw-semibold mb-2">पूर्व स्थिति की तस्वीर</div>
-                                        @if (!empty($reply->cb_photo))
-                                            <a href="{{ asset($reply->cb_photo) }}" target="_blank"
-                                                class="btn btn-sm btn-outline-primary">खोलें</a>
-                                        @else
-                                            <button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं है</button>
-                                        @endif
-                                    </div>
-
-                                    <div class="card mr-2 p-3 border-0 shadow rounded text-center"
-                                        style="width: 200px; background-color: #ffffff;">
-                                        <div class="fw-semibold mb-2">बाद की तस्वीर</div>
-                                        @if (!empty($reply->ca_photo))
-                                            <a href="{{ asset($reply->ca_photo) }}" target="_blank"
-                                                class="btn btn-sm btn-outline-primary">खोलें</a>
-                                        @else
-                                            <button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं है</button>
-                                        @endif
-                                    </div>
-
-                                    <div class="card mr-2 p-3 border-0 shadow rounded text-center"
-                                        style="width: 200px; background-color: #ffffff;">
-                                        <div class="fw-semibold mb-2">यूट्यूब लिंक</div>
-                                        @if (!empty($reply->c_video))
-                                            <a href="{{ $reply->c_video }}" target="_blank"
-                                                class="btn btn-sm btn-outline-primary">लिंक</a>
-                                        @else
-                                            <button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं है</button>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-
-
-
+                    <div class="modal-body">
+                        <div class="border p-2 rounded mb-4 bg-light">
+                            <h5>समस्या / समाधान</h5>
+                            <p id="modal-reply">—</p>
                         </div>
+
+                        <div class="border p-2 rounded mb-3">
+                            <h5>उत्तर विवरण</h5>
+                            <div class="table-responsive">
+                                <table style="color: black" class="table table-bordered text-center align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>पूर्वनिर्धारित उत्तर</th>
+                                            <th>स्थिति</th>
+                                            <th>तारीख</th>
+                                            <th>भेजा गया</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td id="modal-predefined">—</td>
+                                            <td id="modal-status">—</td>
+                                            <td id="modal-date">—</td>
+                                            <td id="modal-admin">—</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="border p-2 rounded mb-3 bg-light">
+                                <h5 class="mb-3 text-center">अटैचमेंट्स</h5>
+                                <div class="d-flex flex-wrap justify-content-center gap-2">
+                                    <div class="card p-3 mr-2  border-0 shadow rounded" style="background-color: #ffffff;">
+                                        <div class="text-center" style="width: 200px;">
+                                            <div>पूर्व स्थिति की तस्वीर</div>
+                                            <a href="#" id="cb-photo-link"
+                                                class="btn btn-sm btn-outline-primary mt-1" target="_blank">खोलें</a>
+                                        </div>
+                                    </div>
+
+                                    <div class="card p-3 mr-2  border-0 shadow rounded"
+                                        style="background-color: #ffffff;">
+                                        <div class="text-center" style="width: 200px;">
+                                            <div>बाद की तस्वीर</div>
+                                            <a href="#" id="ca-photo-link"
+                                                class="btn btn-sm btn-outline-primary mt-1" target="_blank">खोलें</a>
+                                        </div>
+                                    </div>
+
+                                    <div class="card p-3 mr-2  border-0 shadow rounded"
+                                        style="background-color: #ffffff;">
+                                        <div class="text-center" style="width: 200px;">
+                                            <div>वीडियो लिंक</div>
+                                            <a href="#" id="video-link" class="btn btn-sm btn-outline-primary mt-1"
+                                                target="_blank">खोलें</a>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-
-
-
-
                 </div>
             </div>
         </div>
@@ -489,6 +479,27 @@
 
     @push('scripts')
         <script>
+            $(document).on('click', '.view-details-btn', function() {
+                const reply = $(this).data('reply') || '—';
+                const replyDate = $(this).data('reply-date') || '—';
+                const status = $(this).data('status') || '—';
+                const admin = $(this).data('admin') || '—';
+                const predefined = $(this).data('predefined') || '—';
+                const cbPhoto = $(this).data('cb-photo');
+                const caPhoto = $(this).data('ca-photo');
+                const video = $(this).data('video');
+
+                $('#modal-reply').text(reply);
+                $('#modal-status').text(status);
+                $('#modal-date').text(replyDate);
+                $('#modal-admin').text(admin);
+                $('#modal-predefined').text(predefined);
+
+                cbPhoto ? $('#cb-photo-link').attr('href', cbPhoto).show() : $('#cb-photo-link').hide();
+                caPhoto ? $('#ca-photo-link').attr('href', caPhoto).show() : $('#ca-photo-link').hide();
+                video ? $('#video-link').attr('href', video).show() : $('#video-link').hide();
+            });
+
             $(document).ready(function() {
                 $('#replyForm').on('submit', function(e) {
                     e.preventDefault();

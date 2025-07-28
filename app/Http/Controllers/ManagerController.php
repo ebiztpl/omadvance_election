@@ -21,10 +21,10 @@ use App\Models\Level;
 use App\Models\Jati;
 use App\Models\Position;
 use App\Models\Complaint;
-use Carbon\Carbon;
 use App\Models\Reply;
 use App\Models\JatiwiseVoter;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class ManagerController extends Controller
 {
@@ -34,6 +34,225 @@ class ManagerController extends Controller
         return view('manager/dashboard');
     }
 
+    public function getCalendarData(Request $request)
+    {
+        $month = (int) $request->month;
+        $year = (int) $request->year;
+
+        if (!$month || !$year) {
+            return response()->json(['error' => 'Invalid month or year'], 400);
+        }
+
+        $start = Carbon::createFromDate($year, $month, 1)->startOfMonth()->toDateString();
+        $end = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+
+        $records = DB::table('complaint')
+            ->selectRaw("DATE(posted_date) as date,
+                     SUM(CASE WHEN complaint_type = 'समस्या' THEN 1 ELSE 0 END) as samasya,
+                     SUM(CASE WHEN complaint_type = 'विकास' THEN 1 ELSE 0 END) as vikash,
+                     SUM(CASE WHEN complaint_type = 'शुभ सुचना' THEN 1 ELSE 0 END) as shubh,
+                     SUM(CASE WHEN complaint_type = 'अशुभ सुचना' THEN 1 ELSE 0 END) as asubh")
+            ->whereBetween(DB::raw('DATE(posted_date)'), [$start, $end])
+            ->groupBy(DB::raw("DATE(posted_date)"))
+            ->get();
+
+        $data = [];
+        foreach ($records as $row) {
+            $data[$row->date] = [
+                'samasya' => (int) $row->samasya,
+                'vikash' => (int) $row->vikash,
+                'shubh' => (int) $row->shubh,
+                'asubh' => (int) $row->asubh,
+            ];
+        }
+
+        return response()->json($data);
+    }
+
+    public function getComplaintSummary()
+    {
+        $now = Carbon::now();
+
+        $ranges = [
+            'आज' => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
+            'कल' => [$now->copy()->subDay()->startOfDay(), $now->copy()->subDay()->endOfDay()],
+            'पिछला सप्ताह' => [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()],
+            'पिछला माह' => [$now->copy()->subMonth()->startOfMonth(), $now->copy()->subMonth()->endOfMonth()],
+            'कुल' => [Carbon::create(2000, 1, 1), $now]
+        ];
+
+        $result = [];
+
+        foreach ($ranges as $label => [$start, $end]) {
+            $records = DB::table('complaint')
+                ->selectRaw("
+                    type,
+                    SUM(CASE WHEN complaint_type = 'समस्या' THEN 1 ELSE 0 END) as samasya,
+                    SUM(CASE WHEN complaint_type = 'विकास' THEN 1 ELSE 0 END) as vikash,
+                    SUM(CASE WHEN complaint_type = 'शुभ सुचना' THEN 1 ELSE 0 END) as shubh,
+                    SUM(CASE WHEN complaint_type = 'अशुभ सुचना' THEN 1 ELSE 0 END) as asubh
+                ")
+                ->whereBetween('posted_date', [$start, $end])
+                ->groupBy('type')
+                ->get();
+
+            // Only replies for समस्या and विकास
+            $replyCounts = DB::table('complaint')
+                ->join('complaint_reply', 'complaint.complaint_id', '=', 'complaint_reply.complaint_id')
+                ->whereBetween('complaint.posted_date', [$start, $end])
+                ->whereIn('complaint.complaint_type', ['समस्या', 'विकास'])
+                ->select('complaint.type', DB::raw('COUNT(*) as reply_count'))
+                ->groupBy('complaint.type')
+                ->pluck('reply_count', 'complaint.type');
+
+            $entry = [
+                'samay' => $label,
+                'samasya' => ['operator' => 0, 'commander' => 0],
+                'vikash' => ['operator' => 0, 'commander' => 0],
+                'shubh' => ['operator' => 0, 'commander' => 0],
+                'asubh' => ['operator' => 0, 'commander' => 0],
+                'replies' => [
+                    'operator' => $replyCounts[2] ?? 0,
+                    'commander' => $replyCounts[1] ?? 0,
+                ],
+            ];
+
+            foreach ($records as $row) {
+                $type = $row->type == 1 ? 'commander' : 'operator';
+                $entry['samasya'][$type] = $row->samasya;
+                $entry['vikash'][$type] = $row->vikash;
+                $entry['shubh'][$type] = $row->shubh;
+                $entry['asubh'][$type] = $row->asubh;
+            }
+
+            $result[] = $entry;
+        }
+
+        return response()->json($result);
+    }
+
+    public function fetchSuchna()
+    {
+        $today = \Carbon\Carbon::today();
+        $yesterday = \Carbon\Carbon::yesterday();
+        $weekStart = \Carbon\Carbon::today()->subDays(6);
+
+        $records = Complaint::with('area') 
+            ->whereIn('complaint_type', ['शुभ सुचना', 'अशुभ सुचना'])
+            ->whereDate('posted_date', '>=', $weekStart)
+            ->orderBy('posted_date', 'desc')
+            ->get([
+                'name',
+                'mobile_number',
+                'area_id',
+                'issue_description',
+                'complaint_type',
+                'posted_date'
+            ]);
+
+        $todayData = [];
+        $yesterdayData = [];
+        $weekData = [];
+
+        foreach ($records as $row) {
+            $date = \Carbon\Carbon::parse($row->posted_date)->toDateString();
+
+            $recordData = $row->toArray();
+            $recordData['area_name'] = $row->area->area_name ?? 'N/A'; 
+
+            if ($date == $today->toDateString()) {
+                $todayData[] = $recordData;
+            } elseif ($date == $yesterday->toDateString()) {
+                $yesterdayData[] = $recordData;
+            }
+
+            $weekData[] = $recordData;
+        }
+
+        return response()->json([
+            'today' => $todayData,
+            'yesterday' => $yesterdayData,
+            'week' => $weekData
+        ]);
+    }
+
+
+    public function fetchVibhaagWiseCount()
+    {
+        $data = DB::table('complaint')
+            ->select(
+                'complaint_department as department',
+                DB::raw('COUNT(*) as total')
+            )
+            ->whereNotNull('complaint_department')
+            ->where('complaint_department', '!=', '')
+            ->where('complaint_department', '!=', '--चुने--')
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->groupBy('complaint_department')
+            ->orderBy('total', 'DESC')
+            ->get();
+
+        return response()->json($data);
+    }
+
+    public function fetchStatus()
+    {
+        $statusLabels = [
+            1 => 'शिकायत दर्ज',
+            2 => 'प्रक्रिया में',
+            3 => 'स्थगित',
+            4 => 'पूर्ण',
+            5 => 'रद्द',
+        ];
+
+        $data = DB::table('complaint')
+            ->select('complaint_status', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('complaint_status')
+            ->where('complaint_status', '!=', '')
+            ->groupBy('complaint_status')
+            ->orderBy('total', 'DESC')
+            ->get()
+            ->map(function ($item) use ($statusLabels) {
+                return [
+                    'status' => $statusLabels[$item->complaint_status] ?? 'अन्य',
+                    'total' => $item->total
+                ];
+            });
+
+        return response()->json($data);
+
+        return response()->json($data);
+    }
+
+    public function fetchDashboardStats()
+    {
+        $today = now()->toDateString();
+
+        $newVotersToday = DB::table('registration_form')
+            ->whereDate('date_time', $today)
+            ->where('type', 1)
+            ->count();
+
+        $newContactsToday = DB::table('registration_form')
+            ->whereDate('date_time', $today)
+            ->where('type', 2)
+            ->count();
+
+        $totalVoters = DB::table('registration_form')
+            ->where('type', 1)
+            ->count();
+
+        $totalContacts = DB::table('registration_form')
+            ->where('type', 2)
+            ->count();
+
+        return response()->json([
+            'new_voters'     => $newVotersToday,
+            'new_contacts'   => $newContactsToday,
+            'total_voters'   => $totalVoters,
+            'total_contacts' => $totalContacts,
+        ]);
+    }
 
     // division master controller functions
     public function index()
@@ -924,7 +1143,7 @@ class ManagerController extends Controller
 
         if ($request->filled('complaint_type')) {
             $query->where('complaint_type', $request->complaint_type);
-        } 
+        }
 
         // if ($request->filled('department_id')) {
         //     $query->where('complaint_department', $request->department_id);
@@ -1062,7 +1281,8 @@ class ManagerController extends Controller
             'areas',
             'departments',
             'subjects',
-            'replyOptions'));
+            'replyOptions'
+        ));
     }
 
     // public function viewOperatorComplaints(Request $request)
@@ -1490,7 +1710,7 @@ class ManagerController extends Controller
             'txtpolling' => 'required',
             // 'txtarea' => 'required',
             'type' => 'required|string',
-            'CharCounter' => 'required|string|max:100',
+            'CharCounter' => 'nullable|string|max:100',
             'NameText' => 'required|string|max:2000',
             'department' => 'nullable',
             'post' => 'nullable',
@@ -1524,7 +1744,7 @@ class ManagerController extends Controller
         $complaint->area_id = $area_id;
         $complaint->complaint_department = $request->department ?? '';
         $complaint->complaint_designation = $request->post ?? '';
-        $complaint->issue_title = $request->CharCounter;
+        $complaint->issue_title = $request->CharCounter ?? '';
         $complaint->issue_description = $request->NameText;
         $complaint->news_date = $request->from_date;
         $complaint->program_date = $request->program_date;
