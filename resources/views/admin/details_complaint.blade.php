@@ -172,17 +172,16 @@
                                 </td>
                                 <td> {{ $reply->forwardedToManager?->admin_name ?? '' }}</td>
                                 <td>
-                                       <button type="button" class="btn btn-sm btn-info view-details-btn"
-                                        data-toggle="modal" data-target="#detailsModal"
-                                        data-reply="{{ $reply->complaint_reply }}"
+                                    <button type="button" class="btn btn-sm btn-info view-details-btn" data-toggle="modal"
+                                        data-target="#detailsModal" data-reply="{{ $reply->complaint_reply }}"
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
                                         data-status="{{ strip_tags($complaint->statusTextPlain()) }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
                                         data-predefined="{{ $reply->predefinedReply->reply ?? '-' }}"
-                                        data-cb-photo="{{ $reply->cb_photo }}" data-ca-photo="{{ $reply->ca_photo }}"
-                                        data-video="{{ $reply->c_video }}">
-                                        देखें
-                                    </button>
+                                        data-cb-photo="{{ $reply->cb_photo ? asset( $reply->cb_photo) : '' }}"
+                                        data-ca-photo="{{ $reply->ca_photo ? asset($reply->ca_photo) : '' }}"
+                                        data-video="{{ $reply->c_video ? asset($reply->c_video) : '' }}">
+                                        विवरण </button>
                                 </td>
                                 {{-- <td>{{ $replyFromName }}</td> --}}
                                 {{-- <td>
@@ -267,12 +266,13 @@
                                     <div class="card p-3 mr-2  border-0 shadow rounded" style="background-color: #ffffff;">
                                         <div class="text-center" style="width: 200px;">
                                             <div>पूर्व स्थिति की तस्वीर</div>
-                                            <a href="#" id="cb-photo-link" class="btn btn-sm btn-outline-primary mt-1"
-                                                target="_blank">खोलें</a>
+                                            <a href="#" id="cb-photo-link"
+                                                class="btn btn-sm btn-outline-primary mt-1" target="_blank">खोलें</a>
                                         </div>
                                     </div>
 
-                                    <div class="card p-3 mr-2  border-0 shadow rounded" style="background-color: #ffffff;">
+                                    <div class="card p-3 mr-2  border-0 shadow rounded"
+                                        style="background-color: #ffffff;">
                                         <div class="text-center" style="width: 200px;">
                                             <div>बाद की तस्वीर</div>
                                             <a href="#" id="ca-photo-link"

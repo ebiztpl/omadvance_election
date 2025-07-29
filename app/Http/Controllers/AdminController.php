@@ -1220,7 +1220,7 @@ class AdminController extends Controller
         if (!$complaint) {
             return response()->json(['error' => 'शिकायत नहीं मिली।'], 404);
         }
-        
+
         $complaint->replies()->delete();
 
         $complaint->delete();
@@ -2627,6 +2627,7 @@ class AdminController extends Controller
                     'position_id'       => 0,
                     'date_time'         => now(),
                     'type'              => 1,
+                    'voter_nature'      => 'no input',
                     'death/left'        => $death_or_left
                 ];
 
@@ -2757,6 +2758,72 @@ class AdminController extends Controller
     }
 
 
+    public function votershow($id)
+    {
+        $registration = RegistrationForm::where('type', 1)->findOrFail($id);
+        $step2 = Step2::where('registration_id', $id)->first();
+        $step3 = Step3::where('registration_id', $id)->first();
+        $step4 = Step4::where('registration_id', $id)->first();
+
+        $vidhansabha = optional(VidhansabhaLokSabha::find($step2->vidhansabha ?? null))->vidhansabha ?? 'N/A';
+        $mandal = optional(Mandal::find($step2->mandal ?? null))->mandal_name ?? 'N/A';
+        $nagar = optional(Nagar::find($step2->nagar ?? null))->nagar_name ?? 'N/A';
+        $polling = optional(Polling::find($step2->matdan_kendra_name ?? null))->polling_name ?? 'N/A';
+        $area = optional(Area::find($step2->area_id ?? null))->area_name ?? 'N/A';
+
+        $divisions = DB::table('division_master')->get();
+        $district_id = $step2->district_id ?? null;
+        $districts = DB::table('district_master')->get();
+
+        $interests = isset($step3->intrest) ? explode(' ', $step3->intrest) : [];
+        $interestOptions = [
+            'कृषि',
+            'समाजसेवा',
+            'राजनीति',
+            'पर्यावरण',
+            'शिक्षा',
+            'योग',
+            'स्वास्थ्य',
+            'स्वच्छता',
+            'साधना'
+        ];
+
+        $allComplaints = Complaint::where('voter_id', $registration->voter_id)->get();
+
+        $samasyavikashComplaints = $allComplaints->filter(function ($c) {
+            return in_array($c->complaint_type, ['समस्या', 'विकास']);
+        });
+        $shubhAshubhComplaints = $allComplaints->filter(function ($c) {
+            return in_array(strtolower($c->complaint_type), ['शुभ सुचना', 'अशुभ सुचना']);
+        });
+
+        $complaintReplies = Reply::whereIn('complaint_id', $allComplaints->pluck('voter_id'))
+            ->get()
+            ->groupBy('complaint_id');
+
+        return view('admin.details_voter', compact(
+            'registration',
+            'step2',
+            'step3',
+            'step4',
+            'vidhansabha',
+            'mandal',
+            'nagar',
+            'polling',
+            'area',
+            'divisions',
+            'districts',
+            'district_id',
+            'interests',
+            'interestOptions',
+            'samasyavikashComplaints',
+            'shubhAshubhComplaints',
+            'complaintReplies'
+        ));
+    }
+
+
+
     // view voters data functions
     public function viewvoter()
     {
@@ -2816,7 +2883,7 @@ class AdminController extends Controller
                 <td>' . $voter->{'death/left'} . '</td>
                 <td>' . \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') . '</td>
                 <td style="white-space: nowrap;">
-    <a href="' . route('register.show', $voter->registration_id) . '" class="btn btn-xs btn-success">View</a>
+    <a href="' . route('voter.show', $voter->registration_id) . '" class="btn btn-xs btn-success">View</a>
 
     <form action="' . route('register.destroy', $voter->registration_id) . '" method="POST" style="display:inline-block;" onsubmit="return confirm(\'क्या आप वाकई रिकॉर्ड हटाना चाहते हैं?\')">
         ' . csrf_field() . '
