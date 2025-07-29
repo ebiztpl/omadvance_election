@@ -182,9 +182,10 @@
                                         data-status="{{ strip_tags($complaint->statusTextPlain()) }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
                                         data-predefined="{{ $reply->predefinedReply->reply ?? '-' }}"
-                                        data-cb-photo="{{ $reply->cb_photo }}" data-ca-photo="{{ $reply->ca_photo }}"
-                                        data-video="{{ $reply->c_video }}">
-                                        देखें
+                                       data-cb-photo="{{ $reply->cb_photo ? asset( $reply->cb_photo) : '' }}"
+                                    data-ca-photo="{{ $reply->ca_photo ? asset($reply->ca_photo) : '' }}"
+                                    data-video="{{ $reply->c_video ? asset($reply->c_video) : '' }}">
+                                    विवरण
                                     </button>
                                 </td>
                                 {{-- <td>{{ $replyFromName }}</td> --}}
