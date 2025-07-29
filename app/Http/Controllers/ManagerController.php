@@ -48,8 +48,6 @@ class ManagerController extends Controller
 
         $records = DB::table('complaint')
             ->selectRaw("DATE(posted_date) as date,
-                     SUM(CASE WHEN complaint_type = 'समस्या' THEN 1 ELSE 0 END) as samasya,
-                     SUM(CASE WHEN complaint_type = 'विकास' THEN 1 ELSE 0 END) as vikash,
                      SUM(CASE WHEN complaint_type = 'शुभ सुचना' THEN 1 ELSE 0 END) as shubh,
                      SUM(CASE WHEN complaint_type = 'अशुभ सुचना' THEN 1 ELSE 0 END) as asubh")
             ->whereBetween(DB::raw('DATE(posted_date)'), [$start, $end])
@@ -59,8 +57,6 @@ class ManagerController extends Controller
         $data = [];
         foreach ($records as $row) {
             $data[$row->date] = [
-                'samasya' => (int) $row->samasya,
-                'vikash' => (int) $row->vikash,
                 'shubh' => (int) $row->shubh,
                 'asubh' => (int) $row->asubh,
             ];
@@ -134,36 +130,36 @@ class ManagerController extends Controller
     public function fetchSuchna()
     {
         $today = \Carbon\Carbon::today();
-        $yesterday = \Carbon\Carbon::yesterday();
+        $tomorrow = \Carbon\Carbon::tomorrow();
         $weekStart = \Carbon\Carbon::today()->subDays(6);
 
         $records = Complaint::with('area') 
             ->whereIn('complaint_type', ['शुभ सुचना', 'अशुभ सुचना'])
-            ->whereDate('posted_date', '>=', $weekStart)
-            ->orderBy('posted_date', 'desc')
+            ->whereDate('program_date', '>=', $weekStart)
+            ->orderBy('program_date', 'asc')
             ->get([
                 'name',
                 'mobile_number',
                 'area_id',
                 'issue_description',
                 'complaint_type',
-                'posted_date'
+                'program_date'
             ]);
 
         $todayData = [];
-        $yesterdayData = [];
+        $tomorrowData = [];
         $weekData = [];
 
         foreach ($records as $row) {
-            $date = \Carbon\Carbon::parse($row->posted_date)->toDateString();
+            $date = \Carbon\Carbon::parse($row->program_date)->toDateString();
 
             $recordData = $row->toArray();
             $recordData['area_name'] = $row->area->area_name ?? 'N/A'; 
 
             if ($date == $today->toDateString()) {
                 $todayData[] = $recordData;
-            } elseif ($date == $yesterday->toDateString()) {
-                $yesterdayData[] = $recordData;
+            } elseif ($date == $tomorrow->toDateString()) {
+                $tomorrowData[] = $recordData;
             }
 
             $weekData[] = $recordData;
@@ -171,7 +167,7 @@ class ManagerController extends Controller
 
         return response()->json([
             'today' => $todayData,
-            'yesterday' => $yesterdayData,
+            'tomorrow' => $tomorrowData,
             'week' => $weekData
         ]);
     }
