@@ -69,6 +69,7 @@
                                                     <th>नंo</th>
                                                     <th>क्षेत्र</th>
                                                     <th>विषय</th>
+                                                    <th>विवरण</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="today-table" style="color: black"></tbody>
@@ -116,8 +117,8 @@
                                             <thead>
                                                 <tr>
                                                     <th rowspan="2">समय</th>
-                                                    <th colspan="3">समस्या / विकास</th>
-                                                    <th colspan="3">शुभ / अशुभ सूचना</th>
+                                                    <th colspan="3">समस्या</th>
+                                                    <th colspan="3">विकास</th>
                                                 </tr>
                                                 <tr>
                                                     <th>कार्यालय</th>
@@ -160,6 +161,7 @@
                                                     <th>नंo</th>
                                                     <th>क्षेत्र</th>
                                                     <th>विषय</th>
+                                                    <th>विवरण</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="tomorrow-table" style="color: black"></tbody>
@@ -195,6 +197,7 @@
                                                     <th>क्षेत्र</th>
                                                     <th>विषय</th>
                                                     <th>दिनांक</th>
+                                                    <th>विवरण</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="week-table" style="color: black"></tbody>
@@ -241,6 +244,74 @@
                 </div>
             </div>
         </div>
+
+
+
+
+
+        <!-- सूचना विवरण Modal -->
+        <div class="modal fade" id="complaintModal" tabindex="-1" aria-labelledby="complaintModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content rounded-3 shadow-lg">
+                    <div class="modal-header bg-light text-white d-flex justify-content-between align-items-center">
+                        <h5 class="modal-title fw-bold mb-0" id="complaintModalLabel">
+                            सूचना विवरण <span id="modal-complaint-number" class="ml-2"></span>
+                        </h5>
+                        <div id="modal-status-button"></div>
+                    </div>
+
+
+                    <div class="modal-body px-4 py-3">
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0">
+                                <tbody style="font-size: 14px; color: black">
+                                    <tr>
+                                        <th class="bg-light">नाम</th>
+                                        <th class="bg-light">मोबाइल</th>
+                                        <th class="bg-light">क्षेत्र</th>
+                                        <th class="bg-light">आवेदक</th>
+                                        <th class="bg-light">मतदाता</th>
+                                        <th class="bg-light">कार्यक्रम दिनांक</th>
+                                    </tr>
+                                    <tr>
+                                        <td id="modal-name"></td>
+                                        <td id="modal-mobile"></td>
+                                        <td id="modal-area"></td>
+                                        <td id="modal-applicant"></td>
+                                        <td id="modal-voter"></td>
+                                        <td id="modal-date"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="row no-gutters mt-5">
+                                <div class="col-md-4 pr-md-3 mb-2">
+                                    <label style="font-weight: bold">विषय शीर्षक</label>
+                                    <input id="modal-title" type="text" class="form-control" readonly>
+                                </div>
+                                <div class="col-md-8">
+                                    <label style="font-weight: bold">विषय विवरण</label>
+                                    <textarea id="modal-issue" class="form-control" rows="3" readonly
+                                        style="resize: none; overflow-wrap: break-word;"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="mt-3" id="modal-image-button-container" style="display: none;">
+                                <a id="modal-image-button" class="btn btn-info" href="#" target="_blank">
+                                    भेजी गई फ़ाइल
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer justify-content-end">
+                        <button type="button" class="btn btn-warning" data-dismiss="modal">बंद करें</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 
@@ -256,69 +327,64 @@
                         const $tbody = $("#dynamicTable tbody");
                         $tbody.empty();
                         data.forEach(row => {
-                            const totalSamasyaOperator = Number(row.samasya.operator) + Number(row
-                                .vikash.operator);
-                            const totalSamasyaCommander = Number(row.samasya.commander) + Number(row
-                                .vikash.commander);
+                            const totalSamasyaOperator = Number(row.samasya.operator);
+                            const totalSamasyaCommander = Number(row.samasya.commander);
                             const totalSamasyaReplies = Number(row.replies.operator) + Number(row
                                 .replies.commander);
 
-                            const totalSuchnaOperator = Number(row.shubh.operator) + Number(row
-                                .asubh.operator);
-                            const totalSuchnaCommander = Number(row.shubh.commander) + Number(row
-                                .asubh.commander);
-                            const totalSuchnaReplies = totalSuchnaOperator + totalSuchnaCommander;
+                            const totalVikashOperator = Number(row.vikash.operator);
+                            const totalVikashCommander = Number(row.vikash.commander)
+                            const totalVikashReplies = Number(row.repliesvikash.operator) + Number(
+                                row
+                                .repliesvikash.commander);
+
+                            const makeLink = (section, type, user) =>
+                                `/complaints/${section}?type=${type}&user=${user}`;
+
+
+
                             const tr = `
                             <tr>
                                 <td><strong>${row.samay}</strong></td>
 
                                 <td>
-                                    <span class="badge bg-danger text-white" data-bs-toggle="tooltip" 
-                                        title="कार्यालय → समस्या: ${row.samasya.operator}, विकास: ${row.vikash.operator}">
+                                    <a href="${makeLink(row.section, 'समस्या', 'operator')}">  <span class="badge bg-danger text-white" data-bs-toggle="tooltip">
                                         ${totalSamasyaOperator}
-                                    </span>
+                                    </span></a>
                                 </td>
                                 <td>
-                                    <span class="badge bg-danger text-white" data-bs-toggle="tooltip" 
-                                        title="कमांडर → समस्या: ${row.samasya.commander}, विकास: ${row.vikash.commander}">
+                                     <a href="${makeLink(row.section, 'समस्या', 'commander')}"><span class="badge bg-danger text-white" data-bs-toggle="tooltip">
                                         ${totalSamasyaCommander}
                                     </span>
+                                    </a>
                                 </td>
                                 <td>
-                                    <span class="badge bg-warning" data-bs-toggle="tooltip" 
-                                        title="समाधान → कार्यालय: ${row.replies.operator}, कमांडर: ${row.replies.commander}">
+                                    <span class="badge bg-warning" data-bs-toggle="tooltip">
                                         ${totalSamasyaReplies}
                                     </span>
                                 </td>
 
                                 <td>
-                                    <span class="badge bg-success text-white" data-bs-toggle="tooltip" 
-                                        title="कार्यालय → शुभ: ${row.shubh.operator}, अशुभ: ${row.asubh.operator}">
-                                        ${totalSuchnaOperator}
+                                    <a href="${makeLink(row.section, 'विकास', 'operator')}"><span class="badge bg-success text-white" data-bs-toggle="tooltip">
+                                        ${totalVikashOperator}
                                     </span>
+                                    </a>
                                 </td>
                                 <td>
-                                    <span class="badge bg-success text-white" data-bs-toggle="tooltip" 
-                                        title="कमांडर → शुभ: ${row.shubh.commander}, अशुभ: ${row.asubh.commander}">
-                                        ${totalSuchnaCommander}
+                                     <a href="${makeLink(row.section, 'विकास', 'commander')}"><span class="badge bg-success text-white" data-bs-toggle="tooltip">
+                                        ${totalVikashCommander}
                                     </span>
+                                    </a>
                                 </td>
                                 <td>
-                                    <span class="badge bg-warning" data-bs-toggle="tooltip" 
-                                        title="समाधान: कार्यालय ${totalSuchnaOperator} + कमांडर ${totalSuchnaCommander}">
-                                        ${totalSuchnaReplies}
+                                    <span class="badge bg-warning" data-bs-toggle="tooltip">
+                                        ${totalVikashReplies}
                                     </span>
                                 </td>
                             </tr>
                         `;
 
                             $tbody.append(tr);
-                        });
-
-                        const tooltipTriggerList = [].slice.call(document.querySelectorAll(
-                            '[data-bs-toggle="tooltip"]'));
-                        tooltipTriggerList.map(function(tooltipTriggerEl) {
-                            return new bootstrap.Tooltip(tooltipTriggerEl);
                         });
                     },
                     error: function(xhr, status, error) {
@@ -383,12 +449,69 @@
                                     <td>${row.area_name}</td>
                                     <td>${row.issue_description}</td>
                                     ${selector === "#week-table" ? `<td>${row.program_date}</td>` : ''}
+                                    <td>
+                                       <button class="btn btn-sm btn-primary view-details-btn" data-id="${row.complaint_id}">
+                                            विवरण
+                                        </button>
+                                    </td>
                                 </tr>
                             `;
                         $tbody.append(rowHTML);
                     });
                 }
 
+                $(document).on('click', '.view-details-btn', function() {
+                    const id = $(this).data('id');
+                    openComplaintModal(id);
+                });
+
+                function openComplaintModal(id) {
+                    if (!id) {
+                        alert("Invalid ID");
+                        return;
+                    }
+
+                    $.ajax({
+                        url: '/detail_suchna/' + id,
+                        method: 'GET',
+                        success: function(data) {
+                            $('#modal-name').text(data.name || '—');
+                            $('#modal-mobile').text(data.mobile_number || '—');
+                            $('#modal-area').text(data.area?.area_name || '—');
+                            $('#modal-issue').text(data.issue_description || '—');
+                            $('#modal-title').val(data.issue_title || '—');
+                            $('#modal-applicant').text(data.aavedak || '—');
+                            $('#modal-complaint-number').text('#' + (data.complaint_number || '—'));
+                            $('#modal-voter').text(data.voter_id || '—');
+                            $('#modal-date').text(data.program_date || '—');
+                            $('#modal-status-button').html(data.status_text || '');
+
+                            if (data.issue_attachment) {
+                                let fullUrl = '/assets/upload/complaints/' + data.issue_attachment;
+
+                                let imageButtonHtml = `
+                                    <a href="${fullUrl}" class="btn btn-sm btn-info" target="_blank">
+                                        अटैचमेंट खोलें
+                                    </a>
+                                `;
+
+                                $('#modal-image-button-container').html(imageButtonHtml).show();
+                            } else {
+                                $('#modal-image-button-container').html(`
+                                    <button class="btn btn-sm btn-secondary" disabled>
+                                        कोई अटैचमेंट नहीं है
+                                    </button>
+                                `).show();
+                            }
+
+                            const modal = new bootstrap.Modal(document.getElementById('complaintModal'));
+                            modal.show();
+                        },
+                        error: function() {
+                            alert("डाटा लोड करने में त्रुटि हुई।");
+                        }
+                    });
+                }
 
 
                 $.ajax({
@@ -404,10 +527,12 @@
                         } else {
                             data.forEach(item => {
                                 $list.append(`
+                                  <a href="/complaints/vibhag-details?department=${item.department}" class="text-decoration-none" style="color: black">
                             <li class="d-flex justify-content-between border-bottom py-1">
                                 <span>${item.department}</span>
                                 <span class="badge bg-secondary text-white">${item.total}</span>
                             </li>
+                            </a>
                         `);
                             });
                         }
@@ -432,10 +557,12 @@
                         } else {
                             data.forEach(item => {
                                 $list.append(`
+                                 <a href="/complaints/status-details?status=${item.status}" class="text-decoration-none" style="color: black">
                             <li class="d-flex justify-content-between border-bottom py-1">
                                 <span>${item.status}</span>
                                 <span class="badge bg-success text-white">${item.total}</span>
                             </li>
+                                    </a>
                         `);
                             });
                         }
@@ -451,11 +578,29 @@
                     url: '/dashboard/stats',
                     method: 'GET',
                     success: function(data) {
-                        $('.new-voters').html('<i class="fa fa-users"></i> ' + data.new_voters);
-                        $('.new-contacts').html('<i class="fa fa-phone"></i> ' + data.new_contacts);
-                        $('.total-voters').html('<i class="fa fa-check-square"></i> ' + data.total_voters);
-                        $('.total-contacts').html('<i class="fa fa-address-book"></i> ' + data
-                            .total_contacts);
+                        $('.new-voters').html(
+                            `<a href="/voters/details?filter=today-voters" class="text-decoration-none" style="color: black">
+                                <i class="fa fa-users"></i> ${data.new_voters}
+                            </a>`
+                        );
+
+                        $('.new-contacts').html(
+                            `<a href="/voters/details?filter=today-contacts" class="text-decoration-none" style="color: black">
+                                <i class="fa fa-phone"></i> ${data.new_contacts}
+                            </a>`
+                        );
+
+                        $('.total-voters').html(
+                            `<a href="/voters/details?filter=total-voters" class="text-decoration-none" style="color: black">
+                                <i class="fa fa-check-square"></i> ${data.total_voters}
+                            </a>`
+                        );
+
+                        $('.total-contacts').html(
+                            `<a href="/voters/details?filter=total-contacts" class="text-decoration-none" style="color: black">
+                                <i class="fa fa-address-book"></i> ${data.total_contacts}
+                            </a>`
+                        );
                     }
                 });
             });
@@ -524,22 +669,24 @@
                             const info = calendarData[fullDate];
                             const total = info ? (info.shubh + info.asubh) : 0;
 
-                            table += `<td class="p-1"><div><strong>${date}</strong></div>`;
+                            table += `<td class="p-1">
+                                <a href="/complaints/date-wise?date=${fullDate}" class="text-decoration-none text-dark">
+                                    <div><strong>${date}</strong></div>`;
 
                             if (total > 0) {
                                 const tooltip = `
-                        शुभ सूचना: ${info.shubh}
-                        अशुभ सूचना: ${info.asubh}
-                    `.trim().replace(/\n/g, ' ').replace(/\s+/g, ' ');
+                                    शुभ सूचना: ${info.shubh}
+                                    अशुभ सूचना: ${info.asubh}
+                                `.trim().replace(/\n/g, ' ').replace(/\s+/g, ' ');
 
                                 table += `
-                        <div class="calendar-dot mx-auto mt-1" data-bs-toggle="tooltip" title="${tooltip}">
-                            <span class="dot-text">${total}</span>
-                        </div>
-                    `;
+                                    <div class="calendar-dot mx-auto mt-1" data-bs-toggle="tooltip" title="${tooltip}">
+                                        <span class="dot-text">${total}</span>
+                                    </div>
+                                `;
                             }
 
-                            table += `</td>`;
+                            table += `</a></td>`;
                             date++;
                         }
                     }
@@ -557,6 +704,14 @@
 
             $(document).ready(function() {
                 loadCalendar(currentMonth, currentYear);
+            });
+
+            $(document).ajaxStart(function() {
+                $("#loader-wrapper").show();
+            });
+
+            $(document).ajaxStop(function() {
+                $("#loader-wrapper").hide();
             });
         </script>
     @endpush

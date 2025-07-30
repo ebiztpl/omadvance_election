@@ -85,7 +85,7 @@ class Complaint extends Model
             1 => 'शिकायत दर्ज',
             2 => 'प्रक्रिया में',
             3 => 'स्थगित',
-            4 => 'पूर्ण',
+            4 => '<button class="btn btn-success">पूर्ण</button>',
             5 => 'रद्द',
         ];
 

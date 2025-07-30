@@ -153,6 +153,9 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/fetch-vibhaag-count', [ManagerController::class, 'fetchVibhaagWiseCount']);
     Route::get('/fetch-status', [ManagerController::class, 'fetchStatus']);
     Route::get('/dashboard/stats', [ManagerController::class, 'fetchDashboardStats']);
+    Route::get('/complaints/{section}', [ManagerController::class, 'sectionView']);
+    Route::get('/voters/details', [ManagerController::class, 'voterDetails']);
+    Route::get('/detail_suchna/{id}', [ManagerController::class, 'detail_suchna']);
 
 
     // division routes
