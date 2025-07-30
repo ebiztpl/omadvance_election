@@ -72,9 +72,20 @@ class ManagerController extends Controller
         $ranges = [
             'आज' => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
             'कल' => [$now->copy()->subDay()->startOfDay(), $now->copy()->subDay()->endOfDay()],
-            'पिछला सप्ताह' => [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()],
-            'पिछला माह' => [$now->copy()->subMonth()->startOfMonth(), $now->copy()->subMonth()->endOfMonth()],
-            'कुल' => [Carbon::create(2000, 1, 1), $now]
+            'इस सप्ताह' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],
+            'इस माह' => [$now->copy()->startOfMonth(), $now],
+            'कुल' => [
+                Carbon::create(2000, 1, 1)->format('Y-m-d H:i:s'),
+                $now->format('Y-m-d H:i:s')
+            ]
+        ];
+
+        $sectionMap = [
+            'आज' => 'today',
+            'कल' => 'yesterday',
+            'इस सप्ताह' => 'current-week',
+            'इस माह' => 'current-month',
+            'कुल' => 'all',
         ];
 
         $result = [];
@@ -84,32 +95,41 @@ class ManagerController extends Controller
                 ->selectRaw("
                     type,
                     SUM(CASE WHEN complaint_type = 'समस्या' THEN 1 ELSE 0 END) as samasya,
-                    SUM(CASE WHEN complaint_type = 'विकास' THEN 1 ELSE 0 END) as vikash,
-                    SUM(CASE WHEN complaint_type = 'शुभ सुचना' THEN 1 ELSE 0 END) as shubh,
-                    SUM(CASE WHEN complaint_type = 'अशुभ सुचना' THEN 1 ELSE 0 END) as asubh
+                    SUM(CASE WHEN complaint_type = 'विकास' THEN 1 ELSE 0 END) as vikash
                 ")
                 ->whereBetween('posted_date', [$start, $end])
                 ->groupBy('type')
                 ->get();
 
-            // Only replies for समस्या and विकास
             $replyCounts = DB::table('complaint')
                 ->join('complaint_reply', 'complaint.complaint_id', '=', 'complaint_reply.complaint_id')
                 ->whereBetween('complaint.posted_date', [$start, $end])
-                ->whereIn('complaint.complaint_type', ['समस्या', 'विकास'])
+                ->where('complaint.complaint_type', 'समस्या')
+                ->select('complaint.type', DB::raw('COUNT(*) as reply_count'))
+                ->groupBy('complaint.type')
+                ->pluck('reply_count', 'complaint.type');
+
+            $replyVikashCounts = DB::table('complaint')
+                ->join('complaint_reply', 'complaint.complaint_id', '=', 'complaint_reply.complaint_id')
+                ->whereBetween('complaint.posted_date', [$start, $end])
+                ->where('complaint.complaint_type', 'विकास')
                 ->select('complaint.type', DB::raw('COUNT(*) as reply_count'))
                 ->groupBy('complaint.type')
                 ->pluck('reply_count', 'complaint.type');
 
             $entry = [
                 'samay' => $label,
+                'section' => $sectionMap[$label] ?? null,
                 'samasya' => ['operator' => 0, 'commander' => 0],
                 'vikash' => ['operator' => 0, 'commander' => 0],
-                'shubh' => ['operator' => 0, 'commander' => 0],
-                'asubh' => ['operator' => 0, 'commander' => 0],
                 'replies' => [
                     'operator' => $replyCounts[2] ?? 0,
                     'commander' => $replyCounts[1] ?? 0,
+                ],
+
+                'repliesvikash' => [
+                    'operator' => $replyVikashCounts[2] ?? 0,
+                    'commander' => $replyVikashCounts[1] ?? 0,
                 ],
             ];
 
@@ -117,8 +137,6 @@ class ManagerController extends Controller
                 $type = $row->type == 1 ? 'commander' : 'operator';
                 $entry['samasya'][$type] = $row->samasya;
                 $entry['vikash'][$type] = $row->vikash;
-                $entry['shubh'][$type] = $row->shubh;
-                $entry['asubh'][$type] = $row->asubh;
             }
 
             $result[] = $entry;
@@ -133,11 +151,12 @@ class ManagerController extends Controller
         $tomorrow = \Carbon\Carbon::tomorrow();
         $weekStart = \Carbon\Carbon::today()->subDays(6);
 
-        $records = Complaint::with('area') 
+        $records = Complaint::with('area')
             ->whereIn('complaint_type', ['शुभ सुचना', 'अशुभ सुचना'])
             ->whereDate('program_date', '>=', $weekStart)
             ->orderBy('program_date', 'asc')
             ->get([
+                'complaint_id',
                 'name',
                 'mobile_number',
                 'area_id',
@@ -154,7 +173,7 @@ class ManagerController extends Controller
             $date = \Carbon\Carbon::parse($row->program_date)->toDateString();
 
             $recordData = $row->toArray();
-            $recordData['area_name'] = $row->area->area_name ?? 'N/A'; 
+            $recordData['area_name'] = $row->area->area_name ?? 'N/A';
 
             if ($date == $today->toDateString()) {
                 $todayData[] = $recordData;
@@ -231,7 +250,7 @@ class ManagerController extends Controller
 
         $newContactsToday = DB::table('registration_form')
             ->whereDate('date_time', $today)
-            ->where('type', 2)
+            ->whereIn('type', [1, 2])
             ->count();
 
         $totalVoters = DB::table('registration_form')
@@ -239,7 +258,7 @@ class ManagerController extends Controller
             ->count();
 
         $totalContacts = DB::table('registration_form')
-            ->where('type', 2)
+            ->whereIn('type', [1, 2])
             ->count();
 
         return response()->json([
@@ -249,6 +268,264 @@ class ManagerController extends Controller
             'total_contacts' => $totalContacts,
         ]);
     }
+
+    public function sectionView($section, Request $request)
+    {
+        $now = Carbon::now();
+        $complaints = collect();
+        $type = $request->query('type');
+        $user = $request->query('user');
+        $title = 'शिकायतें';
+
+        switch ($section) {
+            case 'today':
+                $start = $now->copy()->startOfDay();
+                $end = $now->copy()->endOfDay();
+                $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
+                foreach ($complaints as $complaint) {
+                    if (!in_array($complaint->complaint_status, [4, 5])) {
+                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+                    } else {
+                        $complaint->pending_days = 0;
+                    }
+                }
+                $title .= ' (आज)';
+                break;
+
+            case 'yesterday':
+                $start = $now->copy()->subDay()->startOfDay();
+                $end = $now->copy()->subDay()->endOfDay();
+                $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
+                foreach ($complaints as $complaint) {
+                    if (!in_array($complaint->complaint_status, [4, 5])) {
+                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+                    } else {
+                        $complaint->pending_days = 0;
+                    }
+                }
+                $title .= ' (कल)';
+                break;
+
+            case 'current-week':
+                $start = $now->copy()->startOfWeek();
+                $end = $now->copy()->endOfWeek();
+                $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
+                foreach ($complaints as $complaint) {
+                    if (!in_array($complaint->complaint_status, [4, 5])) {
+                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+                    } else {
+                        $complaint->pending_days = 0;
+                    }
+                }
+                $title .= ' (इस सप्ताह)';
+                break;
+
+            case 'current-month':
+                $start = $now->copy()->startOfMonth();
+                $end = $now;
+                $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
+                foreach ($complaints as $complaint) {
+                    if (!in_array($complaint->complaint_status, [4, 5])) {
+                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+                    } else {
+                        $complaint->pending_days = 0;
+                    }
+                }
+                $title .= ' (इस माह)';
+                break;
+            case 'all':
+                $start = Carbon::create(2000, 1, 1)->startOfDay();
+                $end = Carbon::now()->endOfDay();
+
+                $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
+                foreach ($complaints as $complaint) {
+                    if (!in_array($complaint->complaint_status, [4, 5])) {
+                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+                    } else {
+                        $complaint->pending_days = 0;
+                    }
+                }
+                $title = 'सभी शिकायतें';
+                break;
+
+
+            case 'vibhag-details':
+                $department = $request->query('department');
+
+                if (!$department) {
+                    abort(400, 'Department not specified');
+                }
+
+                $complaints = Complaint::where('complaint_department', $department)
+                    ->orderBy('posted_date', 'desc')
+                    ->get();
+
+                foreach ($complaints as $complaint) {
+                    if (!in_array($complaint->complaint_status, [4, 5])) {
+                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+                    } else {
+                        $complaint->pending_days = 0;
+                    }
+                }
+
+                $title = "शिकायतें (विभाग: " . $department . ")";
+                break;
+
+            case 'status-details':
+                $statusMap = [
+                    'शिकायत दर्ज' => 1,
+                    'प्रक्रिया में' => 2,
+                    'स्थगित' => 3,
+                    'पूर्ण' => 4,
+                    'रद्द' => 5,
+                ];
+
+                $label = $request->query('status');
+                $statusCode = collect($statusMap)
+                    ->filter(fn($v, $k) => trim($k) === trim($label))
+                    ->first();
+
+                if ($statusCode === false) {
+                    abort(400, 'Invalid status');
+                }
+
+                $complaints = Complaint::where('complaint_status', $statusCode)
+                    ->orderBy('posted_date', 'desc')
+                    ->get();
+
+                foreach ($complaints as $complaint) {
+                    if (!in_array($complaint->complaint_status, [4, 5])) {
+                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+                    } else {
+                        $complaint->pending_days = 0;
+                    }
+                }
+
+                $title = "शिकायतें (" . $label . ")";
+                break;
+
+
+            case 'date-wise':
+                $date = $request->query('date');
+                if (!$date) {
+                    abort(400, 'Invalid date');
+                }
+
+                $start = Carbon::parse($date)->startOfDay();
+                $end = Carbon::parse($date)->endOfDay();
+
+                $complaints = $this->getComplaintsBetween($start, $end, $type, $user)->filter(function ($complaint) {
+                    return in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']);
+                });
+                foreach ($complaints as $complaint) {
+                    if (!in_array($complaint->complaint_status, [4, 5])) {
+                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+                    } else {
+                        $complaint->pending_days = 0;
+                    }
+                }
+                $title = 'शिकायतें (' . Carbon::parse($date)->format('d M Y') . ')';
+                break;
+
+            default:
+                abort(404);
+        }
+
+        return view('manager/dashboard_details', compact('complaints', 'title', 'section'));
+    }
+
+    private function getComplaintsBetween($start, $end, $type = null, $user = null)
+    {
+        $query = Complaint::with(['division', 'district', 'vidhansabha', 'mandal', 'gram', 'polling', 'area', 'registrationDetails', 'admin'])
+            ->whereBetween('posted_date', [$start, $end]);
+
+        if ($type) {
+            $query->where('complaint_type', $type);
+        }
+
+        if ($user) {
+            $userType = $user === 'commander' ? 1 : ($user === 'operator' ? 2 : null);
+            if ($userType !== null) {
+                $query->where('type', $userType);
+            }
+        }
+
+        return $query->orderBy('posted_date', 'desc')->get();
+    }
+
+
+    public function voterDetails(Request $request)
+    {
+        $filter = $request->query('filter');
+
+        $query = RegistrationForm::with(['position', 'step2', 'step2.area', 'step3', 'step4']);
+
+        switch ($filter) {
+            case 'today-voters':
+                $title = 'आज के मतदाता';
+                $query->whereDate('date_time', now())->where('type', 1);
+                break;
+
+            case 'today-contacts':
+                $title = 'आज के संपर्क';
+                $query->whereDate('date_time', now())->whereIn('type', [1, 2]);
+                break;
+
+            case 'total-voters':
+                $title = 'कुल मतदाता';
+                $query->where('type', 1);
+                break;
+
+            case 'total-contacts':
+                $title = 'कुल संपर्क';
+                $query->whereIn('type', [1, 2]);
+                break;
+
+            default:
+                abort(404);
+        }
+
+        $entries = $query->orderBy('date_time', 'desc')->get();
+
+        return view('manager/contact_voter_details', compact('entries', 'title'));
+    }
+
+    public function detail_suchna($id)
+    {
+        $complaint = Complaint::with(
+            'registration',
+            'division',
+            'district',
+            'vidhansabha',
+            'mandal',
+            'gram',
+            'polling',
+            'area',
+            'admin',
+            'registrationDetails'
+        )->findOrFail($id);
+
+        // Choose applicant name based on type
+        $aavedak = $complaint->type == 2
+            ? ($complaint->admin->admin_name ?? '-')
+            : ($complaint->registrationDetails->name ?? '-');
+
+        return response()->json([
+            'name' => $complaint->name,
+            'mobile_number' => $complaint->mobile_number,
+            'area' => $complaint->area,
+            'issue_description' => $complaint->issue_description,
+            'voter_id' => $complaint->voter_id,
+            'program_date' => $complaint->program_date,
+            'complaint_type' => $complaint->complaint_type,
+            'complaint_number' => $complaint->complaint_number,
+            'status_text' => $complaint->statusText(),
+            'aavedak' => $aavedak,
+            'issue_attachment' => $complaint->issue_attachment,
+        ]);
+    }
+
+
 
     // division master controller functions
     public function index()

@@ -39,4 +39,19 @@ class RegistrationForm extends Model
     {
         return $this->belongsTo(Position::class, 'position_id');
     }
+
+    public function step2()
+    {
+        return $this->hasOne(Step2::class, 'registration_id', 'registration_id');
+    }
+
+    public function step3()
+    {
+        return $this->hasOne(Step3::class, 'registration_id', 'registration_id');
+    }
+
+    public function step4()
+    {
+        return $this->hasOne(Step4::class, 'registration_id', 'registration_id');
+    }
 }
