@@ -117,6 +117,8 @@ Route::middleware('checklogin')->group(function () {
     Route::get('admin/download-voters-alt', [AdminController::class, 'exportVoterExcel'])->name('voters.download');
     Route::post('/admin/upload-voter-sheet', [AdminController::class, 'uploadVoterData'])->name('voter.upload');
     Route::get('admin/voter/details/{id}', [AdminController::class, 'votershow'])->name('voter.show');
+    Route::get('admin/voter/update/{id}', [AdminController::class, 'voterUpdate'])->name('voter.update');
+    Route::post('/admin/voter/update/{id}', [AdminController::class, 'voterUpdatePost'])->name('voter.update.post');
 
     // view voter data routes
     Route::get('/admin/voterlist', [AdminController::class, 'viewvoter'])->name('viewvoter.index');
