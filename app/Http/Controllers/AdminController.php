@@ -2883,15 +2883,16 @@ class AdminController extends Controller
                 <td>' . $voter->{'death/left'} . '</td>
                 <td>' . \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') . '</td>
                 <td style="white-space: nowrap;">
-    <a href="' . route('voter.show', $voter->registration_id) . '" class="btn btn-xs btn-success">View</a>
+                    <a href="' . route('voter.show', $voter->registration_id) . '" class="btn btn-xs btn-success">View</a>
+                    <a href="' . route('voter.update', $voter->registration_id) . '" class="btn btn-xs btn-info">Edit</a>
 
-    <form action="' . route('register.destroy', $voter->registration_id) . '" method="POST" style="display:inline-block;" onsubmit="return confirm(\'क्या आप वाकई रिकॉर्ड हटाना चाहते हैं?\')">
-        ' . csrf_field() . '
-        ' . method_field('DELETE') . '
-        <button type="submit" class="btn btn-xs btn-danger">Delete</button>
-    </form>
-</td>
-            </tr>';
+                    <form action="' . route('register.destroy', $voter->registration_id) . '" method="POST" style="display:inline-block;" onsubmit="return confirm(\'क्या आप वाकई रिकॉर्ड हटाना चाहते हैं?\')">
+                        ' . csrf_field() . '
+                        ' . method_field('DELETE') . '
+                        <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                    </form>
+                </td>
+                            </tr>';
         }
 
         return response()->json([
@@ -2899,6 +2900,91 @@ class AdminController extends Controller
             'table_rows' => $tableRows
         ]);
     }
+
+    public function voterUpdate($id)
+    {
+        $registration = DB::table('registration_form')->where('registration_id', $id)->first();
+        $step2 = DB::table('step2')->where('registration_id', $id)->first();
+        $step3 = DB::table('step3')->where('registration_id', $id)->first();
+
+        $divisions = DB::table('division_master')->get();
+        $districts = DB::table('district_master')->get();
+        $polling = DB::table('gram_polling')->where('gram_polling_id', $step2->matdan_kendra_no ?? 0)->first();
+
+        return view('admin/update_voters', [
+            'registration' => $registration,
+            'step2' => $step2,
+            'step3' => $step3,
+            'divisions' => $divisions,
+            'districts' => $districts,
+            'polling' => $polling->polling_name ?? '',
+            'mandal' => $polling->mandal_id ?? '',
+            'nagar' => $polling->nagar_id ?? '',
+            'vidhansabha' => $step2->vidhansabha ?? '',
+            'area' => DB::table('area_master')->where('area_id', $step2->area_id ?? 0)->value('area_name')
+        ]);
+    }
+
+    public function voterUpdatePost(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required',
+            'father_name' => 'required',
+            'age' => 'nullable|numeric',
+            'gender' => 'required|in:पुरुष,स्त्री,अन्य',
+            'voter_number' => 'required'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            DB::table('registration_form')->where('registration_id', $id)->update([
+                'name' => $request->name,
+                'father_name' => $request->father_name,
+                'gender' => $request->gender,
+                'age' => $request->age,
+                'mobile1' => $request->mobile1,
+                'mobile2' => $request->mobile2,
+                'jati' => $request->jati,
+                'business' => $request->business,
+                'education' => $request->education,
+                'religion' => $request->religion,
+                'caste' => $request->caste,
+                'voter_id' => $request->voter_number,
+                'voter_nature' => $request->voter_nature ?? 'no input',
+            ]);
+
+            DB::table('step2')->updateOrInsert(
+                ['registration_id' => $id],
+                [
+                    'division_id' => $request->division_name,
+                    'district' => $request->district,
+                    'vidhansabha' => $request->vidhansabha,
+                    'loksabha' => $request->loksabha,
+                    'mandal' => $request->mandal,
+                    'nagar' => $request->nagar,
+                    'matdan_kendra_name' => $request->matdan_kendra_name,
+                    'matdan_kendra_no' => 0,
+                    'polling_area' => $request->polling_area,
+                    'voter_number' => $request->voter_number,
+                ]
+            );
+
+            DB::table('step3')->updateOrInsert(
+                ['registration_id' => $id],
+                [
+                    'total_member' => $request->total_member ?? 0,
+                    'total_voter' => $request->total_voter ?? 0,
+                ]
+            );
+
+            DB::commit();
+            return response()->json(['status' => 'success', 'message' => 'Voter updated successfully.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
 
 
     // member form functions

@@ -93,6 +93,8 @@
                                             <td style="white-space: nowrap;">
                                                 <a href="{{ route('voter.show', $voter->registration_id) }}"
                                                     class="btn btn-sm btn-success mr-1">View</a>
+                                                     <a href="{{ route('voter.update', $voter->registration_id) }}"
+                                                    class="btn btn-sm btn-info mr-1">Edit</a>
                                                 {{-- <a href="{{ route('register.show', $voter->registration_id) }}"
                                                     class="btn btn-sm btn-primary mr-1">Edit</a> --}}
                                                 <form action="{{ route('register.destroy', $voter->registration_id) }}"
