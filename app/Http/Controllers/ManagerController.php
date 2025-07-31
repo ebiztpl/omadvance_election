@@ -4,6 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Division;
+use App\Models\Category;
+use App\Models\Interest;
+use App\Models\Business;
+use App\Models\Education;
+use App\Models\Politics;
+use App\Models\Religion;
 use App\Models\Department;
 use App\Models\ComplaintReply;
 use App\Models\Adhikari;
@@ -162,7 +168,8 @@ class ManagerController extends Controller
                 'area_id',
                 'issue_description',
                 'complaint_type',
-                'program_date'
+                'program_date',
+                'news_time'
             ]);
 
         $todayData = [];
@@ -517,6 +524,7 @@ class ManagerController extends Controller
             'issue_description' => $complaint->issue_description,
             'voter_id' => $complaint->voter_id,
             'program_date' => $complaint->program_date,
+            'news_time' => $complaint->news_time,
             'complaint_type' => $complaint->complaint_type,
             'complaint_number' => $complaint->complaint_number,
             'status_text' => $complaint->statusText(),
@@ -2319,5 +2327,267 @@ class ManagerController extends Controller
         }
 
         return response()->json(['options' => $options]);
+    }
+
+
+
+
+
+
+    // category master controller functions
+    public function categoryIndex()
+    {
+        $categories = Category::all();
+        return view('manager/category_master', compact('categories'));
+    }
+
+    public function categoryStore(Request $request)
+    {
+        $request->validate([
+            'category' => 'required|unique:category_master,category'
+        ]);
+
+        Category::create(['category' => $request->category]);
+
+        return redirect()->back()->with('insert_msg', 'श्रेणी जोड़ी गई!');
+    }
+
+    public function categoryEdit($id)
+    {
+        $category = Category::findOrFail($id);
+        return view('manager/edit_category', compact('category'));
+    }
+
+    public function categoryUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'category' => 'required|unique:category_master,category,' . $id . ',id'
+        ]);
+
+        $category = Category::findOrFail($id);
+        $category->update(['category' => $request->category]);
+
+        return redirect()->route('category.index')->with('update_msg', 'श्रेणी अपडेट की गई!');
+    }
+
+    public function categoryDestroy($id)
+    {
+        Category::destroy($id);
+        return redirect()->back()->with('delete_msg', 'श्रेणी हटाई गई!');
+    }
+
+
+    // interest master controller functions
+    public function interestIndex()
+    {
+        $interests = Interest::all();
+        return view('manager/interest_master', compact('interests'));
+    }
+
+    public function interestStore(Request $request)
+    {
+        $request->validate([
+            'interest' => 'required|unique:interest_master,interest_name'
+        ]);
+
+        Interest::create(['interest_name' => $request->interest]);
+
+        return redirect()->back()->with('insert_msg', 'रुचि जोड़ी गई!');
+    }
+
+    public function interestEdit($id)
+    {
+        $interest = Interest::findOrFail($id);
+        return view('manager/edit_interest', compact('interest'));
+    }
+
+    public function interestUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'interest' => 'required|unique:interest_master,interest_name,' . $id . ',id'
+        ]);
+
+        $interest = Interest::findOrFail($id);
+        $interest->update(['interest_name' => $request->interest]);
+
+        return redirect()->route('interest.index')->with('update_msg', 'रुचि अपडेट की गई!');
+    }
+
+    public function interestDestroy($id)
+    {
+        Interest::destroy($id);
+        return redirect()->back()->with('delete_msg', 'रुचि हटाई गई!');
+    }
+
+
+    // religion master controller functions
+    public function religionIndex()
+    {
+        $religions = Religion::all();
+        return view('manager/religion_master', compact('religions'));
+    }
+
+    public function religionStore(Request $request)
+    {
+        $request->validate([
+            'religion' => 'required|unique:religion_master,religion_name'
+        ]);
+
+        Religion::create(['religion_name' => $request->religion]);
+
+        return redirect()->back()->with('insert_msg', 'धर्म जोड़ा गया!');
+    }
+
+    public function religionEdit($id)
+    {
+        $religion = Religion::findOrFail($id);
+        return view('manager/edit_religion', compact('religion'));
+    }
+
+    public function religionUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'religion' => 'required|unique:religion_master,religion_name,' . $id . ',religion_id'
+        ]);
+
+        $religion = Religion::findOrFail($id);
+        $religion->update(['religion_name' => $request->religion]);
+
+        return redirect()->route('religion.index')->with('update_msg', 'धर्म अपडेट किया गया!');
+    }
+
+    public function religionDestroy($id)
+    {
+        Religion::destroy($id);
+        return redirect()->back()->with('delete_msg', 'धर्म हटाया गया!');
+    }
+
+
+    // education master controller functions
+    public function educationIndex()
+    {
+        $educations = Education::all();
+        return view('manager/education_master', compact('educations'));
+    }
+
+    public function educationStore(Request $request)
+    {
+        $request->validate([
+            'education' => 'required|unique:education_master,education_name'
+        ]);
+
+        Education::create(['education_name' => $request->education]);
+
+        return redirect()->back()->with('insert_msg', 'शिक्षा जोड़ी गई!');
+    }
+
+    public function educationEdit($id)
+    {
+        $education = Education::findOrFail($id);
+        return view('manager/edit_education', compact('education'));
+    }
+
+    public function educationUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'education' => 'required|unique:education_master,education_name,' . $id . ',id'
+        ]);
+
+        $education = Education::findOrFail($id);
+        $education->update(['education_name' => $request->education]);
+
+        return redirect()->route('education.index')->with('update_msg', 'शिक्षा अपडेट की गई!');
+    }
+
+    public function educationDestroy($id)
+    {
+        Education::destroy($id);
+        return redirect()->back()->with('delete_msg', 'शिक्षा हटाई गई!');
+    }
+
+
+    // business master controller functions
+    public function businessIndex()
+    {
+        $businesss = Business::all();
+        return view('manager/business_master', compact('businesss'));
+    }
+
+    public function businessStore(Request $request)
+    {
+        $request->validate([
+            'business' => 'required|unique:business_master,business_name'
+        ]);
+
+        Business::create(['business_name' => $request->business]);
+
+        return redirect()->back()->with('insert_msg', 'व्यवसाय जोड़ा गया!');
+    }
+
+    public function businessEdit($id)
+    {
+        $business = Business::findOrFail($id);
+        return view('manager/edit_business', compact('business'));
+    }
+
+    public function businessUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'business' => 'required|unique:business_master,business_name,' . $id . ',id'
+        ]);
+
+        $business = Business::findOrFail($id);
+        $business->update(['business_name' => $request->business]);
+
+        return redirect()->route('business.index')->with('update_msg', 'व्यवसाय अपडेट किया गया!');
+    }
+
+    public function businessDestroy($id)
+    {
+        Business::destroy($id);
+        return redirect()->back()->with('delete_msg', 'व्यवसाय हटाया गया!');
+    }
+
+
+    // politics master controller functions
+    public function politicsIndex()
+    {
+        $politics = Politics::all();
+        return view('manager/politics_master', compact('politics'));
+    }
+
+    public function politicsStore(Request $request)
+    {
+        $request->validate([
+            'politics' => 'required|unique:politics_master,name'
+        ]);
+
+        Politics::create(['name' => $request->politics]);
+
+        return redirect()->back()->with('insert_msg', 'राजनीति जोड़ी गई!');
+    }
+
+    public function politicsEdit($id)
+    {
+        $politics = Politics::findOrFail($id);
+        return view('manager/edit_politics', compact('politics'));
+    }
+
+    public function politicsUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'politics' => 'required|unique:politics_master,name,' . $id . ',id'
+        ]);
+
+        $politics = Politics::findOrFail($id);
+        $politics->update(['name' => $request->politics]);
+
+        return redirect()->route('politics.index')->with('update_msg', 'राजनीति अपडेट की गई!');
+    }
+
+    public function politicsDestroy($id)
+    {
+        Politics::destroy($id);
+        return redirect()->back()->with('delete_msg', 'राजनीति हटाई गई!');
     }
 }
