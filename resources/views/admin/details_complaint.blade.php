@@ -30,8 +30,10 @@
 
                     $fields = [
                         'शिकायतकर्ता का नाम' => $complaint->name,
-                        'शिकायतकर्ता का मोबाइल' => $complaint->email,
-                        'पदाधिकारी का मोबाइल' => $complaint->mobile_number,
+                        'शिकायतकर्ता का मोबाइल' => $complaint->mobile_number,
+                        'पिता का नाम' => $complaint->father_name,
+                        'रेफरेंस नाम' => $complaint->reference_name,
+                        // 'पदाधिकारी का मोबाइल' => $complaint->mobile_number,
                         'मतदाता पहचान' => $complaint->voter_id,
                         'संभाग का नाम' => $complaint->division->division_name ?? '',
                         'जिले का नाम' => $complaint->district->district_name ?? '',
@@ -68,15 +70,7 @@
                     </div>
                 @endforeach
 
-                <div class="col-md-4" style="justify-content: center; align-items:center">
-                    <label class="form-label">फ़ाइल अटैचमेंट</label>
-                    @if (!empty($complaint->issue_attachment))
-                        <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
-                            class="btn btn-primary" target="_blank">अटैचमेंट खोलें</a>
-                    @else
-                        <button class="btn btn-sm btn-secondary" disabled>कोई अटैचमेंट नहीं है</button>
-                    @endif
-                </div>
+
 
 
                 <div class="col-md-4 d-flex align-items-start mt-3">
@@ -96,6 +90,15 @@
                     <textarea class="form-control" rows="3" disabled>{{ $complaint->issue_description }}</textarea>
                 </div>
 
+                <div class="col-md-4 mt-4" style="justify-content: center; align-items:center">
+                    <label class="form-label">फ़ाइल अटैचमेंट</label>
+                    @if (!empty($complaint->issue_attachment))
+                        <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
+                            class="btn btn-primary" target="_blank">अटैचमेंट खोलें</a>
+                    @else
+                        <button class="btn btn-sm btn-secondary" disabled>कोई अटैचमेंट नहीं है</button>
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -178,7 +181,7 @@
                                         data-status="{{ strip_tags($complaint->statusTextPlain()) }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
                                         data-predefined="{{ $reply->predefinedReply->reply ?? '-' }}"
-                                        data-cb-photo="{{ $reply->cb_photo ? asset( $reply->cb_photo) : '' }}"
+                                        data-cb-photo="{{ $reply->cb_photo ? asset($reply->cb_photo) : '' }}"
                                         data-ca-photo="{{ $reply->ca_photo ? asset($reply->ca_photo) : '' }}"
                                         data-video="{{ $reply->c_video ? asset($reply->c_video) : '' }}">
                                         विवरण </button>

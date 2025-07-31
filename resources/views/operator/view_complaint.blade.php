@@ -159,6 +159,8 @@
                                     <tr>
                                         <th>क्र.</th>
                                         <th>शिकायतकर्ता</th>
+                                        <th>पिता का नाम</th>
+                                        <th>रेफरेंस नाम</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
                                         <th>विभाग</th>
                                         <th>शिकायत की तिथि</th>
@@ -177,6 +179,8 @@
                                                 {{ $complaint->name ?? 'N/A' }} <br>
                                                 {{ $complaint->mobile_number ?? '' }}
                                             </td>
+                                            <td>{{ $complaint->father_name ?? '' }}</td>
+                                            <td>{{ $complaint->reference_name ?? '' }}</td>
                                             <td
                                                 title="
                                                 
