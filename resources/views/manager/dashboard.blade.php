@@ -69,6 +69,7 @@
                                                     <th>नंo</th>
                                                     <th>क्षेत्र</th>
                                                     <th>विषय</th>
+                                                    <th>कार्यक्रम समय</th>
                                                     <th>विवरण</th>
                                                 </tr>
                                             </thead>
@@ -161,6 +162,7 @@
                                                     <th>नंo</th>
                                                     <th>क्षेत्र</th>
                                                     <th>विषय</th>
+                                                    <th>कार्यक्रम समय</th>
                                                     <th>विवरण</th>
                                                 </tr>
                                             </thead>
@@ -196,7 +198,8 @@
                                                     <th>नंo</th>
                                                     <th>क्षेत्र</th>
                                                     <th>विषय</th>
-                                                    <th>दिनांक</th>
+                                                    <th>कार्यक्रम दिनांक</th>
+                                                    <th>कार्यक्रम समय</th>
                                                     <th>विवरण</th>
                                                 </tr>
                                             </thead>
@@ -272,6 +275,7 @@
                                         <th class="bg-light">क्षेत्र</th>
                                         <th class="bg-light">आवेदक</th>
                                         <th class="bg-light">मतदाता</th>
+                                        <th class="bg-light">कार्यक्रम समय</th>
                                         <th class="bg-light">कार्यक्रम दिनांक</th>
                                     </tr>
                                     <tr>
@@ -280,6 +284,7 @@
                                         <td id="modal-area"></td>
                                         <td id="modal-applicant"></td>
                                         <td id="modal-voter"></td>
+                                        <td id="modal-time"></td>
                                         <td id="modal-date"></td>
                                     </tr>
                                 </tbody>
@@ -449,6 +454,7 @@
                                     <td>${row.area_name}</td>
                                     <td>${row.issue_description}</td>
                                     ${selector === "#week-table" ? `<td>${row.program_date}</td>` : ''}
+                                     <td>${row.news_time}</td>
                                     <td>
                                        <button class="btn btn-sm btn-primary view-details-btn" data-id="${row.complaint_id}">
                                             विवरण
@@ -483,6 +489,7 @@
                             $('#modal-applicant').text(data.aavedak || '—');
                             $('#modal-complaint-number').text('#' + (data.complaint_number || '—'));
                             $('#modal-voter').text(data.voter_id || '—');
+                            $('#modal-time').text(data.news_time || '—');
                             $('#modal-date').text(data.program_date || '—');
                             $('#modal-status-button').html(data.status_text || '');
 

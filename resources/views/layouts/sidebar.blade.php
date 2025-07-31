@@ -124,12 +124,12 @@
                             class="icon icon-arrow-right"></i><span class="nav-text">जनसंख्या</span></a>
                     <ul aria-expanded="false">
                         <li><a href="{{ route('jati.index') }}">जाति जोड़े</a></li>
-                        <li><a href="#">शिक्षा जोड़े</a></li>
-                        <li><a href="#">व्यवसाय जोड़े</a></li>
-                        <li><a href="#">धर्म जोड़े</a></li>
-                        <li><a href="#">श्रेणी जोड़े</a></li>
-                        <li><a href="#">राजनीतिक/सामाजिक सक्रियता</a></li>
-                        <li><a href="#">रुचि जोड़े</a></li>
+                        <li><a href="{{ route('education.index') }}">शिक्षा जोड़े</a></li>
+                        <li><a href="{{ route('business.index') }}">व्यवसाय जोड़े</a></li>
+                        <li><a href="{{ route('religion.index') }}">धर्म जोड़े</a></li>
+                        <li><a href="{{ route('category.index') }}">श्रेणी जोड़े</a></li>
+                        <li><a href="{{ route('politics.index') }}">राजनीतिक जोड़े</a></li>
+                        <li><a href="{{ route('interest.index') }}">रुचि जोड़े</a></li>
                     </ul>
                 </li>
 

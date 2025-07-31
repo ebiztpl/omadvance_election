@@ -278,6 +278,57 @@ Route::middleware('checklogin')->group(function () {
     Route::post('manager/create_adhikari_master/store', [ManagerController::class, 'adhikariStore'])->name('adhikari.store');
     Route::get('manager/create_adhikari_master/edit/{id}', [ManagerController::class, 'adhikariEdit'])->name('adhikari.edit');
     Route::post('manager/create_adhikari_master/update/{id}', [ManagerController::class, 'adhikariUpdate'])->name('adhikari.update');
+
+
+    // category routes
+    Route::get('manager/category_master', [ManagerController::class, 'categoryIndex'])->name('category.index');
+    Route::post('manager/category_master', [ManagerController::class, 'categoryStore'])->name('category.store');
+    Route::get('manager/category/edit/{id}', [ManagerController::class, 'categoryEdit'])->name('category.edit');
+    Route::post('manager/category/update/{id}', [ManagerController::class, 'categoryUpdate'])->name('category.update');
+    // Route::get('/category/delete/{id}', [ManagerController::class, 'categoryDestroy'])->name('category.delete');
+
+
+
+    // interest routes
+    Route::get('manager/interest_master', [ManagerController::class, 'interestIndex'])->name('interest.index');
+    Route::post('manager/interest_master', [ManagerController::class, 'interestStore'])->name('interest.store');
+    Route::get('manager/interest/edit/{id}', [ManagerController::class, 'interestEdit'])->name('interest.edit');
+    Route::post('manager/interest/update/{id}', [ManagerController::class, 'interestUpdate'])->name('interest.update');
+    // Route::get('/interest/delete/{id}', [ManagerController::class, 'interestDestroy'])->name('interest.delete');
+
+
+    // business routes
+    Route::get('manager/business_master', [ManagerController::class, 'businessIndex'])->name('business.index');
+    Route::post('manager/business_master', [ManagerController::class, 'businessStore'])->name('business.store');
+    Route::get('manager/business/edit/{id}', [ManagerController::class, 'businessEdit'])->name('business.edit');
+    Route::post('manager/business/update/{id}', [ManagerController::class, 'businessUpdate'])->name('business.update');
+    // Route::get('/business/delete/{id}', [ManagerController::class, 'businessDestroy'])->name('business.delete');
+
+
+    // politics routes
+    Route::get('manager/politics_master', [ManagerController::class, 'politicsIndex'])->name('politics.index');
+    Route::post('manager/politics_master', [ManagerController::class, 'politicsStore'])->name('politics.store');
+    Route::get('manager/politics/edit/{id}', [ManagerController::class, 'politicsEdit'])->name('politics.edit');
+    Route::post('manager/politics/update/{id}', [ManagerController::class, 'politicsUpdate'])->name('politics.update');
+    // Route::get('/politics/delete/{id}', [ManagerController::class, 'politicsDestroy'])->name('politics.delete');
+
+
+    // religion routes
+    Route::get('manager/religion_master', [ManagerController::class, 'religionIndex'])->name('religion.index');
+    Route::post('manager/religion_master', [ManagerController::class, 'religionStore'])->name('religion.store');
+    Route::get('manager/religion/edit/{id}', [ManagerController::class, 'religionEdit'])->name('religion.edit');
+    Route::post('manager/religion/update/{id}', [ManagerController::class, 'religionUpdate'])->name('religion.update');
+    // Route::get('/religion/delete/{id}', [ManagerController::class, 'religionDestroy'])->name('religion.delete');
+
+
+    // education routes
+    Route::get('manager/education_master', [ManagerController::class, 'educationIndex'])->name('education.index');
+    Route::post('manager/education_master', [ManagerController::class, 'educationStore'])->name('education.store');
+    Route::get('manager/education/edit/{id}', [ManagerController::class, 'educationEdit'])->name('education.edit');
+    Route::post('manager/education/update/{id}', [ManagerController::class, 'educationUpdate'])->name('education.update');
+    // Route::get('/education/delete/{id}', [ManagerController::class, 'educationDestroy'])->name('education.delete');
+
+
     Route::post('manager/ajax/designation', [ManagerController::class, 'getDesignation'])->name('ajax.designation');
 
     Route::get('/manager/commander_complaints', [ManagerController::class, 'viewCommanderComplaints'])->name('commander.complaints.view');
