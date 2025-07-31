@@ -1974,6 +1974,8 @@ class ManagerController extends Controller
     {
         $request->validate([
             'txtname' => 'required|string|max:255',
+            'father_name' => 'required|string|max:255',
+            'reference' => 'nullable|string|max:255',
             'voter' => 'required|string|max:255',
             'division_id' => 'required|integer',
             'txtdistrict_name' => 'required',
@@ -2006,6 +2008,8 @@ class ManagerController extends Controller
         $complaint->complaint_type = $request->type;
         $complaint->name = $request->txtname;
         $complaint->mobile_number = $request->mobile;
+        $complaint->father_name = $request->father_name;
+        $complaint->reference_name = $request->reference;
         $complaint->email = $request->mobile;
         $complaint->voter_id = $request->voter;
         $complaint->division_id = $request->division_id;

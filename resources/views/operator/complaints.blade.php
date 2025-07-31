@@ -76,6 +76,20 @@
 
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        पिता का नाम <span class="error">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" name="father_name" required>
+                                </div>
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                       रेफरेंस नाम
+                                    </label>
+                                    <input type="text" class="form-control" name="reference" >
+                                </div>
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         मतदाता पहचान <span class="error">*</span>
                                     </label>
                                     <input type="text" class="form-control" name="voter" required>
@@ -185,46 +199,45 @@
                                     </div>
                                 </div>
 
-                                    {{-- Date Row --}}
-                                    <div class="form-group row date_row" style="display: none;">
-                                        <div class="col-md-3 d-flex align-items-center">
-                                            <label for="from_date" class="me-2 mr-2 mb-0"
-                                                style="white-space: nowrap;">सूचना
-                                                दिनांक</label>
-                                            <input type="date" class="form-control" name="from_date">
-                                        </div>
-
-                                        <div class="col-md-3 d-flex align-items-center">
-                                            <label for="program_date" class="me-2 mr-2 mb-0"
-                                                style="white-space: nowrap;">कार्यक्रम दिनांक</label>
-                                            <input type="date" class="form-control" name="program_date">
-                                        </div>
-
-
-                                        <div class="col-md-3 d-flex align-items-center">
-                                            <label for="to_date" class="me-2 mr-2 mb-0"
-                                                style="white-space: nowrap;">कार्यक्रम समय</label>
-                                            <input type="time" class="form-control" name="to_date">
-                                        </div>
+                                {{-- Date Row --}}
+                                <div class="form-group row date_row" style="display: none;">
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="from_date" class="me-2 mr-2 mb-0" style="white-space: nowrap;">सूचना
+                                            दिनांक</label>
+                                        <input type="date" class="form-control" name="from_date">
                                     </div>
 
-                                    {{-- Subject, Description, File --}}
-                                    <div class="form-group row">
-                                        {{-- <div class="col-md-12 mb-3">
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="program_date" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">कार्यक्रम दिनांक</label>
+                                        <input type="date" class="form-control" name="program_date">
+                                    </div>
+
+
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="to_date" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">कार्यक्रम समय</label>
+                                        <input type="time" class="form-control" name="to_date">
+                                    </div>
+                                </div>
+
+                                {{-- Subject, Description, File --}}
+                                <div class="form-group row">
+                                    {{-- <div class="col-md-12 mb-3">
                                         <label>विषय <span class="error">*</span></label>
                                         <input type="text" class="form-control"
                                             placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें"
                                             id="transliterateTextarea" name="CharCounter" maxlength="100" required>
                                     </div> --}}
 
-                                        <div class="col-md-12 mb-3">
-                                            <label>विवरण <span class="error">*</span></label>
-                                            <textarea class="form-control" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें" name="NameText"
-                                                id="NameText" rows="5" maxlength="2000" required></textarea>
-                                        </div>
-
-
+                                    <div class="col-md-12 mb-3">
+                                        <label>विवरण <span class="error">*</span></label>
+                                        <textarea class="form-control" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें" name="NameText"
+                                            id="NameText" rows="5" maxlength="2000" required></textarea>
                                     </div>
+
+
+                                </div>
                             </fieldset>
                         </fieldset>
 

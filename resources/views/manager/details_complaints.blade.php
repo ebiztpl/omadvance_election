@@ -75,6 +75,22 @@
 
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        पिता का नाम <span class="error">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" name="father_name"
+                                        value="{{ old('father_name', $complaint->father_name) }}" required>
+                                </div>
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        रेफरेंस नाम 
+                                    </label>
+                                    <input type="text" class="form-control" name="reference"
+                                        value="{{ old('reference', $complaint->reference_name) }}">
+                                </div>
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         मतदाता पहचान <span class="error">*</span>
                                     </label>
                                     <input type="text" class="form-control" name="voter"

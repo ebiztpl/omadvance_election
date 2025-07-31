@@ -51,7 +51,7 @@
 
                 <div class="row">
                     <div class="col-xl-12 col-lg-12 col-md-12">
-                        <div class="card" style="background-color: #F6F7C4; min-height: 350px">
+                        <div class="card" style="background-color: #F6F7C4; height: 350px">
                             <div class="card-body">
                                 <div class="card-header" style="border-bottom: 2px solid gray;">
                                     <h4 class="card-title suchna">नई सूचना</h4>
@@ -348,12 +348,12 @@
                                 <td><strong>${row.samay}</strong></td>
 
                                 <td>
-                                    <a href="${makeLink(row.section, 'समस्या', 'operator')}">  <span class="badge bg-danger text-white" data-bs-toggle="tooltip">
+                                    <a href="${makeLink(row.section, 'समस्या', 'operator')}" target="_blank">  <span class="badge bg-danger text-white" data-bs-toggle="tooltip">
                                         ${totalSamasyaOperator}
                                     </span></a>
                                 </td>
                                 <td>
-                                     <a href="${makeLink(row.section, 'समस्या', 'commander')}"><span class="badge bg-danger text-white" data-bs-toggle="tooltip">
+                                     <a href="${makeLink(row.section, 'समस्या', 'commander')}" target="_blank"><span class="badge bg-danger text-white" data-bs-toggle="tooltip">
                                         ${totalSamasyaCommander}
                                     </span>
                                     </a>
@@ -365,13 +365,13 @@
                                 </td>
 
                                 <td>
-                                    <a href="${makeLink(row.section, 'विकास', 'operator')}"><span class="badge bg-success text-white" data-bs-toggle="tooltip">
+                                    <a href="${makeLink(row.section, 'विकास', 'operator')}" target="_blank"><span class="badge bg-success text-white" data-bs-toggle="tooltip">
                                         ${totalVikashOperator}
                                     </span>
                                     </a>
                                 </td>
                                 <td>
-                                     <a href="${makeLink(row.section, 'विकास', 'commander')}"><span class="badge bg-success text-white" data-bs-toggle="tooltip">
+                                     <a href="${makeLink(row.section, 'विकास', 'commander')}" target="_blank"><span class="badge bg-success text-white" data-bs-toggle="tooltip">
                                         ${totalVikashCommander}
                                     </span>
                                     </a>
@@ -527,7 +527,7 @@
                         } else {
                             data.forEach(item => {
                                 $list.append(`
-                                  <a href="/complaints/vibhag-details?department=${item.department}" class="text-decoration-none" style="color: black">
+                                  <a href="/complaints/vibhag-details?department=${item.department}" target="_blank" class="text-decoration-none" style="color: black">
                             <li class="d-flex justify-content-between border-bottom py-1">
                                 <span>${item.department}</span>
                                 <span class="badge bg-secondary text-white">${item.total}</span>
@@ -557,7 +557,7 @@
                         } else {
                             data.forEach(item => {
                                 $list.append(`
-                                 <a href="/complaints/status-details?status=${item.status}" class="text-decoration-none" style="color: black">
+                                 <a href="/complaints/status-details?status=${item.status}" target="_blank" class="text-decoration-none" style="color: black">
                             <li class="d-flex justify-content-between border-bottom py-1">
                                 <span>${item.status}</span>
                                 <span class="badge bg-success text-white">${item.total}</span>
@@ -579,25 +579,25 @@
                     method: 'GET',
                     success: function(data) {
                         $('.new-voters').html(
-                            `<a href="/voters/details?filter=today-voters" class="text-decoration-none" style="color: black">
+                            `<a href="/voters/details?filter=today-voters" target="_blank" class="text-decoration-none" style="color: black">
                                 <i class="fa fa-users"></i> ${data.new_voters}
                             </a>`
                         );
 
                         $('.new-contacts').html(
-                            `<a href="/voters/details?filter=today-contacts" class="text-decoration-none" style="color: black">
+                            `<a href="/voters/details?filter=today-contacts" target="_blank" class="text-decoration-none" style="color: black">
                                 <i class="fa fa-phone"></i> ${data.new_contacts}
                             </a>`
                         );
 
                         $('.total-voters').html(
-                            `<a href="/voters/details?filter=total-voters" class="text-decoration-none" style="color: black">
+                            `<a href="/voters/details?filter=total-voters" target="_blank" class="text-decoration-none" style="color: black">
                                 <i class="fa fa-check-square"></i> ${data.total_voters}
                             </a>`
                         );
 
                         $('.total-contacts').html(
-                            `<a href="/voters/details?filter=total-contacts" class="text-decoration-none" style="color: black">
+                            `<a href="/voters/details?filter=total-contacts" target="_blank" class="text-decoration-none" style="color: black">
                                 <i class="fa fa-address-book"></i> ${data.total_contacts}
                             </a>`
                         );
@@ -670,7 +670,7 @@
                             const total = info ? (info.shubh + info.asubh) : 0;
 
                             table += `<td class="p-1">
-                                <a href="/complaints/date-wise?date=${fullDate}" class="text-decoration-none text-dark">
+                                <a href="/complaints/date-wise?date=${fullDate}" target="_blank" class="text-decoration-none text-dark">
                                     <div><strong>${date}</strong></div>`;
 
                             if (total > 0) {

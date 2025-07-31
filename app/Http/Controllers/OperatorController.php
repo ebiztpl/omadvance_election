@@ -61,6 +61,8 @@ class OperatorController extends Controller
         $request->validate([
             'txtname' => 'required|string|max:255',
             'mobile' => 'nullable|string|regex:/^[0-9]{10,15}$/',
+            'father_name' => 'required|string|max:255',
+            'reference' => 'nullable|string|max:255',
             'division_id' => 'required|integer',
             'voter' => 'required|string|max:255',
             'txtdistrict_name' => 'required|integer',
@@ -91,7 +93,6 @@ class OperatorController extends Controller
         $nagar = Nagar::with('mandal')->find($request->txtgram);
         $mandal_id = $nagar?->mandal?->mandal_id;
 
-        // ✅ Derive Area ID using Polling
         $polling = Polling::with('area')->where('gram_polling_id', $request->txtpolling)->first();
         $area_id = $polling?->area?->area_id;
 
@@ -136,6 +137,8 @@ class OperatorController extends Controller
             'user_id' => session('user_id'),
             'name' => $request->txtname,
             'mobile_number' => $request->mobile,
+            'father_name' => $request->father_name,
+            'reference_name' => $request->reference,
             'email' => $request->mobile,
             'voter_id' => $request->voter,
             'complaint_type' => $request->type,

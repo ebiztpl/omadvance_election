@@ -21,6 +21,8 @@ class Complaint extends Model
         'name',
         'email',
         'mobile_number',
+        'father_name',
+        'reference_name',
         'complaint_number',
         'complaint_type',
         'issue_title',
