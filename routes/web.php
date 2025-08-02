@@ -156,7 +156,8 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/complaints/{section}', [ManagerController::class, 'sectionView']);
     Route::get('/voters/details', [ManagerController::class, 'voterDetails']);
     Route::get('/detail_suchna/{id}', [ManagerController::class, 'detail_suchna']);
-
+    Route::get('/ajax/forwarded-counts', [ManagerController::class, 'getForwardedCounts'])
+        ->name('ajax.forwarded.counts');
 
     // division routes
     Route::get('manager/division_master', [ManagerController::class, 'index'])->name('division.index');
