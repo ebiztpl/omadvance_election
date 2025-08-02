@@ -23,25 +23,27 @@
                                 <thead>
                                     <tr>
                                         <th>क्र.</th>
-                                        <th>शिकायतकर्ता</th>
+                                        <th style="min-width: 150px;">शिकायतकर्ता</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
                                         <th>विभाग</th>
                                         <th>शिकायत की तिथि</th>
                                         <th>से बकाया</th>
                                         <th>स्थिति</th>
                                         <th>आवेदक</th>
-                                        <th>फ़ाइल देखें</th>
+                                        <th>फॉरवर्ड अधिकारी</th>
                                         <th>आगे देखें</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($complaints as $index => $complaint)
-                                        <tr>
+                                        
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td> {{ $complaint->complaint_number ?? 'N/A' }} <br>
-                                                {{ $complaint->name ?? 'N/A' }} <br>
-                                                {{ $complaint->mobile_number ?? '' }}
+                                            <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }} <br>
+                                                <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
+                                                <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
+                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br>
+                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }}
                                             </td>
 
                                             <td
@@ -89,13 +91,15 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if (!empty($complaint->issue_attachment))
+                                               {{ $complaint->forwarded_to_name ?? '-' }} <br>
+                                               {{ $complaint->forwarded_to_date }}
+                                                {{-- @if (!empty($complaint->issue_attachment))
                                                     <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
                                                         target="_blank" class="btn btn-sm btn-success">
                                                         देखें
                                                     </a>
                                                  
-                                                @endif
+                                                @endif --}}
                                             </td>
                                             <td>
                                                 <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"

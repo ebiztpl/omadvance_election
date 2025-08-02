@@ -56,7 +56,7 @@
                                 <span class="badge bg-danger" id="failed-count">Failed: 0</span>
                                 <span class="badge bg-warning" id="repeat_count">Duplicate: 0</span>
                             </div>
-                            <table class="display table table-bordered" style="min-width: 845px" id="error-table">
+                            <table class="display table table-bordered" style="min-width: 845px" id="example">
                                 <thead>
                                     <tr>
                                         <th>#</th>
@@ -188,8 +188,8 @@
                 const container = document.getElementById('error-table-container');
                 const body = document.getElementById('voter-results-body');
 
-                if ($.fn.DataTable.isDataTable('#error-table')) {
-                    $('#error-table').DataTable().clear().destroy();
+                if ($.fn.DataTable.isDataTable('#example')) {
+                    $('#example').DataTable().clear().destroy();
                 }
 
                 body.innerHTML = '';
@@ -209,7 +209,7 @@
             <td>${escapeHtml(err.polling_no)}</td>
             <td>${escapeHtml(err.family_count)}</td>
             <td>${escapeHtml(err.mukhiya_mobile)}</td>
-            <td>${escapeHtml(err['death/left'])}</td>
+            <td>${escapeHtml(err.death_left)}</td>
             <td>${escapeHtml(err.reason)}</td>
         </tr>`;
                     body.insertAdjacentHTML('beforeend', row);
@@ -218,7 +218,7 @@
                 container.style.display = 'block';
 
                 // Re-initialize DataTable after table is rebuilt
-                $('#error-table').DataTable({
+                $('#example').DataTable({
                     destroy: true, // Important to ensure full reset
                     dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
                         '<"row"<"col-sm-12"tr>>' +

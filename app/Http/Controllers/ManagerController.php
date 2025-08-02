@@ -276,6 +276,52 @@ class ManagerController extends Controller
         ]);
     }
 
+    public function getForwardedCounts()
+    {
+        $username = session('logged_in_user');
+
+        if (!$username) {
+            return response()->json(['error' => 'User not logged in.'], 401);
+        }
+
+        $user = \App\Models\User::where('admin_name', $username)->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'User not found.'], 404);
+        }
+
+        $userId = $user->admin_id;
+
+        $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+            ->groupBy('complaint_id');
+
+        $latestReplies = \App\Models\Reply::joinSub($latestRepliesSub, 'latest', function ($join) {
+            $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
+                ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
+        })
+            ->whereNotNull('forwarded_to')
+            ->whereHas('complaint', function ($query) {
+                $query->whereNotIn('complaint_status', [4, 5])
+                    ->whereIn('complaint_type', ['समस्या', 'विकास']);
+            })
+            ->select('complaint_reply.*');
+
+        $forwardedToYou = (clone $latestReplies)
+            ->where('complaint_reply.forwarded_to', $userId)
+            ->distinct('complaint_reply.complaint_id')
+            ->count('complaint_reply.complaint_id');
+
+        $forwardedToOthers = (clone $latestReplies)
+            ->where('complaint_reply.forwarded_to', '!=', $userId)
+            ->distinct('complaint_reply.complaint_id')
+            ->count('complaint_reply.complaint_id');
+
+        return response()->json([
+            'forwarded_to_you' => $forwardedToYou,
+            'forwarded_to_others' => $forwardedToOthers,
+        ]);
+    }
+
     public function sectionView($section, Request $request)
     {
         $now = Carbon::now();
@@ -283,6 +329,28 @@ class ManagerController extends Controller
         $type = $request->query('type');
         $user = $request->query('user');
         $title = 'शिकायतें';
+
+
+        $loadForwardedTo = function ($complaints) {
+            foreach ($complaints as $complaint) {
+                if (!in_array($complaint->complaint_status, [4, 5])) {
+                    $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+                } else {
+                    $complaint->pending_days = 0;
+                }
+
+                $lastReply = $complaint->replies()
+                    ->with('forwardedToManager')
+                    ->whereNotNull('forwarded_to')
+                    ->orderByDesc('reply_date')
+                    ->first();
+
+                $complaint->forwarded_to_name = $lastReply?->forwardedToManager?->admin_name ?? '-';
+                $complaint->forwarded_to_date = $lastReply?->reply_date?->format('d-m-Y H:i') ?? '-';
+            }
+
+            return $complaints;
+        };
 
         switch ($section) {
             case 'today':
@@ -303,13 +371,7 @@ class ManagerController extends Controller
                 $start = $now->copy()->subDay()->startOfDay();
                 $end = $now->copy()->subDay()->endOfDay();
                 $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
-                foreach ($complaints as $complaint) {
-                    if (!in_array($complaint->complaint_status, [4, 5])) {
-                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
-                    } else {
-                        $complaint->pending_days = 0;
-                    }
-                }
+                $complaints = $loadForwardedTo($complaints);
                 $title .= ' (कल)';
                 break;
 
@@ -317,13 +379,7 @@ class ManagerController extends Controller
                 $start = $now->copy()->startOfWeek();
                 $end = $now->copy()->endOfWeek();
                 $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
-                foreach ($complaints as $complaint) {
-                    if (!in_array($complaint->complaint_status, [4, 5])) {
-                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
-                    } else {
-                        $complaint->pending_days = 0;
-                    }
-                }
+                $complaints = $loadForwardedTo($complaints);
                 $title .= ' (इस सप्ताह)';
                 break;
 
@@ -331,13 +387,7 @@ class ManagerController extends Controller
                 $start = $now->copy()->startOfMonth();
                 $end = $now;
                 $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
-                foreach ($complaints as $complaint) {
-                    if (!in_array($complaint->complaint_status, [4, 5])) {
-                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
-                    } else {
-                        $complaint->pending_days = 0;
-                    }
-                }
+                $complaints = $loadForwardedTo($complaints);
                 $title .= ' (इस माह)';
                 break;
             case 'all':
@@ -345,13 +395,7 @@ class ManagerController extends Controller
                 $end = Carbon::now()->endOfDay();
 
                 $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
-                foreach ($complaints as $complaint) {
-                    if (!in_array($complaint->complaint_status, [4, 5])) {
-                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
-                    } else {
-                        $complaint->pending_days = 0;
-                    }
-                }
+                $complaints = $loadForwardedTo($complaints);
                 $title = 'सभी शिकायतें';
                 break;
 
@@ -367,14 +411,7 @@ class ManagerController extends Controller
                     ->orderBy('posted_date', 'desc')
                     ->get();
 
-                foreach ($complaints as $complaint) {
-                    if (!in_array($complaint->complaint_status, [4, 5])) {
-                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
-                    } else {
-                        $complaint->pending_days = 0;
-                    }
-                }
-
+                $complaints = $loadForwardedTo($complaints);
                 $title = "शिकायतें (विभाग: " . $department . ")";
                 break;
 
@@ -399,14 +436,9 @@ class ManagerController extends Controller
                 $complaints = Complaint::where('complaint_status', $statusCode)
                     ->orderBy('posted_date', 'desc')
                     ->get();
+                $complaints = $loadForwardedTo($complaints);
 
-                foreach ($complaints as $complaint) {
-                    if (!in_array($complaint->complaint_status, [4, 5])) {
-                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
-                    } else {
-                        $complaint->pending_days = 0;
-                    }
-                }
+
 
                 $title = "शिकायतें (" . $label . ")";
                 break;
@@ -424,14 +456,53 @@ class ManagerController extends Controller
                 $complaints = $this->getComplaintsBetween($start, $end, $type, $user)->filter(function ($complaint) {
                     return in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']);
                 });
-                foreach ($complaints as $complaint) {
-                    if (!in_array($complaint->complaint_status, [4, 5])) {
-                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
-                    } else {
-                        $complaint->pending_days = 0;
-                    }
-                }
+                $complaints = $loadForwardedTo($complaints);
                 $title = 'शिकायतें (' . Carbon::parse($date)->format('d M Y') . ')';
+                break;
+
+            case 'forwarded':
+                $user = \App\Models\User::where('admin_name', session('logged_in_user'))->first();
+
+                if (!$user) {
+                    abort(403, 'User not logged in.');
+                }
+
+                $userId = $user->admin_id;
+                $direction = $request->query('direction');
+
+                $latestReplies = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+                    ->groupBy('complaint_id');
+
+                $latestForwardedReplies = \App\Models\Reply::joinSub($latestReplies, 'latest', function ($join) {
+                    $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
+                        ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
+                })
+                    ->whereNotNull('forwarded_to')
+                    ->whereHas('complaint', function ($query) {
+                        $query->whereNotIn('complaint_status', [4, 5])
+                            ->whereIn('complaint_type', ['समस्या', 'विकास']);
+                    })
+                    ->with('complaint.replies');
+
+                if ($direction === 'to') {
+                    $latestForwardedReplies = $latestForwardedReplies->where('forwarded_to', $userId);
+                    $title = 'आपको निर्देशित शिकायतें';
+                } elseif ($direction === 'others') {
+                    $latestForwardedReplies = $latestForwardedReplies->where('forwarded_to', '!=', $userId);
+                    $title = 'अन्य निर्देशित शिकायतें';
+                }
+
+                $replies = $latestForwardedReplies->get();
+
+
+                $complaints = $replies
+                    ->pluck('complaint')
+                    ->filter()
+                    ->unique('complaint_id')
+                    ->sortByDesc('posted_date')
+                    ->values();
+                $complaints = $loadForwardedTo($complaints);
+
                 break;
 
             default:
@@ -1416,7 +1487,7 @@ class ManagerController extends Controller
 
     public function viewCommanderComplaints(Request $request)
     {
-        $query = Complaint::where('type', 1);
+        $query = Complaint::with('replies.forwardedToManager')->where('type', 1);
 
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
@@ -1486,6 +1557,14 @@ class ManagerController extends Controller
             } else {
                 $complaint->pending_days = 0;
             }
+
+            $lastReply = $complaint->replies
+                ->whereNotNull('forwarded_to')
+                ->sortByDesc('reply_date')
+                ->first();
+
+            $complaint->forwarded_to_name = $lastReply?->forwardedToManager?->admin_name ?? '-';
+            $complaint->forwarded_reply_date = $lastReply?->reply_date?->format('d-m-Y h:i') ?? '-';
         }
 
         if ($request->ajax()) {
@@ -1494,7 +1573,8 @@ class ManagerController extends Controller
             foreach ($complaints as $index => $complaint) {
                 $html .= '<tr>';
                 $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
+                // $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
+                $html .= '<td><strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? '') . '<br> <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br><strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br><strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -1527,12 +1607,13 @@ class ManagerController extends Controller
                 $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
                 $html .= '<td>' . ($complaint->registrationDetails->name ?? '') . '</td>';
 
+                $html .= '<td>' . ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-') . '</td>';
                 // Attachment
-                if (!empty($complaint->issue_attachment)) {
-                    $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
-                } else {
-                    $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
-                }
+                // if (!empty($complaint->issue_attachment)) {
+                //     $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
+                // } else {
+                //     $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
+                // }
 
                 // Action Button
                 $html .= '<td><a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
@@ -1592,7 +1673,7 @@ class ManagerController extends Controller
         // $districtId = 11;
         // $divisionId = 2;
 
-        $query = Complaint::with('registrationDetails')->where('type', 2);
+        $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 2);
         // ->where('district_id', $districtId)
         // ->where('vidhansabha_id', $vidhansabhaId);
 
@@ -1670,6 +1751,14 @@ class ManagerController extends Controller
             $complaint->pending_days = in_array($complaint->complaint_status, [4, 5])
                 ? 0
                 : \Carbon\Carbon::parse($complaint->posted_date)->diffInDays(now());
+
+            $lastReply = $complaint->replies
+                ->whereNotNull('forwarded_to')
+                ->sortByDesc('reply_date')
+                ->first();
+
+            $complaint->forwarded_to_name = $lastReply?->forwardedToManager?->admin_name ?? '-';
+            $complaint->forwarded_reply_date = $lastReply?->reply_date?->format('d-m-Y h:i') ?? '-';
         }
 
         if ($request->ajax()) {
@@ -1678,7 +1767,7 @@ class ManagerController extends Controller
             foreach ($complaints as $index => $complaint) {
                 $html .= '<tr>';
                 $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
+                $html .= '<td><strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? '') . '<br> <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br><strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br><strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '</td>';
 
 
                 $html .= '<td title="
@@ -1711,13 +1800,13 @@ class ManagerController extends Controller
                 // Status Text
                 $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
                 $html .= '<td>' . ($complaint->admin_name ?? '') . '</td>';
-
+                $html .= '<td>' . ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-') . '</td>';
                 // Attachment
-                if (!empty($complaint->issue_attachment)) {
-                    $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
-                } else {
-                    $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
-                }
+                // if (!empty($complaint->issue_attachment)) {
+                //     $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
+                // } else {
+                //     $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
+                // }
 
                 // Action Button
                 $html .= '<td><a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';

@@ -139,7 +139,7 @@ class MemberController extends Controller
             ->where('registration_id', $registrationId)
             ->value('mobile1');
 
-        Complaint::create([
+        $complaint = Complaint::create([
             'user_id' => 0,
             'complaint_number' => $complaintNumber,
             'video' => $videoFilename,
@@ -164,6 +164,16 @@ class MemberController extends Controller
             'news_time' => null,
             'posted_date' => now(),
         ]);
+
+
+        Reply::create([
+            'complaint_id' => $complaint->complaint_id,
+            'forwarded_to' => 6,
+            'reply_from' => 0,
+            'reply_date' => now(),
+            'complaint_reply' => 'शिकायत दर्ज की गई है।',
+        ]);
+
 
         $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaintNumber;
         $this->messageSent($complaintNumber, $mobile);
@@ -450,7 +460,7 @@ class MemberController extends Controller
         }
 
 
-        $query = Complaint::with(['polling', 'area'])
+        $query = Complaint::with(['polling', 'area', 'replies.forwardedToManager'])
             ->where('complaint_created_by', $registrationId)
             ->where('type', 1);
 
@@ -526,6 +536,14 @@ class MemberController extends Controller
             } else {
                 $complaint->pending_days = 0;
             }
+
+            $lastReply = $complaint->replies
+                ->whereNotNull('forwarded_to')
+                ->sortByDesc('reply_date')
+                ->first();
+
+            $complaint->forwarded_to_name = $lastReply?->forwardedToManager?->admin_name ?? '-';
+            $complaint->forwarded_reply_date = $lastReply?->reply_date?->format('d-m-Y h:i A') ?? '-';
         }
 
         if ($request->ajax()) {
@@ -534,8 +552,7 @@ class MemberController extends Controller
             foreach ($complaints as $index => $complaint) {
                 $html .= '<tr>';
                 $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
-
+                $html .= '<td><strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? '') . '<br> <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br><strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br><strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -568,12 +585,7 @@ class MemberController extends Controller
                 $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
                 $html .= '<td>' . ($complaint->registrationDetails->name ?? '') . '</td>';
 
-                // Attachment
-                if (!empty($complaint->issue_attachment)) {
-                    $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
-                } else {
-                    $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
-                }
+                $html .= '<td>' . $complaint->forwarded_to_name . '<br>' . $complaint->forwarded_reply_date . '</td>';
 
                 $html .= '<td><a href="' . route('complaint.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
 

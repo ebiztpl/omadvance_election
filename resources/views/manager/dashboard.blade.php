@@ -86,17 +86,49 @@
             </div>
 
             <div class="col-xl-4 col-lg-4 col-md-4 w-100">
-                <div class="card w-100 d-flex flex-column" style="background-color: #e3e4ee">
-                    <div class="card-body d-flex flex-column">
-                        <div class="card-header" style="border-bottom: 2px solid gray;">
-                            <h4 class="card-title suchna mb-0">मासिक जानकारी कैलेंडर</h4>
+                <div class="p-3 mb-4" style="background-color: #EEEFE0">
+                    <div class="section-title text-center">
+                        <h4 class="font-weight-bold">समस्या / विकास </h4>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <a id="forward1" href="/complaints/forwarded?direction=to" target="_blank"
+                                class="forwarded-btn d-flex justify-content-between align-items-center p-3">
+                                <div class="text-left">
+                                    <div class="subtitle font-weight-bold">आपको निर्देशित</div>
+                                </div>
+                                <span class="count-badge" id="count-you">0</span>
+                            </a>
                         </div>
-                        <div id="calendar-controls" class="d-flex justify-content-between align-items-center my-3">
-                            <button class="btn btn-sm btn-outline-primary" onclick="changeMonth(-1)">← पिछला</button>
-                            <h5 id="month-year" class="m-0"></h5>
-                            <button class="btn btn-sm btn-outline-primary" onclick="changeMonth(1)">अगला →</button>
+
+                        <div class="col-md-6">
+                            <a id="forward1" href="/complaints/forwarded?direction=others" target="_blank"
+                                class="forwarded-btn d-flex justify-content-between align-items-center p-3">
+                                <div class="text-left">
+                                    <div class="subtitle font-weight-bold">अन्य निर्देशित</div>
+                                </div>
+                                <span class="count-badge" id="count-others">0</span>
+                            </a>
                         </div>
-                        <div id="calendar" class="table-responsive flex-grow-1"></div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-12 col-lg-12 col-md-12">
+                        <div class="card w-100 d-flex flex-column" style="background-color: #e3e4ee">
+                            <div class="card-body d-flex flex-column">
+                                <div class="card-header" style="border-bottom: 2px solid gray;">
+                                    <h4 class="card-title suchna mb-0">मासिक जानकारी कैलेंडर</h4>
+                                </div>
+                                <div id="calendar-controls" class="d-flex justify-content-between align-items-center my-3">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="changeMonth(-1)">←
+                                        पिछला</button>
+                                    <h5 id="month-year" class="m-0"></h5>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="changeMonth(1)">अगला →</button>
+                                </div>
+                                <div id="calendar" class="table-responsive flex-grow-1"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -109,7 +141,7 @@
                         <div class="card" style="background-color: #f5e2dc">
                             <div class="card-body">
                                 <div class="card-header" style="border-bottom: 2px solid gray;">
-                                    <h4 class="card-title suchna mb-0">समस्या/विकास और शुभ/अशुभ सूचना सारणी</h4>
+                                    <h4 class="card-title suchna mb-0">समस्या और विकास सारणी</h4>
                                 </div>
                                 <div class="row mt-3">
                                     <div class="col-xl-12">
@@ -610,6 +642,24 @@
                         );
                     }
                 });
+
+
+                fetchForwardedCounts();
+
+                function fetchForwardedCounts() {
+                    $.ajax({
+                        url: "{{ route('ajax.forwarded.counts') }}",
+                        method: 'GET',
+                        dataType: 'json',
+                        success: function(data) {
+                            $('#count-you').text(data.forwarded_to_you);
+                            $('#count-others').text(data.forwarded_to_others);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error fetching forwarded counts:', error);
+                        }
+                    });
+                }
             });
 
 

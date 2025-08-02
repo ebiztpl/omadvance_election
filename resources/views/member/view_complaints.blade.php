@@ -11,129 +11,129 @@
 
 @section('content')
 
-  <div class="row page-titles mx-0">
-            <div class="col-md-12 col-sm-12 col-xs-12">
-                <div id="complaintFilterForm">
-                    <div class="row mt-3">
-                        <div class="col-md-2">
-                            <label>स्थिति</label>
-                            <select name="complaint_status" id="complaint_status" class="form-control">
-                                <option value="">-- सभी --</option>
-                                <option value="1">शिकायत दर्ज</option>
-                                <option value="2">प्रक्रिया में</option>
-                                <option value="3">स्थगित</option>
-                                <option value="4">पूर्ण</option>
-                                <option value="5">रद्द</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>शिकायत प्रकार</label>
-                            <select name="complaint_type" id="complaint_type" class="form-control">
-                                <option value="शुभ सुचना">शुभ सुचना</option>
-                                <option value="अशुभ सुचना">अशुभ सुचना</option>
-                                <option value="समस्या" selected>समस्या</option>
-                                <option value="विकास">विकास</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>विभाग</label>
-                            <select name="department_id" id="department_id" class="form-control">
-                                <option value="">-- सभी --</option>
-                                @foreach ($departments as $dept)
-                                    <option value="{{ $dept->department_id }}">{{ $dept->department_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>विषय</label>
-                            <select name="subject_id" id="subject_id" class="form-control">
-                                <option value="">-- सभी --</option>
-                                @foreach ($subjects as $subject)
-                                    <option value="{{ $subject->subject_id }}">{{ $subject->subject }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>मंडल</label>
-                            <select name="mandal_id" id="mandal_id" class="form-control">
-                                <option value="">-- सभी --</option>
-                                @foreach ($mandals as $mandal)
-                                    <option value="{{ $mandal->mandal_id }}">{{ $mandal->mandal_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>ग्राम/नगर</label>
-                            <select name="gram_id" id="gram_id" class="form-control">
-                                <option value="">-- सभी --</option>
-                                @foreach ($grams as $g)
-                                    <option value="{{ $g->nagar_id }}">{{ $g->nagar_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+    <div class="row page-titles mx-0">
+        <div class="col-md-12 col-sm-12 col-xs-12">
+            <div id="complaintFilterForm">
+                <div class="row mt-3">
+                    <div class="col-md-2">
+                        <label>स्थिति</label>
+                        <select name="complaint_status" id="complaint_status" class="form-control">
+                            <option value="">-- सभी --</option>
+                            <option value="1">शिकायत दर्ज</option>
+                            <option value="2">प्रक्रिया में</option>
+                            <option value="3">स्थगित</option>
+                            <option value="4">पूर्ण</option>
+                            <option value="5">रद्द</option>
+                        </select>
                     </div>
 
-                    <div class="row mt-2">
-                        <div class="col-md-2">
-                            <label>मतदान केंद्र</label>
-                            <select name="polling_id" id="polling_id" class="form-control">
-                                <option value="">-- सभी --</option>
-                                @foreach ($pollings as $p)
-                                    <option value="{{ $p->gram_polling_id }}">{{ $p->polling_name }}
-                                        ({{ $p->polling_no }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="col-md-2">
+                        <label>शिकायत प्रकार</label>
+                        <select name="complaint_type" id="complaint_type" class="form-control">
+                            <option value="शुभ सुचना">शुभ सुचना</option>
+                            <option value="अशुभ सुचना">अशुभ सुचना</option>
+                            <option value="समस्या" selected>समस्या</option>
+                            <option value="विकास">विकास</option>
+                        </select>
+                    </div>
 
-                        <div class="col-md-2">
-                            <label>क्षेत्र</label>
-                            <select name="area_id" id="area_id" class="form-control">
-                                <option value="">-- सभी --</option>
-                                @foreach ($areas as $a)
-                                    <option value="{{ $a->area_id }}">{{ $a->area_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="col-md-2">
+                        <label>विभाग</label>
+                        <select name="department_id" id="department_id" class="form-control">
+                            <option value="">-- सभी --</option>
+                            @foreach ($departments as $dept)
+                                <option value="{{ $dept->department_id }}">{{ $dept->department_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        <div class="col-md-2">
-                            <label>उत्तर</label>
-                            <select name="reply_id" id="reply_id" class="form-control">
-                                <option value="">-- सभी --</option>
-                                @foreach ($replyOptions as $option)
-                                    <option value="{{ $option->reply_id }}">{{ $option->reply }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="col-md-2">
+                        <label>विषय</label>
+                        <select name="subject_id" id="subject_id" class="form-control">
+                            <option value="">-- सभी --</option>
+                            @foreach ($subjects as $subject)
+                                <option value="{{ $subject->subject_id }}">{{ $subject->subject }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        <div class="col-md-2">
-                            <label>तिथि से</label>
-                            <input type="date" name="from_date" id="from_date" class="form-control">
+                    <div class="col-md-2">
+                        <label>मंडल</label>
+                        <select name="mandal_id" id="mandal_id" class="form-control">
+                            <option value="">-- सभी --</option>
+                            @foreach ($mandals as $mandal)
+                                <option value="{{ $mandal->mandal_id }}">{{ $mandal->mandal_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>तिथि तक</label>
-                            <input type="date" name="to_date" id="to_date" class="form-control">
-                        </div>
-
-                        <div class="col-md-2 mt-4">
-                            <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर लागू करें</button>
-                        </div>
+                    <div class="col-md-2">
+                        <label>ग्राम/नगर</label>
+                        <select name="gram_id" id="gram_id" class="form-control">
+                            <option value="">-- सभी --</option>
+                            @foreach ($grams as $g)
+                                <option value="{{ $g->nagar_id }}">{{ $g->nagar_name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
-                <div class="text-center mt-2">
-                    <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
-                        title="फ़िल्टर छुपाएं"></i>
+                <div class="row mt-2">
+                    <div class="col-md-2">
+                        <label>मतदान केंद्र</label>
+                        <select name="polling_id" id="polling_id" class="form-control">
+                            <option value="">-- सभी --</option>
+                            @foreach ($pollings as $p)
+                                <option value="{{ $p->gram_polling_id }}">{{ $p->polling_name }}
+                                    ({{ $p->polling_no }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>क्षेत्र</label>
+                        <select name="area_id" id="area_id" class="form-control">
+                            <option value="">-- सभी --</option>
+                            @foreach ($areas as $a)
+                                <option value="{{ $a->area_id }}">{{ $a->area_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>उत्तर</label>
+                        <select name="reply_id" id="reply_id" class="form-control">
+                            <option value="">-- सभी --</option>
+                            @foreach ($replyOptions as $option)
+                                <option value="{{ $option->reply_id }}">{{ $option->reply }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>तिथि से</label>
+                        <input type="date" name="from_date" id="from_date" class="form-control">
+
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>तिथि तक</label>
+                        <input type="date" name="to_date" id="to_date" class="form-control">
+                    </div>
+
+                    <div class="col-md-2 mt-4">
+                        <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर लागू करें</button>
+                    </div>
                 </div>
             </div>
+
+            <div class="text-center mt-2">
+                <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
+                    title="फ़िल्टर छुपाएं"></i>
+            </div>
         </div>
+    </div>
 
 
     <div class="container">
@@ -159,16 +159,14 @@
                                 <thead>
                                     <tr>
                                         <th>क्र.</th>
-                                        <th>शिकायतकर्ता</th>
-                                        <th>पिता का नाम</th>
-                                        <th>रेफरेंस नाम</th>
+                                        <th style="min-width: 100px;">शिकायतकर्ता</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
                                         <th>विभाग</th>
                                         <th>शिकायत की तिथि</th>
                                         <th>से बकाया</th>
                                         <th>स्थिति</th>
                                         <th>आवेदक</th>
-                                        <th>फ़ाइल देखें</th>
+                                        <th>फॉरवर्ड अधिकारी</th>
                                         <th>आगे देखें</th>
                                     </tr>
                                 </thead>
@@ -177,12 +175,13 @@
                                     @foreach ($complaints as $index => $complaint)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td> {{ $complaint->complaint_number ?? 'N/A' }} <br>
-                                                {{ $complaint->name ?? 'N/A' }} <br>
-                                                {{ $complaint->mobile_number ?? '' }}
+                                            <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }}
+                                                <br>
+                                                <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
+                                                <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
+                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br>
+                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }}
                                             </td>
-                                            <td>{{ $complaint->father_name ?? '' }}</td>
-                                            <td>{{ $complaint->reference_name ?? '' }}</td>
                                             <td
                                                 title="
                                                 
@@ -192,7 +191,7 @@
 विधानसभा:  {{ $complaint->vidhansabha->vidhansabha ?? 'N/A' }}
 मंडल:  {{ $complaint->mandal->mandal_name ?? 'N/A' }}
 नगर/ग्राम:  {{ $complaint->gram->nagar_name ?? 'N/A' }}
-मतदान केंद्र:  {{ $complaint->polling->polling_name ?? 'N/A' }} ({{ $complaint->polling->polling_no ?? 'N/A'}})
+मतदान केंद्र:  {{ $complaint->polling->polling_name ?? 'N/A' }} ({{ $complaint->polling->polling_no ?? 'N/A' }})
 क्षेत्र:  {{ $complaint->area->area_name ?? 'N/A' }}
 ">
                                                 {{ $complaint->division->division_name ?? 'N/A' }}<br>
@@ -201,13 +200,14 @@
                                                 {{ $complaint->mandal->mandal_name ?? 'N/A' }}<br>
                                                 {{ $complaint->gram->nagar_name ?? 'N/A' }}<br>
                                                 {{ $complaint->polling->polling_name ?? 'N/A' }}
-                                                ({{ $complaint->polling->polling_no ?? 'N/A'}})
+                                                ({{ $complaint->polling->polling_no ?? 'N/A' }})
                                                 <br>
                                                 {{ $complaint->area->area_name ?? 'N/A' }}
                                             </td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                             <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}
+                                            </td>
                                             {{-- <td>
                                                 @if (!in_array($complaint->complaint_status, [4, 5]))
                                                     {{ $complaint->pending_days }} दिन
@@ -228,18 +228,11 @@
                                             <td>{!! $complaint->statusTextPlain() !!}</td>
                                             <td>{{ $complaint->registrationDetails->name ?? '' }}</td>
                                             <td>
-                                                @if (!empty($complaint->issue_attachment))
-                                                    <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
-                                                        target="_blank" class="btn btn-sm btn-success">
-                                                        देखें
-                                                    </a>
-                                                {{-- @else
-                                                    <button class="btn btn-sm btn-secondary" disabled>अटैचमेंट नहीं
-                                                        है</button> --}}
-                                                @endif
+                                                {{ $complaint->forwarded_to_name ?? '-' }} <br>
+                                                {{ $complaint->forwarded_reply_date }}
                                             </td>
 
-                                             <td>
+                                            <td>
                                                 <a href="{{ route('complaint.show', $complaint->complaint_id) }}"
                                                     class="btn btn-sm btn-primary" style="white-space: nowrap;">
                                                     क्लिक करें
@@ -247,10 +240,10 @@
                                             </td>
                                         </tr>
                                     @endforeach
-                                </>
+                                    </>
 
 
-                                {{-- <tbody>
+                                    {{-- <tbody>
                                     @foreach ($complaints as $index => $complaint)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
@@ -289,7 +282,7 @@
         </div>
     </div>
 
-       @push('scripts')
+    @push('scripts')
         <script>
             $(document).ready(function() {
                 // Mandal → Gram

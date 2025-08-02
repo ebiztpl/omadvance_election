@@ -21,6 +21,7 @@ class Reply extends Model
         'ca_photo',
         'reply_from',
         'reply_date',
+        'forwarded_to'
     ];
 
     protected $casts = [

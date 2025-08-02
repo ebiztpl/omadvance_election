@@ -80,7 +80,7 @@ class OperatorController extends Controller
             'from_date' => 'nullable|date',
             'program_date' => 'nullable|date',
             'to_date' => 'nullable',
-            'file_attach' => 'nullable|file|max:20480',
+            'file_attach' => 'nullable|file|max:20480'
         ]);
 
         $userId = session('user_id');
@@ -165,6 +165,14 @@ class OperatorController extends Controller
             'posted_date' => now(),
         ]);
 
+        Reply::create([
+            'complaint_id' => $complaint->complaint_id,
+            'forwarded_to' => 6,
+            'reply_from' => $userId,
+            'reply_date' => now(),
+            'complaint_reply' => 'शिकायत दर्ज की गई है।',
+        ]);
+
         // $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaint_number;
         // $this->messageSent($complaint_number, $mobile);
 
@@ -237,7 +245,7 @@ class OperatorController extends Controller
         }
 
 
-        $query = Complaint::with(['polling', 'area', 'admin', 'vidhansabha', 'mandal', 'gram'])
+        $query = Complaint::with(['polling', 'area', 'admin', 'vidhansabha', 'mandal', 'gram', 'replies.forwardedToManager'])
             ->where('complaint_created_by', $userId)
             ->where('type', 2);
 
@@ -312,6 +320,14 @@ class OperatorController extends Controller
             } else {
                 $complaint->pending_days = 0;
             }
+
+            $lastReply = $complaint->replies
+                ->whereNotNull('forwarded_to')
+                ->sortByDesc('reply_date')
+                ->first();
+
+            $complaint->forwarded_to_name = $lastReply?->forwardedToManager?->admin_name ?? '-';
+            $complaint->forwarded_reply_date = $lastReply?->reply_date?->format('d-m-Y h:i A') ?? '-';
         }
 
         if ($request->ajax()) {
@@ -320,8 +336,8 @@ class OperatorController extends Controller
             foreach ($complaints as $index => $complaint) {
                 $html .= '<tr>';
                 $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
-
+                // $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
+                $html .= '<td><strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? '') . '<br> <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br><strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br><strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -354,12 +370,7 @@ class OperatorController extends Controller
                 $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
                 $html .= '<td>' . ($complaint->admin->admin_name ?? 'N/A') . '</td>';
 
-                // Attachment
-                if (!empty($complaint->issue_attachment)) {
-                    $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
-                } else {
-                    $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
-                }
+                $html .= '<td>' . $complaint->forwarded_to_name . '<br>' . $complaint->forwarded_reply_date . '</td>';
 
                 $html .= '<td><a href="' . route('operator_complaint.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
 
