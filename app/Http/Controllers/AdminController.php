@@ -1430,11 +1430,15 @@ class AdminController extends Controller
         $request->validate([
             'cmp_reply' => 'required|string',
             'cmp_status' => 'required|in:1,2,3,4,5',
-            'forwarded_to' => 'nullable|exists:admin_master,admin_id',
+            'forwarded_to' => [
+                'required_if:cmp_status,1,2,3',
+                'nullable',
+                'exists:admin_master,admin_id'
+            ],
             'selected_reply' => [
                 'nullable',
                 function ($attribute, $value, $fail) {
-                    if ($value !== null && $value !== 'अन्य' && !\App\Models\ComplaintReply::where('reply_id', $value)->exists()) {
+                    if ((int)$value !== 0 && !\App\Models\ComplaintReply::where('reply_id', $value)->exists()) {
                         $fail('The selected reply is invalid.');
                     }
                 }
@@ -1442,21 +1446,28 @@ class AdminController extends Controller
             'cb_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'ca_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'c_video' => 'nullable|url|max:255',
+            'contact_status' => 'nullable|string'
         ]);
 
         $reply = new Reply();
         $reply->complaint_id = $id;
         $reply->complaint_reply = $request->cmp_reply;
-        $reply->selected_reply = $request->selected_reply !== 'अन्य' ? $request->selected_reply : null;
-        $reply->reply_from = auth()->id() ?? 2;
+        $reply->selected_reply = $request->selected_reply ?? 0;
         $reply->reply_date = now();
+        $reply->complaint_status = $request->cmp_status;
 
         if ($request->filled('c_video')) {
             $reply->c_video = $request->c_video;
         }
 
-        if ($request->filled('forwarded_to')) {
+        if (in_array((int)$request->cmp_status, [4, 5])) {
+            $reply->forwarded_to = 0;
+        } else {
             $reply->forwarded_to = $request->forwarded_to;
+        }
+
+        if ($request->filled('contact_status')) {
+            $reply->contact_status = $request->contact_status;
         }
 
         $reply->save();
@@ -1672,7 +1683,7 @@ class AdminController extends Controller
 
     public function getVidhansabha($district_id)
     {
-        return VidhansabhaLokSabha::where('district_id', $district_id)->get();
+        return VidhansabhaLokSabha::where('district_id', $district_id)->get(['vidhansabha_id', 'vidhansabha']);
     }
 
     public function getMandal($vidhansabha_id)

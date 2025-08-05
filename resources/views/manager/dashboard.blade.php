@@ -51,7 +51,7 @@
 
                 <div class="row">
                     <div class="col-xl-12 col-lg-12 col-md-12">
-                        <div class="card" style="background-color: #F6F7C4; height: 350px">
+                        <div class="card" style="background-color: #F6F7C4; ">
                             <div class="card-body">
                                 <div class="card-header" style="border-bottom: 2px solid gray;">
                                     <h4 class="card-title suchna">नई सूचना</h4>
@@ -75,6 +75,116 @@
                                             </thead>
                                             <tbody id="today-table" style="color: black"></tbody>
 
+
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <div class="col-xl-12 col-lg-12 col-md-12">
+                        <div class="card" style="background-color: #f5e2dc">
+                            <div class="card-body">
+                                <div class="card-header" style="border-bottom: 2px solid gray;">
+                                    <h4 class="card-title suchna mb-0">समस्या और विकास सारणी</h4>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-xl-12">
+                                        <table id="dynamicTable" class="table text-center custom-bordered-table"
+                                            style="color: black;">
+                                            <thead>
+                                                <tr>
+                                                    <th rowspan="2">समय</th>
+                                                    <th colspan="3">समस्या</th>
+                                                    <th colspan="3">विकास</th>
+                                                </tr>
+                                                <tr>
+                                                    <th>कार्यालय</th>
+                                                    <th>कमांडर</th>
+                                                    <th>समाधान योग</th>
+                                                    <th>कार्यालय</th>
+                                                    <th>कमांडर</th>
+                                                    <th>समाधान योग</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-12 col-lg-12 col-md-12">
+                        <div class="card" style="background-color: #FEFAE0">
+                            <div class="card-body">
+                                <div class="card-header" style="border-bottom: 2px solid gray;">
+                                    <h4 class="card-title suchna">आगामी कल की सूचना</h4>
+
+                                    <div class="mt-4 mb-2 d-flex justify-content-end align-items-center suchna-badges">
+                                    </div>
+                                </div>
+
+
+                                <div class="table-responsive mt-3">
+                                    <div class="overflow-auto" style="max-height: 500px; overflow-y: auto;">
+                                        <table class="table table-bordered">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th>नाम</th>
+                                                    <th>नंo</th>
+                                                    <th>क्षेत्र</th>
+                                                    <th>विषय</th>
+                                                    <th>कार्यक्रम समय</th>
+                                                    <th>विवरण</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tomorrow-table" style="color: black"></tbody>
+
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-12 col-lg-12 col-md-12">
+                        <div class="card" style="background-color: #ECF2FF">
+                            <div class="card-body">
+                                <div class="card-header" style="border-bottom: 2px solid gray;">
+                                    <h4 class="card-title suchna mb-0">आगामी सप्ताह की सूचना</h4>
+
+                                    <div class="mt-4 mb-2 d-flex justify-content-end align-items-center suchna-badges">
+                                    </div>
+                                </div>
+
+
+
+                                <div class="table-responsive mt-3">
+                                    <div class="overflow-auto" style="max-height: 500px; overflow-y: auto;">
+                                        <table class="table table-bordered">
+                                            <thead class="thead-dark fixed">
+                                                <tr>
+                                                    <th>नाम</th>
+                                                    <th>नंo</th>
+                                                    <th>क्षेत्र</th>
+                                                    <th>विषय</th>
+                                                    <th>कार्यक्रम दिनांक</th>
+                                                    <th>कार्यक्रम समय</th>
+                                                    <th>विवरण</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="week-table" style="color: black"></tbody>
 
                                         </table>
                                     </div>
@@ -120,13 +230,70 @@
                                 <div class="card-header" style="border-bottom: 2px solid gray;">
                                     <h4 class="card-title suchna mb-0">मासिक जानकारी कैलेंडर</h4>
                                 </div>
-                                <div id="calendar-controls" class="d-flex justify-content-between align-items-center my-3">
+                                <div id="calendar-controls"
+                                    class="d-flex justify-content-between align-items-center my-3">
                                     <button class="btn btn-sm btn-outline-primary" onclick="changeMonth(-1)">←
                                         पिछला</button>
                                     <h5 id="month-year" class="m-0"></h5>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="changeMonth(1)">अगला →</button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="changeMonth(1)">अगला
+                                        →</button>
                                 </div>
                                 <div id="calendar" class="table-responsive flex-grow-1"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-12 col-lg-12 col-md-12">
+                        <div class="card" style="background-color: rgb(201, 247, 231)">
+
+                            <div class="card-body">
+                                <div class="card-header" style="border-bottom: 2px solid gray;">
+                                    <h4 class="card-title suchna mb-0">विभाग समस्या</h4>
+                                </div>
+                                <div class="mt-3" style="max-height: 400px; overflow-y: auto;">
+                                    <ul id="vibhaag-count-list"
+                                        style="list-style-type: none; padding: 0; font-weight: bold"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-12 col-lg-12 col-md-12">
+                        <div class="card" style="background-color: rgb(247, 247, 198)">
+                            <div class="card-body">
+                                <div class="card-header" style="border-bottom: 2px solid gray;">
+                                    <h4 class="card-title suchna mb-0">स्थिति</h4>
+
+                                    <select id="date-filter" class="form-control w-auto">
+                                        <option value="सभी" selected>सभी</option>
+                                        <option value="आज">आज</option>
+                                        <option value="कल">कल</option>
+                                        <option value="पिछला सप्ताह">पिछला सप्ताह</option>
+                                        <option value="पिछला माह">पिछला माह</option>
+                                    </select>
+                                </div>
+                                <ul class="mt-3" id="status-count-list"
+                                    style="list-style-type: none; padding: 0; font-weight: bold">
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-12 col-lg-12 col-md-12">
+                        <div class="card" style="background-color: #ECE8DD">
+                            <div class="card-body">
+                                <div class="card-header" style="border-bottom: 2px solid gray;">
+                                    <h4 class="card-title suchna mb-0">अन्य को निर्देशित</h4>
+                                </div>
+                                <ul class="mt-3" id="forward-count-list"
+                                    style="list-style-type: none; padding: 0; font-weight: bold">
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -134,7 +301,7 @@
             </div>
         </div>
 
-        <div class="row">
+        {{-- <div class="row">
             <div class="col-xl-8 col-lg-8 col-md-8">
                 <div class="row">
                     <div class="col-xl-12 col-lg-12 col-md-12">
@@ -277,8 +444,23 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="row">
+                    <div class="col-xl-12 col-lg-12 col-md-12">
+                        <div class="card" style="background-color: #ECE8DD">
+                            <div class="card-body">
+                                <div class="card-header" style="border-bottom: 2px solid gray;">
+                                    <h4 class="card-title suchna mb-0">अन्य निर्देशित</h4>
+                                </div>
+                                <ul class="mt-3" id="forward-count-list"
+                                    style="list-style-type: none; padding: 0; font-weight: bold">
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </div> --}}
 
 
 
@@ -583,34 +765,77 @@
                     }
                 });
 
-                $.ajax({
-                    url: "/fetch-status",
-                    method: "GET",
-                    dataType: "json",
-                    success: function(data) {
-                        const $list = $("#status-count-list");
-                        $list.empty();
+                // $.ajax({
+                //     url: "/fetch-status",
+                //     method: "GET",
+                //     dataType: "json",
+                //     success: function(data) {
+                //         const $list = $("#status-count-list");
+                //         $list.empty();
 
-                        if (data.length === 0) {
-                            $list.append(`<li class="text-muted text-center">कोई डेटा उपलब्ध नहीं</li>`);
-                        } else {
-                            data.forEach(item => {
-                                $list.append(`
-                                 <a href="/complaints/status-details?status=${item.status}" target="_blank" class="text-decoration-none" style="color: black">
-                            <li class="d-flex justify-content-between border-bottom py-1">
-                                <span>${item.status}</span>
-                                <span class="badge bg-success text-white">${item.total}</span>
-                            </li>
-                                    </a>
-                        `);
-                            });
+                //         if (data.length === 0) {
+                //             $list.append(`<li class="text-muted text-center">कोई डेटा उपलब्ध नहीं</li>`);
+                //         } else {
+                //             data.forEach(item => {
+                //                 $list.append(`
+                //                  <a href="/complaints/status-details?status=${item.status}" target="_blank"                  class="text-decoration-none" style="color: black">
+                //             <li class="d-flex justify-content-between border-bottom py-1">
+                //                 <span>${item.status}</span>
+                //                 <span class="badge bg-success text-white">${item.total}</span>
+                //             </li>
+                //                     </a>
+                //         `);
+                //             });
+                //         }
+                //     },
+                //     error: function(xhr, status, error) {
+                //         console.error("Error fetching Status:", error);
+                //         $("#status-count-list").html(
+                //             `<li class="text-danger">डेटा लोड करने में त्रुटि</li>`);
+                //     }
+                // });
+
+                function loadStatusCounts(filter = 'सभी') {
+                    $.ajax({
+                        url: "/fetch-status",
+                        method: "GET",
+                        data: {
+                            filter: filter
+                        }, 
+                        dataType: "json",
+                        success: function(data) {
+                            const $list = $("#status-count-list");
+                            $list.empty();
+
+                            if (data.length === 0) {
+                                $list.append(
+                                    `<li class="text-muted text-center">कोई डेटा उपलब्ध नहीं</li>`);
+                            } else {
+                                data.forEach(item => {
+                                    $list.append(`
+                                        <a href="/complaints/status-details?status=${encodeURIComponent(item.status)}&filter=${filter}" target="_blank" class="text-decoration-none" style="color: black">
+                                            <li class="d-flex justify-content-between border-bottom py-1">
+                                                <span>${item.status}</span>
+                                                <span class="badge bg-success text-white">${item.total}</span>
+                                            </li>
+                                        </a>
+                                    `);
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching Status:", error);
+                            $("#status-count-list").html(
+                                `<li class="text-danger">डेटा लोड करने में त्रुटि</li>`);
                         }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Error fetching Status:", error);
-                        $("#status-count-list").html(
-                            `<li class="text-danger">डेटा लोड करने में त्रुटि</li>`);
-                    }
+                    });
+                }
+                const $filter = $('#date-filter');
+
+                loadStatusCounts($filter.val());
+
+                $filter.on('change', function() {
+                    loadStatusCounts($(this).val());
                 });
 
                 $.ajax({
@@ -660,8 +885,37 @@
                         }
                     });
                 }
-            });
 
+                $.ajax({
+                    url: "/fetch-forwards",
+                    method: "GET",
+                    dataType: "json",
+                    success: function(data) {
+                        const $list = $("#forward-count-list");
+                        $list.empty();
+
+                        if (data.length === 0) {
+                            $list.append(`<li class="text-muted text-center">कोई डेटा उपलब्ध नहीं</li>`);
+                        } else {
+                            data.forEach(item => {
+                                $list.append(`
+                                 <a href="/complaints/forward-details?forward=${item.forward}"  class="text-decoration-none" style="color: black">
+                            <li class="d-flex justify-content-between border-bottom py-1" style="font-size: 16px">
+                                <span>${item.forward}</span>
+                                <span class="badge bg-primary text-white">${item.total}</span>
+                            </li>
+                                    </a>
+                        `);
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error fetching Status:", error);
+                        $("#forward-count-list").html(
+                            `<li class="text-danger">डेटा लोड करने में त्रुटि</li>`);
+                    }
+                });
+            });
 
             let today = new Date();
             let currentMonth = today.getMonth();

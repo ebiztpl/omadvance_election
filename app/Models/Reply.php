@@ -21,6 +21,7 @@ class Reply extends Model
         'ca_photo',
         'reply_from',
         'reply_date',
+        'complaint_status',
         'forwarded_to'
     ];
 
@@ -31,6 +32,18 @@ class Reply extends Model
     public function complaint()
     {
         return $this->belongsTo(Complaint::class, 'complaint_id');
+    }
+
+    public function statusTextPlain(): string
+    {
+        return match ($this->complaint_status) {
+            1 => 'शिकायत दर्ज',
+            2 => 'प्रक्रिया में',
+            3 => 'स्थगित',
+            4 => '<button class="btn btn-success">पूर्ण</button>',
+            5 => '<button class="btn btn-danger">रद्द</button>',
+            default => 'शिकायत दर्ज',
+        };
     }
 
     public function photos(): HasMany

@@ -88,7 +88,7 @@ class Complaint extends Model
             2 => 'प्रक्रिया में',
             3 => 'स्थगित',
             4 => '<button class="btn btn-success">पूर्ण</button>',
-            5 => 'रद्द',
+            5 => '<button class="btn btn-danger">रद्द</button>',
         ];
 
         return $statusLabels[$this->complaint_status] ?? 'शिकायत दर्ज';
