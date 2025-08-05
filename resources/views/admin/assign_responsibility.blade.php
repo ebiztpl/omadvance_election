@@ -308,7 +308,7 @@
 
             $("#filter_data").click(function(e) {
                 e.preventDefault();
-                $(".loader-wrapper").show();
+                $("#loader-wrapper").show();
 
                 const data = {
                     _token: '{{ csrf_token() }}',
@@ -336,12 +336,12 @@
                             $("#filtered_data").html('<div class="text-danger">No data found.</div>');
                             $("#table_card").show();
                         }
-
+                        $("#loader-wrapper").hide();
                         $("#total").text(response.count);
-                        $(".loader").hide();
+
                     },
                     error: function(xhr) {
-                        $(".loader").hide();
+                        $("#loader-wrapper").hide();
                         console.error(xhr.responseText);
                         alert("Something went wrong. Check console.");
                     }
@@ -362,14 +362,11 @@
 
                         // Load Vidhansabha based on district
                         $.get('/admin/get-vidhansabha/' + districtId, function(res) {
-                            $('#txtvidhansabha').html('<option value="">--चुनें--</option>');
-                            res.forEach(v => {
-                                $('#txtvidhansabha').append(
-                                    `<option value="${v.vidhansabha_id}">${v.vidhansabha}</option>`
-                                );
-                            });
-                            $('#txtvidhansabha').val(vidhansabhaId);
-                            $('#txtvidhansabha').trigger('change'); // Trigger to load mandal
+                            // console.log("Populating vidhansabha dropdown with:", res);
+
+                            $('#txtvidhansabha').html('<option value="">--चुनें--</option>' + res
+                                .join(''));
+                            $('#txtvidhansabha').val(String(vidhansabhaId)).trigger('change');
                         });
                     },
                     error: function() {
@@ -382,14 +379,13 @@
             $('#txtvidhansabha').on('change', function() {
                 const vidhansabhaId = $(this).val();
                 $('#txtmandal').html('<option value="">--चुनें--</option>');
-                $('#txtgram').html('<option value="">--चुनें--</option>'); // Clear nagar
-
+                $('#txtgram').html('<option value="">--चुनें--</option>');
                 if (vidhansabhaId) {
                     $.get('/admin/get-mandal/' + vidhansabhaId, function(mandals) {
-                        mandals.forEach(m => {
-                            $('#txtmandal').append(
-                                `<option value="${m.mandal_id}">${m.mandal_name}</option>`);
-                        });
+                        // console.log("Populating mandal dropdown with:", mandals);
+
+                        let options = '<option value="">--चुनें--</option>' + mandals.join('');
+                        $('#txtmandal').html(options);
                     });
                 }
             });
@@ -404,10 +400,9 @@
 
                 if (mandalId) {
                     $.get('/admin/get-nagar/' + mandalId, function(nagars) {
-                        nagars.forEach(n => {
-                            $('#txtgram').append(
-                                `<option value="${n.nagar_id}">${n.nagar_name}</option>`);
-                        });
+                        // console.log("Populating mandal dropdown with:", nagars);
+                        let options = '<option value="">--चुनें--</option>' + nagars.join('');
+                        $('#txtgram').html(options);
                     });
                 }
             });
@@ -420,10 +415,14 @@
 
                 if (gramId) {
                     $.get('/admin/get-polling/' + gramId, function(pollings) {
+                        // console.log("Populating vidhansabha dropdown with:", pollings);
+                        let options = '<option value="">--चुनें--</option>';
                         pollings.forEach(p => {
-                            $('#txtpolling').append(
-                                `<option value="${p.gram_polling_id}">${p.polling_name}</option>`);
+                            options +=
+                                `<option value="${p.gram_polling_id}">${p.polling_name}</option>`;
                         });
+
+                        $('#txtpolling').html(options);
                     });
                 }
             });
@@ -435,11 +434,13 @@
 
                 if (pollingId) {
                     $.get('/admin/get-area/' + pollingId, function(areas) {
-                        console.log("Areas fetched:", areas);
+                        // console.log("Areas fetched:", areas);
+                        let options = '<option value="">--चुनें--</option>';
                         areas.forEach(a => {
-                            $('#area_name').append(
-                                `<option value="${a.area_id}">${a.area_name}</option>`);
+                            options +=
+                                `<option value="${a.area_id}">${a.area_name}</option>`;
                         });
+                        $('#area_name').html(options);
                     });
                 }
             });
@@ -524,13 +525,9 @@
 
                             if (vidhansabhaId) {
                                 $.get('/admin/get-mandal/' + vidhansabhaId, function(res) {
-                                    $('#mandal_id').html(
-                                        '<option value="">--Select--</option>');
-                                    res.forEach(m => {
-                                        $('#mandal_id').append(
-                                            `<option value="${m.mandal_id}">${m.mandal_name}</option>`
-                                        );
-                                    });
+                                    let options = '<option value="">--चुनें--</option>' + res
+                                        .join('');
+                                    $('#mandal_id').html(options);
                                     $('#mandal_id').val(mandalId);
                                 });
                             }
@@ -556,15 +553,12 @@
 
                 $('#vidhansabha_id').on('change', function() {
                     const vidhansabhaId = $(this).val();
-                    $('#mandal_id').html('<option value="">--Select--</option>');
+                    $('#mandal_id').html('<option value="">--चुनें--</option>');
 
                     if (vidhansabhaId) {
                         $.get('/admin/get-mandal/' + vidhansabhaId, function(res) {
-                            res.forEach(m => {
-                                $('#mandal_id').append(
-                                    `<option value="${m.mandal_id}">${m.mandal_name}</option>`
-                                );
-                            });
+                            let options = '<option value="">--चुनें--</option>' + res.join('');
+                            $('#mandal_id').html(options);
                         });
                     }
                 });
@@ -646,7 +640,8 @@
                         e.preventDefault();
                         const name = e.target.dataset.name;
                         alert(
-                            `सदस्य "${name}" को पहले ही एक पद आवंटित किया गया है। दोबारा पद नहीं दिया जा सकता।`);
+                            `सदस्य "${name}" को पहले ही एक पद आवंटित किया गया है। दोबारा पद नहीं दिया जा सकता।`
+                        );
                     }
                 });
             });

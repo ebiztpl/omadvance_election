@@ -61,6 +61,13 @@
                             <br />
                             <button type="submit" class="btn btn-primary">अपलोड करें</button>
                         </div>
+
+                        <div class="col-md-12 mt-4 d-none" id="progress-container">
+                            <div class="progress" style="height: 25px;">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                    role="progressbar" style="width: 0%">0%</div>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -72,7 +79,10 @@
             $(document).ready(function() {
                 $('#complaintForm').on('submit', function(e) {
                     e.preventDefault();
-                    $("#loader-wrapper").show();
+                    // $("#loader-wrapper").show();
+                    $('#video-error').text('');
+                    $('#progressBar').css('width', '0%').text('0%').removeClass('bg-success');
+                    $('#progress-container').removeClass('d-none');
 
                     var formData = new FormData(this);
 
@@ -82,8 +92,27 @@
                         data: formData,
                         processData: false,
                         contentType: false,
+                        xhr: function() {
+                            var xhr = new XMLHttpRequest();
+                            xhr.upload.addEventListener('progress', function(e) {
+                                if (e.lengthComputable) {
+                                    var percent = Math.round((e.loaded / e.total) * 100);
+                                    $('#progressBar')
+                                        .css('width', percent + '%')
+                                        .text(percent + '%');
+
+                                    if (percent === 100) {
+                                        $('#progressBar').addClass('bg-success');
+                                    }
+                                }
+                            });
+                            return xhr;
+                        },
                         success: function(response) {
-                            $("#loader-wrapper").hide();
+                            // $("#loader-wrapper").hide();
+                            $('#progressBar').css('width', '0%').text('0%');
+                            $('#progressBar').removeClass('bg-success');
+                             $('#progress-container').addClass('d-none');
 
 
                             if (response.success) {
@@ -104,14 +133,17 @@
                             }, 5000);
                         },
                         error: function(xhr) {
-                            $("#loader-wrapper").hide();
+                            // $("#loader-wrapper").hide();
+                              $('#progressBar').css('width', '0%').text('0%').removeClass('bg-success');
+                    $('#progress-container').addClass('d-none');
+                    
                             if (xhr.responseJSON && xhr.responseJSON.errors) {
                                 if (xhr.responseJSON.errors.video) {
                                     $('#video-error').text(xhr.responseJSON.errors.video[0]);
                                 }
                                 if (xhr.responseJSON.errors.area_id) {
                                     alert(xhr.responseJSON.errors.area_id[
-                                    0]); 
+                                        0]);
                                 }
                             } else {
                                 alert('त्रुटि: शिकायत दर्ज नहीं की जा सकी।');

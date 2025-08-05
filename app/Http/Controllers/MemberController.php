@@ -149,12 +149,13 @@ class MemberController extends Controller
             'vidhansabha_id' => $vidhansabhaId,
             'district_id' => $districtId,
             'division_id' => $divisionId,
+            'father_name' => '',
             'mobile_number' => $mobile,
             'complaint_type' => 'समस्या',
             'complaint_designation' => '',
             'type' => $type,
             'complaint_created_by' => $registrationId,
-            'complaint_status' => '',
+            'complaint_status' => 1,
             'issue_title' => '',
             'issue_description' => '',
             'issue_attachment' => $videoFilename,
@@ -171,6 +172,8 @@ class MemberController extends Controller
             'forwarded_to' => 6,
             'reply_from' => 0,
             'reply_date' => now(),
+            'selected_reply' => Null,
+            'complaint_status' => 1,
             'complaint_reply' => 'शिकायत दर्ज की गई है।',
         ]);
 
@@ -648,11 +651,15 @@ class MemberController extends Controller
         $request->validate([
             'cmp_reply' => 'required|string',
             'cmp_status' => 'required|in:1,2,3,4,5',
-            'forwarded_to' => 'nullable|exists:admin_master,admin_id',
+            'forwarded_to' => [
+                'required_if:cmp_status,1,2,3',
+                'nullable',
+                'exists:admin_master,admin_id'
+            ],
             'selected_reply' => [
                 'nullable',
                 function ($attribute, $value, $fail) {
-                    if ($value !== null && $value !== 'अन्य' && !\App\Models\ComplaintReply::where('reply_id', $value)->exists()) {
+                    if ((int)$value !== 0 && !\App\Models\ComplaintReply::where('reply_id', $value)->exists()) {
                         $fail('The selected reply is invalid.');
                     }
                 }
@@ -660,21 +667,29 @@ class MemberController extends Controller
             'cb_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'ca_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'c_video' => 'nullable|url|max:255',
+            'contact_status' => 'nullable|string'
         ]);
 
         $reply = new Reply();
         $reply->complaint_id = $id;
         $reply->complaint_reply = $request->cmp_reply;
-        $reply->selected_reply = $request->selected_reply !== 'अन्य' ? $request->selected_reply : null;
+        $reply->selected_reply = $request->selected_reply ?? 0;
         $reply->reply_from = auth()->id() ?? 2;
         $reply->reply_date = now();
+        $reply->complaint_status = $request->cmp_status;
 
         if ($request->filled('c_video')) {
             $reply->c_video = $request->c_video;
         }
 
-        if ($request->filled('forwarded_to')) {
+        if (in_array((int)$request->cmp_status, [4, 5])) {
+            $reply->forwarded_to = 0;
+        } else {
             $reply->forwarded_to = $request->forwarded_to;
+        }
+
+        if ($request->filled('contact_status')) {
+            $reply->contact_status = $request->contact_status;
         }
 
         $reply->save();

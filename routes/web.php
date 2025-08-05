@@ -158,6 +158,7 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/detail_suchna/{id}', [ManagerController::class, 'detail_suchna']);
     Route::get('/ajax/forwarded-counts', [ManagerController::class, 'getForwardedCounts'])
         ->name('ajax.forwarded.counts');
+    Route::get('/fetch-forwards', [ManagerController::class, 'getForwardedComplaintsPerManager']);
 
     // division routes
     Route::get('manager/division_master', [ManagerController::class, 'index'])->name('division.index');

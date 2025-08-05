@@ -63,7 +63,7 @@
                 @endforeach
 
 
-                
+
 
                 {{-- <div class="col-md-4 mt-5" style="justify-content: center; align-items:center">
                     <label class="form-label">फ़ाइल अटैचमेंट</label>
@@ -173,22 +173,25 @@
                                     $reply->reply_from == 1 ? $reply->complaint->user->name ?? 'User' : 'BJS Team';
                             @endphp --}}
                             <tr>
-                                <td>{{ $reply->predefinedReply->reply ?? '-' }}</td>
-                                <td>{!! $complaint->statusTextPlain() !!}</td>
+                                <td> {{ $reply->selected_reply === 0 ? 'अन्य' : $reply->predefinedReply->reply ?? '-' }}
+                                </td>
+                                <td>{!! $reply->statusTextPlain() !!}</td>
                                 <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') : 'N/A' }}
                                 </td>
                                 <td> {{ $reply->forwardedToManager?->admin_name ?? '' }}</td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-info view-details-btn" data-toggle="modal"
                                         data-target="#detailsModal" data-reply="{{ $reply->complaint_reply }}"
+                                        data-contact="{{ $reply->contact_status }}"
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
-                                        data-status="{{ strip_tags($complaint->statusTextPlain()) }}"
+                                         data-status="{{ strip_tags($reply->statusTextPlain()) }}"
+                                        data-predefined="{{ $reply->selected_reply === 0 ? 'अन्य' : ($reply->predefinedReply->reply ?? '-') }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
-                                        data-predefined="{{ $reply->predefinedReply->reply ?? '-' }}"
-                                       data-cb-photo="{{ $reply->cb_photo ? asset( $reply->cb_photo) : '' }}"
-                                    data-ca-photo="{{ $reply->ca_photo ? asset($reply->ca_photo) : '' }}"
-                                    data-video="{{ $reply->c_video ? asset($reply->c_video) : '' }}">
-                                    विवरण
+                                        {{-- data-predefined="{{ $reply->predefinedReply->reply ?? '-' }}" --}}
+                                        data-cb-photo="{{ $reply->cb_photo ? asset($reply->cb_photo) : '' }}"
+                                        data-ca-photo="{{ $reply->ca_photo ? asset($reply->ca_photo) : '' }}"
+                                        data-video="{{ $reply->c_video ? asset($reply->c_video) : '' }}">
+                                        विवरण
                                     </button>
                                 </td>
                                 {{-- <td>{{ $replyFromName }}</td> --}}
@@ -255,6 +258,7 @@
                                             <th>स्थिति</th>
                                             <th>तारीख</th>
                                             <th>भेजा गया</th>
+                                            <th>संपर्क स्थिति</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -263,6 +267,7 @@
                                             <td id="modal-status">—</td>
                                             <td id="modal-date">—</td>
                                             <td id="modal-admin">—</td>
+                                            <td id="modal-contact">—</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -394,12 +399,15 @@
 
     @push('scripts')
         <script>
-             $(document).on('click', '.view-details-btn', function() {
+            $(document).on('click', '.view-details-btn', function() {
                 const reply = $(this).data('reply') || '—';
+                const contact = $(this).data('contact') || '—';
                 const replyDate = $(this).data('reply-date') || '—';
                 const status = $(this).data('status') || '—';
                 const admin = $(this).data('admin') || '—';
-                const predefined = $(this).data('predefined') || '—';
+                const predefinedRaw = $(this).data('predefined');
+                const predefined = predefinedRaw === 0 ? 'अन्य' : (predefinedRaw || '—');
+
                 const cbPhoto = $(this).data('cb-photo');
                 const caPhoto = $(this).data('ca-photo');
                 const video = $(this).data('video');
@@ -409,6 +417,7 @@
                 $('#modal-date').text(replyDate);
                 $('#modal-admin').text(admin);
                 $('#modal-predefined').text(predefined);
+                 $('#modal-contact').text(contact);
 
                 cbPhoto ? $('#cb-photo-link').attr('href', cbPhoto).show() : $('#cb-photo-link').hide();
                 caPhoto ? $('#ca-photo-link').attr('href', caPhoto).show() : $('#ca-photo-link').hide();

@@ -271,7 +271,7 @@
                                 <div class="col-md-3">
                                     <label>जिला</label>
                                     <select id="district_id" name="district_id" class="form-control" required>
-                                        <option value="">--Select District--</option>
+                                        <option value="">--जिला चुनें--</option>
                                         @foreach ($districts as $d)
                                             <option value="{{ $d->district_id }}">{{ $d->district_name }}</option>
                                         @endforeach
@@ -290,7 +290,7 @@
                                 <div class="col-md-3">
                                     <label>मंडल का प्रकार</label>
                                     <select name="mandal_type" class="form-control" required>
-                                        <option value="">--Select Type--</option>
+                                        <option value="">--प्रकार चुनें--</option>
                                         <option value="1">ग्रामीण मंडल</option>
                                         <option value="2">नगर मंडल</option>
                                     </select>
@@ -409,11 +409,8 @@
 
                 function loadVidhansabha(districtId, selectedId, callback) {
                     $.get('/admin/get-vidhansabha/' + districtId, function(res) {
-                        $('#txtvidhansabha').html('<option value="">--चुनें--</option>');
-                        res.forEach(v => {
-                            $('#txtvidhansabha').append(
-                                `<option value="${v.vidhansabha_id}">${v.vidhansabha}</option>`);
-                        });
+                        console.log("Vidhansabha response:", res);
+                        $('#txtvidhansabha').html('<option value="">--चुनें--</option>' + res.join(''));
                         $('#txtvidhansabha').val(String(selectedId)).trigger('change');
                         $("#txtvidhansabha option[value=selectedId]").prop('selected', true);
                         if (callback) callback();
@@ -423,11 +420,8 @@
                 function loadMandal(vidhansabhaId, selectedId, callback) {
                     console.log(selectedId);
                     $.get('/admin/get-mandal/' + vidhansabhaId, function(res) {
-                        $('#txtmandal').html('<option value="">--चुनें--</option>');
-                        res.forEach(m => {
-                            $('#txtmandal').append(
-                                `<option value="${m.mandal_id}">${m.mandal_name}</option>`);
-                        });
+                        $('#txtmandal').html('<option value="">--चुनें--</option>' + res.join(''));
+
                         $('#txtmandal').val(String(selectedId)).trigger('change');
                         $("#txtmandal option[value=selectedId]").prop('selected', true);
                         if (callback) callback();
@@ -436,11 +430,8 @@
 
                 function loadGram(mandalId, selectedId, callback) {
                     $.get('/admin/get-nagar/' + mandalId, function(res) {
-                        $('#txtgram').html('<option value="">--चुनें--</option>');
-                        res.forEach(g => {
-                            $('#txtgram').append(
-                                `<option value="${g.nagar_id}">${g.nagar_name}</option>`);
-                        });
+                        $('#txtgram').html('<option value="">--चुनें--</option>' + res.join(''));
+
                         $('#txtgram').val(String(selectedId)).trigger('change');
                         if (callback) callback();
                     });
@@ -535,8 +526,8 @@
                 $('#district_id').on('change', function() {
                     const districtId = $(this).val();
 
-                    $('#vidhansabha_id').html('<option value="">--Select--</option>');
-                    $('#mandal_id').html('<option value="">--Select--</option>');
+                    $('#vidhansabha_id').html('<option value="">--चुनें--</option>');
+                    $('#mandal_id').html('<option value="">--चुनें--</option>');
 
                     if (districtId) {
                         $.get('/get-vidhansabhas?district_id=' + districtId, function(res) {
@@ -563,7 +554,7 @@
                         if (districtId) {
                             $.get('/get-vidhansabhas?district_id=' + districtId, function(res) {
                                 $('#vidhansabha_id').html(
-                                    '<option value="">--Select--</option>');
+                                    '<option value="">--चुनें--</option>');
                                 res.forEach(v => {
                                     $('#vidhansabha_id').append(
                                         `<option value="${v.vidhansabha_id}">${v.vidhansabha}</option>`
@@ -574,13 +565,10 @@
 
                                 if (vidhansabhaId) {
                                     $.get('/admin/get-mandal/' + vidhansabhaId, function(res) {
-                                        $('#mandal_id').html(
-                                            '<option value="">--Select--</option>');
-                                        res.forEach(m => {
-                                            $('#mandal_id').append(
-                                                `<option value="${m.mandal_id}">${m.mandal_name}</option>`
-                                            );
-                                        });
+                                        let options =
+                                            '<option value="">--चुनें--</option>' + res
+                                            .join('');
+                                        $('#mandal_id').html(options);
                                         $('#mandal_id').val(mandalId);
                                     });
                                 }
@@ -590,8 +578,8 @@
 
                     $('#district_id').on('change', function() {
                         const districtId = $(this).val();
-                        $('#vidhansabha_id').html('<option value="">--Select--</option>');
-                        $('#mandal_id').html('<option value="">--Select--</option>');
+                        $('#vidhansabha_id').html('<option value="">--चुनें--</option>');
+                        $('#mandal_id').html('<option value="">--चुनें--</option>');
 
                         if (districtId) {
                             $.get('/get-vidhansabhas?district_id=' + districtId, function(res) {
@@ -606,15 +594,13 @@
 
                     $('#vidhansabha_id').on('change', function() {
                         const vidhansabhaId = $(this).val();
-                        $('#mandal_id').html('<option value="">--Select--</option>');
+                        $('#mandal_id').html('<option value="">--चुनें--</option>');
 
                         if (vidhansabhaId) {
                             $.get('/admin/get-mandal/' + vidhansabhaId, function(res) {
-                                res.forEach(m => {
-                                    $('#mandal_id').append(
-                                        `<option value="${m.mandal_id}">${m.mandal_name}</option>`
-                                    );
-                                });
+                                let options = '<option value="">--चुनें--</option>' + res.join(
+                                    '');
+                                $('#mandal_id').html(options);
                             });
                         }
                     });
@@ -675,7 +661,9 @@
                                 if (xhr.status === 409 && xhr.responseJSON?.error) {
                                     alert(xhr.responseJSON.error);
                                 } else {
-                                    alert('त्रुटि: नगर केंद्र/ग्राम केंद्र जोड़ने में विफल');
+                                    alert(
+                                        'त्रुटि: नगर केंद्र/ग्राम केंद्र जोड़ने में विफल'
+                                        );
                                 }
                                 console.log(xhr.responseText);
                             }
