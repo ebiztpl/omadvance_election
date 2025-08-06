@@ -85,6 +85,7 @@ Route::middleware('checklogin')->group(function () {
 
     Route::get('admin/assign_responsibility', [AdminController::class, 'reponsibility_index'])->name('responsibility.index');
     Route::post('admin/assign_responsibility', [AdminController::class, 'responsibility_filter'])->name('responsibility.filter');
+    Route::get('/responsibility/download', [AdminController::class, 'downloadFullData'])->name('responsibility.download');
     Route::post('admin/assign_responsibility/store', [AdminController::class, 'responsibility_store'])->name('responsibility.store');
     Route::post('admin/assign-position/save', [AdminController::class, 'responsibility_store'])->name('responsibility.store');
     Route::get('/get-vidhansabhas', [AdminController::class, 'getVidhansabhasByDistrict'])->name('get.vidhansabhas');
@@ -121,8 +122,10 @@ Route::middleware('checklogin')->group(function () {
     Route::post('/admin/voter/update/{id}', [AdminController::class, 'voterUpdatePost'])->name('voter.update.post');
 
     // view voter data routes
-    Route::get('/admin/voterlist', [AdminController::class, 'viewvoter'])->name('viewvoter.index');
+    Route::get('/admin/voterlist', [AdminController::class, 'voterListPage'])->name('voter.view');
+    Route::get('/admin/voterlist/view', [AdminController::class, 'viewvoter'])->name('viewvoter.index');
     Route::post('admin/voterlist', [AdminController::class, 'voterdata'])->name('voterdata.index');
+    Route::get('/admin/voterlist/download', [AdminController::class, 'downloadvoterFullData'])->name('voterlist.download');
 
     // member data upload routes
     Route::get('/admin/membership_form', [AdminController::class, 'membercreate'])->name('membership.create');

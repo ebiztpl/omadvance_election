@@ -9,8 +9,7 @@
                     <div class="card-body">
                          <div class="table-responsive">
                             <span
-                                style="margin-bottom: 8px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
-                                शिकायतें - <span id="complaint-count">{{ $entries->count() }}</span></span>
+                                style="margin-bottom: 8px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल - <span id="complaint-count">{{ $entries->count() }}</span></span>
                         <table id="example" class="display table-bordered">
                             <thead>
                                 <tr>
