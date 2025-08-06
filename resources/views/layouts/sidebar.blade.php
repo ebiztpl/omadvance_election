@@ -28,7 +28,7 @@
                 <li><a href="{{ route('upload.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">मतदाता डेटा अपलोड</span></a></li>
 
-                <li><a href="{{ route('viewvoter.index') }}"><i class="icon icon-arrow-right"></i><span
+                <li><a href="{{ route('voter.view') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">मतदाता डेटा</span></a></li>
 
                 <li><a href="{{ route('dashboard2.index') }}"><i class="icon icon-arrow-right"></i><span

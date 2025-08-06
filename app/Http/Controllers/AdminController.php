@@ -1515,6 +1515,80 @@ class AdminController extends Controller
 
     public function responsibility_filter(Request $request)
     {
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+
+        $query = RegistrationForm::query()
+            ->join('step2', 'step2.registration_id', '=', 'registration_form.registration_id')
+            ->join('step3', 'step3.registration_id', '=', 'registration_form.registration_id');
+
+        if ($request->filled('mobile')) {
+            $query->where('registration_form.member_id', $request->mobile);
+        }
+        if ($request->filled('education')) {
+            $query->where('registration_form.education', $request->education);
+        }
+        if ($request->filled('category')) {
+            $query->where('registration_form.caste', $request->category);
+        }
+        if ($request->filled('business')) {
+            $query->where('registration_form.business', $request->business);
+        }
+        if ($request->filled('district_id')) {
+            $query->where('step2.district', $request->district_id);
+        }
+        if ($request->filled('vidhansabha_id')) {
+            $query->where('step2.vidhansabha', $request->vidhansabha_id);
+        }
+
+        $totalFiltered = $query->count();
+        $results = $query->select(
+            'registration_form.*',
+            'step2.district as district_id',
+            'step3.permanent_address'
+        )->skip($start)
+            ->take($length)
+            ->get();
+
+        foreach ($results as $r) {
+            $district = District::find($r->district_id);
+            $r->district = $district ? $district->district_name : null;
+        }
+
+        $data = [];
+        foreach ($results as $index => $b) {
+            $date = $b->date_time ? \Carbon\Carbon::parse($b->date_time)->format('d-m-Y') : '';
+            $isAssigned = AssignPosition::where('member_id', $b->registration_id)->exists();
+
+            $assignButton = $isAssigned
+                ? "<button class='btn btn-info btn-sm mr-1 already-assigned' data-name='{$b->name}'>Assigned</button>"
+                : "<a href='#' class='btn btn-primary btn-sm chk' data-id='{$b->registration_id}' data-toggle='modal' data-target='#assignModal'>Assign</a>";
+            $data[] = [
+                'sr_no' => $start + $index + 1,
+                'member_id' => $b->member_id,
+                'name' => "{$b->name}<br>{$b->mobile1}<br>{$b->gender}",
+                'address' => $b->permanent_address,
+                'district' => $b->district,
+                'photo' => "<img src='" . asset('assets/upload/' . $b->photo) . "' height='100' />",
+                'post_date' => $b->date_time ? \Carbon\Carbon::parse($b->date_time)->format('d-m-Y') : '',
+                'action' => "<div class='d-flex'>
+            <a href='" . route('register.show', $b->registration_id) . "' class='btn btn-success btn-sm mr-1'>View</a>
+            <a href='" . route('register.card', ['id' => $b->registration_id]) . "' class='btn btn-warning btn-sm mr-1'>Card</a>
+            {$assignButton}
+        </div>"
+            ];
+        }
+
+        return response()->json([
+            "draw" => intval($request->input('draw')),
+            "recordsTotal" => RegistrationForm::count(),
+            "recordsFiltered" => $totalFiltered,
+            "data" => $data
+        ]);
+    }
+
+    public function downloadFullData(Request $request)
+    {
         $query = RegistrationForm::query()
             ->join('step2', 'step2.registration_id', '=', 'registration_form.registration_id')
             ->join('step3', 'step3.registration_id', '=', 'registration_form.registration_id');
@@ -1539,62 +1613,47 @@ class AdminController extends Controller
         }
 
         $results = $query->select(
-            'registration_form.*',
-            'step2.district as district_id',
-            'step3.permanent_address'
+            'registration_form.member_id',
+            'registration_form.name',
+            'registration_form.mobile1',
+            'registration_form.gender',
+            'step3.permanent_address',
+            'step2.district',
+            'registration_form.date_time'
         )->get();
 
-        foreach ($results as $r) {
-            $district = District::find($r->district_id);
-            $r->district = $district ? $district->district_name : null;
+        $csvData = [];
+        foreach ($results as $item) {
+            $csvData[] = [
+                'Member ID' => $item->member_id,
+                'Name' => $item->name,
+                'Mobile' => $item->mobile1,
+                'Gender' => $item->gender,
+                'Address' => $item->permanent_address,
+                'District' => District::find($item->district)->district_name ?? '',
+                'Post Date' => $item->date_time ? \Carbon\Carbon::parse($item->date_time)->format('d-m-Y') : ''
+            ];
         }
 
-        $html = '<table class="display table table-bordered" style="min-width: 845px" id="example">';
-        $html .= '<thead><tr>
-        <th>Sr.No.</th>
-        <th>Member ID</th>
-        <th>Name</th>
-        <th>Address</th>
-        <th>District</th>
-        <th>Photo</th>
-        <th>Post Date</th>
-        <th>Action</th>
-        </tr></thead><tbody>';
+        // Create CSV file download
+        $filename = "filtered_data_" . now()->format('Ymd_His') . ".csv";
+        $handle = fopen('php://output', 'w');
 
-        foreach ($results as $index => $b) {
-            $date = $b->date_time ? \Carbon\Carbon::parse($b->date_time)->format('d-m-Y') : '';
-            $isAssigned = AssignPosition::where('member_id', $b->registration_id)->exists();
+        header('Content-Type: text/csv');
+        header("Content-Disposition: attachment; filename=$filename");
 
-            if ($isAssigned) {
-                $assignButton = "<button class='btn btn-info btn-sm mr-1 already-assigned' data-name='{$b->name}'>Assigned</button>";
-            } else {
-                $assignButton = "<a href='#' class='btn btn-primary btn-sm chk' data-id='{$b->registration_id}' data-toggle='modal' data-target='#assignModal'>Assign</a>";
-            }
-            $html .= "<tr>
-            <td>" . ($index + 1) . "</td>
-            <td>{$b->member_id}</td>
-            <td>{$b->name}<br>{$b->mobile1}<br>{$b->gender}</td>
-            <td>{$b->permanent_address}</td>
-            <td>{$b->district}</td>
-            <td><img src='" . asset('assets/upload/' . $b->photo) . "' height='100' alt='Photo' /></td>
-            <td>{$date}</td>
-            <td>
-            <div class='d-flex'>
-                <a href='" . route('register.show', $b->registration_id) . "' class='btn btn-success btn-sm mr-1'>View</a>
-               <a href='" . route('register.card', ['id' => $b->registration_id]) . "' class='btn btn-warning btn-sm mr-1'>Card</a>
-               {$assignButton}
-            </div>
-            </td>
-        </tr>";
+        // Write headers
+        fputcsv($handle, array_keys($csvData[0] ?? []));
+
+        // Write rows
+        foreach ($csvData as $row) {
+            fputcsv($handle, $row);
         }
 
-        $html .= '</tbody></table>';
-
-        return response()->json([
-            'html' => $html,
-            'count' => count($results)
-        ]);
+        fclose($handle);
+        exit;
     }
+
 
     public function responsibility_store(Request $request)
     {
@@ -2803,9 +2862,9 @@ class AdminController extends Controller
             $failedRows = [];
 
             foreach ($sheetData as $index => $row) {
-                    if (empty(array_filter($row, fn($value) => trim($value) !== ''))) {
-                        continue;
-                    }
+                if (empty(array_filter($row, fn($value) => trim($value) !== ''))) {
+                    continue;
+                }
                 DB::beginTransaction();
 
                 try {
@@ -3285,81 +3344,202 @@ class AdminController extends Controller
 
 
     // view voters data functions
-    public function viewvoter()
-    {
-        $voters = DB::table('registration_form')
-            ->where('type', 1)
-            ->get()
-            ->map(function ($voter) {
-                $voter->step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
-                $voter->step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
-                $voter->area_name = DB::table('area_master')
-                    ->where('area_id', optional($voter->step2)->area_id)
-                    ->value('area_name');
-                return $voter;
-            });
-        $total = $voters->count();
 
-        return view('admin.voterlist', compact('voters', 'total'));
+    public function voterListPage()
+    {
+        $total = DB::table('registration_form')->where('type', 1)->count();
+        return view('admin/voterlist', compact('total'));
     }
 
 
-    public function voterdata(Request $request)
+    public function viewvoter(Request $request)
     {
-        $query = DB::table('registration_form')->where('type', 1);
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
 
+        $query = DB::table('registration_form')->where('type', 1);
         if ($request->filled('voter_id')) {
-            $query->where('voter_id', 'like', '%' . $request->voter_id . '%');
+            $query->where('voter_id', 'like', '%' . $request->input('voter_id') . '%');
         }
 
-        $voters = $query->get()->map(function ($voter) {
-            //$voter->age = $voter->dob ? \Carbon\Carbon::parse($voter->dob)->age : 'N/A';
-            return $voter;
-        });
+        $total = $query->count();
 
-        $count = $voters->count();
-        $tableRows = '';
-        $i = 1;
+        $results = $query->offset($start)->limit($length)->get();
 
-        foreach ($voters as $voter) {
+        $data = [];
+        $sr = $start + 1;
+
+        foreach ($results as $voter) {
             $step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
             $step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
+            $area_name = DB::table('area_master')->where('area_id', optional($step2)->area_id)->value('area_name');
 
-            $area_name = DB::table('area_master')->where('area_id', $step2->area_id)->first();
-            $tableRows .= '
-            <tr>
-                <td>' . $i++ . '</td>
-                <td>' . $voter->name . '</td>
-				<td>' . $voter->father_name . '</td>
-                <td>' . $step2->house . '</td>
-                <td>' . $voter->age . '</td>
-                <td>' . $voter->gender . '</td>
-				<td>' . $voter->voter_id . '</td>
-				<td>' . $area_name->area_name . '</td>
-                <td>' . $voter->jati . '</td>
-                <td>' . $step2->matdan_kendra_no . '</td>
-                <td>' . $step3->total_member . '</td>
-                <td>' . $step3->mukhiya_mobile . '</td>
-                <td>' . $voter->death_left . '</td>
-                <td>' . \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') . '</td>
-                <td style="white-space: nowrap;">
-                    <a href="' . route('voter.show', $voter->registration_id) . '" class="btn btn-xs btn-success">View</a>
-                    <a href="' . route('voter.update', $voter->registration_id) . '" class="btn btn-xs btn-info">Edit</a>
-
-                    <form action="' . route('register.destroy', $voter->registration_id) . '" method="POST" style="display:inline-block;" onsubmit="return confirm(\'क्या आप वाकई रिकॉर्ड हटाना चाहते हैं?\')">
-                        ' . csrf_field() . '
-                        ' . method_field('DELETE') . '
-                        <button type="submit" class="btn btn-xs btn-danger">Delete</button>
-                    </form>
-                </td>
-                            </tr>';
+            $data[] = [
+                'sr_no' => $sr++,
+                'name' => $voter->name,
+                'father_name' => $voter->father_name,
+                'house' => $step2->house ?? '',
+                'age' => $voter->age,
+                'gender' => $voter->gender,
+                'voter_id' => $voter->voter_id,
+                'area_name' => $area_name ?? '',
+                'jati' => $voter->jati,
+                'matdan_kendra_no' => $step2->matdan_kendra_no ?? '',
+                'total_member' => $step3->total_member ?? '',
+                'mukhiya_mobile' => $step3->mukhiya_mobile ?? '',
+                'death_left' => $voter->{'death/left'} ?? '',
+                'date_time' => $voter->date_time ? \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') : '',
+                'action' => '
+                    <div class="d-flex" >
+                        <a href="' . route('voter.show', $voter->registration_id) . '" class="btn btn-sm btn-success" style="margin-right: 2px">View</a>
+                        <a href="' . route('voter.update', $voter->registration_id) . '" class="btn btn-sm btn-info" style="margin-right: 2px">Edit</a>
+                        <form action="' . route('register.destroy', $voter->registration_id) . '" method="POST" onsubmit="return confirm(\'क्या आप वाकई रिकॉर्ड हटाना चाहते हैं?\')">
+                            ' . csrf_field() . method_field('DELETE') . '
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </div>
+                ',
+            ];
         }
 
         return response()->json([
-            'count' => $count,
-            'table_rows' => $tableRows
+            'draw' => intval($request->input('draw')),
+            'recordsTotal' => $total,
+            'recordsFiltered' => $total,
+            'data' => $data,
         ]);
     }
+
+
+    public function downloadvoterFullData(Request $request)
+    {
+        $query = DB::table('registration_form')->where('type', 1);
+
+        // Apply filter if available
+        if ($request->filled('area_id')) {
+            $areaId = $request->input('area_id');
+            $query->whereIn('registration_id', function ($subquery) use ($areaId) {
+                $subquery->select('registration_id')
+                    ->from('step2')
+                    ->where('area_id', $areaId);
+            });
+        }
+
+        $results = $query->get();
+
+        $data = [];
+        $sr = 1;
+
+        foreach ($results as $voter) {
+            $step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
+            $step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
+            $area_name = DB::table('area_master')->where('area_id', optional($step2)->area_id)->value('area_name');
+
+            $data[] = [
+                'SR No' => $sr++,
+                'Name' => $voter->name,
+                'Father Name' => $voter->father_name,
+                'House' => $step2->house ?? '',
+                'Age' => $voter->age,
+                'Gender' => $voter->gender,
+                'Voter ID' => $voter->voter_id,
+                'Area Name' => $area_name ?? '',
+                'Jati' => $voter->jati,
+                'Matdan Kendra No' => $step2->matdan_kendra_no ?? '',
+                'Total Member' => $step3->total_member ?? '',
+                'Mukhiya Mobile' => $step3->mukhiya_mobile ?? '',
+                'Death/Left' => $voter->death_left ?? '',
+                'Date Time' => $voter->date_time ? \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') : '',
+            ];
+        }
+
+        // Prepare CSV headers
+        $fileName = "voterlist.csv";
+        $headers = [
+            "Content-type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        // Return streamed CSV response
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+
+            // Write the column headings
+            if (!empty($data)) {
+                fputcsv($file, array_keys($data[0]));
+            }
+
+            // Write the data
+            foreach ($data as $row) {
+                fputcsv($file, $row);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+
+    // public function voterdata(Request $request)
+    // {
+    //     $query = DB::table('registration_form')->where('type', 1);
+
+    //     if ($request->filled('voter_id')) {
+    //         $query->where('voter_id', 'like', '%' . $request->voter_id . '%');
+    //     }
+
+    //     $voters = $query->get()->map(function ($voter) {
+    //         //$voter->age = $voter->dob ? \Carbon\Carbon::parse($voter->dob)->age : 'N/A';
+    //         return $voter;
+    //     });
+
+    //     $count = $voters->count();
+    //     $tableRows = '';
+    //     $i = 1;
+
+    //     foreach ($voters as $voter) {
+    //         $step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
+    //         $step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
+
+    //         $area_name = DB::table('area_master')->where('area_id', $step2->area_id)->first();
+    //         $tableRows .= '
+    //         <tr>
+    //             <td>' . $i++ . '</td>
+    //             <td>' . $voter->name . '</td>
+	// 			<td>' . $voter->father_name . '</td>
+    //             <td>' . $step2->house . '</td>
+    //             <td>' . $voter->age . '</td>
+    //             <td>' . $voter->gender . '</td>
+	// 			<td>' . $voter->voter_id . '</td>
+	// 			<td>' . $area_name->area_name . '</td>
+    //             <td>' . $voter->jati . '</td>
+    //             <td>' . $step2->matdan_kendra_no . '</td>
+    //             <td>' . $step3->total_member . '</td>
+    //             <td>' . $step3->mukhiya_mobile . '</td>
+    //             <td>' . $voter->death_left . '</td>
+    //             <td>' . \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') . '</td>
+    //             <td style="white-space: nowrap;">
+    //                 <a href="' . route('voter.show', $voter->registration_id) . '" class="btn btn-xs btn-success">View</a>
+    //                 <a href="' . route('voter.update', $voter->registration_id) . '" class="btn btn-xs btn-info">Edit</a>
+
+    //                 <form action="' . route('register.destroy', $voter->registration_id) . '" method="POST" style="display:inline-block;" onsubmit="return confirm(\'क्या आप वाकई रिकॉर्ड हटाना चाहते हैं?\')">
+    //                     ' . csrf_field() . '
+    //                     ' . method_field('DELETE') . '
+    //                     <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+    //                 </form>
+    //             </td>
+    //                         </tr>';
+    //     }
+
+    //     return response()->json([
+    //         'count' => $count,
+    //         'table_rows' => $tableRows
+    //     ]);
+    // }
 
     public function voterUpdate($id)
     {

@@ -18,7 +18,7 @@
                         <div class="table-responsive">
                             <span
                                 style="margin-bottom: 8px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
-                                शिकायतें - <span id="complaint-count">{{ $complaints->count() }}</span></span>
+                                 - <span id="complaint-count">{{ $complaints->count() }}</span></span>
                             <table id="example" style="min-width: 845px" class="display table table-bordered">
                                 <thead>
                                     <tr>

@@ -98,8 +98,24 @@
             <div class="col-12">
                 <div class="card" id="table_card" style="display: none;">
                     <div class="card-body">
+                        <button id="download_full_data" class="btn btn-primary mb-3" style="display: none; float: right">
+                            पूरा डेटा डाउनलोड करें
+                        </button>
                         <div id="filtered_data" class="table-responsive">
-
+                            <table id="example" class="display table table-bordered" style="min-width: 845px">
+                                <thead>
+                                    <tr>
+                                        <th>क्र.</th>
+                                        <th>सदस्य आईडी</th>
+                                        <th>नाम</th>
+                                        <th>पता</th>
+                                        <th>जिला</th>
+                                        <th>फोटो</th>
+                                        <th>दिनांक</th>
+                                        <th>क्रिया</th>
+                                    </tr>
+                                </thead>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -306,12 +322,58 @@
             });
 
 
+            // $("#filter_data").click(function(e) {
+            //     e.preventDefault();
+            //     $("#loader-wrapper").show();
+
+            //     const data = {
+            //         _token: '{{ csrf_token() }}',
+            //         mobile: $("#main_mobile").val(),
+            //         education: $("#education").val(),
+            //         category: $("#category").val(),
+            //         business: $("#business").val(),
+            //         district_id: $("#searchdistrict").val(),
+            //         vidhansabha_id: $("#searchvidhansabha").val()
+            //     };
+
+            //     $.ajax({
+            //         url: "{{ route('responsibility.filter') }}",
+            //         type: "POST",
+            //         data: data,
+            //         success: function(response) {
+            //             if (response.count > 0) {
+            //                 $("#filtered_data").html(response.html);
+            //                 $('#example').DataTable({
+            //                     destroy: true,
+            //                     responsive: true,
+            //                     pageLength: 20, // ← LIMITS to 20 per page
+            //                     lengthChange: true, // ← allows user to change rows/page
+            //                     searching: true, // ← enables client-side search
+            //                     ordering: true
+            //                 });
+            //                 $("#table_card").show();
+            //             } else {
+            //                 $("#filtered_data").html('<div class="text-danger">No data found.</div>');
+            //                 $("#table_card").show();
+            //             }
+            //             $("#loader-wrapper").hide();
+            //             $("#total").text(response.count);
+
+            //         },
+            //         error: function(xhr) {
+            //             $("#loader-wrapper").hide();
+            //             console.error(xhr.responseText);
+            //             alert("Something went wrong. Check console.");
+            //         }
+            //     });
+            // });
+
+
             $("#filter_data").click(function(e) {
                 e.preventDefault();
                 $("#loader-wrapper").show();
 
-                const data = {
-                    _token: '{{ csrf_token() }}',
+                const filterParams = {
                     mobile: $("#main_mobile").val(),
                     education: $("#education").val(),
                     category: $("#category").val(),
@@ -320,32 +382,109 @@
                     vidhansabha_id: $("#searchvidhansabha").val()
                 };
 
-                $.ajax({
-                    url: "{{ route('responsibility.filter') }}",
-                    type: "POST",
-                    data: data,
-                    success: function(response) {
-                        if (response.count > 0) {
-                            $("#filtered_data").html(response.html);
-                            $('#example').DataTable({
-                                destroy: true,
-                                responsive: true
-                            });
-                            $("#table_card").show();
-                        } else {
-                            $("#filtered_data").html('<div class="text-danger">No data found.</div>');
-                            $("#table_card").show();
-                        }
-                        $("#loader-wrapper").hide();
-                        $("#total").text(response.count);
+                $("#table_card").show();
+                $("#download_full_data").show();
 
+                if ($.fn.DataTable.isDataTable('#example')) {
+                    $('#example').DataTable().destroy();
+                }
+
+                var table = $('#example').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    pageLength: 10,
+                    lengthChange: true,
+                    dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
+                        '<"row"<"col-sm-12"tr>>' +
+                        '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+                    buttons: [
+                        'csv', 'excel'
+                    ],
+                    lengthMenu: [
+                        [10, 25, 50, 100, 500, 1000],
+                        [10, 25, 50, 100, 500, 1000],
+                    ],
+                    ajax: {
+                        url: "{{ route('responsibility.filter') }}",
+                        type: "POST",
+                        data: function(d) {
+                            return $.extend({}, d, {
+                                mobile: $("#main_mobile").val(),
+                                education: $("#education").val(),
+                                category: $("#category").val(),
+                                business: $("#business").val(),
+                                district_id: $("#searchdistrict").val(),
+                                vidhansabha_id: $("#searchvidhansabha").val(),
+                                _token: '{{ csrf_token() }}'
+                            });
+                        },
+
+                        dataSrc: function(json) {
+                            $('#total').text(json.recordsFiltered);
+                            return json.data;
+                        },
+
+                        complete: function() {
+                            $("#loader-wrapper").hide();
+                        },
+                        error: function(xhr) {
+                            $("#loader-wrapper").hide();
+                            console.error(xhr.responseText);
+                        }
                     },
-                    error: function(xhr) {
-                        $("#loader-wrapper").hide();
-                        console.error(xhr.responseText);
-                        alert("Something went wrong. Check console.");
-                    }
+                    columns: [{
+                            data: 'sr_no',
+                            title: 'क्र.'
+                        },
+                        {
+                            data: 'member_id',
+                            title: 'सदस्य आईडी'
+                        },
+                        {
+                            data: 'name',
+                            title: 'नाम'
+                        },
+                        {
+                            data: 'address',
+                            title: 'पता'
+                        },
+                        {
+                            data: 'district',
+                            title: 'जिला'
+                        },
+                        {
+                            data: 'photo',
+                            title: 'फोटो',
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
+                            data: 'post_date',
+                            title: 'दिनांक'
+                        },
+                        {
+                            data: 'action',
+                            title: 'क्रिया',
+                            orderable: false,
+                            searchable: false
+                        }
+                    ]
                 });
+
+                $('#example').on('preXhr.dt', function() {
+                    $("#loader-wrapper").show();
+                });
+
+                $('#example').on('xhr.dt', function() {
+                    $("#loader-wrapper").hide();
+                });
+
+                $("#download_full_data").off('click').on('click', function() {
+                    $("#loader-wrapper").show();
+                    const query = $.param(filterParams);
+                    window.location.href = `{{ route('responsibility.download') }}?${query}`;
+                });
+
             });
 
             $(document).on('click', '.chk', function() {

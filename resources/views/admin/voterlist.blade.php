@@ -26,16 +26,24 @@
                     @csrf
                     <div id="rowGroup">
                         <div class="form-row align-items-end mb-2">
-                            
+
                             <div class="col-md-4">
                                 <label>मतदाता आईडी सर्च करें <span class="text-danger">*</span></label>
                                 <input type="text" name="voter_id" id="main_voter_id" class="form-control">
                             </div>
-                            <div class="col-md-6 mt-2" style="color:rgb(55, 64, 75)">
+                            <div class="col-xl-1 mt-2" style="color:rgb(55, 64, 75)">
                                 <br />
-                                <button type="button" id="data-filter" class="btn btn-success mr-3" disabled>सर्च
+                                <button type="button" id="data-filter" class="btn btn-success" disabled>सर्च
                                     करें</button>
-                                Data Count: <span id="total">{{ $total }}</span>
+                            </div>
+
+                            <div class="col-xl-2">
+                                <br />
+                                <p class="mt-">कुल रिकॉर्ड: <span id="record-count">{{ $total }}</span></p>
+                            </div>
+                            <div class="col-md-2 mt-2">
+                                <br />
+
                             </div>
                         </div>
                     </div>
@@ -51,6 +59,9 @@
                 </div>
                 <div class="card" id="table_card" style="display: none">
                     <div class="card-body">
+                        <button id="download_full_data" class="btn btn-primary mb-3" style="display: none; float: right">
+                            पूरा डेटा डाउनलोड करें
+                        </button>
                         <div class="table-responsive" id="filtered_data">
                             <table class="display table table-bordered" style="min-width: 845px" id="example">
                                 <thead>
@@ -72,7 +83,7 @@
                                         <th>क्रिया</th>
                                     </tr>
                                 </thead>
-                                <tbody id="voter-table-body">
+                                {{-- <tbody id="voter-table-body">
                                     @php $i = 1; @endphp
                                     @foreach ($voters as $voter)
                                         <tr>
@@ -95,8 +106,6 @@
                                                     class="btn btn-sm btn-success mr-1">View</a>
                                                      <a href="{{ route('voter.update', $voter->registration_id) }}"
                                                     class="btn btn-sm btn-info mr-1">Edit</a>
-                                                {{-- <a href="{{ route('register.show', $voter->registration_id) }}"
-                                                    class="btn btn-sm btn-primary mr-1">Edit</a> --}}
                                                 <form action="{{ route('register.destroy', $voter->registration_id) }}"
                                                     method="POST" style="display: inline-block;"
                                                     onsubmit="return confirm('क्या आप वाकई रिकॉर्ड हटाना चाहते हैं?')">
@@ -108,7 +117,7 @@
                                         </tr>
                                     @endforeach
 
-                                </tbody>
+                                </tbody> --}}
                             </table>
                         </div>
 
@@ -127,57 +136,117 @@
                     $('#data-filter').prop('disabled', !hasValue);
                 });
 
-                // $('#show-voters').click(function() {
-                //     $("#loader-wrapper").show();
-                //     $.ajax({
-                //         url: "{{ route('viewvoter.index') }}",
-                //         method: "POST",
-                //         data: {
-                //             _token: "{{ csrf_token() }}",
-                //             voter_id: ""
-                //         },
-                //         success: function(response) {
-                //             $("#loader-wrapper").hide();
-                //             $('#total').text(response.count);
-                //             $('#table_card').show();
-                //             $('#show-voters').hide();
-                //         },
-                //         error: function() {
-                //             $("#loader-wrapper").hide();
-                //             alert("Something went wrong.");
-                //         }
-                //     });
-                // });
-
-                $('#show-voters').click(function() {
+                $('#show-voters').on('click', function() {
                     $('#table_card').show();
+                    $("#download_full_data").show();
                     $(this).hide();
+                    $("#loader-wrapper").show();
+                    // Destroy if already initialized
+                    if ($.fn.DataTable.isDataTable('#example')) {
+                        $('#example').DataTable().clear().destroy();
+                    }
+
+                    var table = $('#example').DataTable({
+                        processing: true,
+                        serverSide: true,
+                        pageLength: 10,
+                        lengthChange: true,
+                        dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
+                            '<"row"<"col-sm-12"tr>>' +
+                            '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+                        buttons: [
+                            'csv', 'excel'
+                        ],
+                        lengthMenu: [
+                            [10, 25, 50, 100, 500, 1000],
+                            [10, 25, 50, 100, 500, 1000],
+                        ],
+                        ajax: {
+                            url: "{{ route('viewvoter.index') }}",
+                            type: 'GET',
+                            data: function(d) {
+                                d.voter_id = $('#main_voter_id').val();
+                            },
+                            dataSrc: function(json) {
+                                $('#record-count').text(json.recordsFiltered);
+                                return json.data;
+                            },
+                            complete: function() {
+                                $("#loader-wrapper").hide();
+                            },
+                            error: function(xhr) {
+                                console.error("AJAX error:", xhr.responseText);
+                            }
+                        },
+                        columns: [{
+                                data: 'sr_no'
+                            },
+                            {
+                                data: 'name'
+                            },
+                            {
+                                data: 'father_name'
+                            },
+                            {
+                                data: 'house'
+                            },
+                            {
+                                data: 'age'
+                            },
+                            {
+                                data: 'gender'
+                            },
+                            {
+                                data: 'voter_id'
+                            },
+                            {
+                                data: 'area_name'
+                            },
+                            {
+                                data: 'jati'
+                            },
+                            {
+                                data: 'matdan_kendra_no'
+                            },
+                            {
+                                data: 'total_member'
+                            },
+                            {
+                                data: 'mukhiya_mobile'
+                            },
+                            {
+                                data: 'death_left'
+                            },
+                            {
+                                data: 'date_time'
+                            },
+                            {
+                                data: 'action',
+                                orderable: false,
+                                searchable: false
+                            }
+                        ]
+                    });
+                    $('#example').on('preXhr.dt', function() {
+                        $("#loader-wrapper").show();
+                    });
+
+                    $('#example').on('xhr.dt', function() {
+                        $("#loader-wrapper").hide();
+                    });
+
+                    $('#download_full_data').on('click', function() {
+                        $("#loader-wrapper").show();
+                        const query = $.param(filterParams || {});
+                        window.location.href = `{{ route('voterlist.download') }}?${query}`;
+                    });
                 });
+
 
                 // Filter by Voter ID
                 $('#data-filter').click(function() {
-                    let voter_id = $('#main_voter_id').val().trim();
-                    if (voter_id === '') return;
                     $("#loader-wrapper").show();
-
-                    $.ajax({
-                        url: "{{ route('voterdata.index') }}",
-                        method: "POST",
-                        data: {
-                            _token: "{{ csrf_token() }}",
-                            voter_id: voter_id
-                        },
-                        success: function(response) {
-                            $("#loader-wrapper").hide();
-                            $('#voter-table-body').html(response.table_rows);
-                            $('#total').text(response.count);
-                            $('#table_card').show();
-                        },
-                        error: function() {
-                            $("#loader-wrapper").hide();
-                            alert("Something went wrong.");
-                        }
-                    });
+                    $('#example').DataTable().ajax.reload(null, false);
                 });
             });
         </script>
