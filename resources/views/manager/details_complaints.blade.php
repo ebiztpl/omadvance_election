@@ -606,10 +606,13 @@
                         </div>
 
                         <div class="col-md-3" id="forwarded_to_field">
-                            <label class="form-label">अधिकारी चुनें (आगे भेजे)<span class="tx-danger"
-                                    style="color: red;">*</span></label>
-                            <select name="forwarded_to" id="managers" class="form-control" required>
-                                <option value="">--चयन करें--</option>
+                            <label class="form-label">अधिकारी चुनें (आगे भेजे)</label>
+                            <select name="manager_id" id="manager_id" class="form-control">
+                                <!-- Preselect the logged-in manager -->
+                                <option value="{{ $loggedInManagerId }}" selected>
+                                    {{ \App\Models\User::find($loggedInManagerId)->admin_name }} (You)
+                                </option>
+
                                 @foreach ($managers as $manager)
                                     <option value="{{ $manager->admin_id }}">{{ $manager->admin_name }}</option>
                                 @endforeach

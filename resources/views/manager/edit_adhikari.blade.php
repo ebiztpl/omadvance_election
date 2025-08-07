@@ -17,8 +17,8 @@
                 <form method="POST" action="{{ route('adhikari.update', $adhikari->adhikari_id) }}">
                     @csrf
                     <div class="item form-group row">
-                        <div class="col-md-3 col-sm-3 col-xs-12">
-                            <label>विभाग <span class="required">*</span></label>
+                        <div class="col-md-2 col-sm-2 col-xs-12">
+                            <label>विभाग <span class="required text-danger">*</span></label>
                             <select name="department_id" id="department_id" class="form-control" required>
                                 <option value="">--Select Department--</option>
                                 @foreach ($departments as $d)
@@ -30,7 +30,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-3 col-sm-3 col-xs-12">
+                        <div class="col-md-2 col-sm-2 col-xs-12">
                             <label>पद <span class="text-danger">*</span></label>
                             <select name="designation_id" id="designation_id" class="form-control" required>
                                 <option value="">--Select Designation--</option>
@@ -43,22 +43,28 @@
                             </select>
                         </div>
 
-                        <div class="col-md-3 col-sm-3 col-xs-12">
+                        <div class="col-md-2 col-sm-2 col-xs-12">
                             <label>व्यक्ति का नाम <span class="text-danger">*</span></label>
                             <input type="text" name="name" class="form-control" value="{{ $adhikari->name }}"
                                 required>
                         </div>
 
-                        <div class="col-md-3 col-sm-3 col-xs-12">
+                        <div class="col-md-2 col-sm-2 col-xs-12">
                             <label>मोबाइल <span class="text-danger">*</span></label>
                             <input type="text" name="mobile" class="form-control" value="{{ $adhikari->mobile }}"
                                 required>
                         </div>
 
-                        <div class="col-md-3 mt-2">
+                        <div class="col-md-2 col-sm-2 col-xs-12">
+                            <label>ईमेल आईडी <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" value="{{ $adhikari->email }}"
+                                required>
+                        </div>
+
+                        <div class="col-md-2 mt-2">
                             <br />
-                            <button type="submit" class="btn btn-success">Update</button>
-                            <a href="{{ route('adhikari.index') }}" class="btn btn-secondary">Back</a>
+                            <button type="submit" class="btn btn-success">अपडेट</button>
+                            <a href="{{ route('adhikari.index') }}" class="btn btn-secondary">वापस</a>
                         </div>
                     </div>
                 </form>

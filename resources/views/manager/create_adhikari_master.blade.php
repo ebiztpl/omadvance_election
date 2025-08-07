@@ -18,7 +18,7 @@
                     @csrf
                     <div id="entries">
                         <div class="item form-group row mb-2">
-                            <div class="col-md-3 col-sm-3 col-xs-12">
+                            <div class="col-md-2 col-sm-2 col-xs-12">
                                 <label>विभाग <span class="text-danger">*</span></label>
                                 <select id="department_id" name="department_id" class="form-control" required>
                                     <option value="">--Select Department--</option>
@@ -28,28 +28,31 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3 col-sm-3 col-xs-12">
+                            <div class="col-md-2 col-sm-2 col-xs-12">
                                 <label>पद<span class="text-danger">*</span></label>
                                 <select id="designation_id" name="designation_id" class="form-control" required></select>
                             </div>
 
-                            <div class="col-md-3 col-sm-3 col-xs-12">
+                            <div class="col-md-2 col-sm-2 col-xs-12">
                                 <label>व्यक्ति का नाम <span class="text-danger">*</span></label>
                                 <input type="text" name="name" class="form-control" required>
                             </div>
 
-                            <div class="col-md-3 col-sm-3 col-xs-12">
+                            <div class="col-md-2 col-sm-2 col-xs-12">
                                 <label>मोबाइल <span class="text-danger">*</span></label>
                                 <input type="text" name="mobile" class="form-control" required>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="item form-group row">
-                        <div class="col-md-6 mt-2">
-                            <br />
-                            <button type="submit" class="btn btn-success">Submit</button>
-                            <a href="{{ route('adhikari.index') }}" class="btn btn-primary ml-2">Cancel</a>
+                            <div class="col-md-2 col-sm-2 col-xs-12">
+                                <label>ईमेल आईडी <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-2 mt-2">
+                                <br />
+                                <button type="submit" class="btn btn-success">सबमिट</button>
+                                <a href="{{ route('adhikari.index') }}" class="btn btn-primary ml-2">रद्द</a>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -89,6 +92,7 @@
                                         <th>विभाग</th>
                                         <th>पद</th>
                                         <th>मोबाइल </th>
+                                        <th>ईमेल </th>
                                         <th>विकल्प</th>
                                     </tr>
                                 </thead>
@@ -100,6 +104,7 @@
                                             <td>{{ $r->department->department_name ?? '-' }}</td>
                                             <td>{{ $r->designation->designation_name ?? '-' }}</td>
                                             <td>{{ $r->mobile }}</td>
+                                            <td>{{ $r->email }}</td>
                                             <td><a href="{{ route('adhikari.edit', $r->adhikari_id) }}"
                                                     data-toggle="tooltip" title="Edit"><i
                                                         class="fa fa-edit fa-lg"></i></a></td>

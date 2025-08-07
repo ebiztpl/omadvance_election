@@ -245,6 +245,55 @@ class ManagerController extends Controller
     //     return response()->json($data);
     // }
 
+    // public function fetchStatus(Request $request)
+    // {
+    //     $statusLabels = [
+    //         1 => 'शिकायत दर्ज',
+    //         2 => 'प्रक्रिया में',
+    //         3 => 'स्थगित',
+    //         4 => 'पूर्ण',
+    //         5 => 'रद्द',
+    //     ];
+
+    //     $query = DB::table('complaint')
+    //         ->select('complaint_status', DB::raw('COUNT(*) as total'))
+    //         ->whereNotNull('complaint_status')
+    //         ->where('complaint_status', '!=', '')
+    //         ->whereIn('complaint_type', ['समस्या', 'विकास']);
+
+
+    //     $filter = $request->input('filter', 'all');
+
+    //     switch ($filter) {
+    //         case 'आज':
+    //             $query->whereDate('posted_date', Carbon::today());
+    //             break;
+    //         case 'कल':
+    //             $query->whereDate('posted_date', Carbon::yesterday());
+    //             break;
+    //         case 'पिछला सप्ताह':
+    //             $query->whereBetween('posted_date', [Carbon::now()->subWeek(), Carbon::now()]);
+    //             break;
+    //         case 'पिछला माह':
+    //             $query->whereBetween('posted_date', [Carbon::now()->subMonth(), Carbon::now()]);
+    //             break;
+    //     }
+
+    //     $data = $query
+    //         ->groupBy('complaint_status')
+    //         ->orderBy('total', 'DESC')
+    //         ->get()
+    //         ->map(function ($item) use ($statusLabels) {
+    //             return [
+    //                 'status' => $statusLabels[$item->complaint_status] ?? 'अन्य',
+    //                 'total' => $item->total
+    //             ];
+    //         });
+
+    //     return response()->json($data);
+    // }
+
+
     public function fetchStatus(Request $request)
     {
         $statusLabels = [
@@ -255,43 +304,47 @@ class ManagerController extends Controller
             5 => 'रद्द',
         ];
 
-        $query = DB::table('complaint')
-            ->select('complaint_status', DB::raw('COUNT(*) as total'))
-            ->whereNotNull('complaint_status')
-            ->where('complaint_status', '!=', '')
-            ->whereIn('complaint_type', ['समस्या', 'विकास']);
+        $latestReplyIds = DB::table('complaint_reply')
+            ->select('complaint_id', DB::raw('MAX(complaint_reply_id) as latest_id'))
+            ->groupBy('complaint_id');
 
-       
+        $query = DB::table('complaint_reply as cr')
+            ->joinSub($latestReplyIds, 'latest', function ($join) {
+                $join->on('cr.complaint_id', '=', 'latest.complaint_id')
+                    ->on('cr.complaint_reply_id', '=', 'latest.latest_id');
+            })
+            ->join('complaint as c', 'c.complaint_id', '=', 'cr.complaint_id')
+            ->whereIn('c.complaint_type', ['समस्या', 'विकास']);
+
         $filter = $request->input('filter', 'all');
+        $dates = match ($filter) {
+            'आज' => [Carbon::today(), Carbon::today()],
+            'कल' => [Carbon::yesterday(), Carbon::yesterday()],
+            'पिछले सात दिन' => [Carbon::now()->subWeek(), Carbon::now()],
+            'पिछले तीस दिन' => [Carbon::now()->subMonth(), Carbon::now()],
+            default => null,
+        };
 
-        switch ($filter) {
-            case 'आज':
-                $query->whereDate('posted_date', Carbon::today());
-                break;
-            case 'कल':
-                $query->whereDate('posted_date', Carbon::yesterday());
-                break;
-            case 'पिछला सप्ताह':
-                $query->whereBetween('posted_date', [Carbon::now()->subWeek(), Carbon::now()]);
-                break;
-            case 'पिछला माह':
-                $query->whereBetween('posted_date', [Carbon::now()->subMonth(), Carbon::now()]);
-                break;
+        if ($dates) {
+            $query->whereBetween('cr.reply_date', $dates);
         }
 
         $data = $query
-            ->groupBy('complaint_status')
-            ->orderBy('total', 'DESC')
+            ->select('cr.complaint_status', DB::raw('COUNT(*) as total'))
+            ->groupBy('cr.complaint_status')
+            ->orderByDesc('total')
             ->get()
             ->map(function ($item) use ($statusLabels) {
                 return [
                     'status' => $statusLabels[$item->complaint_status] ?? 'अन्य',
-                    'total' => $item->total
+                    'total' => $item->total,
                 ];
             });
 
         return response()->json($data);
     }
+
+
 
     public function fetchDashboardStats()
     {
@@ -358,16 +411,16 @@ class ManagerController extends Controller
             ->distinct('complaint_reply.complaint_id')
             ->count('complaint_reply.complaint_id');
 
-        $forwardedToOthers = (clone $latestReplies)
-            ->where('complaint_reply.forwarded_to', '!=', $userId)
-            ->whereNotNull('complaint_reply.forwarded_to')
-            ->where('complaint_reply.forwarded_to', '!=', 0)
-            ->distinct('complaint_reply.complaint_id')
-            ->count('complaint_reply.complaint_id');
+        // $forwardedToOthers = (clone $latestReplies)
+        //     ->where('complaint_reply.forwarded_to', '!=', $userId)
+        //     ->whereNotNull('complaint_reply.forwarded_to')
+        //     ->where('complaint_reply.forwarded_to', '!=', 0)
+        //     ->distinct('complaint_reply.complaint_id')
+        //     ->count('complaint_reply.complaint_id');
 
         return response()->json([
             'forwarded_to_you' => $forwardedToYou,
-            'forwarded_to_others' => $forwardedToOthers,
+            // 'forwarded_to_others' => $forwardedToOthers,
         ]);
     }
 
@@ -413,6 +466,37 @@ class ManagerController extends Controller
 
         return response()->json($result);
     }
+
+    public function countUnheardComplaints()
+    {
+        $validComplaintIdsQuery = DB::table('complaint_reply as cr')
+            ->select('cr.complaint_id')
+            ->join(DB::raw('(
+            SELECT complaint_id, COUNT(*) as reply_count, MIN(complaint_reply_id) as min_id
+            FROM complaint_reply
+            GROUP BY complaint_id
+            HAVING COUNT(*) = 1
+        ) as reply_info'), function ($join) {
+                $join->on('cr.complaint_id', '=', 'reply_info.complaint_id')
+                    ->on('cr.complaint_reply_id', '=', 'reply_info.min_id');
+            })
+            ->where('cr.complaint_status', 1)
+            ->where('cr.complaint_reply', 'शिकायत दर्ज की गई है।')
+            ->where('cr.forwarded_to', 6)
+            ->whereNull('cr.selected_reply');
+
+        $count = DB::table('complaint')
+            ->whereIn('complaint_id', $validComplaintIdsQuery)
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->count();
+
+        return response()->json(['count' => $count]);
+    }
+
+
+
+
+
 
 
     public function sectionView($section, Request $request)
@@ -519,6 +603,7 @@ class ManagerController extends Controller
 
                 $label = $request->query('status');
                 $filter = $request->query('filter', 'सभी');
+
                 $statusCode = collect($statusMap)
                     ->filter(fn($v, $k) => trim($k) === trim($label))
                     ->first();
@@ -527,29 +612,42 @@ class ManagerController extends Controller
                     abort(400, 'Invalid status');
                 }
 
-                $complaints = Complaint::where('complaint_status', $statusCode)
-                    ->whereIn('complaint_type', ['समस्या', 'विकास']);
+                $latestReplyIds = DB::table('complaint_reply')
+                    ->select('complaint_id', DB::raw('MAX(complaint_reply_id) as latest_id'))
+                    ->groupBy('complaint_id');
 
-                switch ($filter) {
-                    case 'आज':
-                        $complaints->whereDate('posted_date', Carbon::today());
-                        break;
-                    case 'कल':
-                        $complaints->whereDate('posted_date', Carbon::yesterday());
-                        break;
-                    case 'पिछला सप्ताह':
-                        $complaints->whereBetween('posted_date', [Carbon::now()->subWeek(), Carbon::now()]);
-                        break;
-                    case 'पिछला माह':
-                        $complaints->whereBetween('posted_date', [Carbon::now()->subMonth(), Carbon::now()]);
-                        break;
+                $query = DB::table('complaint_reply as cr')
+                    ->joinSub($latestReplyIds, 'latest', function ($join) {
+                        $join->on('cr.complaint_id', '=', 'latest.complaint_id')
+                            ->on('cr.complaint_reply_id', '=', 'latest.latest_id');
+                    })
+                    ->join('complaint as c', 'c.complaint_id', '=', 'cr.complaint_id')
+                    ->where('cr.complaint_status', $statusCode)
+                    ->whereIn('c.complaint_type', ['समस्या', 'विकास']);
+
+                $dates = match ($filter) {
+                    'आज' => [Carbon::today(), Carbon::today()],
+                    'कल' => [Carbon::yesterday(), Carbon::yesterday()],
+                    'पिछले सात दिन' => [Carbon::now()->subWeek(), Carbon::now()],
+                    'पिछले तीस दिन' => [Carbon::now()->subMonth(), Carbon::now()],
+                    default => null,
+                };
+
+                if ($dates) {
+                    $query->whereBetween('cr.reply_date', $dates);
                 }
 
-                $complaints = $complaints->orderBy('posted_date', 'desc')->get();
+                $complaintIds = $query->pluck('c.complaint_id');
+
+                $complaints = Complaint::whereIn('complaint_id', $complaintIds)
+                    ->orderBy('posted_date', 'desc')
+                    ->get();
+
                 $complaints = $loadForwardedTo($complaints);
 
                 $title = "शिकायतें ({$label}) - {$filter}";
                 break;
+
 
 
             case 'date-wise':
@@ -656,6 +754,34 @@ class ManagerController extends Controller
                 $complaints = $loadForwardedTo($complaints);
 
                 $title = "निर्देशित शिकायतें (" . $managerName . ")";
+                break;
+
+            case 'not_opened':
+
+                $validComplaintIds = DB::table('complaint_reply as cr')
+                    ->select('cr.complaint_id')
+                    ->join(DB::raw('(
+                            SELECT complaint_id, COUNT(*) as reply_count, MIN(complaint_reply_id) as min_id
+                            FROM complaint_reply
+                            GROUP BY complaint_id
+                            HAVING COUNT(*) = 1
+                        ) as reply_info'), function ($join) {
+                        $join->on('cr.complaint_id', '=', 'reply_info.complaint_id')
+                            ->on('cr.complaint_reply_id', '=', 'reply_info.min_id');
+                    })
+                    ->where('cr.complaint_status', 1)
+                    ->where('cr.complaint_reply', 'शिकायत दर्ज की गई है।')
+                    ->where('cr.forwarded_to', 6)
+                    ->whereNull('cr.selected_reply');
+
+                $complaints = Complaint::whereIn('complaint_id', $validComplaintIds->pluck('complaint_id'))
+                    ->whereIn('complaint_type', ['समस्या', 'विकास'])
+                    ->orderBy('posted_date', 'desc')
+                    ->get();
+
+                $complaints = $loadForwardedTo($complaints);
+
+                $title = "अनसुनी शिकायतें";
                 break;
 
             default:
@@ -2094,8 +2220,10 @@ class ManagerController extends Controller
             ->get();
         $replyOptions = ComplaintReply::all();
         $departments = Department::all();
+        $loggedInManagerId = session('user_id');
+
         $managers = User::where('role', 2)
-            ->where('admin_id', '!=', session('user_id'))
+            ->where('admin_id', '!=', $loggedInManagerId) // exclude logged-in manager
             ->get();
 
         return view('manager/details_complaints', [
@@ -2104,6 +2232,7 @@ class ManagerController extends Controller
             'replyOptions' => $replyOptions,
             'departments' => $departments,
             'managers' => $managers,
+            'loggedInManagerId' => $loggedInManagerId
         ]);
     }
 
@@ -2113,7 +2242,6 @@ class ManagerController extends Controller
             'cmp_reply' => 'required|string',
             'cmp_status' => 'required|in:1,2,3,4,5',
             'forwarded_to' => [
-                'required_if:cmp_status,1,2,3',
                 'nullable',
                 'exists:admin_master,admin_id'
             ],
@@ -2145,10 +2273,15 @@ class ManagerController extends Controller
             $reply->c_video = $request->c_video;
         }
 
+        $userId = session('user_id');
+        $userRole = session('logged_in_role');
+
         if (in_array((int)$request->cmp_status, [4, 5])) {
             $reply->forwarded_to = 0;
         } else {
-            $reply->forwarded_to = $request->forwarded_to;
+            $reply->forwarded_to = $request->forwarded_to ?? (
+                ($userRole == 2) ? $userId : null
+            );
         }
 
         if ($request->filled('contact_status')) {
@@ -2519,13 +2652,15 @@ class ManagerController extends Controller
             'department_id' => 'required|exists:department_master,department_id',
             'designation_id' => 'required|exists:designation_master,designation_id',
             'name' => 'required|string|max:255',
-            'mobile' => 'required|digits:10'
+            'mobile' => 'required|digits:10',
+            'email' => 'required|email|max:255'
         ]);
 
         $exists = DB::table('create_adhikari_master')
             ->where('department_id', $request->department_id)
             ->where('designation_id', $request->designation_id)
             ->where('mobile', $request->mobile)
+            ->where('email', $request->email)
             ->exists();
 
         if ($exists) {
@@ -2537,6 +2672,7 @@ class ManagerController extends Controller
             'designation_id' => $request->designation_id,
             'name' => $request->name,
             'mobile' => $request->mobile,
+            'email' => $request->email,
             'created_at' => now(),
         ]);
 
@@ -2558,7 +2694,8 @@ class ManagerController extends Controller
             'department_id' => 'required|exists:department_master,department_id',
             'designation_id' => 'required|exists:designation_master,designation_id',
             'name' => 'required|string|max:255',
-            'mobile' => 'required|digits:10'
+            'mobile' => 'required|digits:10',
+            'email' => 'required|email|max:255'
         ]);
 
         $adhikari = Adhikari::findOrFail($id);
@@ -2567,7 +2704,9 @@ class ManagerController extends Controller
             'department_id' => $request->department_id,
             'designation_id' => $request->designation_id,
             'name' => $request->name,
-            'mobile' => $request->mobile
+            'mobile' => $request->mobile,
+            'email' => $request->email,
+            'updated_at' => now(),
         ]);
 
         return redirect()->route('adhikari.index')->with('update_msg', 'अधिकारी अपडेट किया गया!');
