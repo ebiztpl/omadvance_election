@@ -212,6 +212,16 @@
                         </div>
 
                         <div class="col-md-6">
+                            <a id="forward1" href="/complaints/not_opened" target="_blank"
+                                class="forwarded-btn d-flex justify-content-between align-items-center p-3">
+                                <div class="text-left">
+                                    <div class="subtitle font-weight-bold">अनसुनी शिकायतें</div>
+                                </div>
+                                <span class="count-badge" id="count-not-opened">0</span>
+                            </a>
+                        </div>
+
+                        {{-- <div class="col-md-6">
                             <a id="forward1" href="/complaints/forwarded?direction=others" target="_blank"
                                 class="forwarded-btn d-flex justify-content-between align-items-center p-3">
                                 <div class="text-left">
@@ -219,7 +229,7 @@
                                 </div>
                                 <span class="count-badge" id="count-others">0</span>
                             </a>
-                        </div>
+                        </div> --}}
                     </div>
                 </div>
 
@@ -272,8 +282,8 @@
                                         <option value="सभी" selected>सभी</option>
                                         <option value="आज">आज</option>
                                         <option value="कल">कल</option>
-                                        <option value="पिछला सप्ताह">पिछला सप्ताह</option>
-                                        <option value="पिछला माह">पिछला माह</option>
+                                        <option value="पिछले सात दिन">पिछले सात दिन</option>
+                                        <option value="पिछले तीस दिन">पिछले तीस दिन</option>
                                     </select>
                                 </div>
                                 <ul class="mt-3" id="status-count-list"
@@ -778,13 +788,13 @@
                 //         } else {
                 //             data.forEach(item => {
                 //                 $list.append(`
-                //                  <a href="/complaints/status-details?status=${item.status}" target="_blank"                  class="text-decoration-none" style="color: black">
-                //             <li class="d-flex justify-content-between border-bottom py-1">
-                //                 <span>${item.status}</span>
-                //                 <span class="badge bg-success text-white">${item.total}</span>
-                //             </li>
-                //                     </a>
-                //         `);
+        //                  <a href="/complaints/status-details?status=${item.status}" target="_blank"                  class="text-decoration-none" style="color: black">
+        //             <li class="d-flex justify-content-between border-bottom py-1">
+        //                 <span>${item.status}</span>
+        //                 <span class="badge bg-success text-white">${item.total}</span>
+        //             </li>
+        //                     </a>
+        //         `);
                 //             });
                 //         }
                 //     },
@@ -801,7 +811,7 @@
                         method: "GET",
                         data: {
                             filter: filter
-                        }, 
+                        },
                         dataType: "json",
                         success: function(data) {
                             const $list = $("#status-count-list");
@@ -878,7 +888,7 @@
                         dataType: 'json',
                         success: function(data) {
                             $('#count-you').text(data.forwarded_to_you);
-                            $('#count-others').text(data.forwarded_to_others);
+                            // $('#count-others').text(data.forwarded_to_others);
                         },
                         error: function(xhr, status, error) {
                             console.error('Error fetching forwarded counts:', error);
@@ -913,6 +923,18 @@
                         console.error("Error fetching Status:", error);
                         $("#forward-count-list").html(
                             `<li class="text-danger">डेटा लोड करने में त्रुटि</li>`);
+                    }
+                });
+
+
+                $.ajax({
+                    url: "/ajax/complaints/not_opened_count",
+                    type: "GET",
+                    success: function(data) {
+                        $('#count-not-opened').text(data.count);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error fetching count:", error);
                     }
                 });
             });

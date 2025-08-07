@@ -15,6 +15,7 @@ class Adhikari extends Model
         'designation_id',
         'name',
         'mobile',
+        'email'
     ];
 
     // Relationships
