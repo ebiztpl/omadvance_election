@@ -30,6 +30,7 @@
                                         <th>से बकाया</th>
                                         <th>स्थिति</th>
                                         <th>आवेदक</th>
+                                        <th>शिकायत प्रकार</th>
                                         <th>फॉरवर्ड अधिकारी</th>
                                         <th>आगे देखें</th>
                                     </tr>
@@ -90,6 +91,8 @@
                                                     {{ $complaint->registrationDetails->name ?? '-' }}
                                                 @endif
                                             </td>
+                                            <td>{{ $complaint->complaint_type ?? '' }}</td>
+
                                             <td>
                                                {{ $complaint->forwarded_to_name ?? '-' }} <br>
                                                {{ $complaint->forwarded_to_date }}
@@ -101,6 +104,7 @@
                                                  
                                                 @endif --}}
                                             </td>
+                                            
                                             <td>
                                                 <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"
                                                     class="btn btn-sm btn-primary" style="white-space: nowrap;">

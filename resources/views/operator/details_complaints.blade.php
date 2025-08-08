@@ -193,6 +193,7 @@
                                     <button type="button" class="btn btn-sm btn-info view-details-btn" data-toggle="modal"
                                         data-target="#detailsModal" data-reply="{{ $reply->complaint_reply }}"
                                         data-contact="{{ $reply->contact_status }}"
+                                         data-details="{{ $reply->contact_update }}"
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
                                         data-status="{{ strip_tags($reply->statusTextPlain()) }}"
@@ -268,6 +269,7 @@
                                             <th>तारीख</th>
                                             <th>भेजा गया</th>
                                             <th>संपर्क स्थिति</th>
+                                             <th>संपर्क विवरण</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -277,6 +279,7 @@
                                             <td id="modal-date">—</td>
                                             <td id="modal-admin">—</td>
                                             <td id="modal-contact">—</td>
+                                             <td id="modal-details">—</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -422,7 +425,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-3">
+                        {{-- <div class="col-md-3">
                             <label class="form-label">संपर्क स्थिति:</label>
                             <select name="contact_status" class="form-control">
                                 <option value="">--चयन करें--</option>
@@ -436,7 +439,7 @@
                                 <option value="SMS भेजा गया">SMS/Whatsapp भेजा गया</option>
                                 <option value="फोन नंबर उपलब्ध नहीं है">फोन नंबर उपलब्ध नहीं है</option>
                             </select>
-                        </div>
+                        </div> --}}
 
                     </div>
 
@@ -512,6 +515,7 @@
             $(document).on('click', '.view-details-btn', function() {
                 const reply = $(this).data('reply') || '—';
                 const contact = $(this).data('contact') || '—';
+                const details = $(this).data('details') || '—';
                 const replyDate = $(this).data('reply-date') || '—';
                 const status = $(this).data('status') || '—';
                 const admin = $(this).data('admin') || '—';
@@ -528,6 +532,7 @@
                 $('#modal-admin').text(admin);
                 $('#modal-predefined').text(predefined);
                 $('#modal-contact').text(contact);
+                 $('#modal-details').text(details);
 
                 cbPhoto ? $('#cb-photo-link').attr('href', cbPhoto).show() : $('#cb-photo-link').hide();
                 caPhoto ? $('#ca-photo-link').attr('href', caPhoto).show() : $('#ca-photo-link').hide();
