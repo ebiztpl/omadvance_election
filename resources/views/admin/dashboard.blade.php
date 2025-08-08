@@ -232,6 +232,9 @@
             <div class="col-md-12">
                 <div class="card" id="table_card" style="display: none;">
                     <div class="card-body">
+                        <button id="download_full_data" class="btn btn-primary mb-3" style="display: none; float: right">
+                            पूरा डेटा डाउनलोड करें
+                        </button>
 
                         @if (session('success'))
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -260,16 +263,20 @@
                             </div>
                         @endif
 
-                        <form method="post" action="{{ route('dashboard.download') }}" class="mb-5">
-                            @csrf
-                            <input type="hidden" name="download_data_whr" id="download_data_whr" value="">
-                            <button type="submit" name="download" class="btn btn-danger pull-right">
-                                <i class="fa fa-download"></i> Download Filter Data
-                            </button>
-                        </form>
-
                         <div id="filtered_data" class="table-responsive">
-
+                            <table class="display table-bordered" style="min-width: 845px" id="example">
+                                <thead>
+                                    <tr>
+                                        <th>Sr.No.</th>
+                                        <th>Member ID</th>
+                                        <th>Name</th>
+                                        <th>Mobile</th>
+                                        <th>Gender</th>
+                                        <th>Entry Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -281,119 +288,151 @@
 
     @push('scripts')
         <script>
-            $("#data-filter").click(function() {
-                $("#loader-wrapper").show();
+            const filterParams = () => {
+                return {
+                    _token: "{{ csrf_token() }}",
+                    main_mobile: $("#main_mobile").val(),
+                    name: $("#name").val(),
+                    gender: $("#gender").val(),
+                    category: $("#category").val(),
+                    business: $("#business").val(),
+                    district: $("#district").val(),
+                    txtvidhansabha: $("#txtvidhansabha").val(),
+                    mandal: $("#mandal").val(),
+                    txtjati: $("#txtjati").val(),
+                    religion: $("#religion").val(),
+                    from_age: $("#from_age").val(),
+                    to_age: $("#to_age").val(),
+                    education: $("#education").val(),
+                    party_name: $("#party_name").val(),
+                    membership: $("#membership").val(),
+                    interest_area: $("#interest_area").val(),
+                    family_member: $("#family_member").val(),
+                    vehicle: $("#vehicle").val(),
+                    whatsapp: $("#whatsapp").val()
+                };
+            };
 
-                let where = [];
-                const getVal = id => $(`#${id}`).val();
 
-                if (getVal("main_mobile")) where.push(`reg.member_id = '${getVal("main_mobile")}'`);
-                if (getVal("name")) where.push(`reg.name = '${getVal("name")}'`);
-                if (getVal("gender")) where.push(`reg.gender = '${getVal("gender")}'`);
-                if (getVal("category")) where.push(`reg.caste = '${getVal("category")}'`);
-                if (getVal("business")) where.push(`reg.business = '${getVal("business")}'`);
-                if (getVal("district")) where.push(`st.district = '${getVal("district")}'`);
-                if (getVal("txtvidhansabha")) where.push(`st.vidhansabha = '${getVal("txtvidhansabha")}'`);
-                if (getVal("mandal")) where.push(`st.mandal = '${getVal("mandal")}'`);
-                if (getVal("txtjati")) where.push(`reg.jati = '${getVal("txtjati")}'`);
-                if (getVal("religion")) where.push(`reg.religion = '${getVal("religion")}'`);
-                if (getVal("from_age") && getVal("to_age")) where.push(
-                    `reg.age BETWEEN ${getVal("from_age")} AND ${getVal("to_age")}`);
-                if (getVal("education")) where.push(`reg.education = '${getVal("education")}'`);
-                if (getVal("party_name")) where.push(`st4.party_name = '${getVal("party_name")}'`);
-                if (getVal("membership")) where.push(`reg.membership = '${getVal("membership")}'`);
-                if (getVal("interest_area")) where.push(`st3.intrest = '${getVal("interest_area")}'`);
+            let table;
 
-                if (getVal("family_member")) {
-                    let range = getVal("family_member").split(" AND ");
-                    if (range.length === 2) {
-                        where.push(`st3.total_member BETWEEN ${range[0]} AND ${range[1]}`);
-                    }
+            function loadDataTable() {
+                if ($.fn.DataTable.isDataTable('#example')) {
+                    $('#example').DataTable().clear().destroy();
                 }
 
-                if (getVal("vehicle")) where.push(`st3.${getVal("vehicle")} > 0`);
-                if (getVal("whatsapp") !== "") where.push(`reg.mobile1_whatsapp = '${getVal("whatsapp")}'`);
+                $("#loader-wrapper").show();
+                $('#total_count').text('');
 
-                let whereStr = where.join(" AND ");
-                $("#download_data_whr").val(whereStr);
-
-                $.ajax({
-                    url: "{{ route('dashboard.filter') }}",
-                    type: "POST",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        main_mobile: $("#main_mobile").val(),
-                        name: $("#name").val(),
-                        gender: $("#gender").val(),
-                        category: $("#category").val(),
-                        business: $("#business").val(),
-                        district: $("#district").val(),
-                        txtvidhansabha: $("#txtvidhansabha").val(),
-                        mandal: $("#mandal").val(),
-                        txtjati: $("#txtjati").val(),
-                        religion: $("#religion").val(),
-                        from_age: $("#from_age").val(),
-                        to_age: $("#to_age").val(),
-                        education: $("#education").val(),
-                        party_name: $("#party_name").val(),
-                        membership: $("#membership").val(),
-                        interest_area: $("#interest_area").val(),
-                        family_member: $("#family_member").val(),
-                        vehicle: $("#vehicle").val(),
-                        whatsapp: $("#whatsapp").val()
-                    },
-                    success: function(response) {
-                        if (response.count > 0) {
-                            $("#filtered_data").html(response.html);
-                            if ($.fn.DataTable.isDataTable("#example")) {
-                                $('#example').DataTable().destroy();
-                            }
-
-
-                            $('#example').DataTable({
-                                dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
-                                    '<"row"<"col-sm-12"tr>>' +
-                                    '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
-                                buttons: [{
-                                        extend: "csv",
-                                        exportOptions: {
-                                            modifier: {
-                                                page: "all"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        extend: "excel",
-                                        exportOptions: {
-                                            modifier: {
-                                                page: "all"
-                                            }
-                                        }
-                                    }
-                                ],
-                                lengthMenu: [
-                                    [10, 25, 50, 100, 500, -1],
-                                    [10, 25, 50, 100, 500, "All"]
-                                ],
-                                pageLength: 10,
-                                responsive: true,
-                            });
-
-
-                            $("#table_card").show();
-                        } else {
-                            $("#filtered_data").html('<div class="text-danger">No data found.</div>');
-                            $("#table_card").show();
+                table = $('#example').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    pageLength: 10,
+                    lengthChange: true,
+                    dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
+                        '<"row"<"col-sm-12"tr>>' +
+                        '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+                    buttons: [
+                        'csv', 'excel'
+                    ],
+                    lengthMenu: [
+                        [10, 25, 50, 100, 500, 1000],
+                        [10, 25, 50, 100, 500, 1000],
+                    ],
+                    ajax: {
+                        url: '{{ route('dashboard.filter') }}',
+                        type: 'POST',
+                        data: function(d) {
+                            d._token = "{{ csrf_token() }}";
+                            d.main_mobile = $("#main_mobile").val();
+                            d.name = $("#name").val();
+                            d.gender = $("#gender").val();
+                            d.category = $("#category").val();
+                            d.business = $("#business").val();
+                            d.district = $("#district").val();
+                            d.txtvidhansabha = $("#txtvidhansabha").val();
+                            d.mandal = $("#mandal").val();
+                            d.txtjati = $("#txtjati").val();
+                            d.religion = $("#religion").val();
+                            d.from_age = $("#from_age").val();
+                            d.to_age = $("#to_age").val();
+                            d.education = $("#education").val();
+                            d.party_name = $("#party_name").val();
+                            d.membership = $("#membership").val();
+                            d.interest_area = $("#interest_area").val();
+                            d.family_member = $("#family_member").val();
+                            d.vehicle = $("#vehicle").val();
+                            d.whatsapp = $("#whatsapp").val();
+                        },
+                        dataSrc: function(json) {
+                            $('#loader-wrapper').hide();
+                            $('#total').text(json.recordsFiltered);
+                            return json.data;
+                        },
+                        complete: function() {
+                            $("#loader-wrapper").hide();
+                        },
+                        error: function() {
+                            $('#loader-wrapper').hide();
+                            console.error(xhr.responseText);
                         }
-
-                        $("#total").text(response.count);
-                        $("#loader-wrapper").hide();
                     },
-                    error: function() {
-                        $("#loader-wrapper").hide();
-                    }
+                    columns: [{
+                            data: 'DT_RowIndex',
+                            name: 'DT_RowIndex'
+                        },
+                        {
+                            data: 'member_id',
+                            name: 'member_id'
+                        },
+                        {
+                            data: 'name',
+                            name: 'name'
+                        },
+                        {
+                            data: 'mobile',
+                            name: 'mobile'
+                        },
+                        {
+                            data: 'gender',
+                            name: 'gender'
+                        },
+                        {
+                            data: 'entry_date',
+                            name: 'entry_date'
+                        },
+                        {
+                            data: 'action',
+                            name: 'action',
+                            orderable: false,
+                            searchable: false
+                        }
+                    ]
+                });
+
+                $('#example').on('preXhr.dt', function() {
+                    $("#loader-wrapper").show();
+                });
+
+                $('#example').on('xhr.dt', function() {
+                    $("#loader-wrapper").hide();
+                });
+
+                $("#download_full_data").off('click').on('click', function() {
+                    $("#loader-wrapper").show();
+                    const query = $.param(filterParams);
+                    window.location.href = `{{ route('dashboard.download') }}?${query}`;
+                });
+            }
+
+            $(document).ready(function() {
+                $('#data-filter').on('click', function() {
+                    $('#table_card').show();
+                    $("#download_full_data").show();
+                    loadDataTable();
                 });
             });
         </script>
     @endpush
+
 @endsection

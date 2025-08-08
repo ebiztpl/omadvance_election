@@ -106,8 +106,116 @@ class AdminController extends Controller
         return view('admin/dashboard', compact('districts', 'jatis'));
     }
 
+    // public function filter(Request $request)
+    // {
+    //     $start = $request->input('start', 0);
+    //     $length = $request->input('length', 10);
+
+    //     $query = \DB::table('registration_form as reg')
+    //         ->join('step2 as st', 'reg.registration_id', '=', 'st.registration_id')
+    //         ->join('step3 as st3', 'reg.registration_id', '=', 'st3.registration_id')
+    //         ->join('step4 as st4', 'reg.registration_id', '=', 'st4.registration_id');
+
+    //     if ($request->main_mobile) {
+    //         $query->where('reg.member_id', $request->main_mobile);
+    //     }
+    //     if ($request->name) {
+    //         $query->where('reg.name', $request->name);
+    //     }
+    //     if ($request->gender) {
+    //         $query->where('reg.gender', $request->gender);
+    //     }
+    //     if ($request->category) {
+    //         $query->where('reg.caste', $request->category);
+    //     }
+    //     if ($request->business) {
+    //         $query->where('reg.business', $request->business);
+    //     }
+    //     if ($request->district) {
+    //         $query->where('st.district', $request->district);
+    //     }
+    //     if ($request->txtvidhansabha) {
+    //         $query->where('st.vidhansabha', $request->txtvidhansabha);
+    //     }
+    //     if ($request->mandal) {
+    //         $query->where('st.mandal', $request->mandal);
+    //     }
+    //     if ($request->txtjati) {
+    //         $query->where('reg.jati', $request->txtjati);
+    //     }
+    //     if ($request->religion) {
+    //         $query->where('reg.religion', $request->religion);
+    //     }
+    //     if ($request->from_age && $request->to_age) {
+    //         $query->whereBetween('reg.age', [$request->from_age, $request->to_age]);
+    //     }
+    //     if ($request->education) {
+    //         $query->where('reg.education', $request->education);
+    //     }
+    //     if ($request->party_name) {
+    //         $query->where('st4.party_name', $request->party_name);
+    //     }
+    //     if ($request->membership) {
+    //         $query->where('reg.membership', $request->membership);
+    //     }
+    //     if ($request->interest_area) {
+    //         $query->where('st3.intrest', $request->interest_area);
+    //     }
+    //     if ($request->family_member) {
+    //         $range = explode(' AND ', $request->family_member);
+    //         if (count($range) === 2) {
+    //             $query->whereBetween('st3.total_member', $range);
+    //         }
+    //     }
+    //     if ($request->vehicle) {
+    //         $query->where('st3.' . $request->vehicle, '>', 0);
+    //     }
+    //     if ($request->whatsapp !== null) {
+    //         $query->where('reg.mobile1_whatsapp', $request->whatsapp);
+    //     }
+
+    //     $total = $query->count();
+
+    //     $registrations = $query
+    //         ->select('reg.registration_id', 'reg.member_id', 'reg.name', 'reg.mobile1', 'reg.gender', 'reg.date_time')
+    //         ->orderBy('reg.registration_id', 'desc')
+    //         ->offset($start)
+    //         ->limit($length)
+    //         ->get();
+
+    //     $x = $start;
+    //     foreach ($registrations as $row) {
+    //         $x++;
+    //         $date = date('d-m-Y', strtotime($row->date_time));
+    //         $html .= '<tr>';
+    //         $html .= '<td>' . $x . '</td>';
+    //         $html .= '<td>' . $row->member_id . '</td>';
+    //         $html .= '<td>' . $row->name . '</td>';
+    //         $html .= '<td>' . $row->mobile1 . '</td>';
+    //         $html .= '<td>' . $row->gender . '</td>';
+    //         $html .= '<td>' . $date . '</td>';
+    //         $html .= '<td style="white-space: nowrap;">
+    //           <a href="' . route('register.show', $row->registration_id) . '" class="btn btn-sm btn-success">View</a>
+    //           <a href="' . route('register.card', $row->registration_id) . '" class="btn btn-sm btn-primary">Card</a>
+    //           <a href="' . route('register.destroy', $row->registration_id) . '" class="btn btn-sm btn-danger">Delete</a>
+    //         </td>';
+    //         $html .= '</tr>';
+    //     }
+
+    //     $html .= '</tbody></table>';
+
+    //     return response()->json([
+    //         'html' => $html,
+    //         'count' => $total,
+    //     ]);
+    // }
+
+
     public function filter(Request $request)
     {
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+
         $query = \DB::table('registration_form as reg')
             ->join('step2 as st', 'reg.registration_id', '=', 'st.registration_id')
             ->join('step3 as st3', 'reg.registration_id', '=', 'st3.registration_id')
@@ -167,59 +275,242 @@ class AdminController extends Controller
         if ($request->vehicle) {
             $query->where('st3.' . $request->vehicle, '>', 0);
         }
-        if ($request->whatsapp !== null) {
+        if (!is_null($request->whatsapp)) {
             $query->where('reg.mobile1_whatsapp', $request->whatsapp);
         }
 
-        $registrations = $query->get();
-        $count = $registrations->count();
+        $totalFiltered = $query->count();
 
-        $html = '<table class="display table-bordered" style="min-width: 845px" id="example">';
-        $html .= '<thead>
-                <tr>
-                <th>Sr.No.</th>
-                    <th>Member ID</th>
-                    <th>Name</th>
-                    <th>Mobile</th>
-                    <th>Gender</th>
-                    <th>Entry Date</th>
-                    <th>Action</th>
-                </tr>
-              </thead><tbody>';
+        $data = $query
+            ->select('reg.registration_id', 'reg.member_id', 'reg.name', 'reg.mobile1', 'reg.gender', 'reg.date_time')
+            ->orderBy('reg.registration_id', 'desc')
+            ->offset($start)
+            ->limit($length)
+            ->get();
 
+        $formatted = [];
+        $index = $start;
 
-        $x = 0;
-        foreach ($registrations as $row) {
-            $x += 1;
-            $date = date('d-m-Y', strtotime($row->date_time));
-            $html .= '<tr>';
-            $html .= '<td>' . $x . '</td>';
-            $html .= '<td>' . $row->member_id . '</td>';
-            $html .= '<td>' . $row->name . '</td>';
-            $html .= '<td>' . $row->mobile1 . '</td>';
-            $html .= '<td>' . $row->gender . '</td>';
-            $html .= '<td>' . $date . '</td>';
-            $html .= '<td style="white-space: nowrap;">
-              <a href="' . route('register.show', $row->registration_id) . '" class="btn btn-sm btn-success">View</a>
-              <a href="' . route('register.card', $row->registration_id) . '" class="btn btn-sm btn-primary">Card</a>
-              <a href="' . route('register.destroy', $row->registration_id) . '" class="btn btn-sm btn-danger">Delete</a>
-            </td>';
-            $html .= '</tr>';
+        foreach ($data as $row) {
+            $index++;
+            $formatted[] = [
+                'DT_RowIndex' => $index,
+                'member_id' => $row->member_id,
+                'name' => $row->name,
+                'mobile' => $row->mobile1,
+                'gender' => $row->gender,
+                'entry_date' => date('d-m-Y', strtotime($row->date_time)),
+                'action' => '
+                    <div style="display: flex;">
+                        <a href="' . route('register.show', $row->registration_id) . '" class="btn btn-sm btn-success mr-2">View</a>
+                        <a href="' . route('register.card', $row->registration_id) . '" class="btn btn-sm btn-primary mr-2">Card</a>
+                        <a href="' . route('register.destroy', $row->registration_id) . '" class="btn btn-sm btn-danger">Delete</a>
+                    </div>'
+            ];
         }
 
-        $html .= '</tbody></table>';
-
         return response()->json([
-            'html' => $html,
-            'count' => $count,
+            'draw' => intval($request->input('draw')),
+            'recordsTotal' => $totalFiltered,
+            'recordsFiltered' => $totalFiltered,
+            'data' => $formatted
         ]);
     }
 
 
+
+    // public function download(Request $request)
+    // {
+    //     $condition = $request->input('download_data_whr');
+
+    //     $query = DB::table('registration_form as reg')
+    //         ->leftJoin('step2 as st2', 'st2.registration_id', '=', 'reg.registration_id')
+    //         ->leftJoin('step3 as st3', 'st3.registration_id', '=', 'reg.registration_id')
+    //         ->leftJoin('step4 as st4', 'st4.registration_id', '=', 'reg.registration_id')
+    //         ->select([
+    //             'reg.reference_id',
+    //             'reg.member_id',
+    //             'reg.name',
+    //             'reg.membership',
+    //             'reg.gender',
+    //             'reg.dob',
+    //             'reg.age',
+    //             'reg.mobile1',
+    //             'reg.mobile2',
+    //             'reg.mobile1_whatsapp',
+    //             'reg.mobile2_whatsapp',
+    //             'reg.religion',
+    //             'reg.caste',
+    //             'reg.jati',
+    //             'reg.education',
+    //             'reg.business',
+    //             'reg.position',
+    //             'reg.father_name',
+    //             'reg.email',
+    //             'st2.division_id',
+    //             'st2.district',
+    //             'st2.vidhansabha',
+    //             'st2.mandal',
+    //             'st2.nagar',
+    //             'st2.matdan_kendra_name',
+    //             'st2.loksabha',
+    //             'st3.total_member',
+    //             'st3.total_voter',
+    //             'st3.member_job',
+    //             'st3.member_name_1',
+    //             'st3.member_mobile_1',
+    //             'st3.member_name_2',
+    //             'st3.member_mobile_2',
+    //             'st3.friend_name_1',
+    //             'st3.friend_mobile_1',
+    //             'st3.friend_name_2',
+    //             'st3.friend_mobile_2',
+    //             'st3.intrest',
+    //             'st3.vehicle1',
+    //             'st3.vehicle2',
+    //             'st3.vehicle3',
+    //             'st3.permanent_address',
+    //             'st3.temp_address',
+    //             'st4.party_name',
+    //             'st4.present_post',
+    //             'st4.reason_join',
+    //             'st4.post_date',
+    //             'reg.photo',
+    //         ]);
+
+
+    //     if (!empty($condition)) {
+    //         $query->whereRaw($condition);
+    //     }
+
+    //     $data = $query->get();
+
+
+    //     $headers = [
+    //         "Content-type" => "text/csv; charset=UTF-8",
+    //         "Content-Disposition" => "attachment; filename=List_Export.csv",
+    //         "Pragma" => "no-cache",
+    //         "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+    //         "Expires" => "0"
+    //     ];
+
+    //     $columns = [
+    //         "साथी का आई डी नंबर",
+    //         "आपका सदस्यता आई डी",
+    //         "आपका नाम",
+    //         "लिंग",
+    //         "जन्म दिनांक",
+    //         "आयु",
+    //         "मोबाइल 1",
+    //         "मोबाइल 2",
+    //         "मोबाइल 1 व्हाट्सएप",
+    //         "मोबाइल 2 व्हाट्सएप",
+    //         "धर्म",
+    //         "श्रेणी",
+    //         "जाति",
+    //         "शैक्षणिक योग्यता",
+    //         "व्यवसाय",
+    //         "व्यवसायिक पद",
+    //         "पिता का नाम",
+    //         "ईमेल आईडी",
+    //         "संभाग का नाम",
+    //         "जिले का नाम",
+    //         "लोकसभा",
+    //         "विधानसभा का नाम",
+    //         "मंडल का नाम",
+    //         "नगर केंद्र/ग्राम केंद्र का नाम",
+    //         "मतदान केंद्र का नाम/क्रमांक",
+    //         "परिवार में कुल सदस्य",
+    //         "परिवार में कुल मतदाता",
+    //         "शासकीय/अशासकीय सेवा में सदस्य",
+    //         "परिवार के सदस्य नाम 1",
+    //         "परिवार के सदस्य मोबाइल 1",
+    //         "परिवार के सदस्य नाम 2",
+    //         "परिवार के सदस्य मोबाइल 2",
+    //         "मित्र / पड़ोसी नाम1",
+    //         "मित्र / पड़ोसी मोबाइल1",
+    //         "मित्र / पड़ोसी नाम2",
+    //         "मित्र / पड़ोसी मोबाइल2",
+    //         "रुचि",
+    //         "मोटरसाइकिल",
+    //         "कार",
+    //         "ट्रेक्टर",
+    //         "स्थाई पता",
+    //         "अस्थाई पता",
+    //         "राजनीतिक/सामाजिक सक्रियता",
+    //         "पद वर्तमान/भूतपूर्व",
+    //         "आप बीजेएस के सदस्य क्यों बन रहे हैं",
+    //         "दिनांक",
+    //         "Photo"
+    //     ];
+
+    //     $callback = function () use ($data, $columns) {
+    //         $file = fopen('php://output', 'w');
+
+    //         fputs($file, $bom = (chr(0xEF) . chr(0xBB) . chr(0xBF)));
+
+    //         fputcsv($file, $columns);
+
+    //         foreach ($data as $row) {
+    //             fputcsv($file, [
+    //                 $row->reference_id,
+    //                 $row->member_id,
+    //                 $row->name,
+    //                 $row->gender,
+    //                 $row->dob,
+    //                 $row->age,
+    //                 $row->mobile1,
+    //                 $row->mobile2,
+    //                 $row->mobile1_whatsapp ? 'yes' : 'no',
+    //                 $row->mobile2_whatsapp ? 'yes' : 'no',
+    //                 $row->religion,
+    //                 $row->caste,
+    //                 $row->jati,
+    //                 $row->education,
+    //                 $row->business,
+    //                 $row->position,
+    //                 $row->father_name,
+    //                 $row->email,
+    //                 $row->division_id,
+    //                 $row->district,
+    //                 $row->loksabha,
+    //                 $row->vidhansabha,
+    //                 $row->mandal,
+    //                 $row->nagar,
+    //                 $row->matdan_kendra_name,
+    //                 $row->total_member,
+    //                 $row->total_voter,
+    //                 $row->member_job,
+    //                 $row->member_name_1,
+    //                 $row->member_mobile_1,
+    //                 $row->member_name_2,
+    //                 $row->member_mobile_2,
+    //                 $row->friend_name_1,
+    //                 $row->friend_mobile_1,
+    //                 $row->friend_name_2,
+    //                 $row->friend_mobile_2,
+    //                 $row->intrest,
+    //                 $row->vehicle1,
+    //                 $row->vehicle2,
+    //                 $row->vehicle3,
+    //                 preg_replace('/[ ,]+/', '-', trim($row->permanent_address)),
+    //                 preg_replace('/[ ,]+/', '-', trim($row->temp_address)),
+    //                 $row->party_name,
+    //                 $row->present_post,
+    //                 preg_replace('/[ ,]+/', '-', trim($row->reason_join)),
+    //                 $row->post_date,
+    //                 $row->photo
+    //             ]);
+    //         }
+
+    //         fclose($file);
+    //     };
+
+    //     return new StreamedResponse($callback, 200, $headers);
+    // }
+
     public function download(Request $request)
     {
-        $condition = $request->input('download_data_whr');
-
         $query = DB::table('registration_form as reg')
             ->leftJoin('step2 as st2', 'st2.registration_id', '=', 'reg.registration_id')
             ->leftJoin('step3 as st3', 'st3.registration_id', '=', 'reg.registration_id')
@@ -275,13 +566,91 @@ class AdminController extends Controller
                 'reg.photo',
             ]);
 
+        // Apply filters from the request
+        if ($request->filled('main_mobile')) {
+            $query->where('reg.mobile1', 'like', '%' . $request->main_mobile . '%');
+        }
 
-        if (!empty($condition)) {
-            $query->whereRaw($condition);
+        if ($request->filled('name')) {
+            $query->where('reg.name', 'like', '%' . $request->name . '%');
+        }
+
+        if ($request->filled('gender')) {
+            $query->where('reg.gender', $request->gender);
+        }
+
+        if ($request->filled('category')) {
+            $query->where('reg.caste', $request->category);
+        }
+
+        if ($request->filled('business')) {
+            $query->where('reg.business', 'like', '%' . $request->business . '%');
+        }
+
+        if ($request->filled('district')) {
+            $query->where('st2.district', $request->district);
+        }
+
+        if ($request->filled('txtvidhansabha')) {
+            $query->where('st2.vidhansabha', $request->txtvidhansabha);
+        }
+
+        if ($request->filled('mandal')) {
+            $query->where('st2.mandal', $request->mandal);
+        }
+
+        if ($request->filled('txtjati')) {
+            $query->where('reg.jati', $request->txtjati);
+        }
+
+        if ($request->filled('religion')) {
+            $query->where('reg.religion', $request->religion);
+        }
+
+        if ($request->filled('from_age')) {
+            $query->where('reg.age', '>=', $request->from_age);
+        }
+
+        if ($request->filled('to_age')) {
+            $query->where('reg.age', '<=', $request->to_age);
+        }
+
+        if ($request->filled('education')) {
+            $query->where('reg.education', $request->education);
+        }
+
+        if ($request->filled('party_name')) {
+            $query->where('st4.party_name', 'like', '%' . $request->party_name . '%');
+        }
+
+        if ($request->filled('membership')) {
+            $query->where('reg.membership', $request->membership);
+        }
+
+        if ($request->filled('interest_area')) {
+            $query->where('st3.intrest', 'like', '%' . $request->interest_area . '%');
+        }
+
+        if ($request->filled('family_member')) {
+            $query->where('st3.total_member', '>=', $request->family_member);
+        }
+
+        if ($request->filled('vehicle')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('st3.vehicle1', 'like', '%' . $request->vehicle . '%')
+                    ->orWhere('st3.vehicle2', 'like', '%' . $request->vehicle . '%')
+                    ->orWhere('st3.vehicle3', 'like', '%' . $request->vehicle . '%');
+            });
+        }
+
+        if ($request->filled('whatsapp')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('reg.mobile1_whatsapp', $request->whatsapp)
+                    ->orWhere('reg.mobile2_whatsapp', $request->whatsapp);
+            });
         }
 
         $data = $query->get();
-
 
         $headers = [
             "Content-type" => "text/csv; charset=UTF-8",
@@ -344,7 +713,8 @@ class AdminController extends Controller
         $callback = function () use ($data, $columns) {
             $file = fopen('php://output', 'w');
 
-            fputs($file, $bom = (chr(0xEF) . chr(0xBB) . chr(0xBF)));
+            // UTF-8 BOM
+            fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             fputcsv($file, $columns);
 
@@ -2886,6 +3256,8 @@ class AdminController extends Controller
                     $voter_id       = $row['G'] ?? '';
                     $area_name      = $row['H'] ?? '';
                     $house          = trim($row['D'] ?? '');
+                    $house = preg_replace('/[^\p{L}\p{N}\/\- ]+/u', '', $house);
+                    $house = mb_substr($house, 0, 50);
                     $name           = $row['B'] ?? '-';
                     $father_name    = $row['C'] ?? '';
                     $age            = $row['E'] ?? '';
@@ -2913,6 +3285,14 @@ class AdminController extends Controller
                     if (!is_numeric($total_family)) throw new \Exception("Invalid total family number");
                     if (!empty($mukhiya_mobile) && !preg_match('/^\d{10}$|^\d{12}$/', $mukhiya_mobile)) {
                         throw new \Exception("Invalid Mukhiya mobile");
+                    }
+
+                    if (!empty($age) && !is_numeric($age)) {
+                        throw new \Exception("Invalid age format");
+                    }
+
+                    if (strlen($house) > 50) {
+                        throw new \Exception("House exceeds max length (50)");
                     }
 
                     $registrationData = [
@@ -3016,18 +3396,24 @@ class AdminController extends Controller
                     $originalMessage = strtolower($e->getMessage());
 
                     $knownErrors = [
+                        'missing voter_id'               => 'Voter ID is missing',
                         'missing area'                  => 'Area name is missing',
                         'invalid area'                  => 'Area not found',
                         'polling info not found'        => 'Polling info not found',
                         'house information is missing'  => 'House is required',
-                        'invalid house'                 => 'Invalid house format',
+                        'invalid house format'          => 'Invalid house format',
+                        'house exceeds max length'       => 'House exceeds max length (50)',
+                        'invalid polling number'         => 'Polling number should be numeric',
+                        'invalid total family number'    => 'Family count should be numeric',
                         'caste (jati) is required'      => 'Caste is required',
-                        'invalid polling number'        => 'Polling number should be numeric',
-                        'invalid total family number'   => 'Family count should be numeric',
-                        'invalid mukhiya mobile number' => 'Mukhiya mobile must be 10 or 12 digits',
+                        'invalid mukhiya mobile'        => 'Mukhiya mobile must be 10 or 12 digits',
+                        'invalid age format'             => 'Age should be numeric',
+                        'unsupported file format'        => 'Unsupported file format',
+                        'data truncated'                 => 'Data too long for column (check "house")',
                         'incorrect integer value'       => 'Wrong number format',
                         'invalid datetime format'       => 'Invalid date format',
-                        'duplicate voter id'            => 'Duplicate voter ID'
+                        'duplicate voter id'            => 'Duplicate voter ID',
+                        'unreadable file'                => 'Excel file corrupted or unreadable',
                     ];
 
                     $simpleReason = 'Data Processing Error';
@@ -3052,7 +3438,7 @@ class AdminController extends Controller
                         'family_count'   => $total_family,
                         'mukhiya_mobile' => $mukhiya_mobile,
                         'death_left'     => $death_or_left,
-                        'reason'         => $e->getMessage(),
+                        'reason'         => $simpleReason,
                     ];
                 }
             }
@@ -3537,12 +3923,12 @@ class AdminController extends Controller
     //         <tr>
     //             <td>' . $i++ . '</td>
     //             <td>' . $voter->name . '</td>
-	// 			<td>' . $voter->father_name . '</td>
+    // 			<td>' . $voter->father_name . '</td>
     //             <td>' . $step2->house . '</td>
     //             <td>' . $voter->age . '</td>
     //             <td>' . $voter->gender . '</td>
-	// 			<td>' . $voter->voter_id . '</td>
-	// 			<td>' . $area_name->area_name . '</td>
+    // 			<td>' . $voter->voter_id . '</td>
+    // 			<td>' . $area_name->area_name . '</td>
     //             <td>' . $voter->jati . '</td>
     //             <td>' . $step2->matdan_kendra_no . '</td>
     //             <td>' . $step3->total_member . '</td>

@@ -708,4 +708,69 @@ class OperatorController extends Controller
         return redirect()->route('operator_complaint.view', $id)
             ->with('success', 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।');
     }
+
+
+
+    public function nextFollowup() {
+        $complaints = Complaint::with([
+            'division',
+            'district',
+            'vidhansabha',
+            'mandal',
+            'gram',
+            'polling',
+            'area',
+            'admin',
+            'registrationDetails',
+            'latestNonDefaultReply',
+            'latestNonDefaultReply.predefinedReply',
+            'latestNonDefaultReply.forwardedToManager'
+        ])->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->whereHas('latestNonDefaultReply')
+        ->orderBy('posted_date', 'desc')
+        ->get();
+
+        return view('operator/next_followup', compact('complaints'));
+    }
+
+    public function updateContactStatus(Request $request, $id)
+    {
+        $request->validate([
+            'contact_status' => 'nullable|string|max:255',
+            'contact_update' => 'nullable|string|max:255',
+        ]);
+
+        $reply = \App\Models\Reply::findOrFail($id);
+        $reply->contact_status = $request->contact_status;
+        $reply->contact_update = $request->contact_update;
+        $reply->save();
+
+        return redirect()->back()->with('success', 'संपर्क स्थिति सफलतापूर्वक अपडेट की गई।');
+    }
+
+    public function followup_show($id)
+    {
+        $complaint = Complaint::with(
+            'replies.predefinedReply',
+            'replies.forwardedToManager',
+            'registration',
+            'division',
+            'district',
+            'vidhansabha',
+            'mandal',
+            'gram',
+            'polling',
+            'area',
+            'registrationDetails'
+        )->findOrFail($id);
+
+        $replyOptions = ComplaintReply::all();
+        $managers = User::where('role', 2)->get();
+
+        return view('operator/followup_details', [
+            'complaint' => $complaint,
+            'replyOptions' => $replyOptions,
+            'managers' => $managers,
+        ]);
+    }
 }

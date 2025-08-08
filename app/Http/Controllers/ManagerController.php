@@ -663,7 +663,7 @@ class ManagerController extends Controller
                     return in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']);
                 });
                 $complaints = $loadForwardedTo($complaints);
-                $title = 'शिकायतें (' . Carbon::parse($date)->format('d M Y') . ')';
+                $title = 'सुचना (' . Carbon::parse($date)->format('d M Y') . ')';
                 break;
 
             case 'forwarded':
@@ -842,9 +842,126 @@ class ManagerController extends Controller
                 abort(404);
         }
 
-        $entries = $query->orderBy('date_time', 'desc')->get();
 
-        return view('manager/contact_voter_details', compact('entries', 'title'));
+        if ($request->ajax()) {
+            $start = $request->input('start');
+            $length = $request->input('length');
+            $draw = $request->input('draw');
+
+            $total = $query->count();
+
+            $data = $query->orderBy('date_time', 'desc')
+                ->skip($start)
+                ->take($length)
+                ->get();
+
+            $results = [];
+
+            $serial = $start + 1;
+
+            foreach ($data as $voter) {
+                $viewUrl = route('voter.show', $voter->registration_id);
+                $deleteUrl = route('register.destroy', $voter->registration_id);
+
+                $actionButtons = '
+                    <div class="d-flex gap-1">
+                        <a href="' . $viewUrl . '" class="btn btn-sm btn-success mr-2">View</a>
+                        <form action="' . $deleteUrl . '" method="POST" onsubmit="return confirm(\'क्या आप वाकई रिकॉर्ड हटाना चाहते हैं?\')">
+                            ' . csrf_field() . method_field('DELETE') . '
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </div>
+                ';
+
+                $results[] = [
+                    $serial++,
+                    $voter->name,
+                    $voter->father_name,
+                    $voter->step2->house ?? '',
+                    $voter->age,
+                    $voter->gender,
+                    $voter->voter_id,
+                    $voter->step2->area->area_name ?? '-',
+                    $voter->jati,
+                    $voter->step2->matdan_kendra_no ?? '',
+                    $voter->step3->total_member ?? '',
+                    $voter->step3->mukhiya_mobile ?? '',
+                    $voter->death_left ?? '',
+                    \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y'),
+                    $actionButtons
+                ];
+            }
+
+            return response()->json([
+                'draw' => intval($draw),
+                'recordsTotal' => $total,
+                'recordsFiltered' => $total,
+                'data' => $results,
+            ]);
+        }
+
+
+        // $entries = $query->orderBy('date_time', 'desc')->paginate($perPage)->withQueryString();
+
+        return view('manager/contact_voter_details', compact('title'));
+    }
+
+    public function downloadVoters(Request $request)
+    {
+        $filter = $request->query('filter');
+        $query = RegistrationForm::with(['step2.area', 'step3']);
+
+        switch ($filter) {
+            case 'today-voters':
+                $query->whereDate('date_time', now())->where('type', 1);
+                break;
+            case 'today-contacts':
+                $query->whereDate('date_time', now())->whereIn('type', [1, 2]);
+                break;
+            case 'total-voters':
+                $query->where('type', 1);
+                break;
+            case 'total-contacts':
+                $query->whereIn('type', [1, 2]);
+                break;
+            default:
+                abort(404);
+        }
+
+        $data = $query->get();
+
+        $csvData = [];
+        foreach ($data as $voter) {
+            $csvData[] = [
+                'नाम' => $voter->name,
+                'पिता/पति' => $voter->father_name,
+                'मकान क्र.' => $voter->step2->house ?? '',
+                'उम्र' => $voter->age,
+                'लिंग' => $voter->gender,
+                'मतदाता आईडी' => $voter->voter_id,
+                'मतदान क्षेत्र' => $voter->step2->area->area_name ?? '',
+                'जाति' => $voter->jati,
+                'मतदान क्र.' => $voter->step2->matdan_kendra_no ?? '',
+                'कुल सदस्य' => $voter->step3->total_member ?? '',
+                'मुखिया मोबाइल' => $voter->step3->mukhiya_mobile ?? '',
+                'मृत्यु/स्थानांतरित' => $voter->death_left ?? '',
+                'दिनांक' => \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y'),
+            ];
+        }
+
+        $filename = 'voter_data_' . now()->format('Ymd_His') . '.csv';
+
+        $handle = fopen('php://output', 'w');
+        ob_start();
+        fputcsv($handle, array_keys($csvData[0] ?? []));
+        foreach ($csvData as $row) {
+            fputcsv($handle, $row);
+        }
+        $csv = ob_get_clean();
+
+        return response($csv)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
     public function detail_suchna($id)

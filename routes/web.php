@@ -57,9 +57,10 @@ Route::middleware('checklogin')->group(function () {
 
 
 
+    Route::get('/dashboard/download', [AdminController::class, 'download'])->name('dashboard.download');
 
     Route::get('admin/dashboard', [AdminController::class, 'index'])->name('dashboard.index');
-    Route::post('admin/dashboard/download', [AdminController::class, 'download'])->name('dashboard.download');
+    // Route::post('admin/dashboard/download', [AdminController::class, 'download'])->name('dashboard.download');
     Route::post('admin/dashboard', [AdminController::class, 'filter'])->name('dashboard.filter');
     Route::post('admin/dashboard/vidhansabha-options', [AdminController::class, 'getVidhansabha']);
     Route::post('admin/dashboard/mandal-options', [AdminController::class, 'getMandal']);
@@ -163,6 +164,7 @@ Route::middleware('checklogin')->group(function () {
         ->name('ajax.forwarded.counts');
     Route::get('/fetch-forwards', [ManagerController::class, 'getForwardedComplaintsPerManager']);
     Route::get('/ajax/complaints/not_opened_count', [ManagerController::class, 'countUnheardComplaints']);
+    Route::get('/voters/details/download', [ManagerController::class, 'downloadVoters'])->name('voterlistdashboard.download');
 
     // division routes
     Route::get('manager/division_master', [ManagerController::class, 'index'])->name('division.index');
@@ -407,6 +409,12 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/operator/get-vidhansabha-from-id/{vidhansabha_id}', [OperatorController::class, 'getVidhansabhaOptionsFromId']);
     Route::get('/operator/get-district-from-id/{district_id}', [OperatorController::class, 'getDistrictOptionsFromId']);
     Route::get('/operator/get-division-from-id/{division_id}', [OperatorController::class, 'getDivisionOptionsFromId']);
+
+
+
+    Route::get('/operator/next_followup', [OperatorController::class, 'nextFollowup'])->name('next_followup.index');
+    Route::post('/update-contact-status/{id}', [OperatorController::class, 'updateContactStatus'])->name('update.contact.status');
+    Route::get('/operator/followup_details/{id}', [OperatorController::class, 'followup_show'])->name('follow_up.show');
 });
 
 

@@ -202,8 +202,8 @@
                     </div>
                     <div class="row justify-content-center">
                         <div class="col-md-6">
-                            <a id="forward1" href="/complaints/forwarded?direction=to" target="_blank"
-                                class="forwarded-btn d-flex justify-content-between align-items-center p-3">
+                            <a id="forward-you" href="/complaints/forwarded?direction=to" target="_blank"
+                                class="forwarded-btn forwarded-you d-flex justify-content-between align-items-center p-3">
                                 <div class="text-left">
                                     <div class="subtitle font-weight-bold">आपको निर्देशित</div>
                                 </div>
@@ -212,8 +212,8 @@
                         </div>
 
                         <div class="col-md-6">
-                            <a id="forward1" href="/complaints/not_opened" target="_blank"
-                                class="forwarded-btn d-flex justify-content-between align-items-center p-3">
+                            <a id="forward-unheard" href="/complaints/not_opened" target="_blank"
+                                class="forwarded-btn forwarded-warning d-flex justify-content-between align-items-center p-3">
                                 <div class="text-left">
                                     <div class="subtitle font-weight-bold">अनसुनी शिकायतें</div>
                                 </div>
@@ -909,7 +909,7 @@
                         } else {
                             data.forEach(item => {
                                 $list.append(`
-                                 <a href="/complaints/forward-details?forward=${item.forward}"  class="text-decoration-none" style="color: black">
+                                 <a href="/complaints/forward-details?forward=${item.forward}" target="_blank"  class="text-decoration-none" style="color: black">
                             <li class="d-flex justify-content-between border-bottom py-1" style="font-size: 16px">
                                 <span>${item.forward}</span>
                                 <span class="badge bg-primary text-white">${item.total}</span>
