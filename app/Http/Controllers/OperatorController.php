@@ -276,6 +276,12 @@ class OperatorController extends Controller
             }
         }
 
+        if ($request->filled('admin_id')) {
+            $query->whereHas('latestReply', function ($q) use ($request) {
+                $q->where('forwarded_to', $request->admin_id);
+            });
+        }
+
         if ($request->filled('reply_id')) {
             $query->whereHas('replies', function ($q) use ($request) {
                 $q->where('selected_reply', $request->reply_id);
@@ -392,6 +398,7 @@ class OperatorController extends Controller
         $departments = Department::all();
         $replyOptions = ComplaintReply::all();
         $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
+        $managers = User::where('role', 2)->get();
 
         return view('operator/view_complaint', compact(
             'complaints',
@@ -401,7 +408,8 @@ class OperatorController extends Controller
             'areas',
             'departments',
             'subjects',
-            'replyOptions'
+            'replyOptions',
+            'managers'
         ));
     }
 
@@ -443,6 +451,17 @@ class OperatorController extends Controller
         return response()->json($nagars->map(function ($n) {
             return "<option value='{$n->nagar_id}'>{$n->nagar_name}</option>";
         }));
+    }
+
+    public function getgramPollings($nagar_id)
+    {
+        $pollings = Polling::where('nagar_id', $nagar_id)->get([
+            'gram_polling_id',
+            'polling_name',
+            'polling_no'
+        ]);
+
+        return response()->json($pollings);
     }
 
     public function getPollings($mandal_id)
@@ -650,7 +669,10 @@ class OperatorController extends Controller
             'cb_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'ca_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'c_video' => 'nullable|url|max:255',
-            'contact_status' => 'nullable|string'
+            'contact_status' => 'nullable|string',
+            'review_date' => 'nullable|date',
+            'importance' => 'nullable|string',
+            'criticality' => 'nullable|string',
         ]);
 
         $reply = new Reply();
@@ -660,6 +682,9 @@ class OperatorController extends Controller
         $reply->reply_from = auth()->id() ?? 2;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;
+        $reply->review_date = $request->review_date ?? null;
+        $reply->importance = $request->importance ?? null;
+        $reply->criticality = $request->criticality ?? null;
 
         if ($request->filled('c_video')) {
             $reply->c_video = $request->c_video;

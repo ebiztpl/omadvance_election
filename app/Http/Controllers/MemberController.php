@@ -494,6 +494,12 @@ class MemberController extends Controller
             }
         }
 
+        if ($request->filled('admin_id')) {
+            $query->whereHas('latestReply', function ($q) use ($request) {
+                $q->where('forwarded_to', $request->admin_id);
+            });
+        }
+
         if ($request->filled('reply_id')) {
             $query->whereHas('replies', function ($q) use ($request) {
                 $q->where('selected_reply', $request->reply_id);
@@ -554,8 +560,14 @@ class MemberController extends Controller
 
             foreach ($complaints as $index => $complaint) {
                 $html .= '<tr>';
-                $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td><strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? '') . '<br> <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br><strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br><strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '</td>';
+                $html .=  '<td>
+        <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
+        <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
+        <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
+        <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
+        <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br>
+        <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+        </td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -575,17 +587,27 @@ class MemberController extends Controller
                     '</td>';
 
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
-                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</td>';
-
-                // Pending Days or Status
-                if (in_array($complaint->complaint_status, [4, 5])) {
-                    $html .= '<td></td>';
+                $html .= '<td>
+                 <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
+                if ($complaint->complaint_status == 4) {
+                    $html .= 'पूर्ण';
+                } elseif ($complaint->complaint_status == 5) {
+                    $html .= 'रद्द';
                 } else {
-                    $html .= '<td>' . $complaint->pending_days . ' दिन</td>';
+                    $html .= $complaint->pending_days . ' दिन';
                 }
+                $html .= '</td>';
+
+                $html .= '<td>' . ($latestReply->review_date ?? 'N/A') . '</td>';
+
+                // Importance
+                $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
+
+                // Criticality
+                $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
 
                 // Status Text
-                $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
+                // $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
                 $html .= '<td>' . ($complaint->registrationDetails->name ?? '') . '</td>';
 
                 $html .= '<td>' . $complaint->forwarded_to_name . '<br>' . $complaint->forwarded_reply_date . '</td>';
@@ -608,6 +630,7 @@ class MemberController extends Controller
         $departments = Department::all();
         $replyOptions = ComplaintReply::all();
         $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
+        $managers = User::where('role', 2)->get();
 
         return view('member/view_complaints', compact(
             'complaints',
@@ -617,7 +640,9 @@ class MemberController extends Controller
             'areas',
             'departments',
             'subjects',
-            'replyOptions'));
+            'replyOptions',
+            'managers'
+        ));
     }
 
     public function complaint_show($id)
@@ -652,7 +677,6 @@ class MemberController extends Controller
             'cmp_reply' => 'required|string',
             'cmp_status' => 'required|in:1,2,3,4,5',
             'forwarded_to' => [
-                'required_if:cmp_status,1,2,3',
                 'nullable',
                 'exists:admin_master,admin_id'
             ],
@@ -667,7 +691,10 @@ class MemberController extends Controller
             'cb_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'ca_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'c_video' => 'nullable|url|max:255',
-            'contact_status' => 'nullable|string'
+            'contact_status' => 'nullable|string',
+            'review_date' => 'nullable|date',
+            'importance' => 'nullable|string',
+            'criticality' => 'nullable|string',
         ]);
 
         $reply = new Reply();
@@ -677,6 +704,9 @@ class MemberController extends Controller
         $reply->reply_from = auth()->id() ?? 2;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;
+        $reply->review_date = $request->review_date ?? null;
+        $reply->importance = $request->importance ?? null;
+        $reply->criticality = $request->criticality ?? null;
 
         if ($request->filled('c_video')) {
             $reply->c_video = $request->c_video;
@@ -719,4 +749,5 @@ class MemberController extends Controller
         return redirect()->route('complaints.view', $id)
             ->with('success', 'जवाब प्रस्तुत किया गया और शिकायत अपडेट की गई');
     }
+    
 }

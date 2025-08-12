@@ -22,7 +22,10 @@ class Reply extends Model
         'reply_from',
         'reply_date',
         'complaint_status',
-        'forwarded_to'
+        'forwarded_to',
+        'review_date',
+        'importance',
+        'criticality',
     ];
 
     protected $casts = [

@@ -122,6 +122,16 @@
                             <input type="date" name="to_date" id="to_date" class="form-control">
                         </div>
 
+                        <div class="col-md-2">
+                            <label>फॉरवर्ड</label>
+                            <select name="admin_id" id="admin_id" class="form-control">
+                                <option value="">-- सभी --</option>
+                                @foreach ($managers as $manager)
+                                    <option value="{{ $manager->admin_id }}">{{ $manager->admin_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <div class="col-md-2 mt-4">
                             <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर लागू करें</button>
                         </div>
@@ -161,9 +171,12 @@
                                         <th style="min-width: 100px;">शिकायतकर्ता</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
                                         <th>विभाग</th>
-                                        <th>शिकायत की तिथि</th>
-                                        <th>से बकाया</th>
-                                        <th>स्थिति</th>
+                                        <th>शिकायत की स्थिति</th>
+                                        {{-- <th>से बकाया</th> --}}
+                                        {{-- <th>स्थिति</th> --}}
+                                        <th>रीव्यू दिनांक</th>
+                                        <th>महत्त्व स्तर</th>
+                                        <th>गंभीरता स्तर</th>
                                         <th>आवेदक</th>
                                         <th>फॉरवर्ड अधिकारी</th>
                                         <th>आगे देखें</th>
@@ -173,12 +186,13 @@
                                     @foreach ($complaints as $index => $complaint)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                           <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }}
+                                            <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }}
                                                 <br>
                                                 <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
                                                 <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
                                                 <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br>
-                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }}
+                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }} <br>
+                                                <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
                                             </td>
                                             <td
                                                 title="
@@ -204,16 +218,11 @@
                                             </td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                            <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}
-                                            </td>
-                                            {{-- <td>
-                                                @if (!in_array($complaint->complaint_status, [4, 5]))
-                                                    {{ $complaint->pending_days }} दिन
-                                                @else
-                                                @endif
-                                            </td> --}}
 
                                             <td>
+                                                <strong>तिथि:
+                                                    {{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}</strong><br>
+
                                                 @if ($complaint->complaint_status == 4)
                                                     पूर्ण
                                                 @elseif ($complaint->complaint_status == 5)
@@ -223,13 +232,23 @@
                                                 @endif
                                             </td>
 
-                                            <td>{!! $complaint->statusTextPlain() !!}</td>
+                                            <td> {{ optional($complaint->replies->sortByDesc('reply_date')->first())->review_date ?? 'N/A' }}
+                                            </td>
+
+                                            <td>
+                                                {{ $complaint->latestReply?->importance ?? 'N/A' }}
+                                            </td>
+
+                                            <td>
+                                                {{ $complaint->latestReply?->criticality ?? 'N/A' }}
+                                            </td>
+
                                             <td>{{ $complaint->admin->admin_name ?? 'N/A' }}</td>
                                             <td>
                                                 {{ $complaint->forwarded_to_name ?? '-' }} <br>
                                                 {{ $complaint->forwarded_reply_date }}
                                             </td>
-                                            
+
                                             <td>
                                                 <a href="{{ route('operator_complaint.show', $complaint->complaint_id) }}"
                                                     class="btn btn-sm btn-primary" style="white-space: nowrap;">
@@ -294,14 +313,14 @@
                             $('#gram_id').append(data);
                         });
 
-                        $.get('/operator/get-pollings/' + mandalId, function(data) {
-                            let html = '<option value="">मतदान केंद्र</option>';
-                            data.forEach(function(polling) {
-                                html +=
-                                    `<option value="${polling.gram_polling_id}">${polling.polling_name} (${polling.polling_no})</option>`;
-                            });
-                            $('#polling_id').html(html);
-                        });
+                        // $.get('/operator/get-pollings/' + mandalId, function(data) {
+                        //     let html = '<option value="">मतदान केंद्र</option>';
+                        //     data.forEach(function(polling) {
+                        //         html +=
+                        //             `<option value="${polling.gram_polling_id}">${polling.polling_name} (${polling.polling_no})</option>`;
+                        //     });
+                        //     $('#polling_id').html(html);
+                        // });
                     }
                 });
 
@@ -370,7 +389,8 @@
                         area_id: $('#area_id').val(),
                         from_date: $('#from_date').val(),
                         to_date: $('#to_date').val(),
-                        reply_id: $('#reply_id').val()
+                        reply_id: $('#reply_id').val(),
+                        admin_id: $('#admin_id').val()
                     };
 
                     $.ajax({

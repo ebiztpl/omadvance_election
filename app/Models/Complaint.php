@@ -136,8 +136,9 @@ class Complaint extends Model
 
     public function registrationDetails()
     {
-        return $this->belongsTo(RegistrationForm::class, 'registration_id', 'complaint_created_by');
+        return $this->belongsTo(RegistrationForm::class, 'complaint_created_by', 'registration_id');
     }
+    
     public function admin()
     {
         return $this->belongsTo(User::class, 'complaint_created_by', 'admin_id');
@@ -149,5 +150,11 @@ class Complaint extends Model
         return $this->hasOne(Reply::class, 'complaint_id')
             ->where('complaint_reply', '!=', 'शिकायत दर्ज की गई है।')
             ->latest('reply_date');
+    }
+
+    public function latestReply()
+    {
+        return $this->hasOne(Reply::class, 'complaint_id')
+            ->latestOfMany('reply_date'); 
     }
 }
