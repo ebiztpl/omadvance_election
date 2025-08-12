@@ -155,11 +155,11 @@ class ManagerController extends Controller
     {
         $today = \Carbon\Carbon::today();
         $tomorrow = \Carbon\Carbon::tomorrow();
-        $weekStart = \Carbon\Carbon::today()->subDays(6);
+        $weekEnd = \Carbon\Carbon::today()->addDays(6);
 
         $records = Complaint::with('area')
             ->whereIn('complaint_type', ['शुभ सुचना', 'अशुभ सुचना'])
-            ->whereDate('program_date', '>=', $weekStart)
+            ->whereBetween('program_date', [$today, $weekEnd])
             ->orderBy('program_date', 'asc')
             ->get([
                 'complaint_id',
@@ -318,10 +318,10 @@ class ManagerController extends Controller
 
         $filter = $request->input('filter', 'all');
         $dates = match ($filter) {
-            'आज' => [Carbon::today(), Carbon::today()],
-            'कल' => [Carbon::yesterday(), Carbon::yesterday()],
-            'पिछले सात दिन' => [Carbon::now()->subWeek(), Carbon::now()],
-            'पिछले तीस दिन' => [Carbon::now()->subMonth(), Carbon::now()],
+            'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+            'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+            'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+            'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
             default => null,
         };
 
@@ -1883,7 +1883,7 @@ class ManagerController extends Controller
 
     public function viewCommanderComplaints(Request $request)
     {
-        $query = Complaint::with('replies.forwardedToManager')->where('type', 1);
+        $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 1);
 
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
@@ -1891,6 +1891,8 @@ class ManagerController extends Controller
 
         if ($request->filled('complaint_type')) {
             $query->where('complaint_type', $request->complaint_type);
+        } else if (!$request->has('filter')) {
+            $query->where('complaint_type', 'समस्या');
         }
 
         // if ($request->filled('department_id')) {
@@ -1906,6 +1908,12 @@ class ManagerController extends Controller
             if ($department) {
                 $query->where('complaint_department', $department->department_name);
             }
+        }
+
+        if ($request->filled('admin_id')) {
+            $query->whereHas('latestReply', function ($q) use ($request) {
+                $q->where('forwarded_to', $request->admin_id);
+            });
         }
 
         if ($request->filled('reply_id')) {
@@ -1945,6 +1953,52 @@ class ManagerController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
+
+        if ($request->filled('filter')) {
+            switch ($request->filter) {
+                case 'not_opened':
+                    $query->whereHas('replies', function ($q) {
+                        $q->where('complaint_status', 1)
+                            ->where('complaint_reply', 'शिकायत दर्ज की गई है।')
+                            ->where('forwarded_to', 6)
+                            ->whereNull('selected_reply');
+                    })->has('replies', '=', 1);
+                    break;
+
+                case 'reviewed':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('review_date');
+                    })->orderByRaw("
+                    (SELECT MIN(review_date) 
+                     FROM complaint_reply 
+                     WHERE complaint_reply.complaint_id = complaint.complaint_id AND review_date IS NOT NULL)
+                ");
+                    break;
+
+                case 'important':
+                    $query->whereHas('replies', fn($q) => $q->whereNotNull('importance'))
+                        ->orderByRaw("FIELD(
+                        (SELECT importance 
+                         FROM complaint_reply 
+                         WHERE complaint_reply.complaint_id = complaint.complaint_id AND importance IS NOT NULL 
+                         ORDER BY reply_date DESC 
+                         LIMIT 1),
+                    'उच्च', 'मध्यम', 'कम')");
+                    break;
+
+                case 'critical':
+                    $query->whereHas('replies', fn($q) => $q->whereNotNull('criticality'))
+                        ->orderByRaw("FIELD(
+                        (SELECT criticality 
+                         FROM complaint_reply 
+                         WHERE complaint_reply.complaint_id = complaint.complaint_id AND criticality IS NOT NULL 
+                         ORDER BY reply_date DESC 
+                         LIMIT 1),
+                    'अत्यधिक', 'मध्यम', 'कम')");
+                    break;
+            }
+        }
+
         $complaints = $query->orderBy('posted_date', 'desc')->get();
 
         foreach ($complaints as $complaint) {
@@ -1969,8 +2023,15 @@ class ManagerController extends Controller
             foreach ($complaints as $index => $complaint) {
                 $html .= '<tr>';
                 $html .= '<td>' . ($index + 1) . '</td>';
-                // $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
-                $html .= '<td><strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? '') . '<br> <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br><strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br><strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '</td>';
+                '<td>
+                    <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
+                    <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
+                    <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
+                    <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
+                    <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br>
+                    <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+                </td>';
+
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -1990,26 +2051,29 @@ class ManagerController extends Controller
                     '</td>';
 
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
-                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y') . '</td>';
 
-                // Pending Days or Status
-                if (in_array($complaint->complaint_status, [4, 5])) {
-                    $html .= '<td>0 दिन</td>';
+                $html .= '<td>
+        <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
+                if ($complaint->complaint_status == 4) {
+                    $html .= 'पूर्ण';
+                } elseif ($complaint->complaint_status == 5) {
+                    $html .= 'रद्द';
                 } else {
-                    $html .= '<td>' . $complaint->pending_days . ' दिन</td>';
+                    $html .= $complaint->pending_days . ' दिन';
                 }
+                $html .= '</td>';
 
-                // Status Text
-                $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
+                $html .= '<td>' . ($latestReply->review_date ?? 'N/A') . '</td>';
+
+                // Importance
+                $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
+
+                // Criticality
+                $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
+
                 $html .= '<td>' . ($complaint->registrationDetails->name ?? '') . '</td>';
 
                 $html .= '<td>' . ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-') . '</td>';
-                // Attachment
-                // if (!empty($complaint->issue_attachment)) {
-                //     $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
-                // } else {
-                //     $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
-                // }
 
                 // Action Button
                 $html .= '<td><a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
@@ -2030,6 +2094,7 @@ class ManagerController extends Controller
         $departments = Department::all();
         $replyOptions = ComplaintReply::all();
         $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
+        $managers = User::where('role', 2)->get();
 
         return view('manager/commander_complaints', compact(
             'complaints',
@@ -2039,7 +2104,8 @@ class ManagerController extends Controller
             'areas',
             'departments',
             'subjects',
-            'replyOptions'
+            'replyOptions',
+            'managers'
         ));
     }
 
@@ -2081,8 +2147,7 @@ class ManagerController extends Controller
 
         if ($request->filled('complaint_type')) {
             $query->where('complaint_type', $request->complaint_type);
-        } else {
-            // Apply default filter for initial load or sabhi
+        } else if (!$request->has('filter')) {
             $query->where('complaint_type', 'समस्या');
         }
 
@@ -2099,6 +2164,12 @@ class ManagerController extends Controller
             if ($department) {
                 $query->where('complaint_department', $department->department_name);
             }
+        }
+
+        if ($request->filled('admin_id')) {
+            $query->whereHas('latestReply', function ($q) use ($request) {
+                $q->where('forwarded_to', $request->admin_id);
+            });
         }
 
         if ($request->filled('reply_id')) {
@@ -2138,6 +2209,52 @@ class ManagerController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
+
+        if ($request->filled('filter')) {
+            switch ($request->filter) {
+                case 'not_opened':
+                    $query->whereHas('replies', function ($q) {
+                        $q->where('complaint_status', 1)
+                            ->where('complaint_reply', 'शिकायत दर्ज की गई है।')
+                            ->where('forwarded_to', 6)
+                            ->whereNull('selected_reply');
+                    })->has('replies', '=', 1);
+                    break;
+
+                case 'reviewed':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('review_date');
+                    })->orderByRaw("
+                    (SELECT MIN(review_date) 
+                     FROM complaint_reply 
+                     WHERE complaint_reply.complaint_id = complaint.complaint_id AND review_date IS NOT NULL)
+                ");
+                    break;
+
+                case 'important':
+                    $query->whereHas('replies', fn($q) => $q->whereNotNull('importance'))
+                        ->orderByRaw("FIELD(
+                        (SELECT importance 
+                         FROM complaint_reply 
+                         WHERE complaint_reply.complaint_id = complaint.complaint_id AND importance IS NOT NULL 
+                         ORDER BY reply_date DESC 
+                         LIMIT 1),
+                    'उच्च', 'मध्यम', 'कम')");
+                    break;
+
+                case 'critical':
+                    $query->whereHas('replies', fn($q) => $q->whereNotNull('criticality'))
+                        ->orderByRaw("FIELD(
+                        (SELECT criticality 
+                         FROM complaint_reply 
+                         WHERE complaint_reply.complaint_id = complaint.complaint_id AND criticality IS NOT NULL 
+                         ORDER BY reply_date DESC 
+                         LIMIT 1),
+                    'अत्यधिक', 'मध्यम', 'कम')");
+                    break;
+            }
+        }
+
         $complaints = $query->orderBy('posted_date', 'desc')->get();
 
         // Add extra data to each complaint
@@ -2163,7 +2280,15 @@ class ManagerController extends Controller
             foreach ($complaints as $index => $complaint) {
                 $html .= '<tr>';
                 $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td><strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? '') . '<br> <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br><strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br><strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '</td>';
+                '<td>
+                    <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
+                    <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
+                    <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
+                    <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
+                    <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br>
+                    <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+                </td>';
+
 
 
                 $html .= '<td title="
@@ -2184,25 +2309,40 @@ class ManagerController extends Controller
                     '</td>';
 
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
-                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i') . '</td>';
 
-                // Pending Days or Status
-                if (in_array($complaint->complaint_status, [4, 5])) {
-                    $html .= '<td></td>';
+                $html .= '<td>
+                 <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
+                if ($complaint->complaint_status == 4) {
+                    $html .= 'पूर्ण';
+                } elseif ($complaint->complaint_status == 5) {
+                    $html .= 'रद्द';
                 } else {
-                    $html .= '<td>' . $complaint->pending_days . ' दिन</td>';
+                    $html .= $complaint->pending_days . ' दिन';
                 }
+                $html .= '</td>';
+
+                $html .= '<td>' . ($latestReply->review_date ?? 'N/A') . '</td>';
+
+                // Importance
+                $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
+
+                // Criticality
+                $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
+                // $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y') . '</td>';
+
+                // // Pending Days or Status
+                // if (in_array($complaint->complaint_status, [4, 5])) {
+                //     $html .= '<td></td>';
+                // } else {
+                //     $html .= '<td>' . $complaint->pending_days . ' दिन</td>';
+                // }
 
                 // Status Text
-                $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
+                // $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
                 $html .= '<td>' . ($complaint->admin_name ?? '') . '</td>';
+
                 $html .= '<td>' . ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-') . '</td>';
-                // Attachment
-                // if (!empty($complaint->issue_attachment)) {
-                //     $html .= '<td><a href="' . asset('assets/upload/complaints/' . $complaint->issue_attachment) . '" target="_blank" class="btn btn-sm btn-success">' . $complaint->issue_attachment . '</a></td>';
-                // } else {
-                //     $html .= '<td><button class="btn btn-sm btn-secondary" disabled>No Attachment</button></td>';
-                // }
+
 
                 // Action Button
                 $html .= '<td><a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
@@ -2223,6 +2363,7 @@ class ManagerController extends Controller
         $departments = Department::all();
         $replyOptions = ComplaintReply::all();
         $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
+        $managers = User::where('role', 2)->get();
 
         return view('manager.operator_complaints', compact(
             'complaints',
@@ -2232,7 +2373,8 @@ class ManagerController extends Controller
             'areas',
             'departments',
             'subjects',
-            'replyOptions'
+            'replyOptions',
+            'managers'
         ));
     }
 
@@ -2373,7 +2515,10 @@ class ManagerController extends Controller
             'cb_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'ca_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'c_video' => 'nullable|url|max:255',
-            'contact_status' => 'nullable|string'
+            'contact_status' => 'nullable|string',
+            'review_date' => 'nullable|date',
+            'importance' => 'nullable|string',
+            'criticality' => 'nullable|string',
         ]);
 
         $complaint = Complaint::findOrFail($id);
@@ -2385,6 +2530,9 @@ class ManagerController extends Controller
         $reply->reply_from = auth()->id() ?? 2;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;
+        $reply->review_date = $request->review_date ?? null;
+        $reply->importance = $request->importance ?? null;
+        $reply->criticality = $request->criticality ?? null;
 
         if ($request->filled('c_video')) {
             $reply->c_video = $request->c_video;
@@ -2396,9 +2544,15 @@ class ManagerController extends Controller
         if (in_array((int)$request->cmp_status, [4, 5])) {
             $reply->forwarded_to = 0;
         } else {
-            $reply->forwarded_to = $request->forwarded_to ?? (
-                ($userRole == 2) ? $userId : null
-            );
+            if ($request->filled('forwarded_to')) {
+                // Use the selected forwarded_to if present
+                $reply->forwarded_to = $request->forwarded_to;
+            } elseif ($userRole == 2 && $userId) {
+                // Use logged-in manager ID if no forwarded_to selected
+                $reply->forwarded_to = $userId;
+            } else {
+                $reply->forwarded_to = null;
+            }
         }
 
         if ($request->filled('contact_status')) {

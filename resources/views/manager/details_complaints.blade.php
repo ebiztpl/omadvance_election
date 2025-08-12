@@ -441,6 +441,9 @@
                             <th>स्थिति</th>
                             <th>दिनांक</th>
                             <th>भेजा गया</th>
+                            <th>रीव्यू दिनांक</th>
+                            <th>महत्त्व स्तर</th>
+                            <th>गंभीरता स्तर</th>
                             <th>विवरण देखें</th>
                         </tr>
                     </thead>
@@ -452,11 +455,18 @@
                                 <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') : 'N/A' }}
                                 </td>
                                 <td> {{ $reply->forwardedToManager?->admin_name ?? '' }}</td>
+                                  <td> {{ $reply->review_date ?? '' }}</td>
+                                <td> {{ $reply->importance ?? '' }}</td>
+                                <td> {{ $reply->criticality ?? '' }}</td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-info view-details-btn"
                                         data-toggle="modal" data-target="#detailsModal"
                                         data-reply="{{ $reply->complaint_reply }}"
                                         data-contact="{{ $reply->contact_status }}"
+                                        data-details="{{ $reply->contact_update }}"
+                                        data-review="{{ $reply->review_date }}"
+                                        data-importance="{{ $reply->importance }}"
+                                        data-critical="{{ $reply->criticality }}"
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
                                         {{-- data-status="{{ $reply->statusTextPlain() }}" --}}
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
@@ -508,6 +518,7 @@
                                             <th>तारीख</th>
                                             <th>भेजा गया</th>
                                             <th>संपर्क स्थिति</th>
+                                            <th>संपर्क विवरण</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -517,6 +528,27 @@
                                             <td id="modal-date">—</td>
                                             <td id="modal-admin">—</td>
                                             <td id="modal-contact">—</td>
+                                            <td id="modal-details">—</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                             <div class="table-responsive">
+                                <table style="color: black" class="table table-bordered text-center align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>रीव्यू दिनांक</th>
+                                            <th>महत्त्व स्तर</th>
+                                            <th>गंभीरता स्तर</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td id="modal-review">—</td>
+                                            <td id="modal-importance">—</td>
+                                            <td id="modal-critical">—</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -571,7 +603,7 @@
                     @csrf
 
                     <div class="row mb-3">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label ">शिकायत की स्थिति: <span class="tx-danger"
                                     style="color: red;">*</span></label>
                             <select name="cmp_status" id="cmp_status" class="form-control" required>
@@ -594,7 +626,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">पूर्व निर्धारित उत्तर चुनें:</label>
                             <select name="selected_reply" id="selected_reply" class="form-control">
                                 <option value="">--चयन करें--</option>
@@ -605,9 +637,9 @@
                             </select>
                         </div>
 
-                        <div class="col-md-3" id="forwarded_to_field">
+                        <div class="col-md-2" id="forwarded_to_field">
                             <label class="form-label">अधिकारी चुनें (आगे भेजे)</label>
-                            <select name="manager_id" id="manager_id" class="form-control">
+                            <select name="forwarded_to" id="forwarded_to" class="form-control">
                                 <!-- Preselect the logged-in manager -->
                                 <option value="{{ $loggedInManagerId }}" selected>
                                     {{ \App\Models\User::find($loggedInManagerId)->admin_name }} (You)
@@ -619,7 +651,32 @@
                             </select>
                         </div>
 
-                        <div class="col-md-3">
+                          <div class="col-md-2">
+                            <label for="review_date">रीव्यू दिनांक</label>
+                            <input type="date" class="form-control" name="review_date">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label for="importance form-label">महत्त्व स्तर:</label>
+                            <select name="importance" class="form-control">
+                                <option value="">--चयन करें--</option>
+                                <option value="उच्च">उच्च</option>
+                                <option value="मध्यम">मध्यम</option>
+                                <option value="कम">कम</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label for="criticality form-label">गंभीरता स्तर:</label>
+                            <select name="criticality" class="form-control">
+                                <option value="">--चयन करें--</option>
+                                <option value="अत्यधिक">अत्यधिक</option>
+                                <option value="मध्यम">मध्यम</option>
+                                <option value="कम">कम</option>
+                            </select>
+                        </div>
+
+                        {{-- <div class="col-md-3">
                             <label class="form-label">संपर्क स्थिति:</label>
                             <select name="contact_status" class="form-control">
                                 <option value="">--चयन करें--</option>
@@ -633,7 +690,7 @@
                                 <option value="SMS भेजा गया">SMS/Whatsapp भेजा गया</option>
                                 <option value="फोन नंबर उपलब्ध नहीं है">फोन नंबर उपलब्ध नहीं है</option>
                             </select>
-                        </div>
+                        </div> --}}
                     </div>
 
                     <div class="row g-3">
@@ -704,8 +761,9 @@
     @push('scripts')
         <script>
             $(document).on('click', '.view-details-btn', function() {
-                const reply = $(this).data('reply') || '—';
+                   const reply = $(this).data('reply') || '—';
                 const contact = $(this).data('contact') || '—';
+                const details = $(this).data('details') || '—';
                 const replyDate = $(this).data('reply-date') || '—';
                 const status = $(this).data('status') || '—';
                 const admin = $(this).data('admin') || '—';
@@ -715,13 +773,20 @@
                 const cbPhoto = $(this).data('cb-photo');
                 const caPhoto = $(this).data('ca-photo');
                 const video = $(this).data('video');
+                const review = $(this).data('review');
+                const importance = $(this).data('importance');
+                const critical = $(this).data('critical');
 
                 $('#modal-reply').text(reply);
                 $('#modal-status').text(status);
                 $('#modal-date').text(replyDate);
                 $('#modal-admin').text(admin);
                 $('#modal-predefined').text(predefined);
-                 $('#modal-contact').text(contact);
+                $('#modal-details').text(details);
+                $('#modal-contact').text(contact);
+                $('#modal-review').text(review);
+                $('#modal-importance').text(importance);
+                $('#modal-critical').text(critical);
 
                 cbPhoto ? $('#cb-photo-link').attr('href', cbPhoto).show() : $('#cb-photo-link').hide();
                 caPhoto ? $('#ca-photo-link').attr('href', caPhoto).show() : $('#ca-photo-link').hide();

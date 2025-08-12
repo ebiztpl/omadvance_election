@@ -26,11 +26,10 @@
                                         <th style="min-width: 150px;">शिकायतकर्ता</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
                                         <th>विभाग</th>
-                                        <th>शिकायत की तिथि</th>
-                                        <th>से बकाया</th>
-                                        <th>स्थिति</th>
+                                        <th>शिकायत की स्थिति</th>
                                         <th>आवेदक</th>
                                         <th>शिकायत प्रकार</th>
+                                        <th>शिकायत विषय</th>
                                         <th>फॉरवर्ड अधिकारी</th>
                                         <th>आगे देखें</th>
                                     </tr>
@@ -44,7 +43,8 @@
                                                 <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
                                                 <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
                                                 <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br>
-                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }}
+                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }} <br>
+                                                <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
                                             </td>
 
                                             <td
@@ -70,10 +70,10 @@
                                             </td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                            <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}
-                                            </td>
-
                                             <td>
+                                                <strong>तिथि:
+                                                    {{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}</strong><br>
+
                                                 @if ($complaint->complaint_status == 4)
                                                     पूर्ण
                                                 @elseif ($complaint->complaint_status == 5)
@@ -83,7 +83,6 @@
                                                 @endif
                                             </td>
 
-                                            <td>{!! $complaint->statusTextPlain() !!}</td>
                                             <td>
                                                 @if ($complaint->type == 2)
                                                     {{ $complaint->admin->admin_name ?? '-' }}
@@ -92,6 +91,8 @@
                                                 @endif
                                             </td>
                                             <td>{{ $complaint->complaint_type ?? '' }}</td>
+
+                                            <td>{{ $complaint->issue_title ?? '' }}</td>
 
                                             <td>
                                                {{ $complaint->forwarded_to_name ?? '-' }} <br>

@@ -159,6 +159,9 @@
                             <th>स्थिति</th>
                             <th>दिनांक</th>
                             <th>भेजा गया</th>
+                            <th>रीव्यू दिनांक</th>
+                            <th>महत्त्व स्तर</th>
+                            <th>गंभीरता स्तर</th>
                             <th>विवरण देखें</th>
                             {{-- <th>समस्या/समाधान</th>
                             <th>पूर्व स्थिति की तस्वीर</th>
@@ -179,10 +182,17 @@
                                 <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') : 'N/A' }}
                                 </td>
                                 <td> {{ $reply->forwardedToManager?->admin_name ?? '' }}</td>
+                                  <td> {{ $reply->review_date ?? '' }}</td>
+                                <td> {{ $reply->importance ?? '' }}</td>
+                                <td> {{ $reply->criticality ?? '' }}</td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-info view-details-btn" data-toggle="modal"
                                         data-target="#detailsModal" data-reply="{{ $reply->complaint_reply }}"
                                         data-contact="{{ $reply->contact_status }}"
+                                         data-details="{{ $reply->contact_update }}"
+                                                                                data-review="{{ $reply->review_date }}"
+                                        data-importance="{{ $reply->importance }}"
+                                        data-critical="{{ $reply->criticality }}"
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
                                          data-status="{{ strip_tags($reply->statusTextPlain()) }}"
                                         data-predefined="{{ $reply->selected_reply === 0 ? 'अन्य' : ($reply->predefinedReply->reply ?? '-') }}"
@@ -259,6 +269,7 @@
                                             <th>तारीख</th>
                                             <th>भेजा गया</th>
                                             <th>संपर्क स्थिति</th>
+                                            <th>संपर्क विवरण</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -268,6 +279,26 @@
                                             <td id="modal-date">—</td>
                                             <td id="modal-admin">—</td>
                                             <td id="modal-contact">—</td>
+                                            <td id="modal-details">—</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                             <div class="table-responsive">
+                                <table style="color: black" class="table table-bordered text-center align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>रीव्यू दिनांक</th>
+                                            <th>महत्त्व स्तर</th>
+                                            <th>गंभीरता स्तर</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td id="modal-review">—</td>
+                                            <td id="modal-importance">—</td>
+                                            <td id="modal-critical">—</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -400,7 +431,7 @@
     @push('scripts')
         <script>
             $(document).on('click', '.view-details-btn', function() {
-                const reply = $(this).data('reply') || '—';
+                   const reply = $(this).data('reply') || '—';
                 const contact = $(this).data('contact') || '—';
                 const replyDate = $(this).data('reply-date') || '—';
                 const status = $(this).data('status') || '—';
@@ -411,13 +442,21 @@
                 const cbPhoto = $(this).data('cb-photo');
                 const caPhoto = $(this).data('ca-photo');
                 const video = $(this).data('video');
+                const review = $(this).data('review');
+                const importance = $(this).data('importance');
+                const details = $(this).data('details') || '—';
+                const critical = $(this).data('critical');
 
                 $('#modal-reply').text(reply);
                 $('#modal-status').text(status);
                 $('#modal-date').text(replyDate);
                 $('#modal-admin').text(admin);
                 $('#modal-predefined').text(predefined);
-                 $('#modal-contact').text(contact);
+                $('#modal-contact').text(contact);
+                $('#modal-review').text(review);
+                $('#modal-importance').text(importance);
+                $('#modal-critical').text(critical);
+                $('#modal-details').text(details);
 
                 cbPhoto ? $('#cb-photo-link').attr('href', cbPhoto).show() : $('#cb-photo-link').hide();
                 caPhoto ? $('#ca-photo-link').attr('href', caPhoto).show() : $('#ca-photo-link').hide();
