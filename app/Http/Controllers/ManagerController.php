@@ -1965,36 +1965,58 @@ class ManagerController extends Controller
                     })->has('replies', '=', 1);
                     break;
 
+
                 case 'reviewed':
                     $query->whereHas('replies', function ($q) {
-                        $q->whereNotNull('review_date');
+                        $q->whereNotNull('review_date')
+                            ->whereRaw('reply_date = (
+                SELECT MAX(reply_date)
+                FROM complaint_reply
+                WHERE complaint_reply.complaint_id = complaint.complaint_id
+            )');
                     })->orderByRaw("
-                    (SELECT MIN(review_date) 
-                     FROM complaint_reply 
-                     WHERE complaint_reply.complaint_id = complaint.complaint_id AND review_date IS NOT NULL)
-                ");
+        (SELECT review_date 
+         FROM complaint_reply 
+         WHERE complaint_reply.complaint_id = complaint.complaint_id 
+         ORDER BY reply_date DESC 
+         LIMIT 1)
+    ");
                     break;
 
                 case 'important':
-                    $query->whereHas('replies', fn($q) => $q->whereNotNull('importance'))
-                        ->orderByRaw("FIELD(
-                        (SELECT importance 
-                         FROM complaint_reply 
-                         WHERE complaint_reply.complaint_id = complaint.complaint_id AND importance IS NOT NULL 
-                         ORDER BY reply_date DESC 
-                         LIMIT 1),
-                    'उच्च', 'मध्यम', 'कम')");
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('importance')
+                            ->whereRaw('reply_date = (
+              SELECT MAX(reply_date)
+              FROM complaint_reply
+              WHERE complaint_reply.complaint_id = complaint.complaint_id
+          )');
+                    })->orderByRaw("FIELD(
+        (SELECT importance 
+         FROM complaint_reply 
+         WHERE complaint_reply.complaint_id = complaint.complaint_id 
+         ORDER BY reply_date DESC 
+         LIMIT 1),
+        'उच्च', 'मध्यम', 'कम'
+    )");
                     break;
 
                 case 'critical':
-                    $query->whereHas('replies', fn($q) => $q->whereNotNull('criticality'))
-                        ->orderByRaw("FIELD(
-                        (SELECT criticality 
-                         FROM complaint_reply 
-                         WHERE complaint_reply.complaint_id = complaint.complaint_id AND criticality IS NOT NULL 
-                         ORDER BY reply_date DESC 
-                         LIMIT 1),
-                    'अत्यधिक', 'मध्यम', 'कम')");
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('criticality')
+                            ->whereRaw('reply_date = (
+              SELECT MAX(reply_date)
+              FROM complaint_reply
+              WHERE complaint_reply.complaint_id = complaint.complaint_id
+          )');
+                    })->orderByRaw("FIELD(
+        (SELECT criticality 
+         FROM complaint_reply 
+         WHERE complaint_reply.complaint_id = complaint.complaint_id 
+         ORDER BY reply_date DESC 
+         LIMIT 1),
+        'अत्यधिक', 'मध्यम', 'कम'
+    )");
                     break;
             }
         }
@@ -2028,7 +2050,7 @@ class ManagerController extends Controller
                     <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
                     <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
                     <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-                    <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br>
+                    <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
                     <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
                 </td>';
 
@@ -2209,7 +2231,6 @@ class ManagerController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
-
         if ($request->filled('filter')) {
             switch ($request->filter) {
                 case 'not_opened':
@@ -2221,40 +2242,61 @@ class ManagerController extends Controller
                     })->has('replies', '=', 1);
                     break;
 
-                case 'reviewed':
-                    $query->whereHas('replies', function ($q) {
-                        $q->whereNotNull('review_date');
+
+                            case 'reviewed':
+                                $query->whereHas('replies', function ($q) {
+                                    $q->whereNotNull('review_date')
+                                        ->whereRaw('reply_date = (
+                            SELECT MAX(reply_date)
+                            FROM complaint_reply
+                            WHERE complaint_reply.complaint_id = complaint.complaint_id
+                        )');
                     })->orderByRaw("
-                    (SELECT MIN(review_date) 
-                     FROM complaint_reply 
-                     WHERE complaint_reply.complaint_id = complaint.complaint_id AND review_date IS NOT NULL)
-                ");
+                            (SELECT review_date 
+                            FROM complaint_reply 
+                            WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                            ORDER BY reply_date DESC 
+                            LIMIT 1)
+                        ");
                     break;
 
                 case 'important':
-                    $query->whereHas('replies', fn($q) => $q->whereNotNull('importance'))
-                        ->orderByRaw("FIELD(
-                        (SELECT importance 
-                         FROM complaint_reply 
-                         WHERE complaint_reply.complaint_id = complaint.complaint_id AND importance IS NOT NULL 
-                         ORDER BY reply_date DESC 
-                         LIMIT 1),
-                    'उच्च', 'मध्यम', 'कम')");
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('importance')
+                                        ->whereRaw('reply_date = (
+                        SELECT MAX(reply_date)
+                        FROM complaint_reply
+                        WHERE complaint_reply.complaint_id = complaint.complaint_id
+                    )');
+                                })->orderByRaw("FIELD(
+                    (SELECT importance 
+                    FROM complaint_reply 
+                    WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                    ORDER BY reply_date DESC 
+                    LIMIT 1),
+                    'उच्च', 'मध्यम', 'कम'
+                )");
                     break;
 
                 case 'critical':
-                    $query->whereHas('replies', fn($q) => $q->whereNotNull('criticality'))
-                        ->orderByRaw("FIELD(
-                        (SELECT criticality 
-                         FROM complaint_reply 
-                         WHERE complaint_reply.complaint_id = complaint.complaint_id AND criticality IS NOT NULL 
-                         ORDER BY reply_date DESC 
-                         LIMIT 1),
-                    'अत्यधिक', 'मध्यम', 'कम')");
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('criticality')
+                            ->whereRaw('reply_date = (
+              SELECT MAX(reply_date)
+              FROM complaint_reply
+              WHERE complaint_reply.complaint_id = complaint.complaint_id
+          )');
+                    })->orderByRaw("FIELD(
+        (SELECT criticality 
+         FROM complaint_reply 
+         WHERE complaint_reply.complaint_id = complaint.complaint_id 
+         ORDER BY reply_date DESC 
+         LIMIT 1),
+        'अत्यधिक', 'मध्यम', 'कम'
+    )");
                     break;
             }
         }
-
         $complaints = $query->orderBy('posted_date', 'desc')->get();
 
         // Add extra data to each complaint
@@ -2285,7 +2327,7 @@ class ManagerController extends Controller
                     <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
                     <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
                     <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-                    <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br>
+                    <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
                     <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
                 </td>';
 

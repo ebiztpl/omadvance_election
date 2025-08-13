@@ -1526,7 +1526,7 @@ class AdminController extends Controller
         <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
         <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
         <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-        <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br>
+        <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
         <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
     </td>';
 
@@ -1737,7 +1737,7 @@ class AdminController extends Controller
         <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
         <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
         <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-        <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br>
+        <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
         <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
     </td>';
 
