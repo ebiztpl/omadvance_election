@@ -122,6 +122,9 @@
                                     <button type="button" class="btn btn-sm btn-info view-details-btn" data-toggle="modal"
                                         data-target="#detailsModal" data-reply="{{ $reply->complaint_reply }}"
                                         data-contact="{{ $reply->contact_status }}"
+                                        data-review="{{ $reply->review_date }}"
+                                        data-importance="{{ $reply->importance }}"
+                                        data-critical="{{ $reply->criticality }}"
                                         data-details="{{ $reply->contact_update }}"
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
@@ -189,6 +192,25 @@
                                 </table>
                             </div>
 
+                            <div class="table-responsive">
+                                <table style="color: black" class="table table-bordered text-center align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>रीव्यू दिनांक</th>
+                                            <th>महत्त्व स्तर</th>
+                                            <th>गंभीरता स्तर</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td id="modal-review">—</td>
+                                            <td id="modal-importance">—</td>
+                                            <td id="modal-critical">—</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
                             <div class="border p-2 rounded mb-3 bg-light">
                                 <h5 class="mb-3 text-center">अटैचमेंट्स</h5>
                                 <div class="d-flex flex-wrap justify-content-center gap-2">
@@ -245,6 +267,9 @@
                 const cbPhoto = $(this).data('cb-photo');
                 const caPhoto = $(this).data('ca-photo');
                 const video = $(this).data('video');
+                const review = $(this).data('review');
+                const importance = $(this).data('importance');
+                const critical = $(this).data('critical');
 
                 $('#modal-reply').text(reply);
                 $('#modal-status').text(status);
@@ -253,6 +278,9 @@
                 $('#modal-predefined').text(predefined);
                 $('#modal-contact').text(contact);
                 $('#modal-details').text(details);
+                 $('#modal-review').text(review);
+                $('#modal-importance').text(importance);
+                $('#modal-critical').text(critical);
 
                 cbPhoto ? $('#cb-photo-link').attr('href', cbPhoto).show() : $('#cb-photo-link').hide();
                 caPhoto ? $('#ca-photo-link').attr('href', caPhoto).show() : $('#ca-photo-link').hide();

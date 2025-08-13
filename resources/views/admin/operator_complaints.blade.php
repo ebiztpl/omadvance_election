@@ -191,7 +191,7 @@
                                                 <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
                                                 <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
                                                 <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br>
-                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }} <br>
+                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }} <br><br>
                                                 <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
                                             </td>
 
@@ -354,7 +354,8 @@
                 });
 
                 // Apply Filters
-                $('#applyFilters').click(function() {
+                $('#applyFilters').click(function(e) {
+                     e.preventDefault();
                     let data = {
                         complaint_status: $('#complaint_status').val(),
                         complaint_type: $('#complaint_type').val(),
@@ -374,6 +375,9 @@
                         url: "{{ route('operator.complaint.view') }}",
                         type: 'GET',
                         data: data,
+                         beforeSend: function() {
+                            $("#loader-wrapper").show();
+                        },
                         success: function(response) {
                             $('#complaintsTableBody').html(response.html);
                             $('#complaint-count').text(response.count);
@@ -408,6 +412,9 @@
                                     [10, 25, 50, 100, 500, "All"],
                                 ],
                             });
+                        },
+                         complete: function() {
+                            $("#loader-wrapper").hide();
                         },
                         error: function() {
                             alert('कुछ गड़बड़ हो गई। कृपया पुनः प्रयास करें।');

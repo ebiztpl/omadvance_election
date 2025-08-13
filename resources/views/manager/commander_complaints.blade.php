@@ -160,18 +160,20 @@
                             </div>
                         @endif
 
-                          <ul class="nav nav-tabs mb-3">
+                        <ul class="nav nav-tabs mb-3">
                             <li class="nav-item">
                                 <a class="nav-link {{ request('filter') === null ? 'active' : '' }}"
                                     href="{{ route('commander.complaints.view') }}">सभी</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {{ request('filter') === 'not_opened' ? 'active' : '' }}"
-                                    href="{{ route('commander.complaints.view', ['filter' => 'not_opened']) }}">नई शिकायतें</a>
+                                    href="{{ route('commander.complaints.view', ['filter' => 'not_opened']) }}">नई
+                                    शिकायतें</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {{ request('filter') === 'reviewed' ? 'active' : '' }}"
-                                    href="{{ route('commander.complaints.view', ['filter' => 'reviewed']) }}">रीव्यू की गई</a>
+                                    href="{{ route('commander.complaints.view', ['filter' => 'reviewed']) }}">रीव्यू की
+                                    गई</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {{ request('filter') === 'important' ? 'active' : '' }}"
@@ -209,11 +211,12 @@
                                     @foreach ($complaints as $index => $complaint)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }} <br>
+                                            <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }}
+                                                <br>
                                                 <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
                                                 <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
                                                 <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br>
-                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }} <br>
+                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }} <br><br>
                                                 <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
                                             </td>
                                             <td
@@ -240,7 +243,7 @@
                                             </td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                           
+
                                             <td>
                                                 <strong>तिथि:
                                                     {{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}</strong><br>
@@ -264,11 +267,11 @@
                                             <td>
                                                 {{ $complaint->latestReply?->criticality ?? 'N/A' }}
                                             </td>
-                                            
+
                                             <td>{{ $complaint->registrationDetails->name ?? '' }}</td>
-                                           <td>
-                                                 {{ $complaint->forwarded_to_name ?? '-' }} <br>
-                                               {{ $complaint->forwarded_reply_date }}
+                                            <td>
+                                                {{ $complaint->forwarded_to_name ?? '-' }} <br>
+                                                {{ $complaint->forwarded_reply_date }}
                                             </td>
 
                                             <td>
@@ -369,8 +372,8 @@
                 });
 
                 // Apply Filters
-                $('#applyFilters').click(function() {
-                    // e.preventDefault();
+                $('#applyFilters').click(function(e) {
+                    e.preventDefault();
                     let data = {
                         complaint_status: $('#complaint_status').val(),
                         complaint_type: $('#complaint_type').val(),
@@ -390,6 +393,9 @@
                         url: "{{ route('commander.complaints.view') }}",
                         type: 'GET',
                         data: data,
+                        beforeSend: function() {
+                            $("#loader-wrapper").show();
+                        },
                         success: function(response) {
                             $('#complaintsTableBody').html(response.html);
                             $('#complaint-count').text(response.count);
@@ -424,6 +430,9 @@
                                     [10, 25, 50, 100, 500, "All"],
                                 ],
                             });
+                        },
+                        complete: function() {
+                            $("#loader-wrapper").hide();
                         },
                         error: function() {
                             alert('कुछ गड़बड़ हो गई। कृपया पुनः प्रयास करें।');
@@ -464,7 +473,7 @@
                 });
 
 
-                 $('#complaintFilterTabs a').on('click', function(e) {
+                $('#complaintFilterTabs a').on('click', function(e) {
                     // e.preventDefault();
                     $('#complaintFilterTabs a').removeClass('active');
                     $(this).addClass('active');
@@ -472,7 +481,7 @@
                     const filter = $(this).data('filter');
 
                     $.ajax({
-                        url: '{{ route("commander.complaints.view") }}',
+                        url: '{{ route('commander.complaints.view') }}',
                         data: {
                             filter: filter
                         },
