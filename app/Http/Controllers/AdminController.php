@@ -1521,14 +1521,14 @@ class AdminController extends Controller
             foreach ($complaints as $index => $complaint) {
                 $html .= '<tr>';
                 $html .= '<td>' . ($index + 1) . '</td>';
-                '<td>
-        <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
-        <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
-        <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-        <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-        <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
-        <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
-    </td>';
+                $html .= '<td>
+                <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
+                <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
+                <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
+                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+              </td>';
 
 
 
@@ -1732,14 +1732,14 @@ class AdminController extends Controller
             foreach ($complaints as $index => $complaint) {
                 $html .= '<tr>';
                 $html .= '<td>' . ($index + 1) . '</td>';
-                '<td>
-        <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
-        <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
-        <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-        <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-        <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
-        <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
-    </td>';
+                $html .= '<td>
+                <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
+                <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
+                <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
+                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+              </td>';
 
 
 

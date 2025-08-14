@@ -345,14 +345,15 @@ class OperatorController extends Controller
                 $html .= '<td>' . ($index + 1) . '</td>';
                 // $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
                $html .= '<td>' . ($index + 1) . '</td>';
-                '<td>
-        <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
-        <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
-        <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-        <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-        <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
-        <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
-    </td>';
+                $html .= '<td>
+                <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
+                <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
+                <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
+                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+              </td>';
+
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '

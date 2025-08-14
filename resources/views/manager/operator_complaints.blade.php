@@ -416,12 +416,14 @@
                             $("#loader-wrapper").show();
                         },
                         success: function(response) {
-                            $('#complaintsTableBody').html(response.html);
-                            $('#complaint-count').text(response.count);
+                        
 
                             if ($.fn.DataTable.isDataTable('#example')) {
                                 $('#example').DataTable().destroy();
                             }
+
+                            $('#complaintsTableBody').html(response.html);
+                            $('#complaint-count').text(response.count);
 
                             $('#example').DataTable({
                                 dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
