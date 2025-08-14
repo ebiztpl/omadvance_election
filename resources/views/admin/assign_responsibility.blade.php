@@ -313,12 +313,25 @@
         <script>
             $('#searchdistrict').on('change', function() {
                 let id = $(this).val();
-                $.post('{{ url('/get-vidhansabha') }}', {
-                    id: id,
+                $.post("{{ url('/get-vidhansabhas') }}", {
+                    district_id: id,
                     _token: '{{ csrf_token() }}'
                 }, function(data) {
-                    $('#searchvidhansabha').html(data);
-                });
+                    console.log(data);
+                    let options = '<option value="">--चुनें--</option>'; 
+
+                    if (data.length > 0) {
+                        $.each(data, function(index, item) {
+                            options += `<option value="${item.vidhansabha_id}">
+                                ${item.vidhansabha}
+                            </option>`;
+                        });
+                    } else {
+                        options += '<option value="">No Vidhansabhas found</option>';
+                    }
+
+                    $('#searchvidhansabha').html(options); 
+                }, 'json');
             });
 
 

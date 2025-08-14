@@ -226,7 +226,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center">कोई जवाब उपलब्ध नहीं है।</td>
+                                <td colspan="8" class="text-center">कोई जवाब उपलब्ध नहीं है।</td>
                             </tr>
                         @endforelse
                     </tbody>
