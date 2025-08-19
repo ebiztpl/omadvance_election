@@ -151,25 +151,93 @@ class ManagerController extends Controller
         return response()->json($result);
     }
 
+    // public function fetchSuchna()
+    // {
+    //     $today = \Carbon\Carbon::today();
+    //     $tomorrow = \Carbon\Carbon::tomorrow();
+    //     $weekEnd = \Carbon\Carbon::today()->addDays(6);
+
+    //     $records = Complaint::with('area')
+    //         ->whereIn('complaint_type', ['शुभ सुचना', 'अशुभ सुचना'])
+    //         ->whereBetween('program_date', [$today, $weekEnd])
+    //         ->orderBy('program_date', 'asc')
+    //         ->get([
+    //             'complaint_id',
+    //             'name',
+    //             'mobile_number',
+    //             'area_id',
+    //             'issue_description',
+    //             'complaint_type',
+    //             'program_date',
+    //             'news_time'
+    //         ]);
+
+    //     $todayData = [];
+    //     $tomorrowData = [];
+    //     $weekData = [];
+
+    //     foreach ($records as $row) {
+    //         $date = \Carbon\Carbon::parse($row->program_date)->toDateString();
+
+    //         $recordData = $row->toArray();
+    //         $recordData['area_name'] = $row->area->area_name ?? 'N/A';
+
+    //         if ($date == $today->toDateString()) {
+    //             $todayData[] = $recordData;
+    //         } elseif ($date == $tomorrow->toDateString()) {
+    //             $tomorrowData[] = $recordData;
+    //         }
+
+    //         $weekData[] = $recordData;
+    //     }
+
+    //     return response()->json([
+    //         'today' => $todayData,
+    //         'tomorrow' => $tomorrowData,
+    //         'week' => $weekData
+    //     ]);
+    // }
+
     public function fetchSuchna()
     {
+        $loggedInId = session('user_id');
+        if (!$loggedInId) {
+            return response()->json(['error' => 'User not logged in.'], 401);
+        }
+
         $today = \Carbon\Carbon::today();
         $tomorrow = \Carbon\Carbon::tomorrow();
         $weekEnd = \Carbon\Carbon::today()->addDays(6);
 
-        $records = Complaint::with('area')
-            ->whereIn('complaint_type', ['शुभ सुचना', 'अशुभ सुचना'])
-            ->whereBetween('program_date', [$today, $weekEnd])
-            ->orderBy('program_date', 'asc')
+        // Subquery: get latest reply per complaint
+        $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+            ->groupBy('complaint_id');
+
+        // Get the table name from the Complaint model
+        $table = (new \App\Models\Complaint)->getTable();
+
+        // Get complaints forwarded to this manager
+        $records = \App\Models\Complaint::with('area')
+            ->joinSub($latestRepliesSub, 'latest', function ($join) use ($table) {
+                $join->on("$table.complaint_id", '=', 'latest.complaint_id');
+            })
+            ->join('complaint_reply as cr', function ($join) use ($table) {
+                $join->on("$table.complaint_id", '=', 'cr.complaint_id')
+                    ->on('cr.reply_date', '=', 'latest.latest_date');
+            })
+            ->where('cr.forwarded_to', $loggedInId)
+            ->whereIn("$table.complaint_type", ['शुभ सुचना', 'अशुभ सुचना'])
+            ->whereBetween("$table.program_date", [$today, $weekEnd])
+            ->orderBy("$table.program_date", 'asc')
             ->get([
-                'complaint_id',
-                'name',
-                'mobile_number',
-                'area_id',
-                'issue_description',
-                'complaint_type',
-                'program_date',
-                'news_time'
+                "$table.complaint_id",
+                "$table.name",
+                "$table.mobile_number",
+                "$table.area_id",
+                "$table.issue_description",
+                "$table.complaint_type",
+                "$table.program_date",
+                "$table.news_time"
             ]);
 
         $todayData = [];
@@ -197,6 +265,8 @@ class ManagerController extends Controller
             'week' => $weekData
         ]);
     }
+
+
 
 
     public function fetchVibhaagWiseCount()
@@ -402,7 +472,7 @@ class ManagerController extends Controller
             ->whereNotNull('forwarded_to')
             ->whereHas('complaint', function ($query) {
                 $query->whereNotIn('complaint_status', [4, 5])
-                    ->whereIn('complaint_type', ['समस्या', 'विकास']);
+                    ->where('complaint_type', 'समस्या');
             })
             ->select('complaint_reply.*');
 
@@ -424,6 +494,97 @@ class ManagerController extends Controller
         ]);
     }
 
+    public function getForwardedVikashCounts()
+    {
+        $username = session('logged_in_user');
+
+        if (!$username) {
+            return response()->json(['error' => 'User not logged in.'], 401);
+        }
+
+        $user = \App\Models\User::where('admin_name', $username)->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'User not found.'], 404);
+        }
+
+        $userId = $user->admin_id;
+
+        $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+            ->groupBy('complaint_id');
+
+        $latestReplies = \App\Models\Reply::joinSub($latestRepliesSub, 'latest', function ($join) {
+            $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
+                ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
+        })
+            ->whereNotNull('forwarded_to')
+            ->whereHas('complaint', function ($query) {
+                $query->whereNotIn('complaint_status', [4, 5])
+                    ->where('complaint_type', 'विकास');
+            })
+            ->select('complaint_reply.*');
+
+        $forwardedToYou = (clone $latestReplies)
+            ->where('complaint_reply.forwarded_to', $userId)
+            ->distinct('complaint_reply.complaint_id')
+            ->count('complaint_reply.complaint_id');
+
+        // $forwardedToOthers = (clone $latestReplies)
+        //     ->where('complaint_reply.forwarded_to', '!=', $userId)
+        //     ->whereNotNull('complaint_reply.forwarded_to')
+        //     ->where('complaint_reply.forwarded_to', '!=', 0)
+        //     ->distinct('complaint_reply.complaint_id')
+        //     ->count('complaint_reply.complaint_id');
+
+        return response()->json([
+            'forwarded_to_you' => $forwardedToYou,
+            // 'forwarded_to_others' => $forwardedToOthers,
+        ]);
+    }
+
+    // public function getForwardedComplaintsPerManager()
+    // {
+    //     $loggedInId = session('user_id');
+
+    //     if (!$loggedInId) {
+    //         return response()->json(['error' => 'User not logged in.'], 401);
+    //     }
+
+    //     // Step 1: Subquery to get latest replies
+    //     $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+    //         ->groupBy('complaint_id');
+
+    //     // Step 2: Join to get latest forwarded replies with valid complaint types and statuses
+    //     $latestReplies = \App\Models\Reply::joinSub($latestRepliesSub, 'latest', function ($join) {
+    //         $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
+    //             ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
+    //     })
+    //         ->whereNotNull('forwarded_to')
+    //         ->whereHas('complaint', function ($query) {
+    //             $query->whereNotIn('complaint_status', [4, 5])
+    //                 ->whereIn('complaint_type', ['समस्या', 'विकास']);
+    //         })
+    //         ->select('forwarded_to', DB::raw('COUNT(DISTINCT complaint_reply.complaint_id) as total'))
+    //         ->groupBy('forwarded_to')
+    //         ->get();
+
+    //     // Step 3: Get all manager users except the logged-in one
+    //     $managers = \App\Models\User::where('role', 2)
+    //         ->where('admin_id', '!=', $loggedInId)
+    //         ->get(['admin_id', 'admin_name']);
+
+    //     // Step 4: Merge count with manager names
+    //     $result = $managers->map(function ($manager) use ($latestReplies) {
+    //         $count = $latestReplies->firstWhere('forwarded_to', $manager->admin_id);
+    //         return [
+    //             'forward' => $manager->admin_name,
+    //             'total' => $count ? $count->total : 0,
+    //         ];
+    //     });
+
+    //     return response()->json($result);
+    // }
+
     public function getForwardedComplaintsPerManager()
     {
         $loggedInId = session('user_id');
@@ -432,35 +593,38 @@ class ManagerController extends Controller
             return response()->json(['error' => 'User not logged in.'], 401);
         }
 
-        // Step 1: Subquery to get latest replies
+        // Subquery to get latest replies per complaint
         $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
             ->groupBy('complaint_id');
 
-        // Step 2: Join to get latest forwarded replies with valid complaint types and statuses
+        // Join to fetch only latest reply per complaint
         $latestReplies = \App\Models\Reply::joinSub($latestRepliesSub, 'latest', function ($join) {
             $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
                 ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
         })
             ->whereNotNull('forwarded_to')
             ->whereHas('complaint', function ($query) {
-                $query->whereNotIn('complaint_status', [4, 5])
-                    ->whereIn('complaint_type', ['समस्या', 'विकास']);
+                $query->whereNotIn('complaint_status', [4, 5]);
             })
-            ->select('forwarded_to', DB::raw('COUNT(DISTINCT complaint_reply.complaint_id) as total'))
-            ->groupBy('forwarded_to')
+            ->with('complaint:complaint_id,complaint_type') // eager load type
             ->get();
 
-        // Step 3: Get all manager users except the logged-in one
+        // Count complaints by manager + type
+        $counts = $latestReplies->groupBy(['forwarded_to', fn($item) => $item->complaint->complaint_type]);
+
+        // All managers except logged-in one
         $managers = \App\Models\User::where('role', 2)
             ->where('admin_id', '!=', $loggedInId)
             ->get(['admin_id', 'admin_name']);
 
-        // Step 4: Merge count with manager names
-        $result = $managers->map(function ($manager) use ($latestReplies) {
-            $count = $latestReplies->firstWhere('forwarded_to', $manager->admin_id);
+        // Build result structure
+        $result = $managers->map(function ($manager) use ($counts) {
             return [
                 'forward' => $manager->admin_name,
-                'total' => $count ? $count->total : 0,
+                'subh'    => optional($counts[$manager->admin_id]['शुभ सूचना'] ?? null)->count() ?? 0,
+                'asubh'   => optional($counts[$manager->admin_id]['अशुभ सूचना'] ?? null)->count() ?? 0,
+                'samasya' => optional($counts[$manager->admin_id]['समस्या'] ?? null)->count() ?? 0,
+                'vikash'  => optional($counts[$manager->admin_id]['विकास'] ?? null)->count() ?? 0,
             ];
         });
 
@@ -487,15 +651,37 @@ class ManagerController extends Controller
 
         $count = DB::table('complaint')
             ->whereIn('complaint_id', $validComplaintIdsQuery)
-            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->where('complaint_type', 'समस्या')
             ->count();
 
         return response()->json(['count' => $count]);
     }
 
+    public function countUnheardComplaintsVikash()
+    {
+        $validComplaintIdsQuery = DB::table('complaint_reply as cr')
+            ->select('cr.complaint_id')
+            ->join(DB::raw('(
+            SELECT complaint_id, COUNT(*) as reply_count, MIN(complaint_reply_id) as min_id
+            FROM complaint_reply
+            GROUP BY complaint_id
+            HAVING COUNT(*) = 1
+        ) as reply_info'), function ($join) {
+                $join->on('cr.complaint_id', '=', 'reply_info.complaint_id')
+                    ->on('cr.complaint_reply_id', '=', 'reply_info.min_id');
+            })
+            ->where('cr.complaint_status', 1)
+            ->where('cr.complaint_reply', 'शिकायत दर्ज की गई है।')
+            ->where('cr.forwarded_to', 6)
+            ->whereNull('cr.selected_reply');
 
+        $count = DB::table('complaint')
+            ->whereIn('complaint_id', $validComplaintIdsQuery)
+            ->where('complaint_type', 'विकास')
+            ->count();
 
-
+        return response()->json(['count' => $count]);
+    }
 
 
 
@@ -686,7 +872,7 @@ class ManagerController extends Controller
                     ->whereNotNull('forwarded_to')
                     ->whereHas('complaint', function ($query) {
                         $query->whereNotIn('complaint_status', [4, 5])
-                            ->whereIn('complaint_type', ['समस्या', 'विकास']);
+                            ->where('complaint_type', 'समस्या');
                     })
                     ->with('complaint.replies');
 
@@ -711,8 +897,54 @@ class ManagerController extends Controller
 
                 break;
 
+            case 'forwardedvikash':
+                $user = \App\Models\User::where('admin_name', session('logged_in_user'))->first();
+
+                if (!$user) {
+                    abort(403, 'User not logged in.');
+                }
+
+                $userId = $user->admin_id;
+                $direction = $request->query('direction');
+
+                $latestReplies = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+                    ->groupBy('complaint_id');
+
+                $latestForwardedReplies = \App\Models\Reply::joinSub($latestReplies, 'latest', function ($join) {
+                    $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
+                        ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
+                })
+                    ->whereNotNull('forwarded_to')
+                    ->whereHas('complaint', function ($query) {
+                        $query->whereNotIn('complaint_status', [4, 5])
+                            ->where('complaint_type', 'विकास');
+                    })
+                    ->with('complaint.replies');
+
+                if ($direction === 'to') {
+                    $latestForwardedReplies = $latestForwardedReplies->where('forwarded_to', $userId);
+                    $title = 'आपको निर्देशित';
+                } elseif ($direction === 'others') {
+                    $latestForwardedReplies = $latestForwardedReplies->where('forwarded_to', '!=', $userId)->where('forwarded_to', '!=', 0);
+                    $title = 'अन्य को निर्देशित';
+                }
+
+                $replies = $latestForwardedReplies->get();
+
+
+                $complaints = $replies
+                    ->pluck('complaint')
+                    ->filter()
+                    ->unique('complaint_id')
+                    ->sortByDesc('posted_date')
+                    ->values();
+                $complaints = $loadForwardedTo($complaints);
+
+                break;
+
             case 'forward-details':
                 $managerName = $request->query('forward');
+                $type = $request->query('type'); // complaint type from query string
 
                 if (!$managerName) {
                     abort(400, 'Manager name not provided.');
@@ -728,6 +960,7 @@ class ManagerController extends Controller
 
                 $managerId = $manager->admin_id;
 
+                // Subquery to get latest reply per complaint
                 $latestReplies = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
                     ->groupBy('complaint_id');
 
@@ -736,9 +969,13 @@ class ManagerController extends Controller
                         ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
                 })
                     ->where('complaint_reply.forwarded_to', $managerId)
-                    ->whereHas('complaint', function ($query) {
-                        $query->whereNotIn('complaint_status', [4, 5])
-                            ->whereIn('complaint_type', ['समस्या', 'विकास']);
+                    ->whereHas('complaint', function ($query) use ($type) {
+                        $query->whereNotIn('complaint_status', [4, 5]);
+
+                        if ($type) {
+                            // If type filter is provided
+                            $query->where('complaint_type', $type);
+                        }
                     })
                     ->with('complaint.replies');
 
@@ -754,6 +991,9 @@ class ManagerController extends Controller
                 $complaints = $loadForwardedTo($complaints);
 
                 $title = "निर्देशित शिकायतें (" . $managerName . ")";
+                if ($type) {
+                    $title .= " - " . $type;
+                }
                 break;
 
             case 'not_opened':
@@ -775,13 +1015,41 @@ class ManagerController extends Controller
                     ->whereNull('cr.selected_reply');
 
                 $complaints = Complaint::whereIn('complaint_id', $validComplaintIds->pluck('complaint_id'))
-                    ->whereIn('complaint_type', ['समस्या', 'विकास'])
+                    ->where('complaint_type', 'समस्या')
                     ->orderBy('posted_date', 'desc')
                     ->get();
 
                 $complaints = $loadForwardedTo($complaints);
 
                 $title = "अनसुनी शिकायतें";
+                break;
+
+            case 'not_opened_vikash':
+
+                $validComplaintIds = DB::table('complaint_reply as cr')
+                    ->select('cr.complaint_id')
+                    ->join(DB::raw('(
+                            SELECT complaint_id, COUNT(*) as reply_count, MIN(complaint_reply_id) as min_id
+                            FROM complaint_reply
+                            GROUP BY complaint_id
+                            HAVING COUNT(*) = 1
+                        ) as reply_info'), function ($join) {
+                        $join->on('cr.complaint_id', '=', 'reply_info.complaint_id')
+                            ->on('cr.complaint_reply_id', '=', 'reply_info.min_id');
+                    })
+                    ->where('cr.complaint_status', 1)
+                    ->where('cr.complaint_reply', 'शिकायत दर्ज की गई है।')
+                    ->where('cr.forwarded_to', 6)
+                    ->whereNull('cr.selected_reply');
+
+                $complaints = Complaint::whereIn('complaint_id', $validComplaintIds->pluck('complaint_id'))
+                    ->where('complaint_type', 'विकास')
+                    ->orderBy('posted_date', 'desc')
+                    ->get();
+
+                $complaints = $loadForwardedTo($complaints);
+
+                $title = "अनसुनी";
                 break;
 
             default:
@@ -1970,54 +2238,76 @@ class ManagerController extends Controller
                     $query->whereHas('replies', function ($q) {
                         $q->whereNotNull('review_date')
                             ->whereRaw('reply_date = (
-                SELECT MAX(reply_date)
-                FROM complaint_reply
-                WHERE complaint_reply.complaint_id = complaint.complaint_id
-            )');
+                                SELECT MAX(reply_date)
+                                FROM complaint_reply
+                                WHERE complaint_reply.complaint_id = complaint.complaint_id
+                            )');
                     })->orderByRaw("
-        (SELECT review_date 
-         FROM complaint_reply 
-         WHERE complaint_reply.complaint_id = complaint.complaint_id 
-         ORDER BY reply_date DESC 
-         LIMIT 1)
-    ");
+                        (SELECT review_date 
+                        FROM complaint_reply 
+                        WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                        ORDER BY reply_date DESC 
+                        LIMIT 1)
+                    ");
                     break;
 
                 case 'important':
                     $query->whereHas('replies', function ($q) {
                         $q->whereNotNull('importance')
                             ->whereRaw('reply_date = (
-              SELECT MAX(reply_date)
-              FROM complaint_reply
-              WHERE complaint_reply.complaint_id = complaint.complaint_id
-          )');
+                                SELECT MAX(reply_date)
+                                FROM complaint_reply
+                                WHERE complaint_reply.complaint_id = complaint.complaint_id
+                            )');
                     })->orderByRaw("FIELD(
-        (SELECT importance 
-         FROM complaint_reply 
-         WHERE complaint_reply.complaint_id = complaint.complaint_id 
-         ORDER BY reply_date DESC 
-         LIMIT 1),
-        'उच्च', 'मध्यम', 'कम'
-    )");
+                            (SELECT importance 
+                            FROM complaint_reply 
+                            WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                            ORDER BY reply_date DESC 
+                            LIMIT 1),
+                            'उच्च', 'मध्यम', 'कम'
+                        )");
                     break;
 
                 case 'critical':
                     $query->whereHas('replies', function ($q) {
                         $q->whereNotNull('criticality')
                             ->whereRaw('reply_date = (
-              SELECT MAX(reply_date)
-              FROM complaint_reply
-              WHERE complaint_reply.complaint_id = complaint.complaint_id
-          )');
+                                    SELECT MAX(reply_date)
+                                    FROM complaint_reply
+                                    WHERE complaint_reply.complaint_id = complaint.complaint_id
+                                )');
                     })->orderByRaw("FIELD(
-        (SELECT criticality 
-         FROM complaint_reply 
-         WHERE complaint_reply.complaint_id = complaint.complaint_id 
-         ORDER BY reply_date DESC 
-         LIMIT 1),
-        'अत्यधिक', 'मध्यम', 'कम'
-    )");
+                                (SELECT criticality 
+                                FROM complaint_reply 
+                                WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                                ORDER BY reply_date DESC 
+                                LIMIT 1),
+                                'अत्यधिक', 'मध्यम', 'कम'
+                            )");
                     break;
+
+                case 'closed': 
+                    $query->where('complaint_status', 4);
+                    break;
+
+                case 'cancel': 
+                    $query->where('complaint_status', 5);
+                    break;
+
+                case 'forwarded_manager':
+                    $loggedInId = session('user_id'); 
+
+                    $query->whereHas('replies', function ($q) use ($loggedInId) {
+                        $q->where('forwarded_to', $loggedInId)
+                            ->whereRaw('reply_date = (
+                        SELECT MAX(reply_date)
+                        FROM complaint_reply
+                        WHERE complaint_reply.complaint_id = complaint.complaint_id
+                    )');
+                    });
+                    break;
+
             }
         }
 
@@ -2243,10 +2533,10 @@ class ManagerController extends Controller
                     break;
 
 
-                            case 'reviewed':
-                                $query->whereHas('replies', function ($q) {
-                                    $q->whereNotNull('review_date')
-                                        ->whereRaw('reply_date = (
+                case 'reviewed':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('review_date')
+                            ->whereRaw('reply_date = (
                             SELECT MAX(reply_date)
                             FROM complaint_reply
                             WHERE complaint_reply.complaint_id = complaint.complaint_id
@@ -2263,37 +2553,58 @@ class ManagerController extends Controller
                 case 'important':
                     $query->whereHas('replies', function ($q) {
                         $q->whereNotNull('importance')
-                                        ->whereRaw('reply_date = (
+                            ->whereRaw('reply_date = (
                         SELECT MAX(reply_date)
                         FROM complaint_reply
                         WHERE complaint_reply.complaint_id = complaint.complaint_id
-                    )');
-                                })->orderByRaw("FIELD(
-                    (SELECT importance 
-                    FROM complaint_reply 
-                    WHERE complaint_reply.complaint_id = complaint.complaint_id 
-                    ORDER BY reply_date DESC 
-                    LIMIT 1),
-                    'उच्च', 'मध्यम', 'कम'
-                )");
+                            )');
+                            })->orderByRaw("FIELD(
+                            (SELECT importance 
+                            FROM complaint_reply 
+                            WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                            ORDER BY reply_date DESC 
+                            LIMIT 1),
+                            'उच्च', 'मध्यम', 'कम'
+                        )");
                     break;
 
                 case 'critical':
                     $query->whereHas('replies', function ($q) {
                         $q->whereNotNull('criticality')
                             ->whereRaw('reply_date = (
-              SELECT MAX(reply_date)
-              FROM complaint_reply
-              WHERE complaint_reply.complaint_id = complaint.complaint_id
-          )');
-                    })->orderByRaw("FIELD(
-        (SELECT criticality 
-         FROM complaint_reply 
-         WHERE complaint_reply.complaint_id = complaint.complaint_id 
-         ORDER BY reply_date DESC 
-         LIMIT 1),
-        'अत्यधिक', 'मध्यम', 'कम'
-    )");
+                            SELECT MAX(reply_date)
+                            FROM complaint_reply
+                            WHERE complaint_reply.complaint_id = complaint.complaint_id
+                        )');
+                                    })->orderByRaw("FIELD(
+                        (SELECT criticality 
+                        FROM complaint_reply 
+                        WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                        ORDER BY reply_date DESC 
+                        LIMIT 1),
+                        'अत्यधिक', 'मध्यम', 'कम'
+                    )");
+                    break;
+
+                case 'closed':
+                    $query->where('complaint_status', 4);
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 5);
+                    break;
+
+                case 'forwarded_manager':
+                    $loggedInId = session('user_id');
+
+                    $query->whereHas('replies', function ($q) use ($loggedInId) {
+                        $q->where('forwarded_to', $loggedInId)
+                            ->whereRaw('reply_date = (
+                        SELECT MAX(reply_date)
+                        FROM complaint_reply
+                        WHERE complaint_reply.complaint_id = complaint.complaint_id
+                    )');
+                    });
                     break;
             }
         }
@@ -2647,7 +2958,8 @@ class ManagerController extends Controller
         $result = $pollings->map(function ($p) {
             return [
                 'id' => $p->gram_polling_id,
-                'label' => "{$p->polling_name} ({$p->polling_no}) - " . ($p->area->area_name ?? '')
+                'label' => "{$p->polling_name} ({$p->polling_no}) - " . ($p->area->area_name ?? ''),
+                'area_id' => $p->area->area_id,
             ];
         });
 
@@ -2678,6 +2990,36 @@ class ManagerController extends Controller
         $subjects = Subject::where('department_id', $department->department_id)->get(['subject']);
 
         return response()->json($subjects);
+    }
+
+    public function getVoter(Request $request)
+    {
+        $request->validate([
+            'name'        => 'required|string',
+            'father_name' => 'required|string',
+            'area_id'     => 'required|integer',
+        ]);
+
+        $voter = DB::table('registration_form')
+            ->join('step2', 'registration_form.registration_id', '=', 'step2.registration_id')
+            ->where('registration_form.name', $request->name)
+            ->where('registration_form.father_name', $request->father_name)
+            ->where('step2.area_id', $request->area_id)
+            ->select('registration_form.voter_id', 'registration_form.name', 'registration_form.father_name')
+            ->first();
+
+        if (!$voter) {
+            return response()->json([
+                'status'  => 'success',
+                'data'    => null,
+                'message' => 'No voter found, you can continue manually.'
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $voter
+        ]);
     }
 
     public function updateComplaint(Request $request, $id)

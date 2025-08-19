@@ -61,8 +61,16 @@
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         <span class="data-text">नाम</span> <span class="error">*</span>
                                     </label>
-                                    <input type="text" class="form-control" name="txtname"
+                                    <input type="text" class="form-control" name="txtname" id="name"
                                         value="{{ old('txtname', $complaint->name) }}" required>
+                                </div>
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        पिता का नाम <span class="error">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" name="father_name" id="father_name"
+                                        value="{{ old('father_name', $complaint->father_name) }}" required>
                                 </div>
 
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
@@ -73,29 +81,9 @@
                                         value="{{ old('mobile', $complaint->mobile_number) }}">
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                        पिता का नाम <span class="error">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" name="father_name"
-                                        value="{{ old('father_name', $complaint->father_name) }}" required>
-                                </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                        रेफरेंस नाम
-                                    </label>
-                                    <input type="text" class="form-control" name="reference"
-                                        value="{{ old('reference', $complaint->reference_name) }}">
-                                </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                        मतदाता पहचान <span class="error">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" name="voter"
-                                        value="{{ old('voter', $complaint->voter_id) }}" required>
-                                </div>
+
 
 
 
@@ -161,6 +149,29 @@
                                             {{ $complaint->polling->area->area_name ?? '' }}
                                         </option>
                                     </select>
+                                    <input type="hidden" id="area_id" name="area_id"
+                                        value="{{ $complaint->polling->area->area_id ?? '' }}">
+                                </div>
+
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        रेफरेंस नाम
+                                    </label>
+                                    <input type="text" class="form-control" name="reference"
+                                        value="{{ old('reference', $complaint->reference_name) }}">
+                                </div>
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        मतदाता पहचान <span class="error">*</span>
+                                    </label>
+
+                                    <div class="d-flex flex-column w-100">
+                                        <input type="text" class="form-control" name="voter" id="voter_id_input"
+                                            value="{{ old('voter', $complaint->voter_id) }}" required>
+                                        <small id="voter-error" class="text-danger mt-1" style="display:none;"></small>
+                                    </div>
                                 </div>
 
                                 {{-- <div class="col-md-4 mb-3">
@@ -450,12 +461,13 @@
                     <tbody style="color: #000;">
                         @forelse ($complaint->replies as $reply)
                             <tr>
-                                <td> {{ $reply->selected_reply === 0 ? 'अन्य' : ($reply->predefinedReply->reply ?? '-') }}</td>
-                                 <td>{!! $reply->statusTextPlain() !!}</td>
+                                <td> {{ $reply->selected_reply === 0 ? 'अन्य' : $reply->predefinedReply->reply ?? '-' }}
+                                </td>
+                                <td>{!! $reply->statusTextPlain() !!}</td>
                                 <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') : 'N/A' }}
                                 </td>
                                 <td> {{ $reply->forwardedToManager?->admin_name ?? '' }}</td>
-                                  <td> {{ $reply->review_date ?? '' }}</td>
+                                <td> {{ $reply->review_date ?? '' }}</td>
                                 <td> {{ $reply->importance ?? '' }}</td>
                                 <td> {{ $reply->criticality ?? '' }}</td>
                                 <td>
@@ -471,7 +483,7 @@
                                         {{-- data-status="{{ $reply->statusTextPlain() }}" --}}
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
                                         data-status="{{ strip_tags($reply->statusTextPlain()) }}"
-                                        data-predefined="{{ $reply->selected_reply === 0 ? 'अन्य' : ($reply->predefinedReply->reply ?? '-') }}"
+                                        data-predefined="{{ $reply->selected_reply === 0 ? 'अन्य' : $reply->predefinedReply->reply ?? '-' }}"
                                         data-cb-photo="{{ $reply->cb_photo ? asset($reply->cb_photo) : '' }}"
                                         data-ca-photo="{{ $reply->ca_photo ? asset($reply->ca_photo) : '' }}"
                                         data-video="{{ $reply->c_video ? asset($reply->c_video) : '' }}">
@@ -535,7 +547,7 @@
                             </div>
 
 
-                             <div class="table-responsive">
+                            <div class="table-responsive">
                                 <table style="color: black" class="table table-bordered text-center align-middle">
                                     <thead class="table-light">
                                         <tr>
@@ -651,7 +663,7 @@
                             </select>
                         </div>
 
-                          <div class="col-md-2">
+                        <div class="col-md-2">
                             <label for="review_date">रीव्यू दिनांक</label>
                             <input type="date" class="form-control" name="review_date">
                         </div>
@@ -761,7 +773,7 @@
     @push('scripts')
         <script>
             $(document).on('click', '.view-details-btn', function() {
-                   const reply = $(this).data('reply') || '—';
+                const reply = $(this).data('reply') || '—';
                 const contact = $(this).data('contact') || '—';
                 const details = $(this).data('details') || '—';
                 const replyDate = $(this).data('reply-date') || '—';
@@ -849,14 +861,14 @@
                             $('#success-message').text(response.message);
 
                             $('#success-alert').removeClass('d-none');
-                            
+
                             window.scrollTo({
                                 top: 0,
                                 behavior: 'smooth'
                             });
 
                             setTimeout(function() {
-                                location.reload(); 
+                                location.reload();
                             }, 500);
 
                             $('#replyForm')[0].reset();
@@ -903,12 +915,18 @@
                     // Toggle department/date rows
                     if (type === "शुभ सुचना" || type === "अशुभ सुचना") {
                         $(".department_row").hide();
-                        $("select[name='department']").removeAttr("required");
+                        $("select[name='department'], select[name='post'], select[name='CharCounter']")
+                            .removeAttr("required");
+
                         $(".date_row").show();
+                        $("input[name='from_date'], input[name='program_date']").attr("required", "required");
                     } else {
                         $(".department_row").show();
-                        $("select[name='department']").attr("required", "required");
+                        $("select[name='department'], select[name='post'], select[name='CharCounter']")
+                            .attr("required", "required");
+
                         $(".date_row").hide();
+                        $("input[name='from_date'], input[name='program_date']").removeAttr("required");
                     }
                 });
 
@@ -981,10 +999,18 @@
                     $.get('/manager/get-pollings-gram/' + nagarId, function(data) {
                         let options = '<option value="">--चुने--</option>';
                         data.forEach(function(item) {
-                            options += `<option value="${item.id}">${item.label}</option>`;
+                            options +=
+                                `<option value="${item.id}" data-area-id="${item.area_id}">${item.label}</option>`;
                         });
                         $('#txtpolling').html(options);
                     });
+                });
+
+                $('#txtpolling').change(function() {
+                    let areaId = $(this).find(':selected').data('area-id') || '';
+                    $('#area_id').val(areaId);
+
+                    fetchVoterId();
                 });
 
 
@@ -1034,6 +1060,54 @@
                         });
                     });
                 }
+
+
+                function fetchVoterId() {
+                    let name = $('#name').val().trim();
+                    let father = $('#father_name').val().trim();
+                    let areaId = $('#area_id').val();
+
+                    if (!name || !father || !areaId) {
+                        $('#voter_id_input').val('');
+                        $('#voter-error').hide().text('');
+                        return;
+                    }
+
+                    $('#voter_id_input').val('Loading...');
+                    $('#voter-error').hide().text('');
+
+                    $.ajax({
+                        url: '/manager/get-voter',
+                        type: 'GET',
+                        data: {
+                            name: name,
+                            father_name: father,
+                            area_id: areaId
+                        },
+                        success: function(res) {
+                            $('#voter_id_input').val('');
+
+                            if (res.status === 'success' && res.data && res.data.voter_id) {
+                                $('#voter_id_input').val(res.data.voter_id);
+                                $('#voter-error').hide().text('');
+                            } else {
+                                $('#voter_id_input').val('');
+                                $('#voter-error')
+                                    .text('मतदाता पहचान नहीं मिली (Voter ID not found for given details)')
+                                    .show();
+                            }
+                        },
+                        error: function(xhr) {
+                            $('#voter_id_input').val('');
+                            $('#voter-error')
+                                .text('मतदाता पहचान नहीं मिली (Voter ID not found for given details)')
+                                .show();
+                            console.error("Error fetching voter: " + xhr.responseText);
+                        }
+                    });
+                }
+
+                $('#name, #father_name').on('blur', fetchVoterId);
             });
 
             document.addEventListener('DOMContentLoaded', function() {
@@ -1045,11 +1119,11 @@
 
                     if (selectedValue === 4 || selectedValue === 5) {
                         forwardedSelect.disabled = true;
-                        forwardedSelect.style.backgroundColor = '#e1e2e6'; 
+                        forwardedSelect.style.backgroundColor = '#e1e2e6';
                         forwardedSelect.removeAttribute('required');
                     } else {
                         forwardedSelect.disabled = false;
-                        forwardedSelect.style.backgroundColor = ''; 
+                        forwardedSelect.style.backgroundColor = '';
                         forwardedSelect.setAttribute('required', 'required');
                     }
                 }

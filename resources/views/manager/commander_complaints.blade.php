@@ -160,28 +160,41 @@
                             </div>
                         @endif
 
-                        <ul class="nav nav-tabs mb-3">
+                        <ul class="nav nav-tabs nav-filters mb-3">
                             <li class="nav-item">
-                                <a class="nav-link {{ request('filter') === null ? 'active' : '' }}"
+                                <a class="nav-link filter-link {{ request('filter') === 'forwarded_manager' ? 'active' : '' }}" style="color: black"
+                                    href="{{ route('commander.complaints.view', ['filter' => 'forwarded_manager']) }}">निर्देशित</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === null ? 'active' : '' }}" style="color: black"
                                     href="{{ route('commander.complaints.view') }}">सभी</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {{ request('filter') === 'not_opened' ? 'active' : '' }}"
+                                <a class="nav-link filter-link {{ request('filter') === 'not_opened' ? 'active' : '' }}" style="color: black"
                                     href="{{ route('commander.complaints.view', ['filter' => 'not_opened']) }}">नई
                                     शिकायतें</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {{ request('filter') === 'reviewed' ? 'active' : '' }}"
+                                <a class="nav-link filter-link {{ request('filter') === 'reviewed' ? 'active' : '' }}" style="color: black"
                                     href="{{ route('commander.complaints.view', ['filter' => 'reviewed']) }}">रीव्यू की
                                     गई</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {{ request('filter') === 'important' ? 'active' : '' }}"
+                                <a class="nav-link filter-link {{ request('filter') === 'important' ? 'active' : '' }}" style="color: black"
                                     href="{{ route('commander.complaints.view', ['filter' => 'important']) }}">महत्त्वपूर्ण</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {{ request('filter') === 'critical' ? 'active' : '' }}"
+                                <a class="nav-link filter-link {{ request('filter') === 'critical' ? 'active' : '' }}" style="color: black"
                                     href="{{ route('commander.complaints.view', ['filter' => 'critical']) }}">गंभीर</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'closed' ? 'active' : '' }}" style="color: black"
+                                    href="{{ route('commander.complaints.view', ['filter' => 'closed']) }}">पूर्ण शिकायतें</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'cancel' ? 'active' : '' }}" style="color: black"
+                                    href="{{ route('commander.complaints.view', ['filter' => 'cancel']) }}">रद्द शिकायतें</a>
                             </li>
                         </ul>
 

@@ -162,8 +162,11 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/detail_suchna/{id}', [ManagerController::class, 'detail_suchna']);
     Route::get('/ajax/forwarded-counts', [ManagerController::class, 'getForwardedCounts'])
         ->name('ajax.forwarded.counts');
+    Route::get('/ajax/forwarded-counts-vikash', [ManagerController::class, 'getForwardedVikashCounts'])
+        ->name('ajax.forwarded.counts.vikash');
     Route::get('/fetch-forwards', [ManagerController::class, 'getForwardedComplaintsPerManager']);
     Route::get('/ajax/complaints/not_opened_count', [ManagerController::class, 'countUnheardComplaints']);
+    Route::get('/ajax/complaints/not_opened_count_vikash', [ManagerController::class, 'countUnheardComplaintsVikash']);
     Route::get('/voters/details/download', [ManagerController::class, 'downloadVoters'])->name('voterlistdashboard.download');
 
     // division routes
@@ -346,6 +349,7 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/manager/details_complaints/{id}', [ManagerController::class, 'allcomplaints_show'])->name('complaints_show.details');
     Route::post('/manager/complaints/{id}/reply', [ManagerController::class, 'complaintsReply'])->name('complaint_reply.reply');
 
+    Route::get('manager/get-voter', [ManagerController::class, 'getVoter'])->name('get.voter');
 
 
     Route::get('/manager/get-districts/{division_id}', [ManagerController::class, 'getDistricts']);
@@ -380,6 +384,7 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/operator/dashboard', [OperatorController::class, 'dashboard'])->name('operator.dashboard');
 
     Route::get('/operator/complaints', [OperatorController::class, 'index'])->name('operator_complaint.index');
+    Route::get('/get-voter', [OperatorController::class, 'getVoter'])->name('get.voter');
     Route::post('/operator/complaints/store', [OperatorController::class, 'store'])->name('operator_complaint.store');
     Route::get('/operator/view_complaint', [OperatorController::class, 'view_complaints'])->name('operator_complaint.view');
     Route::get('/operator/details_complaint/{id}', [OperatorController::class, 'operator_complaints_show'])->name('operator_complaint.show');
