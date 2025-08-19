@@ -198,7 +198,7 @@
             <div class="col-xl-4 col-lg-4 col-md-4 w-100">
                 <div class="p-3 mb-4" style="background-color: #EEEFE0">
                     <div class="section-title text-center">
-                        <h4 class="font-weight-bold">समस्या / विकास </h4>
+                        <h4 class="font-weight-bold">समस्या निर्देशित</h4>
                     </div>
                     <div class="row justify-content-center">
                         <div class="col-md-6">
@@ -218,6 +218,43 @@
                                     <div class="subtitle font-weight-bold">अनसुनी शिकायतें</div>
                                 </div>
                                 <span class="count-badge" id="count-not-opened">0</span>
+                            </a>
+                        </div>
+
+                        {{-- <div class="col-md-6">
+                            <a id="forward1" href="/complaints/forwarded?direction=others" target="_blank"
+                                class="forwarded-btn d-flex justify-content-between align-items-center p-3">
+                                <div class="text-left">
+                                    <div class="subtitle font-weight-bold">अन्य निर्देशित</div>
+                                </div>
+                                <span class="count-badge" id="count-others">0</span>
+                            </a>
+                        </div> --}}
+                    </div>
+                </div>
+
+                <div class="p-3 mb-4" style="background-color: #EBFFD8">
+                    <div class="section-title text-center">
+                        <h4 class="font-weight-bold">विकास निर्देशित</h4>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <a id="forward-you" href="/complaints/forwardedvikash?direction=to" target="_blank"
+                                class="forwarded-btn forwarded-you d-flex justify-content-between align-items-center p-3">
+                                <div class="text-left">
+                                    <div class="subtitle font-weight-bold">आपको निर्देशित</div>
+                                </div>
+                                <span class="count-badge" id="count-you-vikash">0</span>
+                            </a>
+                        </div>
+
+                        <div class="col-md-6">
+                            <a id="forward-unheard" href="/complaints/not_opened_vikash" target="_blank"
+                                class="forwarded-btn forwarded-warning d-flex justify-content-between align-items-center p-3">
+                                <div class="text-left">
+                                    <div class="subtitle font-weight-bold">अनसुनी शिकायतें</div>
+                                </div>
+                                <span class="count-badge" id="count-not-opened-vikash">0</span>
                             </a>
                         </div>
 
@@ -294,7 +331,7 @@
                     </div>
                 </div>
 
-                <div class="row">
+                {{-- <div class="row">
                     <div class="col-xl-12 col-lg-12 col-md-12">
                         <div class="card" style="background-color: #ECE8DD">
                             <div class="card-body">
@@ -307,8 +344,44 @@
                             </div>
                         </div>
                     </div>
+                </div> --}}
+
+                <div class="row">
+                    <div class="col-xl-12 col-lg-12 col-md-12">
+                        <div class="card" style="background-color: #ECE8DD">
+                            <div class="card-body">
+                                <div class="card-header mb-2" style="border-bottom: 2px solid gray;">
+                                    <h4 class="card-title suchna mb-0">अन्य को निर्देशित</h4>
+                                </div>
+
+                                <table class="table forward-table text-center custom-bordered-table" style="color: black;"
+                                    id="forward-count-table">
+                                    <thead>
+                                        <tr>
+                                            <th rowspan="2">प्रबंधक</th>
+                                            <th colspan="2">सूचना</th>
+                                            <th colspan="2">समस्या</th>
+                                        </tr>
+                                        <tr>
+                                            <th>शुभ</th>
+                                            <th>अशुभ</th>
+                                            <th>समस्या</th>
+                                            <th>विकास</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="5" class="text-center">लोड हो रहा है...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+
         </div>
 
         {{-- <div class="row">
@@ -679,10 +752,14 @@
                                     <td>${row.issue_description}</td>
                                     ${selector === "#week-table" ? `<td>${row.program_date}</td>` : ''}
                                      <td>${row.news_time}</td>
-                                    <td>
+                                    <td style="white-space: nowrap;">
                                        <button class="btn btn-sm btn-primary view-details-btn" data-id="${row.complaint_id}">
                                             विवरण
                                         </button>
+                                         <a href="/manager/details_complaints/${row.complaint_id}" 
+                                        class="btn btn-sm btn-warning">
+                                            क्लिक करें
+                                        </a>
                                     </td>
                                 </tr>
                             `;
@@ -896,35 +973,102 @@
                     });
                 }
 
+
+                fetchForwardedCountsVikash();
+
+                function fetchForwardedCountsVikash() {
+                    $.ajax({
+                        url: "{{ route('ajax.forwarded.counts.vikash') }}",
+                        method: 'GET',
+                        dataType: 'json',
+                        success: function(data) {
+                            $('#count-you-vikash').text(data.forwarded_to_you);
+                            // $('#count-others').text(data.forwarded_to_others);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error fetching forwarded counts:', error);
+                        }
+                    });
+                }
+
                 $.ajax({
                     url: "/fetch-forwards",
                     method: "GET",
                     dataType: "json",
                     success: function(data) {
-                        const $list = $("#forward-count-list");
-                        $list.empty();
+                        const $table = $("#forward-count-table tbody");
+                        $table.empty();
 
                         if (data.length === 0) {
-                            $list.append(`<li class="text-muted text-center">कोई डेटा उपलब्ध नहीं</li>`);
+                            $table.append(
+                                `<tr><td colspan="5" class="text-center text-muted">कोई डेटा उपलब्ध नहीं</td></tr>`
+                            );
                         } else {
                             data.forEach(item => {
-                                $list.append(`
-                                 <a href="/complaints/forward-details?forward=${item.forward}" target="_blank"  class="text-decoration-none" style="color: black">
-                            <li class="d-flex justify-content-between border-bottom py-1" style="font-size: 16px">
-                                <span>${item.forward}</span>
-                                <span class="badge bg-primary text-white">${item.total}</span>
-                            </li>
-                                    </a>
-                        `);
+                                $table.append(`
+                                    <tr>
+                                        <td style='font-weight: bold'>${item.forward}</td>
+                                        <td>
+                                            <a href="/complaints/forward-details?forward=${item.forward}&type=शुभ सूचना" target="_blank" class="text-decoration-none text-light">
+                                                <span class="badge bg-success border" style="color: white">${item.subh}</span>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="/complaints/forward-details?forward=${item.forward}&type=अशुभ सूचना" target="_blank" class="text-decoration-none text-dark">
+                                                <span class="badge bg-danger border" style="color: white">${item.asubh}</span>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="/complaints/forward-details?forward=${item.forward}&type=समस्या" target="_blank" class="text-decoration-none text-dark">
+                                                <span class="badge bg-warning text-dark border">${item.samasya}</span>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="/complaints/forward-details?forward=${item.forward}&type=विकास" target="_blank" class="text-decoration-none text-dark">
+                                                <span class="badge bg-info border text-dark">${item.vikash}</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                `);
                             });
                         }
                     },
-                    error: function(xhr, status, error) {
-                        console.error("Error fetching Status:", error);
-                        $("#forward-count-list").html(
-                            `<li class="text-danger">डेटा लोड करने में त्रुटि</li>`);
+                    error: function() {
+                        $("#forward-count-table tbody").html(
+                            `<tr><td colspan="5" class="text-danger text-center">डेटा लोड करने में त्रुटि</td></tr>`
+                        );
                     }
                 });
+
+                // $.ajax({
+                //     url: "/fetch-forwards",
+                //     method: "GET",
+                //     dataType: "json",
+                //     success: function(data) {
+                //         const $list = $("#forward-count-list");
+                //         $list.empty();
+
+                //         if (data.length === 0) {
+                //             $list.append(`<li class="text-muted text-center">कोई डेटा उपलब्ध नहीं</li>`);
+                //         } else {
+                //             data.forEach(item => {
+                //                 $list.append(`
+        //                  <a href="/complaints/forward-details?forward=${item.forward}" target="_blank"  class="text-decoration-none" style="color: black">
+        //             <li class="d-flex justify-content-between border-bottom py-1" style="font-size: 16px">
+        //                 <span>${item.forward}</span>
+        //                 <span class="badge bg-primary text-white">${item.total}</span>
+        //             </li>
+        //                     </a>
+        //         `);
+                //             });
+                //         }
+                //     },
+                //     error: function(xhr, status, error) {
+                //         console.error("Error fetching Status:", error);
+                //         $("#forward-count-list").html(
+                //             `<li class="text-danger">डेटा लोड करने में त्रुटि</li>`);
+                //     }
+                // });
 
 
                 $.ajax({
@@ -932,6 +1076,17 @@
                     type: "GET",
                     success: function(data) {
                         $('#count-not-opened').text(data.count);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error fetching count:", error);
+                    }
+                });
+
+                $.ajax({
+                    url: "/ajax/complaints/not_opened_count_vikash",
+                    type: "GET",
+                    success: function(data) {
+                        $('#count-not-opened-vikash').text(data.count);
                     },
                     error: function(xhr, status, error) {
                         console.error("Error fetching count:", error);

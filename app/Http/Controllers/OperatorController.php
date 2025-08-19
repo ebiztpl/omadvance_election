@@ -56,6 +56,36 @@ class OperatorController extends Controller
         return view('operator/complaints', compact('states', 'nagars',  'departments'));
     }
 
+    public function getVoter(Request $request)
+    {
+        $request->validate([
+            'name'        => 'required|string',
+            'father_name' => 'required|string',
+            'area_id'     => 'required|integer',
+        ]);
+
+        $voter = DB::table('registration_form')
+            ->join('step2', 'registration_form.registration_id', '=', 'step2.registration_id')
+            ->where('registration_form.name', $request->name)
+            ->where('registration_form.father_name', $request->father_name)
+            ->where('step2.area_id', $request->area_id)
+            ->select('registration_form.voter_id', 'registration_form.name', 'registration_form.father_name')
+            ->first();
+
+        if (!$voter) {
+            return response()->json([
+                'status'  => 'success',
+                'data'    => null,
+                'message' => 'No voter found, you can continue manually.'
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $voter
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([

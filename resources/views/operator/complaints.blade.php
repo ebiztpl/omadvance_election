@@ -64,7 +64,14 @@
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         <span class="data-text">नाम</span> <span class="error">*</span>
                                     </label>
-                                    <input type="text" class="form-control" name="txtname" required>
+                                    <input type="text" class="form-control" name="txtname" id="name" required>
+                                </div>
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        पिता का नाम <span class="error">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" name="father_name" id="father_name" required>
                                 </div>
 
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
@@ -74,26 +81,7 @@
                                     <input type="text" class="form-control" name="mobile">
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                        पिता का नाम <span class="error">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" name="father_name" required>
-                                </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                       रेफरेंस नाम
-                                    </label>
-                                    <input type="text" class="form-control" name="reference" >
-                                </div>
-
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                        मतदाता पहचान <span class="error">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" name="voter" required>
-                                </div>
 
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
@@ -148,6 +136,26 @@
                                         <option value="">--चुने--</option>
                                     </select>
                                     <input type="hidden" name="area_id" id="area_id" />
+                                </div>
+
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        रेफरेंस नाम
+                                    </label>
+                                    <input type="text" class="form-control" name="reference">
+                                </div>
+
+                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        मतदाता पहचान <span class="error">*</span>
+                                    </label>
+
+                                    <div class="d-flex flex-column w-100">
+                                        <input type="text" class="form-control" id="voter_id_input" name="voter"
+                                            required>
+                                        <small id="voter-error" class="text-danger mt-1" style="display:none;"></small>
+                                    </div>
                                 </div>
 
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
@@ -393,6 +401,7 @@
                 $('#txtpolling').on('change', function() {
                     const areaId = $(this).find(':selected').data('area-id');
                     $('#area_id').val(areaId || '');
+                    fetchVoterId();
                 });
 
                 $(".check").change(function() {
@@ -424,18 +433,73 @@
                     // Toggle department/date rows
                     if (type === "शुभ सुचना" || type === "अशुभ सुचना") {
                         $(".department_row").hide();
-                        $(".department_row select").prop("required", false);
+                        $("select[name='department'], select[name='post'], select[name='CharCounter']")
+                            .removeAttr("required");
+
                         $(".date_row").show();
+                        $("input[name='from_date'], input[name='program_date']").attr("required", "required");
                     } else {
                         $(".department_row").show();
-                        $(".department_row select").prop("required", true);
+                        $("select[name='department'], select[name='post'], select[name='CharCounter']")
+                            .attr("required", "required");
+
                         $(".date_row").hide();
+                        $("input[name='from_date'], input[name='program_date']").removeAttr("required");
                     }
                 });
 
                 if ($(".check:checked").length > 0) {
                     $(".check:checked").trigger("change");
                 }
+
+
+
+                function fetchVoterId() {
+                    let name = $('#name').val().trim();
+                    let father = $('#father_name').val().trim();
+                    let areaId = $('#area_id').val();
+
+                    if (!name || !father || !areaId) {
+                        $('#voter_id_input').val('');
+                        $('#voter-error').hide().text('');
+                        return;
+                    }
+
+                    $('#voter_id_input').val('Loading...');
+                    $('#voter-error').hide().text('');
+
+                    $.ajax({
+                        url: '/get-voter',
+                        type: 'GET',
+                        data: {
+                            name: name,
+                            father_name: father,
+                            area_id: areaId
+                        },
+                        success: function(res) {
+                            $('#voter_id_input').val('');
+
+                            if (res.status === 'success' && res.data && res.data.voter_id) {
+                                $('#voter_id_input').val(res.data.voter_id);
+                                $('#voter-error').hide().text('');
+                            } else {
+                                $('#voter_id_input').val(''); 
+                                $('#voter-error')
+                                    .text('मतदाता पहचान नहीं मिली (Voter ID not found for given details)')
+                                    .show();
+                            }
+                        },
+                        error: function(xhr) {
+                            $('#voter_id_input').val('');
+                            $('#voter-error')
+                                .text('मतदाता पहचान नहीं मिली (Voter ID not found for given details)')
+                                .show();
+                            console.error("Error fetching voter: " + xhr.responseText);
+                        }
+                    });
+                }
+
+                $('#name, #father_name').on('blur', fetchVoterId);
             });
         </script>
 
