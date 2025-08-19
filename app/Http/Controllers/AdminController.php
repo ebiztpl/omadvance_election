@@ -1808,7 +1808,7 @@ class AdminController extends Controller
         $replyOptions = ComplaintReply::all();
         $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
         $managers = User::where('role', 2)->get();
-        
+
         return view('admin.operator_complaints', compact(
             'complaints',
             'mandals',
@@ -3882,12 +3882,88 @@ class AdminController extends Controller
         ]);
     }
 
+// it is working but for more data it is not working
+    // public function downloadvoterFullData(Request $request)
+    // {
+    //     $query = DB::table('registration_form')->where('type', 1);
 
+    //     // Apply filter if available
+    //     if ($request->filled('area_id')) {
+    //         $areaId = $request->input('area_id');
+    //         $query->whereIn('registration_id', function ($subquery) use ($areaId) {
+    //             $subquery->select('registration_id')
+    //                 ->from('step2')
+    //                 ->where('area_id', $areaId);
+    //         });
+    //     }
+
+    //     $results = $query->get();
+
+    //     $data = [];
+    //     $sr = 1;
+
+    //     foreach ($results as $voter) {
+    //         $step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
+    //         $step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
+    //         $area_name = DB::table('area_master')->where('area_id', optional($step2)->area_id)->value('area_name');
+
+    //         $data[] = [
+    //             'SR No' => $sr++,
+    //             'Name' => $voter->name,
+    //             'Father Name' => $voter->father_name,
+    //             'House' => $step2->house ?? '',
+    //             'Age' => $voter->age,
+    //             'Gender' => $voter->gender,
+    //             'Voter ID' => $voter->voter_id,
+    //             'Area Name' => $area_name ?? '',
+    //             'Jati' => $voter->jati,
+    //             'Matdan Kendra No' => $step2->matdan_kendra_no ?? '',
+    //             'Total Member' => $step3->total_member ?? '',
+    //             'Mukhiya Mobile' => $step3->mukhiya_mobile ?? '',
+    //             'Death/Left' => $voter->death_left ?? '',
+    //             'Date Time' => $voter->date_time ? \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') : '',
+    //         ];
+    //     }
+
+    //     // Prepare CSV headers
+    //     $fileName = "voterlist.csv";
+    //     $headers = [
+    //         "Content-type" => "text/csv",
+    //         "Content-Disposition" => "attachment; filename=$fileName",
+    //         "Pragma" => "no-cache",
+    //         "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+    //         "Expires" => "0"
+    //     ];
+
+    //     // Return streamed CSV response
+    //     $callback = function () use ($data) {
+    //         $file = fopen('php://output', 'w');
+
+    //         // Write the column headings
+    //         if (!empty($data)) {
+    //             fputcsv($file, array_keys($data[0]));
+    //         }
+
+    //         // Write the data
+    //         foreach ($data as $row) {
+    //             fputcsv($file, $row);
+    //         }
+
+    //         fclose($file);
+    //     };
+
+    //     return response()->stream($callback, 200, $headers);
+    // }
+
+    // download in excel
     public function downloadvoterFullData(Request $request)
     {
         $query = DB::table('registration_form')->where('type', 1);
 
-        // Apply filter if available
+        // Optional filters 
+        if ($request->filled('voter_id')) {
+            $query->where('voter_id', $request->input('voter_id'));
+        }
         if ($request->filled('area_id')) {
             $areaId = $request->input('area_id');
             $query->whereIn('registration_id', function ($subquery) use ($areaId) {
@@ -3897,35 +3973,6 @@ class AdminController extends Controller
             });
         }
 
-        $results = $query->get();
-
-        $data = [];
-        $sr = 1;
-
-        foreach ($results as $voter) {
-            $step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
-            $step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
-            $area_name = DB::table('area_master')->where('area_id', optional($step2)->area_id)->value('area_name');
-
-            $data[] = [
-                'SR No' => $sr++,
-                'Name' => $voter->name,
-                'Father Name' => $voter->father_name,
-                'House' => $step2->house ?? '',
-                'Age' => $voter->age,
-                'Gender' => $voter->gender,
-                'Voter ID' => $voter->voter_id,
-                'Area Name' => $area_name ?? '',
-                'Jati' => $voter->jati,
-                'Matdan Kendra No' => $step2->matdan_kendra_no ?? '',
-                'Total Member' => $step3->total_member ?? '',
-                'Mukhiya Mobile' => $step3->mukhiya_mobile ?? '',
-                'Death/Left' => $voter->death_left ?? '',
-                'Date Time' => $voter->date_time ? \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') : '',
-            ];
-        }
-
-        // Prepare CSV headers
         $fileName = "voterlist.csv";
         $headers = [
             "Content-type" => "text/csv",
@@ -3935,25 +3982,137 @@ class AdminController extends Controller
             "Expires" => "0"
         ];
 
-        // Return streamed CSV response
-        $callback = function () use ($data) {
+        $callback = function () use ($query) {
             $file = fopen('php://output', 'w');
 
-            // Write the column headings
-            if (!empty($data)) {
-                fputcsv($file, array_keys($data[0]));
-            }
+            // Write header only once
+            $headerWritten = false;
+            $sr = 1;
 
-            // Write the data
-            foreach ($data as $row) {
-                fputcsv($file, $row);
-            }
+            $query->orderBy('registration_id')
+                ->chunk(1000, function ($results) use (&$headerWritten, &$sr, $file) {
+                    foreach ($results as $voter) {
+                        $step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
+                        $step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
+                        $area_name = DB::table('area_master')->where('area_id', optional($step2)->area_id)->value('area_name');
+
+                        $row = [
+                            'SR No' => $sr++,
+                            'Name' => $voter->name ?? '',
+                            'Father Name' => $voter->father_name ?? '',
+                            'House' => $step2->house ?? '',
+                            'Age' => $voter->age ?? '',
+                            'Gender' => $voter->gender ?? '',
+                            'Voter ID' => $voter->voter_id ?? '',
+                            'Area Name' => $area_name ?? '',
+                            'Jati' => $voter->jati ?? '',
+                            'Matdan Kendra No' => $step2->matdan_kendra_no ?? '',
+                            'Total Member' => $step3->total_member ?? '',
+                            'Mukhiya Mobile' => $step3->mukhiya_mobile ?? '',
+                            'Death/Left' => $voter->death_left ?? '',
+                            'Date Time' => $voter->date_time ? \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') : '',
+                        ];
+
+                        if (!$headerWritten) {
+                            fputcsv($file, array_keys($row));
+                            $headerWritten = true;
+                        }
+
+                        fputcsv($file, $row);
+                    }
+                });
 
             fclose($file);
         };
 
         return response()->stream($callback, 200, $headers);
     }
+
+    // download in zip
+    // public function downloadvoterFullData(Request $request)
+    // {
+    //     $voterId = $request->voter_id;
+    //     $fileName = 'voterlist.zip';
+    //     $filePath = storage_path('app/public/' . $fileName);
+
+    //     // Remove old file if exists
+    //     if (file_exists($filePath)) {
+    //         unlink($filePath);
+    //     }
+
+    //     // Temporary CSV file
+    //     $csvTempPath = storage_path('app/public/voterlist.csv');
+    //     if (file_exists($csvTempPath)) {
+    //         unlink($csvTempPath);
+    //     }
+
+    //     $handle = fopen($csvTempPath, 'w');
+    //     // Write CSV header
+    //     fputcsv($handle, [
+    //         'Sr No',
+    //         'Name',
+    //         'Father Name',
+    //         'House',
+    //         'Age',
+    //         'Gender',
+    //         'Voter ID',
+    //         'Area Name',
+    //         'Jati',
+    //         'Matdan Kendra No',
+    //         'Total Member',
+    //         'Mukhiya Mobile',
+    //         'Death/Left',
+    //         'Date Time'
+    //     ]);
+
+    //     $sr = 1;
+
+    //     DB::table('registration_form')
+    //         ->where('type', 1)
+    //         ->when($request->filled('voter_id'), fn($q) => $q->where('voter_id', 'like', '%' . $voterId . '%'))
+    //         ->orderBy('registration_id')
+    //         ->chunkById(500, function ($voters) use (&$sr, $handle) {
+    //             foreach ($voters as $voter) {
+    //                 $step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
+    //                 $step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
+    //                 $area_name = DB::table('area_master')->where('area_id', optional($step2)->area_id)->value('area_name');
+
+    //                 fputcsv($handle, [
+    //                     $sr++,
+    //                     $voter->name,
+    //                     $voter->father_name,
+    //                     $step2->house ?? '',
+    //                     $voter->age,
+    //                     $voter->gender,
+    //                     $voter->voter_id,
+    //                     $area_name ?? '',
+    //                     $voter->jati,
+    //                     $step2->matdan_kendra_no ?? '',
+    //                     $step3->total_member ?? '',
+    //                     $step3->mukhiya_mobile ?? '',
+    //                     $voter->{'death/left'} ?? '',
+    //                     $voter->date_time ? \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') : '',
+    //                 ]);
+    //             }
+    //         }, 'registration_id');
+
+    //     fclose($handle);
+
+    //     // Create ZIP
+    //     $zip = new \ZipArchive();
+    //     $zip->open($filePath, \ZipArchive::CREATE);
+    //     $zip->addFile($csvTempPath, 'voterlist.csv');
+    //     $zip->close();
+
+    //     // Remove temporary CSV
+    //     if (file_exists($csvTempPath)) {
+    //         unlink($csvTempPath);
+    //     }
+
+    //     return response()->download($filePath)->deleteFileAfterSend(true);
+    // }
+
+
 
 
     // public function voterdata(Request $request)

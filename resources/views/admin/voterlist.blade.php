@@ -59,6 +59,11 @@
                 </div>
                 <div class="card" id="table_card" style="display: none">
                     <div class="card-body">
+                        <div class="progress mb-3" style="height: 25px; display:none;" id="download-progress-wrapper">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                style="width: 0%" id="download-progress">0%</div>
+                        </div>
+
                         <button id="download_full_data" class="btn btn-primary mb-3" style="display: none; float: right">
                             पूरा डेटा डाउनलोड करें
                         </button>
@@ -235,11 +240,43 @@
                         $("#loader-wrapper").hide();
                     });
 
-                    $('#download_full_data').on('click', function() {
-                        $("#loader-wrapper").show();
-                        const query = $.param(filterParams || {});
-                        window.location.href = `{{ route('voterlist.download') }}?${query}`;
+                    $('#download_full_data').on('click', async function() {
+                        const voter_id = $('#main_voter_id').val().trim();
+                        let query = voter_id ? `?voter_id=${voter_id}` : '';
+
+                        const progressWrapper = $("#download-progress-wrapper");
+                        const progressBar = $("#download-progress");
+
+                        progressWrapper.show();
+                        progressBar.css('width', '0%').text('0%');
+
+                        try {
+                            progressBar.css('width', '100%').text('Processing...');
+
+                            const response = await fetch(
+                                `{{ route('voterlist.download') }}${query}`);
+                            if (!response.ok) throw new Error('Network response was not ok');
+
+                            const blob = await response.blob(); 
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'voterlist.csv';
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            window.URL.revokeObjectURL(url);
+
+                        } catch (err) {
+                            alert('Error downloading data: ' + err.message);
+                        } finally {
+                            // Always hide and reset progress bar
+                            progressBar.css('width', '0%').text('0%');
+                            progressWrapper.hide();
+                        }
                     });
+
+
                 });
 
 
