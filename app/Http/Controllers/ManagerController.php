@@ -11,6 +11,7 @@ use App\Models\Education;
 use App\Models\Politics;
 use App\Models\Religion;
 use App\Models\Department;
+use Illuminate\Validation\ValidationException;
 use App\Models\ComplaintReply;
 use App\Models\Adhikari;
 use App\Models\User;
@@ -52,12 +53,21 @@ class ManagerController extends Controller
         $start = Carbon::createFromDate($year, $month, 1)->startOfMonth()->toDateString();
         $end = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
 
+        $loggedInId = session('user_id');
+
         $records = DB::table('complaint')
-            ->selectRaw("DATE(posted_date) as date,
-                     SUM(CASE WHEN complaint_type = 'शुभ सुचना' THEN 1 ELSE 0 END) as shubh,
-                     SUM(CASE WHEN complaint_type = 'अशुभ सुचना' THEN 1 ELSE 0 END) as asubh")
-            ->whereBetween(DB::raw('DATE(posted_date)'), [$start, $end])
-            ->groupBy(DB::raw("DATE(posted_date)"))
+            ->join('complaint_reply as cr', 'complaint.complaint_id', '=', 'cr.complaint_id')
+            ->whereRaw('cr.reply_date = (
+            SELECT MAX(cr2.reply_date)
+            FROM complaint_reply cr2
+            WHERE cr2.complaint_id = complaint.complaint_id
+        )')
+            ->where('cr.forwarded_to', $loggedInId)
+            ->whereBetween(DB::raw('DATE(complaint.program_date)'), [$start, $end])
+            ->selectRaw("DATE(complaint.program_date) as date,
+                     SUM(CASE WHEN complaint.complaint_type = 'शुभ सुचना' THEN 1 ELSE 0 END) as shubh,
+                     SUM(CASE WHEN complaint.complaint_type = 'अशुभ सुचना' THEN 1 ELSE 0 END) as asubh")
+            ->groupBy(DB::raw("DATE(complaint.program_date)"))
             ->get();
 
         $data = [];
@@ -414,7 +424,58 @@ class ManagerController extends Controller
         return response()->json($data);
     }
 
+    public function fetchSuchnaStatus(Request $request)
+    {
+        $statusLabels = [
+            11 => 'सूचना प्राप्त',
+            12 => 'फॉरवर्ड किया',
+            13 => 'सम्मिलित हुए',
+            14 => 'सम्मिलित नहीं हुए',
+            15 => 'फोन पर संपर्क किया',
+            16 => 'ईमेल पर संपर्क किया',
+            17 => 'व्हाट्सएप पर संपर्क किया',
+            18 => 'रद्द'
+        ];
 
+        $latestReplyIds = DB::table('complaint_reply')
+            ->select('complaint_id', DB::raw('MAX(complaint_reply_id) as latest_id'))
+            ->groupBy('complaint_id');
+
+        $query = DB::table('complaint_reply as cr')
+            ->joinSub($latestReplyIds, 'latest', function ($join) {
+                $join->on('cr.complaint_id', '=', 'latest.complaint_id')
+                    ->on('cr.complaint_reply_id', '=', 'latest.latest_id');
+            })
+            ->join('complaint as c', 'c.complaint_id', '=', 'cr.complaint_id')
+            ->whereIn('c.complaint_type', ['शुभ सुचना', 'अशुभ सुचना']);
+
+        $filter = $request->input('filter', 'all');
+        $dates = match ($filter) {
+            'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+            'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+            'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+            'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
+            default => null,
+        };
+
+        if ($dates) {
+            $query->whereBetween('cr.reply_date', $dates);
+        }
+
+        $data = $query
+            ->select('cr.complaint_status', DB::raw('COUNT(*) as total'))
+            ->groupBy('cr.complaint_status')
+            ->orderByDesc('total')
+            ->get()
+            ->map(function ($item) use ($statusLabels) {
+                return [
+                    'status' => $statusLabels[$item->complaint_status] ?? 'अन्य',
+                    'total' => $item->total,
+                ];
+            });
+
+        return response()->json($data);
+    }
 
     public function fetchDashboardStats()
     {
@@ -587,13 +648,12 @@ class ManagerController extends Controller
 
     public function getForwardedComplaintsPerManager()
     {
-        $loggedInId = session('user_id');
+        // $loggedInId = session('user_id');
 
-        if (!$loggedInId) {
-            return response()->json(['error' => 'User not logged in.'], 401);
-        }
+        // if (!$loggedInId) {
+        //     return response()->json(['error' => 'User not logged in.'], 401);
+        // }
 
-        // Subquery to get latest replies per complaint
         $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
             ->groupBy('complaint_id');
 
@@ -606,7 +666,7 @@ class ManagerController extends Controller
             ->whereHas('complaint', function ($query) {
                 $query->whereNotIn('complaint_status', [4, 5]);
             })
-            ->with('complaint:complaint_id,complaint_type') // eager load type
+            ->with('complaint:complaint_id,complaint_type') 
             ->get();
 
         // Count complaints by manager + type
@@ -614,15 +674,15 @@ class ManagerController extends Controller
 
         // All managers except logged-in one
         $managers = \App\Models\User::where('role', 2)
-            ->where('admin_id', '!=', $loggedInId)
+            // ->where('admin_id', '!=', $loggedInId)
             ->get(['admin_id', 'admin_name']);
 
         // Build result structure
         $result = $managers->map(function ($manager) use ($counts) {
             return [
                 'forward' => $manager->admin_name,
-                'subh'    => optional($counts[$manager->admin_id]['शुभ सूचना'] ?? null)->count() ?? 0,
-                'asubh'   => optional($counts[$manager->admin_id]['अशुभ सूचना'] ?? null)->count() ?? 0,
+                'subh'    => optional($counts[$manager->admin_id]['शुभ सुचना'] ?? null)->count() ?? 0,
+                'asubh'   => optional($counts[$manager->admin_id]['अशुभ सुचना'] ?? null)->count() ?? 0,
                 'samasya' => optional($counts[$manager->admin_id]['समस्या'] ?? null)->count() ?? 0,
                 'vikash'  => optional($counts[$manager->admin_id]['विकास'] ?? null)->count() ?? 0,
             ];
@@ -834,7 +894,64 @@ class ManagerController extends Controller
                 $title = "शिकायतें ({$label}) - {$filter}";
                 break;
 
+            case 'suchna-status-details':
+                $statusMap = [
+                    'सूचना प्राप्त' => 11,
+                    'फॉरवर्ड किया' => 12,
+                    'सम्मिलित हुए' => 13,
+                    'सम्मिलित नहीं हुए' => 14,
+                    'फोन पर संपर्क किया' => 15,
+                    'ईमेल पर संपर्क किया' => 16,
+                    'व्हाट्सएप पर संपर्क किया' => 17,
+                    'रद्द' => 18
+                ];
 
+                $label = $request->query('status');
+                $filter = $request->query('filter', 'सभी');
+
+                $statusCode = collect($statusMap)
+                    ->filter(fn($v, $k) => trim($k) === trim($label))
+                    ->first();
+
+                if ($statusCode === false) {
+                    abort(400, 'Invalid status');
+                }
+
+                $latestReplyIds = DB::table('complaint_reply')
+                    ->select('complaint_id', DB::raw('MAX(complaint_reply_id) as latest_id'))
+                    ->groupBy('complaint_id');
+
+                $query = DB::table('complaint_reply as cr')
+                    ->joinSub($latestReplyIds, 'latest', function ($join) {
+                        $join->on('cr.complaint_id', '=', 'latest.complaint_id')
+                            ->on('cr.complaint_reply_id', '=', 'latest.latest_id');
+                    })
+                    ->join('complaint as c', 'c.complaint_id', '=', 'cr.complaint_id')
+                    ->where('cr.complaint_status', $statusCode)
+                    ->whereIn('c.complaint_type', ['शुभ सुचना', 'अशुभ सुचना']);
+
+                $dates = match ($filter) {
+                    'आज' => [Carbon::today(), Carbon::today()],
+                    'कल' => [Carbon::yesterday(), Carbon::yesterday()],
+                    'पिछले सात दिन' => [Carbon::now()->subWeek(), Carbon::now()],
+                    'पिछले तीस दिन' => [Carbon::now()->subMonth(), Carbon::now()],
+                    default => null,
+                };
+
+                if ($dates) {
+                    $query->whereBetween('cr.reply_date', $dates);
+                }
+
+                $complaintIds = $query->pluck('c.complaint_id');
+
+                $complaints = Complaint::whereIn('complaint_id', $complaintIds)
+                    ->orderBy('posted_date', 'desc')
+                    ->get();
+
+                $complaints = $loadForwardedTo($complaints);
+
+                $title = "सूचनाएँ ({$label}) - {$filter}";
+                break;
 
             case 'date-wise':
                 $date = $request->query('date');
@@ -844,10 +961,19 @@ class ManagerController extends Controller
 
                 $start = Carbon::parse($date)->startOfDay();
                 $end = Carbon::parse($date)->endOfDay();
+                $loggedInId = session('user_id');
 
-                $complaints = $this->getComplaintsBetween($start, $end, $type, $user)->filter(function ($complaint) {
-                    return in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']);
-                });
+                $complaints = Complaint::with('latestReply')
+                    ->whereBetween('program_date', [$start, $end])
+                    ->whereIn('complaint_type', ['शुभ सुचना', 'अशुभ सुचना'])
+                    ->whereHas('latestReply', function ($q) use ($loggedInId) {
+                        $q->where('forwarded_to', $loggedInId);
+                    })
+                    ->get();
+
+                // $complaints = $this->getComplaintsBetween($start, $end, $type, $user)->filter(function ($complaint) {
+                //     return in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']);
+                // });
                 $complaints = $loadForwardedTo($complaints);
                 $title = 'सुचना (' . Carbon::parse($date)->format('d M Y') . ')';
                 break;
@@ -2388,7 +2514,11 @@ class ManagerController extends Controller
                 $html .= '<td>' . ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-') . '</td>';
 
                 // Action Button
-                $html .= '<td><a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+                if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना') {
+                    $html .= '<td><a href="' . route('suchna_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+                } elseif ($complaint->complaint_type === 'समस्या' || $complaint->complaint_type === 'विकास') {
+                    $html .= '<td><a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+                }
 
                 $html .= '</tr>';
             }
@@ -2698,8 +2828,11 @@ class ManagerController extends Controller
 
 
                 // Action Button
-                $html .= '<td><a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
-
+                if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना') {
+                    $html .= '<td><a href="' . route('suchna_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+                } elseif ($complaint->complaint_type === 'समस्या' || $complaint->complaint_type === 'विकास') {
+                    $html .= '<td><a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+                }
                 $html .= '</tr>';
             }
 
@@ -2848,22 +2981,65 @@ class ManagerController extends Controller
         ]);
     }
 
+    public function allsuchnas_show($id)
+    {
+        $complaint = Complaint::with(
+            'replies.predefinedReply',
+            'registration',
+            'division',
+            'district',
+            'vidhansabha',
+            'mandal',
+            'gram',
+            'polling',
+            'area',
+            'registrationDetails'
+        )->findOrFail($id);
+
+        $mandals = Mandal::where('vidhansabha_id', $complaint->vidhansabha_id)->pluck('mandal_id');
+
+        // 2. Fetch nagars that belong to those mandals, and eager load the related mandal
+        $nagars = Nagar::with('mandal')
+            ->whereIn('mandal_id', $mandals)
+            ->orderBy('nagar_name')
+            ->get();
+        $replyOptions = ComplaintReply::all();
+        $departments = Department::all();
+        $loggedInManagerId = session('user_id');
+
+        $managers = User::where('role', 2)
+            ->where('admin_id', '!=', $loggedInManagerId) 
+            ->get();
+
+        return view('manager/suchna_details', [
+            'complaint' => $complaint,
+            'nagars' => $nagars,
+            'replyOptions' => $replyOptions,
+            'departments' => $departments,
+            'managers' => $managers,
+            'loggedInManagerId' => $loggedInManagerId
+        ]);
+    }
+
     public function complaintsReply(Request $request, $id)
     {
         $request->validate([
             'cmp_reply' => 'required|string',
-            'cmp_status' => 'required|in:1,2,3,4,5',
+            'cmp_status' => 'required|integer',
             'forwarded_to' => [
+                'required_if:cmp_status,1,2,3,11,12',
                 'nullable',
                 'exists:admin_master,admin_id'
             ],
             'selected_reply' => [
                 'nullable',
                 function ($attribute, $value, $fail) {
-                    if ((int)$value !== 0 && !\App\Models\ComplaintReply::where('reply_id', $value)->exists()) {
-                        $fail('The selected reply is invalid.');
+                    if ($value !== null && (int)$value !== 0) {
+                        if (!\App\Models\ComplaintReply::where('reply_id', $value)->exists()) {
+                            $fail('The selected reply is invalid.');
+                        }
                     }
-                }
+                },
             ],
             'cb_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'ca_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
@@ -2880,7 +3056,7 @@ class ManagerController extends Controller
         $reply->complaint_id = $id;
         $reply->complaint_reply = $request->cmp_reply;
         $reply->selected_reply = $request->selected_reply ?? 0;
-        $reply->reply_from = auth()->id() ?? 2;
+        $reply->reply_from = session('user_id') ?? 0;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;
         $reply->review_date = $request->review_date ?? null;
@@ -2894,7 +3070,7 @@ class ManagerController extends Controller
         $userId = session('user_id');
         $userRole = session('logged_in_role');
 
-        if (in_array((int)$request->cmp_status, [4, 5])) {
+        if (in_array((int)$request->cmp_status, [4, 5, 18, 17, 16, 15, 14, 13])) {
             $reply->forwarded_to = 0;
         } else {
             if ($request->filled('forwarded_to')) {
@@ -2937,18 +3113,42 @@ class ManagerController extends Controller
         $reply->save();
 
         if ($request->ajax()) {
+            $message = 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।';
+
+            if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना') {
+                $message = 'सूचना का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।';
+            }
+
             return response()->json([
-                'message' => 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।'
+                'message' => $message
             ]);
         }
 
-        if ($complaint->type == 1) {
+        if ($complaint->type == 1) { 
+            if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना') {
+                $successMessage = 'कमांडर सूचना का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।';
+            } else {
+                $successMessage = 'कमांडर शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।';
+            }
             return redirect()->route('commander.complaints.view', $id)
-                ->with('success', 'कमांडर शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।');
-        } else {
+                ->with('success', $successMessage);
+        } else { // Operator
+            if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना') {
+                $successMessage = 'सूचना का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।';
+            } else {
+                $successMessage = 'कार्यालय शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।';
+            }
             return redirect()->route('operator.complaints.view', $id)
-                ->with('success', 'कार्यालय शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।');
+                ->with('success', $successMessage);
         }
+
+        // if ($complaint->type == 1) {
+        //     return redirect()->route('commander.complaints.view', $id)
+        //         ->with('success', 'कमांडर शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।');
+        // } else {
+        //     return redirect()->route('operator.complaints.view', $id)
+        //         ->with('success', 'कार्यालय शिकायत के लिए जवाब दर्ज किया गया और शिकायत अपडेट हुई।');
+        // }
     }
 
     public function getPollingsByNagar($nagarId)
@@ -3024,32 +3224,42 @@ class ManagerController extends Controller
 
     public function updateComplaint(Request $request, $id)
     {
-        $request->validate([
-            'txtname' => 'required|string|max:255',
-            'father_name' => 'required|string|max:255',
-            'reference' => 'nullable|string|max:255',
-            'voter' => 'required|string|max:255',
-            'division_id' => 'required|integer',
-            'txtdistrict_name' => 'required',
-            'txtvidhansabha' => 'required',
-            // 'txtmandal' => 'required',
-            'txtgram' => 'required',
-            'txtpolling' => 'required',
-            // 'txtarea' => 'required',
-            'type' => 'required|string',
-            'CharCounter' => 'nullable|string|max:100',
-            'NameText' => 'required|string|max:2000',
-            'department' => 'nullable',
-            'post' => 'nullable',
-            'from_date' => 'nullable|date',
-            'program_date' => 'nullable|date',
-            'to_date' => 'nullable',
-        ]);
+        try {
+            $request->validate([
+                'txtname' => 'required|string|max:255',
+                'mobile'  => 'required|string|regex:/^[0-9]{10,15}$/',
+                'father_name' => 'required|string|max:255',
+                'reference' => 'nullable|string|max:255',
+                'voter' => 'required|string|max:255',
+                'division_id' => 'required|integer',
+                'txtdistrict_name' => 'required|integer',
+                'txtvidhansabha' => 'required|integer',
+                // 'txtmandal' => 'required',
+                'txtgram' => 'required|integer',
+                'txtpolling' => 'required|integer',
+                // 'txtarea' => 'required',
+                'type' => 'required|string',
+                'CharCounter' => 'nullable|string|max:100',
+                'NameText' => 'required|string|max:2000',
+                'department' => 'nullable',
+                'post' => 'nullable',
+                'from_date' => 'nullable|date',
+                'program_date' => 'nullable|date',
+                'to_date' => 'nullable',
+                'file_attach' => 'nullable|file|max:20480'
+            ]);
+        } catch (ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        }
 
         $complaint = Complaint::findOrFail($id);
-
         $complaint_number = $complaint->complaint_number;
-
 
         $nagar = Nagar::with('mandal')->find($request->txtgram);
         $mandal_id = $nagar?->mandal?->mandal_id;
@@ -3095,7 +3305,7 @@ class ManagerController extends Controller
         }
 
         if ($request->ajax()) {
-            return response()->json(['message' => $message]);
+            return response()->json(['success' => true, 'message' => $message]);
         }
 
         if ($complaint->type == 1) {
@@ -3104,6 +3314,101 @@ class ManagerController extends Controller
         } else {
             return redirect()->route('operator.complaints.view')
                 ->with('success', 'कार्यालय शिकायत सफलतापूर्वक अपडेट हुई');
+        }
+    }
+
+    public function updateSuchna(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'txtname' => 'required|string|max:255',
+                'mobile'  => 'required|string|regex:/^[0-9]{10,15}$/',
+                'father_name' => 'required|string|max:255',
+                'reference' => 'nullable|string|max:255',
+                'voter' => 'required|string|max:255',
+                'division_id' => 'required|integer',
+                'txtdistrict_name' => 'required|integer',
+                'txtvidhansabha' => 'required|integer',
+                // 'txtmandal' => 'required',
+                'txtgram' => 'required|integer',
+                'txtpolling' => 'required|integer',
+                // 'txtarea' => 'required',
+                'type' => 'required|string',
+                'CharCounter' => 'nullable|string|max:100',
+                'NameText' => 'required|string|max:2000',
+                'department' => 'nullable',
+                'post' => 'nullable',
+                'from_date' => 'nullable|date',
+                'program_date' => 'nullable|date',
+                'to_date' => 'nullable',
+                'file_attach' => 'nullable|file|max:20480'
+            ]);
+        } catch (ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        }
+
+        $complaint = Complaint::findOrFail($id);
+        $complaint_number = $complaint->complaint_number;
+
+        $nagar = Nagar::with('mandal')->find($request->txtgram);
+        $mandal_id = $nagar?->mandal?->mandal_id;
+
+        $polling = Polling::with('area')->where('gram_polling_id', $request->txtpolling)->first();
+        $area_id = $polling?->area?->area_id;
+
+        $complaint->complaint_type = $request->type;
+        $complaint->name = $request->txtname;
+        $complaint->mobile_number = $request->mobile;
+        $complaint->father_name = $request->father_name;
+        $complaint->reference_name = $request->reference;
+        $complaint->email = $request->mobile;
+        $complaint->voter_id = $request->voter;
+        $complaint->division_id = $request->division_id;
+        $complaint->district_id = $request->txtdistrict_name;
+        $complaint->vidhansabha_id = $request->txtvidhansabha;
+        $complaint->mandal_id = $mandal_id;
+        $complaint->gram_id = $request->txtgram;
+        $complaint->polling_id = $request->txtpolling;
+        $complaint->area_id = $area_id;
+        $complaint->complaint_department = $request->department ?? '';
+        $complaint->complaint_designation = $request->post ?? '';
+        $complaint->issue_title = $request->CharCounter ?? '';
+        $complaint->issue_description = $request->NameText;
+        $complaint->news_date = $request->from_date;
+        $complaint->program_date = $request->program_date;
+        $complaint->news_time = $request->to_date;
+
+        if ($request->hasFile('file_attach')) {
+            $file = $request->file('file_attach');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('assets/upload/complaints'), $filename);
+            $complaint->issue_attachment = $filename;
+        }
+
+        $complaint->save();
+
+        $message = "आपकी सूचना क्रमांक $complaint_number सफलतापूर्वक अपडेट कर दी गई है।";
+        if ($complaint->type == 1) {
+            $mobile = RegistrationForm::where('registration_id', $complaint->complaint_created_by)->value('mobile1');
+            $this->messageSent($message, $mobile);
+        }
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => $message]);
+        }
+
+        if ($complaint->type == 1) {
+            return redirect()->route('commander.complaints.view')
+                ->with('success', 'कमांडर सूचना सफलतापूर्वक अपडेट हुई और संदेश भेजा गया।');
+        } else {
+            return redirect()->route('operator.complaints.view')
+                ->with('success', 'कार्यालय सूचना सफलतापूर्वक अपडेट हुई');
         }
     }
 

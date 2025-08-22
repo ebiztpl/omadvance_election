@@ -1,13 +1,13 @@
 @php
-    $pageTitle = 'समस्याएँ देखें';
+    $pageTitle = 'सूचनाएँ देखे';
     $breadcrumbs = [
         'मैनेजर' => '#',
-        'समस्याएँ देखें' => '#',
+        'सूचनाएँ देखे' => '#',
     ];
 @endphp
 
 @extends('layouts.app')
-@section('title', 'View Complaints')
+@section('title', 'View Suchnas')
 
 @section('content')
     <div class="container">
@@ -22,11 +22,11 @@
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between">
                 <h5>{{ $complaint->complaint_number }}</h5>
-                <span style="color: gray;">समस्या स्थिति: {!! $complaint->statusText() !!}</span>
+                <span style="color: gray;">सूचना स्थिति: {!! $complaint->statusText() !!}</span>
             </div>
             <div class="col-md-12 col-sm-12 col-xs-12">
                 <form id="updateComplaintForm" method="POST" enctype="multipart/form-data"
-                    action="{{ route('complaints.update', $complaint->complaint_id) }}">
+                    action="{{ route('suchna.update', $complaint->complaint_id) }}">
                     @csrf
 
                     {{-- Type Selection --}}
@@ -35,8 +35,8 @@
                             <div id="type_row" class="d-flex justify-content-center flex-wrap">
                                 @php
                                     $types = [
-                                        'समस्या' => ['text' => 'शिकायतकर्ता का नाम', 'heading' => 'समस्या'],
-                                        'विकास' => ['text' => 'मांगकर्ता का नाम', 'heading' => 'विकास'],
+                                        'शुभ सुचना' => ['text' => 'सूचनाकर्ता का नाम', 'heading' => 'शुभ सूचना'],
+                                        'अशुभ सुचना' => ['text' => 'सूचनाकर्ता का नाम', 'heading' => 'अशुभ सूचना'],
                                     ];
                                 @endphp
                                 @foreach ($types as $type => $data)
@@ -77,19 +77,13 @@
 
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                        <span class="mobile-label">मोबाइल</span>
+                                        मोबाइल <span class="error">*</span>
                                     </label>
                                     <div class="flex-grow-1">
                                         <input type="text" class="form-control" name="mobile"
                                             value="{{ old('mobile', $complaint->mobile_number) }}">
                                     </div>
                                 </div>
-
-
-
-
-
-
 
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">संभाग का नाम <span
@@ -129,7 +123,7 @@
 
 
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">नगर/मंडल<span
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">नगर/मंडल <span
                                             class="error">*</span></label>
                                     <select name="txtgram" class="form-control" id="txtgram" required>
                                         <option value="">--चुने--</option>
@@ -145,7 +139,7 @@
 
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">मतदान
-                                        केंद्र/ग्राम/वार्ड<span class="error">*</span></label>
+                                        केंद्र/ग्राम/वार्ड <span class="error">*</span></label>
                                     <select name="txtpolling" class="form-control" id="txtpolling" required>
                                         <option value="{{ $complaint->polling_id }}">
                                             {{ $complaint->polling->polling_name ?? '' }}
@@ -202,54 +196,29 @@
                             <fieldset class="scheduler-border fieldset-bordered">
                                 <legend class="scheduler-border dynamic-legend">विवरण</legend>
 
-                                {{-- Department --}}
-                                <div class="form-group row department_row">
-                                    <div class="col-md-4 d-flex align-items-center">
-                                        <label for="department-select" class="me-2 mr-2 mb-0"
-                                            style="white-space: nowrap;">विभाग <span class="error">*</span></label>
-                                        <select name="department" id="department-select" class="form-control" required>
-                                            <option value="">--चुने--</option>
-                                            @foreach ($departments as $department)
-                                                <option value="{{ $department->department_name }}"
-                                                    {{ old('department', $complaint->complaint_department ?? '') == $department->department_name ? 'selected' : '' }}>
-                                                    {{ $department->department_name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                <div class="form-group row date_row">
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="from_date" class="me-2 mr-2 mb-0" style="white-space: nowrap;">सूचना
+                                            दिनांक <span class="error">*</span></label>
+                                        <input type="date" class="form-control" name="from_date" required
+                                            value="{{ old('from_date', $complaint->news_date) }}">
                                     </div>
 
-                                    <div class="col-md-4 d-flex align-items-center">
-                                        <label for="post-select" class="me-2 mr-2 mb-0" style="white-space: nowrap;">पद
-                                            <span class="error">*</span></label>
-                                        <select name="post" class="form-control" id="post-select" required>
-                                            @if (!empty($complaint->complaint_designation))
-                                                <option value="{{ $complaint->complaint_designation }}" selected>
-                                                    {{ $complaint->complaint_designation }}
-                                                </option>
-                                            @else
-                                                <option value="">--चुने--</option>
-                                            @endif
-                                        </select>
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="program_date" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">कार्यक्रम दिनांक <span
+                                                class="error">*</span></label>
+                                        <input type="date" class="form-control" name="program_date" required
+                                            value="{{ old('program_date', $complaint->program_date) }}">
                                     </div>
 
-                                    <div class="col-md-4 d-flex align-items-center">
-                                        <label for="subject-select" class="me-2 mr-2 mb-0"
-                                            style="white-space: nowrap;">विषय
-                                            <span class="error">*</span></label>
-                                        <select placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें"
-                                            name="CharCounter" id="subject-select" class="form-control" required>
-                                            @if (!empty($complaint->issue_title))
-                                                <option value="{{ $complaint->issue_title }}" selected>
-                                                    {{ $complaint->issue_title }}
-                                                </option>
-                                            @else
-                                                <option value="">--चुने--</option>
-                                            @endif
-                                            <option value="अन्य">अन्य</option>
-                                        </select>
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="to_date" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">कार्यक्रम समय</label>
+                                        <input type="time" class="form-control" name="to_date"
+                                            value="{{ old('to_date', $complaint->news_time) }}">
                                     </div>
                                 </div>
-
 
                                 <div class="form-group row">
                                     <div class="col-md-12 mb-3">
@@ -268,38 +237,28 @@
             </div>
         </div>
 
-
         <div class="card container" style="color: #000;">
             <h5 class="my-3">Reply History for {{ $complaint->complaint_number }}</h5>
+
             <div class="table-responsive">
                 <table class="table table-bordered">
                     <thead class="thead-dark">
                         <tr>
-                            <th>निर्धारित उत्तर</th>
                             <th>स्थिति</th>
                             <th>दिनांक</th>
                             <th>द्वारा भेजा गया</th>
                             <th>को भेजा गया</th>
-                            <th>रीव्यू दिनांक</th>
-                            <th>महत्त्व स्तर</th>
-                            <th>गंभीरता स्तर</th>
                             <th>विवरण देखें</th>
                         </tr>
                     </thead>
                     <tbody style="color: #000;">
                         @forelse ($complaint->replies as $reply)
                             <tr>
-                                <td>{{ $reply->selected_reply === 0 ? 'अन्य' : $reply->predefinedReply->reply ?? '-' }}
-                                </td>
                                 <td>{!! $reply->statusTextPlain() !!}</td>
                                 <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') : 'N/A' }}
                                 </td>
                                 <td>{{ $reply->replyfrom?->admin_name ?? '' }}</td>
-                                <td>{{ $reply->forwardedToManager?->admin_name ?? '' }}</td>
-                                <td>{{ $reply->review_date ?? '' }}</td>
-                                <td>{{ $reply->importance ?? '' }}</td>
-                                <td>{{ $reply->criticality ?? '' }}</td>
-
+                                <td> {{ $reply->forwardedToManager?->admin_name ?? '' }}</td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-info view-details-btn"
                                         data-toggle="modal" data-target="#detailsModal"
@@ -323,16 +282,13 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">
-                                    कोई जवाब उपलब्ध नहीं है।
-                                </td>
+                                <td colspan="5" class="text-center">कोई जवाब उपलब्ध नहीं है।</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
-
 
         <div class="modal fade" id="detailsModal" tabindex="-1" role="dialog" aria-labelledby="detailsModalLabel"
             aria-hidden="true">
@@ -374,63 +330,12 @@
                                     </tbody>
                                 </table>
                             </div>
-
-                            <div class="table-responsive">
-                                <table style="color: black" class="table table-bordered text-center align-middle">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>पूर्वनिर्धारित उत्तर</th>
-                                            <th>रीव्यू दिनांक</th>
-                                            <th>महत्त्व स्तर</th>
-                                            <th>गंभीरता स्तर</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td id="modal-predefined">—</td>
-                                            <td id="modal-review">—</td>
-                                            <td id="modal-importance">—</td>
-                                            <td id="modal-critical">—</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="border p-2 rounded mb-3 bg-light">
-                                <h5 class="mb-3 text-center">अटैचमेंट्स</h5>
-                                <div class="d-flex flex-wrap justify-content-center gap-2">
-                                    <div class="card p-3 mr-2 border-0 shadow rounded" style="background-color: #ffffff;">
-                                        <div class="text-center" style="width: 200px;">
-                                            <div>पूर्व स्थिति की तस्वीर</div>
-                                            <a href="#" id="cb-photo-link"
-                                                class="btn btn-sm btn-outline-primary mt-1" target="_blank">खोलें</a>
-                                        </div>
-                                    </div>
-
-                                    <div class="card p-3 mr-2 border-0 shadow rounded" style="background-color: #ffffff;">
-                                        <div class="text-center" style="width: 200px;">
-                                            <div>बाद की तस्वीर</div>
-                                            <a href="#" id="ca-photo-link"
-                                                class="btn btn-sm btn-outline-primary mt-1" target="_blank">खोलें</a>
-                                        </div>
-                                    </div>
-
-                                    <div class="card p-3 mr-2 border-0 shadow rounded" style="background-color: #ffffff;">
-                                        <div class="text-center" style="width: 200px;">
-                                            <div>वीडियो लिंक</div>
-                                            <a href="#" id="video-link" class="btn btn-sm btn-outline-primary mt-1"
-                                                target="_blank">खोलें</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Reply Form --}}
         <div class="card">
             <div class="card-header" style="color: #000">Reply to {{ $complaint->complaint_number }}</div>
             <div class="card-body">
@@ -441,42 +346,40 @@
 
                     <div class="row mb-3">
                         <div class="col-md-2">
-                            <label class="form-label ">शिकायत की स्थिति: <span class="tx-danger"
+                            <label class="form-label ">सूचना की स्थिति: <span class="tx-danger"
                                     style="color: red;">*</span></label>
                             <select name="cmp_status" id="cmp_status" class="form-control" required>
                                 <option value="">--चुने--</option>
-                                <option value="1" {{ $complaint->complaint_status == 1 ? 'selected' : '' }}>
-                                    शिकायत
-                                    दर्ज
+                                <option value="11" {{ $complaint->complaint_status == 11 ? 'selected' : '' }}>
+                                    सूचना प्राप्त
                                 </option>
-                                <option value="2" {{ $complaint->complaint_status == 2 ? 'selected' : '' }}>
-                                    प्रक्रिया
-                                    में
+                                <option value="12" {{ $complaint->complaint_status == 12 ? 'selected' : '' }}>
+                                    फॉरवर्ड किया
                                 </option>
-                                <option value="3" {{ $complaint->complaint_status == 3 ? 'selected' : '' }}>
-                                    स्थगित
+                                <option value="13" {{ $complaint->complaint_status == 13 ? 'selected' : '' }}>
+                                    सम्मिलित हुए
                                 </option>
-                                <option value="4" {{ $complaint->complaint_status == 4 ? 'selected' : '' }}>पूर्ण
+                                <option value="14" {{ $complaint->complaint_status == 14 ? 'selected' : '' }}>सम्मिलित
+                                    नहीं हुए
                                 </option>
-                                <option value="5" {{ $complaint->complaint_status == 5 ? 'selected' : '' }}>रद्द
+                                <option value="15" {{ $complaint->complaint_status == 15 ? 'selected' : '' }}>फोन पर
+                                    संपर्क किया
                                 </option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label class="form-label">पूर्व निर्धारित उत्तर चुनें:</label>
-                            <select name="selected_reply" id="selected_reply" class="form-control">
-                                <option value="">--चयन करें--</option>
-                                @foreach ($replyOptions as $option)
-                                    <option value="{{ $option->reply_id }}">{{ $option->reply }}</option>
-                                @endforeach
-                                <option value="0">अन्य</option>
+                                <option value="16" {{ $complaint->complaint_status == 16 ? 'selected' : '' }}>ईमेल पर
+                                    संपर्क किया
+                                </option>
+                                <option value="17" {{ $complaint->complaint_status == 17 ? 'selected' : '' }}>
+                                    व्हाट्सएप पर संपर्क किया
+                                </option>
+                                <option value="18" {{ $complaint->complaint_status == 18 ? 'selected' : '' }}>रद्द
+                                </option>
                             </select>
                         </div>
 
                         <div class="col-md-2" id="forwarded_to_field">
                             <label class="form-label">अधिकारी चुनें (आगे भेजे)</label>
                             <select name="forwarded_to" id="forwarded_to" class="form-control">
+                                <!-- Preselect the logged-in manager -->
                                 <option value="{{ $loggedInManagerId }}" selected>
                                     {{ \App\Models\User::find($loggedInManagerId)->admin_name }} (You)
                                 </option>
@@ -486,31 +389,6 @@
                                 @endforeach
                             </select>
                         </div>
-
-                        <div class="col-md-2">
-                            <label for="review_date">रीव्यू दिनांक</label>
-                            <input type="date" class="form-control" name="review_date">
-                        </div>
-
-                        <div class="col-md-2">
-                            <label for="importance form-label">महत्त्व स्तर:</label>
-                            <select name="importance" class="form-control">
-                                <option value="">--चयन करें--</option>
-                                <option value="उच्च">उच्च</option>
-                                <option value="मध्यम">मध्यम</option>
-                                <option value="कम">कम</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label for="criticality form-label">गंभीरता स्तर:</label>
-                            <select name="criticality" class="form-control">
-                                <option value="">--चयन करें--</option>
-                                <option value="अत्यधिक">अत्यधिक</option>
-                                <option value="मध्यम">मध्यम</option>
-                                <option value="कम">कम</option>
-                            </select>
-                        </div>
                     </div>
 
                     <div class="row g-3">
@@ -518,23 +396,6 @@
                             <label class="form-label">विवरण<span class="tx-danger" style="color: red;">*</span></label>
                             <textarea name="cmp_reply" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें"
                                 class="form-control" rows="6" required></textarea>
-                        </div>
-                    </div>
-
-                    <div class="row mt-3">
-                        <div class="col-md-3">
-                            <label class="form-label">पूर्व स्थिति की तस्वीर</label>
-                            <input type="file" name="cb_photo[]" class="form-control" multiple accept="image/*">
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">बाद की तस्वीर</label>
-                            <input type="file" name="ca_photo[]" class="form-control" multiple accept="image/*">
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">यूट्यूब लिंक</label>
-                            <input type="url" name="c_video" class="form-control">
                         </div>
                     </div>
 
@@ -643,7 +504,6 @@
                                 console.log(xhr.responseText);
                             }
                         }
-
                     });
                 });
 
@@ -710,9 +570,28 @@
                     var type = $(this).val();
 
                     if (type === "समस्या") {
-                        $(".mobile-label").html("शिकायतकर्ता का मोबाइल <span class='error'>*</span>");
+                        $(".mobile-label").html("शिकायतकर्ता का मोबाइल");
+                    } else if (type === "विकास") {
+                        $(".mobile-label").html("मांगकर्ता का मोबाइल");
                     } else {
-                        $(".mobile-label").html("मांगकर्ता का मोबाइल <span class='error'>*</span>");
+                        $(".mobile-label").html("सूचनाकर्ता का मोबाइल");
+                    }
+
+                    // Toggle department/date rows
+                    if (type === "शुभ सुचना" || type === "अशुभ सुचना") {
+                        $(".department_row").hide();
+                        $("select[name='department'], select[name='post'], select[name='CharCounter']")
+                            .removeAttr("required");
+
+                        $(".date_row").show();
+                        $("input[name='from_date'], input[name='program_date']").attr("required", "required");
+                    } else {
+                        $(".department_row").show();
+                        $("select[name='department'], select[name='post'], select[name='CharCounter']")
+                            .attr("required", "required");
+
+                        $(".date_row").hide();
+                        $("input[name='from_date'], input[name='program_date']").removeAttr("required");
                     }
                 });
 
@@ -764,7 +643,6 @@
                                     options +=
                                         `<option value="${subject.subject}">${subject.subject}</option>`;
                                 });
-                                options += '<option value="अन्य">अन्य</option>';
                                 $subjectSelect.html(options);
                             },
                             error: function() {

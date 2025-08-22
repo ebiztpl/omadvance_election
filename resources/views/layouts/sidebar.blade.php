@@ -219,8 +219,12 @@
                 
                 <li><a href="{{ route('operator_complaint.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
+                <li><a href="{{ route('operator_suchna.index') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">सूचना पंजीयन करे</span></a></li>
                 <li><a href="{{ route('operator_complaint.view') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्याएँ देखे</span></a></li>
+                <li><a href="{{ route('operator_suchna.view') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">सूचनाएँ देखे</span></a></li>
                 <li><a href="{{ route('next_followup.index') }}"><i class="icon icon-arrow-right"></i><span class="nav-text">फ़ॉलोअप</span></a>
                 </li>
 

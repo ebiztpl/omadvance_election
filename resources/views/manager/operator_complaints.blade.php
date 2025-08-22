@@ -308,10 +308,22 @@
                                                 {{ $complaint->forwarded_reply_date }}
                                             </td>
                                             <td>
-                                                <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"
+                                                {{-- <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"
                                                     class="btn btn-sm btn-primary" style="white-space: nowrap;">
                                                     क्लिक करें
-                                                </a>
+                                                </a> --}}
+
+                                                @if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना')
+                                                    <a href="{{ route('suchna_show.details', $complaint->complaint_id) }}"
+                                                        class="btn btn-sm btn-primary" style="white-space: nowrap;">
+                                                        क्लिक करें
+                                                    </a>
+                                                @elseif($complaint->complaint_type === 'समस्या' || $complaint->complaint_type === 'विकास')
+                                                    <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"
+                                                        class="btn btn-sm btn-primary" style="white-space: nowrap;">
+                                                        क्लिक करें
+                                                    </a>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
