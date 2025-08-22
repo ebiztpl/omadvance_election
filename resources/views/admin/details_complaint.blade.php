@@ -97,7 +97,7 @@
                     <textarea class="form-control" rows="3" disabled>{{ $complaint->issue_title }}</textarea>
                 </div>
 
-                <div class="col-md-3 d-flex align-items-start mt-3" style="margin-top: 8px;">
+                <div class="col-md-6 d-flex align-items-start mt-3" style="margin-top: 8px;">
                     <label class="form-label mr-2 me-2" style="white-space: nowrap; min-width: 120px;">विवरण</label>
                     <textarea class="form-control" rows="3" disabled>{{ $complaint->issue_description }}</textarea>
                 </div>

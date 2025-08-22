@@ -549,7 +549,8 @@ class OperatorController extends Controller
 
         $query = Complaint::with(['polling', 'area', 'admin', 'vidhansabha', 'mandal', 'gram', 'replies.forwardedToManager'])
             ->where('complaint_created_by', $userId)
-            ->where('type', 2);
+            ->where('type', 2)
+            ->whereIn('complaint_type', ['समस्या', 'विकास']);
 
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
@@ -742,7 +743,8 @@ class OperatorController extends Controller
 
         $query = Complaint::with(['polling', 'area', 'admin', 'vidhansabha', 'mandal', 'gram', 'replies.forwardedToManager'])
             ->where('complaint_created_by', $userId)
-            ->where('type', 2);
+            ->where('type', 2)
+            ->whereIn('complaint_type', ['अशुभ सुचना', 'शुभ सुचना']);
 
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
@@ -752,23 +754,10 @@ class OperatorController extends Controller
             $query->where('complaint_type', $request->complaint_type);
         } else {
             // Apply default filter for initial load or sabhi
-            $query->where('complaint_type', 'समस्या');
+            $query->where('complaint_type', 'शुभ सुचना');
         }
 
-        // if ($request->filled('department_id')) {
-        //     $query->where('complaint_department', $request->department_id);
-        // }
-
-        // if ($request->filled('subject_id')) {
-        //     $query->where('issue_title', $request->subject_id);
-        // }
-
-        if ($request->filled('department_id')) {
-            $department = Department::find($request->department_id);
-            if ($department) {
-                $query->where('complaint_department', $department->department_name);
-            }
-        }
+       
 
         if ($request->filled('admin_id')) {
             $query->whereHas('latestReply', function ($q) use ($request) {
@@ -776,17 +765,8 @@ class OperatorController extends Controller
             });
         }
 
-        if ($request->filled('reply_id')) {
-            $query->whereHas('replies', function ($q) use ($request) {
-                $q->where('selected_reply', $request->reply_id);
-            });
-        }
-
-        if ($request->filled('subject_id')) {
-            $subject = Subject::find($request->subject_id);
-            if ($subject) {
-                $query->where('issue_title', $subject->subject);
-            }
+        if ($request->filled('issue_title')) {
+            $query->where('issue_title', $request->issue_title);
         }
 
         if ($request->filled('mandal_id')) {
@@ -816,7 +796,7 @@ class OperatorController extends Controller
         $complaints = $query->orderBy('posted_date', 'desc')->get();
 
         foreach ($complaints as $complaint) {
-            if (!in_array($complaint->complaint_status, [4, 5])) {
+            if (!in_array($complaint->complaint_status, [13, 14, 15, 16, 17, 18])) {
                 $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
             } else {
                 $complaint->pending_days = 0;
@@ -837,9 +817,8 @@ class OperatorController extends Controller
             foreach ($complaints as $index => $complaint) {
                 $html .= '<tr>';
                 $html .= '<td>' . ($index + 1) . '</td>';
-                // $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
                 $html .= '<td>
-                <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
+                <strong>सुचना क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
                 <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
                 <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
@@ -865,29 +844,31 @@ class OperatorController extends Controller
                     ($complaint->area->area_name ?? 'N/A') .
                     '</td>';
 
-                $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
                 $html .= '<td>
                  <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
-                if ($complaint->complaint_status == 4) {
-                    $html .= 'पूर्ण';
-                } elseif ($complaint->complaint_status == 5) {
+                if ($complaint->complaint_status == 13) {
+                    $html .= 'सम्मिलित हुए';
+                } elseif ($complaint->complaint_status == 14) {
+                    $html .= 'सम्मिलित नहीं हुए';
+                } elseif ($complaint->complaint_status == 15) {
+                    $html .= 'फोन पर संपर्क किया';
+                } elseif ($complaint->complaint_status == 16) {
+                    $html .= 'ईमेल पर संपर्क किया';
+                } elseif ($complaint->complaint_status == 17) {
+                    $html .= 'व्हाट्सएप पर संपर्क किया';
+                } elseif ($complaint->complaint_status == 18) {
                     $html .= 'रद्द';
                 } else {
                     $html .= $complaint->pending_days . ' दिन';
                 }
                 $html .= '</td>';
 
-                $html .= '<td>' . ($latestReply->review_date ?? 'N/A') . '</td>';
-
-                // Importance
-                $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
-
-                // Criticality
-                $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
-
                 $html .= '<td>' . ($complaint->admin->admin_name ?? 'N/A') . '</td>';
 
                 $html .= '<td>' . $complaint->forwarded_to_name . '<br>' . $complaint->forwarded_reply_date . '</td>';
+
+                $html .= '<td>' . ($complaint->issue_title ?? '') . '</td>';
+                $html .= '<td>' . ($complaint->program_date ?? '') . '</td>';
 
                 $html .= '<td><a href="' . route('operator_complaint.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
 
@@ -907,7 +888,6 @@ class OperatorController extends Controller
         $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
         $departments = Department::all();
         $replyOptions = ComplaintReply::all();
-        $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
         $managers = User::where('role', 2)->get();
 
         return view('operator/view_suchna', compact(
@@ -917,7 +897,6 @@ class OperatorController extends Controller
             'pollings',
             'areas',
             'departments',
-            'subjects',
             'replyOptions',
             'managers'
         ));
