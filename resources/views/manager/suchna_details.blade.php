@@ -339,16 +339,24 @@
         <div class="card">
             <div class="card-header" style="color: #000">Reply to {{ $complaint->complaint_number }}</div>
             <div class="card-body">
+
+                @if ($disableReply)
+                    <div class="alert alert-warning">
+                        इस शिकायत का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
+                    </div>
+                @endif
+
                 <form id="replyForm" method="POST"
-                    action="{{ route('complaint_reply.reply', $complaint->complaint_id) }}"
-                    enctype="multipart/form-data">
+                    action="{{ route('complaint_reply.reply', $complaint->complaint_id) }}" enctype="multipart/form-data"
+                    @if ($disableReply) style="pointer-events: none; opacity: 0.6;" @endif>
                     @csrf
 
                     <div class="row mb-3">
                         <div class="col-md-2">
                             <label class="form-label ">सूचना की स्थिति: <span class="tx-danger"
                                     style="color: red;">*</span></label>
-                            <select name="cmp_status" id="cmp_status" class="form-control" required>
+                            <select name="cmp_status" id="cmp_status" class="form-control" required
+                                @if ($disableReply) disabled @endif>
                                 <option value="">--चुने--</option>
                                 <option value="11" {{ $complaint->complaint_status == 11 ? 'selected' : '' }}>
                                     सूचना प्राप्त
@@ -378,7 +386,8 @@
 
                         <div class="col-md-2" id="forwarded_to_field">
                             <label class="form-label">अधिकारी चुनें (आगे भेजे)</label>
-                            <select name="forwarded_to" id="forwarded_to" class="form-control">
+                            <select name="forwarded_to" id="forwarded_to" class="form-control"
+                                @if ($disableReply) disabled @endif>
                                 <!-- Preselect the logged-in manager -->
                                 <option value="{{ $loggedInManagerId }}" selected>
                                     {{ \App\Models\User::find($loggedInManagerId)->admin_name }} (You)
@@ -395,12 +404,13 @@
                         <div class="col-md-12">
                             <label class="form-label">विवरण<span class="tx-danger" style="color: red;">*</span></label>
                             <textarea name="cmp_reply" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें"
-                                class="form-control" rows="6" required></textarea>
+                                class="form-control" rows="6" required @if ($disableReply) disabled @endif></textarea>
                         </div>
                     </div>
 
                     <div class="col-12 mt-3">
-                        <button type="submit" class="btn btn-primary">फीडबैक दर्ज करें</button>
+                        <button type="submit" class="btn btn-primary"
+                            @if ($disableReply) disabled @endif>फीडबैक दर्ज करें</button>
                     </div>
 
                 </form>
@@ -777,7 +787,8 @@
 
             document.addEventListener('DOMContentLoaded', function() {
                 const statusSelect = document.getElementById('cmp_status');
-                const forwardedSelect = document.getElementById('managers');
+                const forwardedSelect = document.getElementById('forwarded_to');
+                const replyForm = document.getElementById('replyForm');
 
                 function toggleForwardedField() {
                     const selectedValue = parseInt(statusSelect.value);
@@ -797,6 +808,10 @@
                 toggleForwardedField();
 
                 statusSelect.addEventListener('change', toggleForwardedField);
+
+                @if ($disableReply)
+                    Array.from(replyForm.elements).forEach(el => el.disabled = true);
+                @endif
             });
         </script>
     @endpush
