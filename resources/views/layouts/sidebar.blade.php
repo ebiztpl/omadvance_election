@@ -46,6 +46,14 @@
                     </ul>
                 </li>
 
+                <li><a class="has-arrow" href="#" aria-expanded="false"><i
+                            class="icon icon-arrow-right"></i><span class="nav-text">सूचनाएँ देखे</span></a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('commander.suchnas.view') }}">कमांडर सूचनाएँ</a></li>
+                        <li><a href="{{ route('operator.suchnas.view') }}">कार्यालय सूचनाएँ</a></li>
+                    </ul>
+                </li>
+
                 {{-- <li><a href="{{ route('complaints.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्याएँ देखे</span></a></li> --}}
 
@@ -149,6 +157,14 @@
                         <li><a href="{{ route('operator.complaints.view') }}">कार्यालय समस्याएँ</a></li>
                     </ul>
                 </li>
+                
+                <li><a class="has-arrow" href="#" aria-expanded="false"><i
+                            class="icon icon-arrow-right"></i><span class="nav-text">सूचनाएँ देखे</span></a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('commander.suchna.view') }}">कमांडर सूचनाएँ</a></li>
+                        <li><a href="{{ route('operator.suchna.view') }}">कार्यालय सूचनाएँ</a></li>
+                    </ul>
+                </li>
 
                 <li><a href="{{ route('change_password.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">पासवर्ड बदलें</span></a></li>
@@ -249,6 +265,9 @@
 
                 <li><a href="{{ route('complaints.view') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्याएँ देखे</span></a></li>
+
+                <li><a href="{{ route('suchna.view') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">सूचनाएँ देखे</span></a></li>
             @endif
 
         </ul>

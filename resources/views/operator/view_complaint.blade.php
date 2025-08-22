@@ -30,8 +30,8 @@
                         <div class="col-md-2">
                             <label>शिकायत प्रकार</label>
                             <select name="complaint_type" id="complaint_type" class="form-control">
-                                <option value="शुभ सुचना">शुभ सुचना</option>
-                                <option value="अशुभ सुचना">अशुभ सुचना</option>
+                                {{-- <option value="शुभ सुचना">शुभ सुचना</option>
+                                <option value="अशुभ सुचना">अशुभ सुचना</option> --}}
                                 <option value="समस्या" selected>समस्या</option>
                                 <option value="विकास">विकास</option>
                             </select>
@@ -179,7 +179,7 @@
                                         <th>गंभीरता स्तर</th>
                                         <th>आवेदक</th>
                                         <th>फॉरवर्ड अधिकारी</th>
-                                        <th>आगे देखें</th>
+                                        <th>विस्तार से</th>
                                     </tr>
                                 </thead>
                                 <tbody id="complaintsTableBody">

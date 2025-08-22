@@ -80,6 +80,11 @@ Route::middleware('checklogin')->group(function () {
     // Route::get('/admin/view_complaint', [AdminController::class, 'complaint_index'])->name('complaints.index');
     Route::get('/admin/commander_complaints', [AdminController::class, 'CommanderComplaints'])->name('commander.complaint.view');
     Route::get('/admin/operator_complaints', [AdminController::class, 'OperatorComplaints'])->name('operator.complaint.view');
+
+    Route::get('/admin/commander_suchna', [AdminController::class, 'CommanderSuchnas'])->name('commander.suchnas.view');
+    Route::get('/admin/operator_suchna', [AdminController::class, 'OperatorSuchnas'])->name('operator.suchnas.view');
+
+
     Route::get('/admin/details_complaint/{id}', [AdminController::class, 'complaint_show'])->name('complaints.show');
     Route::post('/admin/complaints/{id}/reply', [AdminController::class, 'postReply'])->name('complaints.reply');
     Route::delete('/complaints/{id}', [AdminController::class, 'complaintDestroy'])->name('complaints.destroy');
@@ -345,6 +350,10 @@ Route::middleware('checklogin')->group(function () {
 
     Route::get('/manager/commander_complaints', [ManagerController::class, 'viewCommanderComplaints'])->name('commander.complaints.view');
     Route::get('/manager/operator_complaints', [ManagerController::class, 'viewOperatorComplaints'])->name('operator.complaints.view');
+
+    Route::get('/manager/commander_suchna', [ManagerController::class, 'viewCommanderSuchnas'])->name('commander.suchna.view');
+    Route::get('/manager/operator_suchna', [ManagerController::class, 'viewOperatorSuchnas'])->name('operator.suchna.view');
+
     Route::post('/manager/update-complaint/{id}', [ManagerController::class, 'updateComplaint'])->name('complaints.update');
     Route::post('/manager/update-suchna/{id}', [ManagerController::class, 'updateSuchna'])->name('suchna.update');
 
@@ -451,6 +460,9 @@ Route::middleware('checkmember')->group(function () {
 
 
     Route::get('/member/view_complaint', [MemberController::class, 'complaint_index'])->name('complaints.view');
+
+    Route::get('/member/view_suchna', [MemberController::class, 'view_suchna'])->name('suchna.view');
+
     Route::get('/member/details_complaint/{id}', [MemberController::class, 'complaint_show'])->name('complaint.show');
     Route::post('/member/complaints/{id}/reply', [MemberController::class, 'postReply'])->name('complaint.reply');
 });
