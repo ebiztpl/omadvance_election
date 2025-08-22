@@ -44,7 +44,7 @@
                                     <label class="form-check-label" for="role_manager">मैनेजर</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="user_role" id="role_user"
+                                    <input class="form-check-input" type="radio" name="user_role" id="role_operator"
                                         value="कार्यालय">
                                     <label class="form-check-label" for="role_operator">कार्यालय</label>
                                 </div>

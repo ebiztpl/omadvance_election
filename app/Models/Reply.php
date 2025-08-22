@@ -45,8 +45,38 @@ class Reply extends Model
             3 => 'स्थगित',
             4 => '<button class="btn btn-success">पूर्ण</button>',
             5 => '<button class="btn btn-danger">रद्द</button>',
+            11 => 'सूचना प्राप्त',
+            12 => 'फॉरवर्ड किया',
+            13 => 'सम्मिलित हुए',
+            14 => 'सम्मिलित नहीं हुए',
+            15 => 'फोन पर संपर्क किया',
+            16 => 'ईमेल पर संपर्क किया',
+            17 => 'व्हाट्सएप पर संपर्क किया',
+            18 => '<button class="btn btn-danger">रद्द</button>',
             default => 'शिकायत दर्ज',
         };
+    }
+
+
+    public function statusText()
+    {
+        $statusLabels = [
+            1 => '<button class="btn btn-success">शिकायत दर्ज</button>',
+            2 => '<button class="btn btn-warning">प्रक्रिया में</button>',
+            3 => '<button class="btn btn-danger">स्थगित</button>',
+            4 => '<button class="btn btn-success">पूर्ण</button>',
+            5 => '<button class="btn btn-danger">रद्द</button>',
+            11 => '<button class="btn btn-success">सूचना प्राप्त</button>',
+            12 => '<button class="btn btn-success">फॉरवर्ड किया</button>',
+            13 => '<button class="btn btn-success">"सम्मिलित हुए"</button>',
+            14 => '<button class="btn btn-warning">सम्मिलित नहीं हुए</button>',
+            15 => '<button class="btn btn-info">फोन पर संपर्क किया</button>',
+            16 => '<button class="btn btn-info">ईमेल पर संपर्क किया</button>',
+            17 => '<button class="btn btn-info">व्हाट्सएप पर संपर्क किया</button>',
+            18 => '<button class="btn btn-danger">रद्द</button>',
+        ];
+
+        return $statusLabels[$this->complaint_status] ?? '<button class="btn btn-primary">शिकायत दर्ज</button>';
     }
 
     public function photos(): HasMany
@@ -78,5 +108,10 @@ class Reply extends Model
     public function forwardedToManager()
     {
         return $this->belongsTo(\App\Models\User::class, 'forwarded_to', 'admin_id');
+    }
+
+    public function replyfrom()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'reply_from', 'admin_id');
     }
 }

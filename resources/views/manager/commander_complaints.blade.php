@@ -162,39 +162,48 @@
 
                         <ul class="nav nav-tabs nav-filters mb-3">
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'forwarded_manager' ? 'active' : '' }}" style="color: black"
+                                <a class="nav-link filter-link {{ request('filter') === 'forwarded_manager' ? 'active' : '' }}"
+                                    style="color: black"
                                     href="{{ route('commander.complaints.view', ['filter' => 'forwarded_manager']) }}">निर्देशित</a>
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === null ? 'active' : '' }}" style="color: black"
-                                    href="{{ route('commander.complaints.view') }}">सभी</a>
+                                <a class="nav-link filter-link {{ request('filter') === null ? 'active' : '' }}"
+                                    style="color: black" href="{{ route('commander.complaints.view') }}">सभी</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'not_opened' ? 'active' : '' }}" style="color: black"
+                                <a class="nav-link filter-link {{ request('filter') === 'not_opened' ? 'active' : '' }}"
+                                    style="color: black"
                                     href="{{ route('commander.complaints.view', ['filter' => 'not_opened']) }}">नई
                                     शिकायतें</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'reviewed' ? 'active' : '' }}" style="color: black"
+                                <a class="nav-link filter-link {{ request('filter') === 'reviewed' ? 'active' : '' }}"
+                                    style="color: black"
                                     href="{{ route('commander.complaints.view', ['filter' => 'reviewed']) }}">रीव्यू की
                                     गई</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'important' ? 'active' : '' }}" style="color: black"
+                                <a class="nav-link filter-link {{ request('filter') === 'important' ? 'active' : '' }}"
+                                    style="color: black"
                                     href="{{ route('commander.complaints.view', ['filter' => 'important']) }}">महत्त्वपूर्ण</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'critical' ? 'active' : '' }}" style="color: black"
+                                <a class="nav-link filter-link {{ request('filter') === 'critical' ? 'active' : '' }}"
+                                    style="color: black"
                                     href="{{ route('commander.complaints.view', ['filter' => 'critical']) }}">गंभीर</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'closed' ? 'active' : '' }}" style="color: black"
-                                    href="{{ route('commander.complaints.view', ['filter' => 'closed']) }}">पूर्ण शिकायतें</a>
+                                <a class="nav-link filter-link {{ request('filter') === 'closed' ? 'active' : '' }}"
+                                    style="color: black"
+                                    href="{{ route('commander.complaints.view', ['filter' => 'closed']) }}">पूर्ण
+                                    शिकायतें</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'cancel' ? 'active' : '' }}" style="color: black"
-                                    href="{{ route('commander.complaints.view', ['filter' => 'cancel']) }}">रद्द शिकायतें</a>
+                                <a class="nav-link filter-link {{ request('filter') === 'cancel' ? 'active' : '' }}"
+                                    style="color: black"
+                                    href="{{ route('commander.complaints.view', ['filter' => 'cancel']) }}">रद्द
+                                    शिकायतें</a>
                             </li>
                         </ul>
 
@@ -288,11 +297,19 @@
                                             </td>
 
                                             <td>
-                                                <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"
-                                                    class="btn btn-sm btn-primary" style="white-space: nowrap;">
-                                                    क्लिक करें
-                                                </a>
+                                                @if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना')
+                                                    <a href="{{ route('suchna_show.details', $complaint->complaint_id) }}"
+                                                        class="btn btn-sm btn-primary" style="white-space: nowrap;">
+                                                        क्लिक करें
+                                                    </a>
+                                                @elseif($complaint->complaint_type === 'समस्या' || $complaint->complaint_type === 'विकास')
+                                                    <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"
+                                                        class="btn btn-sm btn-primary" style="white-space: nowrap;">
+                                                        क्लिक करें
+                                                    </a>
+                                                @endif
                                             </td>
+
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -410,13 +427,13 @@
                             $("#loader-wrapper").show();
                         },
                         success: function(response) {
-                           
+
 
                             if ($.fn.DataTable.isDataTable('#example')) {
                                 $('#example').DataTable().destroy();
                             }
 
-                             $('#complaintsTableBody').html(response.html);
+                            $('#complaintsTableBody').html(response.html);
                             $('#complaint-count').text(response.count);
 
                             $('#example').DataTable({

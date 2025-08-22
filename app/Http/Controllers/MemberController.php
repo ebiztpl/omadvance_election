@@ -65,11 +65,166 @@ class MemberController extends Controller
     }
 
 
+    // public function store(Request $request)
+    // {
+    //     $request->validate([
+    //         'area_id' => 'required|integer',
+    //         'video' => 'required|file|mimetypes:video/*|max:2560000',
+    //         'complaint_type' => 'nullable|string'
+    //     ], [
+    //         'video.max' => 'वीडियो फ़ाइल अधिकतम 2.5GB हो सकती है।',
+    //         'video.mimetypes' => 'केवल वीडियो फ़ॉर्मेट स्वीकार्य है।',
+    //     ]);
+
+    //     $registrationId = session('registration_id');
+    //     if (!$registrationId) {
+    //         return back()->with('error', 'Session expired. Please log in again.');
+    //     }
+
+    //     $areaId = $request->area_id;
+    //     $complaintType = $request->complaint_type ?: 'समस्या';
+
+    //     $pollingId = DB::table('area_master')
+    //         ->where('area_id', $areaId)
+    //         ->value('polling_id');
+
+    //     $nagarId = DB::table('gram_polling')
+    //         ->where('gram_polling_id', $pollingId)
+    //         ->value('nagar_id');
+
+    //     if (!$nagarId) {
+    //         return back()->with('error', 'नगर नहीं मिला।');
+    //     }
+
+    //     $mandalId = DB::table('nagar_master')
+    //         ->where('nagar_id', $nagarId)
+    //         ->value('mandal_id');
+
+    //     $vidhansabhaId = DB::table('mandal')
+    //         ->where('mandal_id', $mandalId)
+    //         ->value('vidhansabha_id');
+
+    //     $vidhansabhaInfo = DB::table('vidhansabha_loksabha')
+    //         ->where('vidhansabha_id', $vidhansabhaId)
+    //         ->first();
+
+    //     $districtId = $vidhansabhaInfo->district_id ?? null;
+
+    //     $divisionId = DB::table('district_master')
+    //         ->where('district_id', $districtId)
+    //         ->value('division_id');
+
+    //     $ref = '00';
+    //     if ($vidhansabhaId == 50) $ref = '19';
+    //     elseif ($vidhansabhaId == 49) $ref = '18';
+
+    //     $rndno = date('dHi', mt_rand(strtotime('2018-01-01'), time()));
+    //     $complaintNumber = 'BJS' . $ref . '-' . $rndno;
+
+    //     $videoFilename = '';
+    //     if ($request->hasFile('video')) {
+    //         $file = $request->file('video');
+    //         $extension = $file->getClientOriginalExtension();
+
+    //         if (in_array(strtolower($extension), ['exe', 'php', 'js'])) {
+    //             return back()->with('error', 'This file type is not allowed.');
+    //         }
+
+    //         $videoFilename = time() . '_' . Str::random(6) . '.' . $extension;
+    //         $file->move(public_path('assets/upload/complaints'), $videoFilename);
+    //     }
+
+    //     $role = session('admin_role');
+    //     $type = ($role === 'फ़ील्ड') ? 1 : 2;
+
+    //     $mobile = DB::table('registration_form')
+    //         ->where('registration_id', $registrationId)
+    //         ->value('mobile1');
+
+    //     $complaint = Complaint::create([
+    //         'user_id' => 0,
+    //         'complaint_number' => $complaintNumber,
+    //         'video' => $videoFilename,
+    //         'polling_id' => $pollingId,
+    //         'area_id' => $areaId,
+    //         'mandal_id' => $mandalId,
+    //         'vidhansabha_id' => $vidhansabhaId,
+    //         'district_id' => $districtId,
+    //         'division_id' => $divisionId,
+    //         'father_name' => '',
+    //         'mobile_number' => $mobile,
+    //         'complaint_type' => $complaintType,
+    //         'complaint_designation' => '',
+    //         'complaint_department' => 'अन्य',
+    //         'type' => $type,
+    //         'complaint_created_by' => $registrationId,
+    //         'complaint_status' => 1,
+    //         'issue_title' => '',
+    //         'issue_description' => '',
+    //         'issue_attachment' => $videoFilename,
+    //         'name' => '',
+    //         'email' => '',
+    //         'gram_id' => $nagarId ?? null,
+    //         'news_time' => null,
+    //         'posted_date' => now(),
+    //     ]);
+
+    //     $replyStatus = 1;
+    //     $replyMessage = 'शिकायत दर्ज की गई है।';
+
+    //     if (in_array($complaintType, ['शुभ सुचना', 'अशुभ सुचना'])) {
+    //         $replyStatus = 11;
+    //         $replyMessage = 'सुचना दर्ज की गई है।';
+    //     }
+
+    //     // Create the Reply
+    //     Reply::create([
+    //         'complaint_id' => $complaint->complaint_id,
+    //         'forwarded_to' => 6,
+    //         'reply_from' => 0,
+    //         'reply_date' => now(),
+    //         'selected_reply' => null,
+    //         'complaint_status' => $replyStatus,
+    //         'complaint_reply' => $replyMessage,
+    //     ]);
+
+    //     // Reply::create([
+    //     //     'complaint_id' => $complaint->complaint_id,
+    //     //     'forwarded_to' => 6,
+    //     //     'reply_from' => 0,
+    //     //     'reply_date' => now(),
+    //     //     'selected_reply' => Null,
+    //     //     'complaint_status' => 1,
+    //     //     'complaint_reply' => 'शिकायत दर्ज की गई है।',
+    //     // ]);
+
+
+    //     // $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaintNumber;
+    //     if (in_array($complaintType, ['शुभ सुचना', 'अशुभ सुचना'])) {
+    //         $message = 'आपकी सूचना सफलतापूर्वक दर्ज की गई है। सूचना संख्या: ' . $complaintNumber;
+    //     } else {
+    //         $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaintNumber;
+    //     }
+    //     $this->messageSent($complaintNumber, $mobile);
+
+    //     if ($request->ajax()) {
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => $message,
+    //             'redirect' => route('member.complaint'),
+    //         ]);
+    //     }
+
+    //     return redirect()->route('member.complaint')->with('success', $message);
+    // }
+
+
     public function store(Request $request)
     {
         $request->validate([
             'area_id' => 'required|integer',
             'video' => 'required|file|mimetypes:video/*|max:2560000',
+            'complaint_type' => 'nullable|string'
         ], [
             'video.max' => 'वीडियो फ़ाइल अधिकतम 2.5GB हो सकती है।',
             'video.mimetypes' => 'केवल वीडियो फ़ॉर्मेट स्वीकार्य है।',
@@ -81,6 +236,7 @@ class MemberController extends Controller
         }
 
         $areaId = $request->area_id;
+        $complaintType = $request->complaint_type ?: 'समस्या';
 
         $pollingId = DB::table('area_master')
             ->where('area_id', $areaId)
@@ -139,6 +295,19 @@ class MemberController extends Controller
             ->where('registration_id', $registrationId)
             ->value('mobile1');
 
+
+        $complaintStatus = 1;
+        $replyStatus = 1;
+        $replyMessage = 'शिकायत दर्ज की गई है।';
+        $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaintNumber;
+
+        if (in_array($complaintType, ['शुभ सुचना', 'अशुभ सुचना'])) {
+            $complaintStatus = 11;
+            $replyStatus = 11;
+            $replyMessage = 'सूचना दर्ज की गई है।';
+            $message = 'आपकी सूचना सफलतापूर्वक दर्ज की गई है। सूचना संख्या: ' . $complaintNumber;
+        }
+
         $complaint = Complaint::create([
             'user_id' => 0,
             'complaint_number' => $complaintNumber,
@@ -151,11 +320,12 @@ class MemberController extends Controller
             'division_id' => $divisionId,
             'father_name' => '',
             'mobile_number' => $mobile,
-            'complaint_type' => 'समस्या',
+            'complaint_type' => $complaintType,
             'complaint_designation' => '',
+            'complaint_department' => 'अन्य',
             'type' => $type,
             'complaint_created_by' => $registrationId,
-            'complaint_status' => 1,
+            'complaint_status' => $complaintStatus,
             'issue_title' => '',
             'issue_description' => '',
             'issue_attachment' => $videoFilename,
@@ -166,19 +336,16 @@ class MemberController extends Controller
             'posted_date' => now(),
         ]);
 
-
         Reply::create([
             'complaint_id' => $complaint->complaint_id,
             'forwarded_to' => 6,
             'reply_from' => 0,
             'reply_date' => now(),
-            'selected_reply' => Null,
-            'complaint_status' => 1,
-            'complaint_reply' => 'शिकायत दर्ज की गई है।',
+            'selected_reply' => null,
+            'complaint_status' => $replyStatus,
+            'complaint_reply' => $replyMessage,
         ]);
 
-
-        $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaintNumber;
         $this->messageSent($complaintNumber, $mobile);
 
         if ($request->ajax()) {
@@ -191,9 +358,6 @@ class MemberController extends Controller
 
         return redirect()->route('member.complaint')->with('success', $message);
     }
-
-
-
 
 
 
@@ -702,7 +866,7 @@ class MemberController extends Controller
         $reply->complaint_id = $id;
         $reply->complaint_reply = $request->cmp_reply;
         $reply->selected_reply = $request->selected_reply ?? 0;
-        $reply->reply_from = auth()->id() ?? 2;
+        $reply->reply_from = session('user_id') ?? 0;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;
         $reply->review_date = $request->review_date ?? null;

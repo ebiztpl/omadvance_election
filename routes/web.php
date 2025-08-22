@@ -156,6 +156,7 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/fetch-suchna', [ManagerController::class, 'fetchSuchna']);
     Route::get('/fetch-vibhaag-count', [ManagerController::class, 'fetchVibhaagWiseCount']);
     Route::get('/fetch-status', [ManagerController::class, 'fetchStatus']);
+    Route::get('/fetch-status-suchna', [ManagerController::class, 'fetchSuchnaStatus']);
     Route::get('/dashboard/stats', [ManagerController::class, 'fetchDashboardStats']);
     Route::get('/complaints/{section}', [ManagerController::class, 'sectionView']);
     Route::get('/voters/details', [ManagerController::class, 'voterDetails']);
@@ -345,8 +346,10 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/manager/commander_complaints', [ManagerController::class, 'viewCommanderComplaints'])->name('commander.complaints.view');
     Route::get('/manager/operator_complaints', [ManagerController::class, 'viewOperatorComplaints'])->name('operator.complaints.view');
     Route::post('/manager/update-complaint/{id}', [ManagerController::class, 'updateComplaint'])->name('complaints.update');
+    Route::post('/manager/update-suchna/{id}', [ManagerController::class, 'updateSuchna'])->name('suchna.update');
 
     Route::get('/manager/details_complaints/{id}', [ManagerController::class, 'allcomplaints_show'])->name('complaints_show.details');
+    Route::get('/manager/details_suchnas/{id}', [ManagerController::class, 'allsuchnas_show'])->name('suchna_show.details');
     Route::post('/manager/complaints/{id}/reply', [ManagerController::class, 'complaintsReply'])->name('complaint_reply.reply');
 
     Route::get('manager/get-voter', [ManagerController::class, 'getVoter'])->name('get.voter');
@@ -390,6 +393,9 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/operator/details_complaint/{id}', [OperatorController::class, 'operator_complaints_show'])->name('operator_complaint.show');
     Route::post('/operator/complaints/{id}/reply', [OperatorController::class, 'operatorReply'])->name('operator_complaint.reply');
 
+    Route::get('/operator/info', [OperatorController::class, 'suchnaIndex'])->name('operator_suchna.index');
+    Route::get('/operator/view_info', [OperatorController::class, 'view_suchna'])->name('operator_suchna.view');
+    Route::post('/operator/info/store', [OperatorController::class, 'suchnaStore'])->name('operator_suchna.store');
 
     Route::get('/operator/get-districts/{division_id}', [OperatorController::class, 'getDistricts']);
     Route::get('/operator/get-vidhansabha/{district_id}', [OperatorController::class, 'getVidhansabhas']);

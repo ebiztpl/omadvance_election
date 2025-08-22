@@ -38,8 +38,19 @@
                             </select>
                         </div> --}}
 
+                        <div class="col-md-2">
+                            <label for="complaint_type">शिकायत का प्रकार: </label>
+                            <select name="complaint_type" id="complaint_type" class="form-control">
+                                <option value="शुभ सुचना">शुभ सूचना</option>
+                                <option value="अशुभ सुचना">अशुभ सूचना</option>
+                                <option value="समस्या" selected>समस्या</option>
+                                <option value="विकास">विकास</option>
+                            </select>
+                            <span class="text-danger small" id="complaint_type-error"></span>
+                        </div>
+
                         <div class="col-md-4">
-                            <label for="area_id">ग्राम चौपाल चुनें:</label>
+                            <label for="area_id">ग्राम चौपाल चुनें: <span class="error">*</span></label>
                             <select name="area_id" id="area_id" class="form-control" required>
                                 <option value="">--चुनें--</option>
                                 @foreach ($areas as $area)
@@ -51,7 +62,7 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label for="video">वीडियो अपलोड करें:</label>
+                            <label for="video">वीडियो अपलोड करें: <span class="error">*</span></label>
                             <input type="file" name="video" id="video" class="form-control" accept="video/*"
                                 required>
                             <span class="text-danger small" id="video-error"></span>
@@ -112,7 +123,7 @@
                             // $("#loader-wrapper").hide();
                             $('#progressBar').css('width', '0%').text('0%');
                             $('#progressBar').removeClass('bg-success');
-                             $('#progress-container').addClass('d-none');
+                            $('#progress-container').addClass('d-none');
 
 
                             if (response.success) {
@@ -134,9 +145,10 @@
                         },
                         error: function(xhr) {
                             // $("#loader-wrapper").hide();
-                              $('#progressBar').css('width', '0%').text('0%').removeClass('bg-success');
-                    $('#progress-container').addClass('d-none');
-                    
+                            $('#progressBar').css('width', '0%').text('0%').removeClass(
+                                'bg-success');
+                            $('#progress-container').addClass('d-none');
+
                             if (xhr.responseJSON && xhr.responseJSON.errors) {
                                 if (xhr.responseJSON.errors.video) {
                                     $('#video-error').text(xhr.responseJSON.errors.video[0]);
@@ -144,6 +156,10 @@
                                 if (xhr.responseJSON.errors.area_id) {
                                     alert(xhr.responseJSON.errors.area_id[
                                         0]);
+                                }
+                                if (xhr.responseJSON.errors.complaint_type) {
+                                    $('#complaint_type-error').text(xhr.responseJSON.errors
+                                        .complaint_type[0]);
                                 }
                             } else {
                                 alert('त्रुटि: शिकायत दर्ज नहीं की जा सकी।');

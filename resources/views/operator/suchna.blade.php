@@ -1,13 +1,13 @@
 @php
-    $pageTitle = 'समस्या पंजीयन करे';
+    $pageTitle = 'सूचना पंजीयन करे';
     $breadcrumbs = [
         'कार्यालय' => '#',
-        'समस्या पंजीयन करे' => '#',
+        'सूचना पंजीयन करे' => '#',
     ];
 @endphp
 
 @extends('layouts.app')
-@section('title', 'Register complaint')
+@section('title', 'Register Suchna')
 
 @section('content')
     <div class="container">
@@ -32,15 +32,15 @@
         <div class="row page-titles mx-0">
             <div class="col-md-12 col-sm-12 col-xs-12">
                 <form id="complaintForm" method="POST" enctype="multipart/form-data"
-                    action="{{ route('operator_complaint.store') }}">
+                    action="{{ route('operator_suchna.store') }}">
                     @csrf
                     <div class="form-group row justify-content-center">
                         <div class="col-md-12 d-flex justify-content-center" style="padding-top:15px;">
                             <div id="type_row" class="d-flex justify-content-center flex-wrap">
                                 @php
                                     $types = [
-                                        'समस्या' => ['text' => 'शिकायतकर्ता का नाम', 'heading' => 'समस्या '],
-                                        'विकास' => ['text' => 'मांगकर्ता का नाम', 'heading' => 'विकास'],
+                                        'शुभ सुचना' => ['text' => 'सूचनाकर्ता का नाम', 'heading' => 'शुभ सूचना'],
+                                        'अशुभ सुचना' => ['text' => 'सूचनाकर्ता का नाम', 'heading' => 'अशुभ सूचना'],
                                     ];
                                 @endphp
                                 @foreach ($types as $type => $data)
@@ -79,7 +79,8 @@
 
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                        <span class="mobile-label">मोबाइल</span>
+                                        <span class="mobile-label">सूचनाकर्ता का मोबाइल<span
+                                                class="ml-1 error">*</span></span>
                                     </label>
                                     <div class="flex-grow-1">
                                         <input type="text" class="form-control" name="mobile" required>
@@ -166,46 +167,31 @@
                                 <div class="col-md-4 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         फाइल अपलोड करें</label>
-                                    <div class="flex-grow-1">
-                                        <input type="file" class="form-control" name="file_attach">
-                                    </div>
+                                    <input type="file" class="form-control" name="file_attach">
                                 </div>
                             </div>
 
                             <fieldset class="scheduler-border fieldset-bordered">
                                 <legend class="scheduler-border dynamic-legend">विवरण -</legend>
-
-                                <div class="form-group row department_row">
-                                    <div class="col-md-4 d-flex align-items-center">
-                                        <label for="department-select" class="me-2 mr-2 mb-0"
-                                            style="white-space: nowrap;">विभाग <span class="error">*</span></label>
-                                        <select name="department" id="department-select" class="form-control" required>
-                                            <option value="">--चुने--</option>
-                                            @foreach ($departments as $department)
-                                                <option value="{{ $department->department_name }}">
-                                                    {{ $department->department_name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                <div class="form-group row date_row">
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="from_date" class="me-2 mr-2 mb-0" style="white-space: nowrap;">सूचना
+                                            दिनांक<span class="ml-1 error">*</span></label>
+                                        <input type="date" class="form-control" name="from_date" required>
                                     </div>
 
-                                    <div class="col-md-4 d-flex align-items-center">
-                                        <label for="post-select" class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                            पद <span class="error">*</span>
-                                        </label>
-                                        <select name="post" class="form-control" id="post-select" required>
-                                            <option value="">--चुने--</option>
-                                        </select>
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="program_date" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">कार्यक्रम दिनांक<span
+                                                class="ml-1 error">*</span></label>
+                                        <input type="date" class="form-control" name="program_date" required>
                                     </div>
 
-                                    <div class="col-md-4 d-flex align-items-center">
-                                        <label for="subject-select" class="me-2 mr-2 mb-0"
-                                            style="white-space: nowrap;">विषय
-                                            <span class="error">*</span></label>
-                                        <select placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें"
-                                            name="CharCounter" id="subject-select" class="form-control" required>
-                                            <option value="">--चुने--</option>
-                                        </select>
+
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="to_date" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">कार्यक्रम समय</label>
+                                        <input type="time" class="form-control" name="to_date">
                                     </div>
                                 </div>
 
@@ -219,7 +205,8 @@
                             </fieldset>
                         </fieldset>
 
-                        <input class="btn btn-primary" type="submit" value="समस्या भेजे"
+
+                        <input class="btn btn-primary" type="submit" value="सूचना भेजे"
                             style="background-color:blue; color:#fff; width:100%; height:50px;">
 
                     </div>
@@ -273,13 +260,11 @@
                         },
                         error: function(xhr) {
                             $("#loader-wrapper").hide();
-                            if (xhr.status === 422) { // validation error
+                            if (xhr.status === 422) {
                                 const errors = xhr.responseJSON.errors;
 
-                                // पुराने error messages हटाएँ
                                 $('.error-text').remove();
 
-                                // हर error को उसके input field के नीचे दिखाएँ
                                 for (let field in errors) {
                                     const input = $(`[name="${field}"]`);
                                     if (input.length) {
@@ -288,76 +273,16 @@
                                         );
                                     }
                                 }
-
-                                // Scroll to first error
                                 $('html, body').animate({
                                     scrollTop: $(".error-text:first").offset().top - 100
                                 }, 500);
 
                             } else {
-                                alert('त्रुटि: शिकायत दर्ज नहीं की जा सकी।');
+                                alert('त्रुटि: सूचना दर्ज नहीं की जा सकी।');
                                 console.log(xhr.responseText);
                             }
                         }
                     });
-                });
-
-                $('#department-select').on('change', function() {
-                    const departmentName = $(this).val();
-                    const $postSelect = $('#post-select');
-
-                    $postSelect.html('<option value="">लोड हो रहा है...</option>');
-
-                    if (departmentName) {
-                        $.ajax({
-                            url: '/get-designations/' + encodeURIComponent(departmentName),
-                            method: 'GET',
-                            success: function(data) {
-                                let options = '<option value="">--चुने--</option>';
-                                data.forEach(function(designation) {
-                                    options +=
-                                        `<option value="${designation.designation_name}">${designation.designation_name}</option>`;
-                                });
-                                $postSelect.html(options);
-                            },
-                            error: function() {
-                                $postSelect.html(
-                                    '<option value="">लोड करने में त्रुटि</option>');
-                            }
-                        });
-                    } else {
-                        $postSelect.html('<option value="">--चुने--</option>');
-                    }
-                });
-
-
-                $('#department-select').on('change', function() {
-                    const departmentName = $(this).val();
-                    const $subjectSelect = $('#subject-select');
-                    $subjectSelect.html('<option value="">लोड हो रहा है...</option>');
-
-                    if (departmentName) {
-                        $.ajax({
-                            url: '/operator/get-subjects-department/' + encodeURIComponent(
-                                departmentName),
-                            method: 'GET',
-                            success: function(data) {
-                                let options = '<option value="">--चुने--</option>';
-                                data.forEach(function(subject) {
-                                    options +=
-                                        `<option value="${subject.subject}">${subject.subject}</option>`;
-                                });
-                                options += '<option value="अन्य">अन्य</option>';
-                                $subjectSelect.html(options);
-                            },
-                            error: function() {
-                                $subjectSelect.html(
-                                    '<option value="">लोड करने में त्रुटि</option>');
-                            }
-                        });
-                    } else {
-                        $subjectSelect.html('<option value="">--चुने--</option>');
-                    }
                 });
 
                 $('#txtgram').on('change', function() {
@@ -374,8 +299,7 @@
                                 $('#area_id').val('');
 
                                 $.each(response, function(index, item) {
-                                    const areaName = item.area ? item.area.area_name :
-                                        '—';
+                                    const areaName = item.area ? item.area.area_name : '—';
                                     const optionText =
                                         `${item.polling_name} (${item.polling_no}) - ${areaName}`;
                                     $('#txtpolling').append(
@@ -413,15 +337,6 @@
                     $(".data-legend").html(legend);
                     $(".dynamic-legend").html("विवरण - " +
                         legend);
-
-
-                    var type = $(this).val();
-
-                    if (type === "समस्या") {
-                        $(".mobile-label").html("शिकायतकर्ता का मोबाइल <span class='error'>*</span>");
-                    } else {
-                        $(".mobile-label").html("मांगकर्ता का मोबाइल <span class='error'>*</span>");
-                    }
                 });
 
                 if ($(".check:checked").length > 0) {
@@ -461,17 +376,14 @@
                             } else {
                                 $('#voter_id_input').val('');
                                 $('#voter-error')
-                                    .text(
-                                        'मतदाता पहचान नहीं मिली (Voter ID not found for given details)'
-                                    )
+                                    .text('मतदाता पहचान नहीं मिली (Voter ID not found for given details)')
                                     .show();
                             }
                         },
                         error: function(xhr) {
                             $('#voter_id_input').val('');
                             $('#voter-error')
-                                .text(
-                                    'मतदाता पहचान नहीं मिली (Voter ID not found for given details)')
+                                .text('मतदाता पहचान नहीं मिली (Voter ID not found for given details)')
                                 .show();
                             console.error("Error fetching voter: " + xhr.responseText);
                         }

@@ -94,27 +94,30 @@
                                 </div>
                                 <div class="row mt-3">
                                     <div class="col-xl-12">
-                                        <table id="dynamicTable" class="table text-center custom-bordered-table"
-                                            style="color: black;">
-                                            <thead>
-                                                <tr>
-                                                    <th rowspan="2">समय</th>
-                                                    <th colspan="3">समस्या</th>
-                                                    <th colspan="3">विकास</th>
-                                                </tr>
-                                                <tr>
-                                                    <th>कार्यालय</th>
-                                                    <th>कमांडर</th>
-                                                    <th>समाधान योग</th>
-                                                    <th>कार्यालय</th>
-                                                    <th>कमांडर</th>
-                                                    <th>समाधान योग</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
+                                        <!-- Responsive wrapper -->
+                                        <div class="table-responsive">
+                                            <table id="dynamicTable" class="table text-center custom-bordered-table"
+                                                style="color: black;">
+                                                <thead>
+                                                    <tr>
+                                                        <th rowspan="2">समय</th>
+                                                        <th colspan="3">समस्या</th>
+                                                        <th colspan="3">विकास</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>कार्यालय</th>
+                                                        <th>कमांडर</th>
+                                                        <th>समाधान योग</th>
+                                                        <th>कार्यालय</th>
+                                                        <th>कमांडर</th>
+                                                        <th>समाधान योग</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
 
-                                            </tbody>
-                                        </table>
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -313,7 +316,7 @@
                         <div class="card" style="background-color: rgb(247, 247, 198)">
                             <div class="card-body">
                                 <div class="card-header" style="border-bottom: 2px solid gray;">
-                                    <h4 class="card-title suchna mb-0">स्थिति</h4>
+                                    <h4 class="card-title suchna mb-0">समस्या स्थिति</h4>
 
                                     <select id="date-filter" class="form-control w-auto">
                                         <option value="सभी" selected>सभी</option>
@@ -324,6 +327,30 @@
                                     </select>
                                 </div>
                                 <ul class="mt-3" id="status-count-list"
+                                    style="list-style-type: none; padding: 0; font-weight: bold">
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <div class="col-xl-12 col-lg-12 col-md-12">
+                        <div class="card" style="background-color: #e6ecec">
+                            <div class="card-body">
+                                <div class="card-header" style="border-bottom: 2px solid gray;">
+                                    <h4 class="card-title suchna mb-0">सूचना स्थिति</h4>
+
+                                    <select id="date-filter-suchna" class="form-control w-auto">
+                                        <option value="सभी" selected>सभी</option>
+                                        <option value="आज">आज</option>
+                                        <option value="कल">कल</option>
+                                        <option value="पिछले सात दिन">पिछले सात दिन</option>
+                                        <option value="पिछले तीस दिन">पिछले तीस दिन</option>
+                                    </select>
+                                </div>
+                                <ul class="mt-3" id="status-suchna-count-list"
                                     style="list-style-type: none; padding: 0; font-weight: bold">
                                 </ul>
                             </div>
@@ -351,30 +378,32 @@
                         <div class="card" style="background-color: #ECE8DD">
                             <div class="card-body">
                                 <div class="card-header mb-2" style="border-bottom: 2px solid gray;">
-                                    <h4 class="card-title suchna mb-0">अन्य को निर्देशित</h4>
+                                    <h4 class="card-title suchna mb-0">सारांश</h4>
                                 </div>
 
-                                <table class="table forward-table text-center custom-bordered-table" style="color: black;"
-                                    id="forward-count-table">
-                                    <thead>
-                                        <tr>
-                                            <th rowspan="2">प्रबंधक</th>
-                                            <th colspan="2">सूचना</th>
-                                            <th colspan="2">समस्या</th>
-                                        </tr>
-                                        <tr>
-                                            <th>शुभ</th>
-                                            <th>अशुभ</th>
-                                            <th>समस्या</th>
-                                            <th>विकास</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td colspan="5" class="text-center">लोड हो रहा है...</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                <div class="table-responsive">
+                                    <table class="table forward-table text-center custom-bordered-table"
+                                        style="color: black;" id="forward-count-table">
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2">प्रबंधक</th>
+                                                <th colspan="2">सूचना</th>
+                                                <th colspan="2">समस्या</th>
+                                            </tr>
+                                            <tr>
+                                                <th>शुभ</th>
+                                                <th>अशुभ</th>
+                                                <th>समस्या</th>
+                                                <th>विकास</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="5" class="text-center">लोड हो रहा है...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -865,13 +894,13 @@
                 //         } else {
                 //             data.forEach(item => {
                 //                 $list.append(`
-        //                  <a href="/complaints/status-details?status=${item.status}" target="_blank"                  class="text-decoration-none" style="color: black">
-        //             <li class="d-flex justify-content-between border-bottom py-1">
-        //                 <span>${item.status}</span>
-        //                 <span class="badge bg-success text-white">${item.total}</span>
-        //             </li>
-        //                     </a>
-        //         `);
+                //                  <a href="/complaints/status-details?status=${item.status}" target="_blank"                  class="text-decoration-none" style="color: black">
+                //             <li class="d-flex justify-content-between border-bottom py-1">
+                //                 <span>${item.status}</span>
+                //                 <span class="badge bg-success text-white">${item.total}</span>
+                //             </li>
+                //                     </a>
+                //         `);
                 //             });
                 //         }
                 //     },
@@ -923,6 +952,50 @@
 
                 $filter.on('change', function() {
                     loadStatusCounts($(this).val());
+                });
+
+
+                function loadSuchnaStatusCounts(filter = 'सभी') {
+                    $.ajax({
+                        url: "/fetch-status-suchna",
+                        method: "GET",
+                        data: {
+                            filter: filter
+                        },
+                        dataType: "json",
+                        success: function(data) {
+                            const $list = $("#status-suchna-count-list");
+                            $list.empty();
+
+                            if (data.length === 0) {
+                                $list.append(
+                                    `<li class="text-muted text-center">कोई डेटा उपलब्ध नहीं</li>`);
+                            } else {
+                                data.forEach(item => {
+                                    $list.append(`
+                                        <a href="/complaints/suchna-status-details?status=${encodeURIComponent(item.status)}&filter=${filter}" target="_blank" class="text-decoration-none" style="color: black">
+                                            <li class="d-flex justify-content-between border-bottom py-1">
+                                                <span>${item.status}</span>
+                                                <span class="badge bg-primary text-white">${item.total}</span>
+                                            </li>
+                                        </a>
+                                    `);
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching Suchna Status:", error);
+                            $("#status-suchna-count-list").html(
+                                `<li class="text-danger">डेटा लोड करने में त्रुटि</li>`);
+                        }
+                    });
+                }
+                const $filtersuchna = $('#date-filter-suchna');
+
+                loadSuchnaStatusCounts($filtersuchna.val());
+
+                $filtersuchna.on('change', function() {
+                    loadSuchnaStatusCounts($(this).val());
                 });
 
                 $.ajax({
@@ -1009,12 +1082,12 @@
                                     <tr>
                                         <td style='font-weight: bold'>${item.forward}</td>
                                         <td>
-                                            <a href="/complaints/forward-details?forward=${item.forward}&type=शुभ सूचना" target="_blank" class="text-decoration-none text-light">
+                                            <a href="/complaints/forward-details?forward=${item.forward}&type=शुभ सुचना" target="_blank" class="text-decoration-none text-light">
                                                 <span class="badge bg-success border" style="color: white">${item.subh}</span>
                                             </a>
                                         </td>
                                         <td>
-                                            <a href="/complaints/forward-details?forward=${item.forward}&type=अशुभ सूचना" target="_blank" class="text-decoration-none text-dark">
+                                            <a href="/complaints/forward-details?forward=${item.forward}&type=अशुभ सुचना" target="_blank" class="text-decoration-none text-dark">
                                                 <span class="badge bg-danger border" style="color: white">${item.asubh}</span>
                                             </a>
                                         </td>

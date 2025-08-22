@@ -28,6 +28,7 @@ use App\Models\City;
 use App\Models\State;
 use Carbon\Carbon;
 use Intervention\Image\Facades\Image;
+use Illuminate\Validation\ValidationException;
 use App\Models\Division;
 use Mpdf\Mpdf;
 use App\Models\VidhansabhaLokSabha;
@@ -54,6 +55,22 @@ class OperatorController extends Controller
 
 
         return view('operator/complaints', compact('states', 'nagars',  'departments'));
+    }
+
+    public function suchnaIndex()
+    {
+        $states = State::orderBy('name')->get();
+        $mandalIds = Mandal::where('vidhansabha_id', 49)->pluck('mandal_id');
+
+        $nagars = Nagar::with('mandal')
+            ->whereIn('mandal_id', $mandalIds)
+            ->orderBy('nagar_name')
+            ->get();
+
+        $departments = Department::all();
+
+
+        return view('operator/suchna', compact('states', 'nagars',  'departments'));
     }
 
     public function getVoter(Request $request)
@@ -88,51 +105,53 @@ class OperatorController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'txtname' => 'required|string|max:255',
-            'mobile' => 'nullable|string|regex:/^[0-9]{10,15}$/',
-            'father_name' => 'required|string|max:255',
-            'reference' => 'nullable|string|max:255',
-            'division_id' => 'required|integer',
-            'voter' => 'required|string|max:255',
-            'txtdistrict_name' => 'required|integer',
-            'txtvidhansabha' => 'required|integer',
-            // 'txtmandal' => 'required|integer',
-            'txtgram' => 'required|integer',
-            'txtpolling' => 'required|integer',
-            // 'txtarea' => 'required|integer',
-            'txtaddress' => 'nullable|string|max:1000',
-            'CharCounter' => 'nullable|string|max:100',
-            'NameText' => 'required|string|max:2000',
-            'type' => 'required|string',
-            'department' => 'nullable',
-            'post' => 'nullable',
-            'from_date' => 'nullable|date',
-            'program_date' => 'nullable|date',
-            'to_date' => 'nullable',
-            'file_attach' => 'nullable|file|max:20480'
-        ]);
+        try {
+            $request->validate([
+                'txtname' => 'required|string|max:255',
+                'mobile' => 'required|string|regex:/^[0-9]{10,15}$/',
+                'father_name' => 'required|string|max:255',
+                'reference' => 'nullable|string|max:255',
+                'division_id' => 'required|integer',
+                'voter' => 'required|string|max:255',
+                'txtdistrict_name' => 'required|integer',
+                'txtvidhansabha' => 'required|integer',
+                'txtgram' => 'required|integer',
+                'txtpolling' => 'required|integer',
+                'txtaddress' => 'nullable|string|max:1000',
+                'CharCounter' => 'nullable|string|max:100',
+                'NameText' => 'required|string|max:2000',
+                'type' => 'required|string',
+                'department' => 'nullable',
+                'post' => 'nullable',
+                'from_date' => 'nullable|date',
+                'program_date' => 'nullable|date',
+                'to_date' => 'nullable',
+                'file_attach' => 'nullable|file|max:20480'
+            ]);
+        } catch (ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        }
 
         $userId = session('user_id');
 
         if (!$userId) {
-            return back()->with('error', 'User session expired. Please log in again.');
+            return response()->json([
+                'success' => false,
+                'errors' => ['session' => ['User session expired. Please log in again.']]
+            ], 401);
         }
-
 
         $nagar = Nagar::with('mandal')->find($request->txtgram);
         $mandal_id = $nagar?->mandal?->mandal_id;
 
         $polling = Polling::with('area')->where('gram_polling_id', $request->txtpolling)->first();
         $area_id = $polling?->area?->area_id;
-
-        // $userAreaId = DB::table('step2')
-        //     ->where('registration_id', $userId)
-        //     ->value('area_id');
-
-        // if ((int)$userAreaId !== (int)$request->txtarea) {
-        //     return back()->with('error', 'आप केवल अपने क्षेत्र के लिए ही शिकायत दर्ज कर सकते हैं।');
-        // }
 
         $vidhansabha = (int) $request->txtvidhansabha;
         $ref = '00';
@@ -153,6 +172,264 @@ class OperatorController extends Controller
             $blocked = ['exe', 'php', 'js'];
 
             if (in_array(strtolower($extension), $blocked)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['file_attach' => ['This file type is not allowed.']]
+                ], 422);
+            }
+
+            $filename = time() . '_' . Str::random(6) . '.' . $extension;
+            $file->move(public_path('assets/upload/complaints'), $filename);
+            $attachment = $filename;
+        }
+
+        $complaint = Complaint::create([
+            'user_id' => $userId,
+            'name' => $request->txtname,
+            'mobile_number' => $request->mobile,
+            'father_name' => $request->father_name,
+            'email' => $request->mobile,
+            'voter_id' => $request->voter,
+            'complaint_type' => $request->type,
+            'issue_title' => $request->CharCounter ?? 'N/A',
+            'issue_description' => $request->NameText,
+            'address' => $request->txtaddress,
+            'division_id' => $request->division_id,
+            'district_id' => $request->txtdistrict_name,
+            'vidhansabha_id' => $vidhansabha,
+            'mandal_id' => $mandal_id,
+            'gram_id' => $request->txtgram,
+            'polling_id' => $request->txtpolling,
+            'area_id' => $area_id,
+            'issue_attachment' => $attachment,
+            'complaint_number' => $complaint_number,
+            'complaint_department' => $request->department ?? '',
+            'complaint_designation' => $request->post ?? '',
+            'news_date' => $request->from_date,
+            'complaint_status' => 1,
+            'program_date' => $request->program_date,
+            'complaint_created_by'  => $userId,
+            'type' => 2,
+            'news_time' => $request->filled('to_date') ? $request->to_date : '00:00',
+            'posted_date' => now(),
+        ]);
+
+        Reply::create([
+            'complaint_id' => $complaint->complaint_id,
+            'forwarded_to' => 6,
+            'complaint_status' => 1,
+            'reply_from' => 0,
+            'reply_date' => now(),
+            'complaint_reply' => 'शिकायत दर्ज की गई है।',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number,
+        ]);
+    }
+
+
+    // public function suchnaStore(Request $request)
+    // {
+    //     $request->validate([
+    //         'txtname' => 'required|string|max:255',
+    //         'mobile' => 'required|string|regex:/^[0-9]{10,15}$/',
+    //         'father_name' => 'required|string|max:255',
+    //         'reference' => 'nullable|string|max:255',
+    //         'division_id' => 'required|integer',
+    //         'voter' => 'required|string|max:255',
+    //         'txtdistrict_name' => 'required|integer',
+    //         'txtvidhansabha' => 'required|integer',
+    //         // 'txtmandal' => 'required|integer',
+    //         'txtgram' => 'required|integer',
+    //         'txtpolling' => 'required|integer',
+    //         // 'txtarea' => 'required|integer',
+    //         'txtaddress' => 'nullable|string|max:1000',
+    //         'CharCounter' => 'nullable|string|max:100',
+    //         'NameText' => 'required|string|max:2000',
+    //         'type' => 'required|string',
+    //         'department' => 'nullable',
+    //         'post' => 'nullable',
+    //         'from_date' => 'nullable|date',
+    //         'program_date' => 'nullable|date',
+    //         'to_date' => 'nullable',
+    //         'file_attach' => 'nullable|file|max:20480'
+    //     ]);
+
+    //     $userId = session('user_id');
+
+    //     if (!$userId) {
+    //         return back()->with('error', 'User session expired. Please log in again.');
+    //     }
+
+
+    //     $nagar = Nagar::with('mandal')->find($request->txtgram);
+    //     $mandal_id = $nagar?->mandal?->mandal_id;
+
+    //     $polling = Polling::with('area')->where('gram_polling_id', $request->txtpolling)->first();
+    //     $area_id = $polling?->area?->area_id;
+
+    //     $vidhansabha = (int) $request->txtvidhansabha;
+    //     $ref = '00';
+    //     if ($vidhansabha === 50) {
+    //         $ref = '19';
+    //     } elseif ($vidhansabha === 49) {
+    //         $ref = '18';
+    //     }
+
+    //     $randomTimestamp = mt_rand(strtotime('2018-01-01'), time());
+    //     $rndno = date('dHi', $randomTimestamp);
+    //     $complaint_number = 'BJS' . $ref . '-' . $rndno;
+
+    //     $attachment = '';
+    //     if ($request->hasFile('file_attach')) {
+    //         $file = $request->file('file_attach');
+    //         $extension = $file->getClientOriginalExtension();
+    //         $blocked = ['exe', 'php', 'js'];
+
+    //         if (in_array(strtolower($extension), $blocked)) {
+    //             return back()->with('error', 'This file type is not allowed.');
+    //         }
+
+    //         $filename = time() . '_' . Str::random(6) . '.' . $extension;
+    //         $file->move(public_path('assets/upload/complaints'), $filename);
+    //         $attachment = $filename;
+    //     }
+
+
+    //     $complaint = Complaint::create([
+    //         'user_id' => session('user_id'),
+    //         'name' => $request->txtname,
+    //         'mobile_number' => $request->mobile,
+    //         'father_name' => $request->father_name,
+    //         'reference_name' => $request->reference,
+    //         'email' => $request->mobile,
+    //         'voter_id' => $request->voter,
+    //         'complaint_type' => $request->type,
+    //         'issue_title' => $request->CharCounter ?? 'N/A',
+    //         'issue_description' => $request->NameText,
+    //         'address' => $request->txtaddress,
+    //         'division_id' => $request->division_id,
+    //         'district_id' => $request->txtdistrict_name,
+    //         'vidhansabha_id' => $vidhansabha,
+    //         'mandal_id' => $mandal_id,
+    //         'gram_id' => $request->txtgram,
+    //         'polling_id' => $request->txtpolling,
+    //         'area_id' => $area_id,
+    //         'issue_attachment' => $attachment,
+    //         'complaint_number' => $complaint_number,
+    //         'complaint_department' => $request->department ?? '',
+    //         'complaint_designation' => $request->post ?? '',
+    //         'news_date' => $request->from_date,
+    //         'complaint_status' => 11,
+    //         'program_date' => $request->program_date,
+    //         'complaint_created_by'  => session('user_id'),
+    //         'type' => 2,
+    //         'news_time' => $request->filled('to_date')  ? $request->to_date : '00:00',
+    //         'posted_date' => now(),
+    //     ]);
+
+    //     Reply::create([
+    //         'complaint_id' => $complaint->complaint_id,
+    //         'forwarded_to' => 6,
+    //         'complaint_status' => 11,
+    //         'reply_from' => 0,
+    //         'reply_date' => now(),
+    //         'complaint_reply' => 'सूचना दर्ज की गई है।',
+    //     ]);
+
+
+    //     if ($request->ajax()) {
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'सूचना सफलतापूर्वक दर्ज की गई है। आपकी सूचना संख्या है: ' . $complaint_number,
+    //         ]);
+    //     }
+
+    //     return redirect()->route('operator_suchna.index')->with('success', 'सूचना सफलतापूर्वक दर्ज की गई है। आपकी सूचना संख्या है: ' . $complaint_number);
+    // }
+
+    public function suchnaStore(Request $request)
+    {
+        try {
+            $request->validate([
+                'txtname' => 'required|string|max:255',
+                'mobile' => 'required|string|regex:/^[0-9]{10,15}$/',
+                'father_name' => 'required|string|max:255',
+                'reference' => 'nullable|string|max:255',
+                'division_id' => 'required|integer',
+                'voter' => 'required|string|max:255',
+                'txtdistrict_name' => 'required|integer',
+                'txtvidhansabha' => 'required|integer',
+                // 'txtmandal' => 'required|integer',
+                'txtgram' => 'required|integer',
+                'txtpolling' => 'required|integer',
+                // 'txtarea' => 'required|integer',
+                'txtaddress' => 'nullable|string|max:1000',
+                'CharCounter' => 'nullable|string|max:100',
+                'NameText' => 'required|string|max:2000',
+                'type' => 'required|string',
+                'department' => 'nullable',
+                'post' => 'nullable',
+                'from_date' => 'nullable|date',
+                'program_date' => 'nullable|date',
+                'to_date' => 'nullable',
+                'file_attach' => 'nullable|file|max:20480'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        }
+
+        $userId = session('user_id');
+
+        if (!$userId) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['session' => ['User session expired. Please log in again.']]
+                ], 401);
+            }
+            return back()->with('error', 'User session expired. Please log in again.');
+        }
+
+        $nagar = Nagar::with('mandal')->find($request->txtgram);
+        $mandal_id = $nagar?->mandal?->mandal_id;
+
+        $polling = Polling::with('area')->where('gram_polling_id', $request->txtpolling)->first();
+        $area_id = $polling?->area?->area_id;
+
+        $vidhansabha = (int) $request->txtvidhansabha;
+        $ref = '00';
+        if ($vidhansabha === 50) {
+            $ref = '19';
+        } elseif ($vidhansabha === 49) {
+            $ref = '18';
+        }
+
+        $randomTimestamp = mt_rand(strtotime('2018-01-01'), time());
+        $rndno = date('dHi', $randomTimestamp);
+        $complaint_number = 'BJS' . $ref . '-' . $rndno;
+
+        $attachment = '';
+        if ($request->hasFile('file_attach')) {
+            $file = $request->file('file_attach');
+            $extension = $file->getClientOriginalExtension();
+            $blocked = ['exe', 'php', 'js'];
+
+            if (in_array(strtolower($extension), $blocked)) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['file_attach' => ['This file type is not allowed.']]
+                    ], 422);
+                }
                 return back()->with('error', 'This file type is not allowed.');
             }
 
@@ -161,10 +438,8 @@ class OperatorController extends Controller
             $attachment = $filename;
         }
 
-        // $mobile = RegistrationForm::where('registration_id', $userId)->value('mobile1');
-
         $complaint = Complaint::create([
-            'user_id' => session('user_id'),
+            'user_id' => $userId,
             'name' => $request->txtname,
             'mobile_number' => $request->mobile,
             'father_name' => $request->father_name,
@@ -187,9 +462,9 @@ class OperatorController extends Controller
             'complaint_department' => $request->department ?? '',
             'complaint_designation' => $request->post ?? '',
             'news_date' => $request->from_date,
-            'complaint_status' => 1,
+            'complaint_status' => 11,
             'program_date' => $request->program_date,
-            'complaint_created_by'  => session('user_id'),
+            'complaint_created_by'  => $userId,
             'type' => 2,
             'news_time' => $request->filled('to_date')  ? $request->to_date : '00:00',
             'posted_date' => now(),
@@ -198,25 +473,21 @@ class OperatorController extends Controller
         Reply::create([
             'complaint_id' => $complaint->complaint_id,
             'forwarded_to' => 6,
-            'complaint_status' => 1,
-            'reply_from' => $userId,
+            'complaint_status' => 11,
+            'reply_from' => 0,
             'reply_date' => now(),
-            'complaint_reply' => 'शिकायत दर्ज की गई है।',
+            'complaint_reply' => 'सूचना दर्ज की गई है।',
         ]);
-
-        // $message = 'आपकी शिकायत सफलतापूर्वक दर्ज की गई है। शिकायत संख्या: ' . $complaint_number;
-        // $this->messageSent($complaint_number, $mobile);
 
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number,
+                'message' => 'सूचना सफलतापूर्वक दर्ज की गई है। आपकी सूचना संख्या है: ' . $complaint_number,
             ]);
         }
 
-        return redirect()->route('operator_complaint.index')->with('success', 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number);
-
-        // return redirect()->route('operator_complaint.index')->with('success', 'शिकायत सफलतापूर्वक दर्ज की गई है। आपकी शिकायत संख्या है: ' . $complaint_number);
+        return redirect()->route('operator_suchna.index')
+            ->with('success', 'सूचना सफलतापूर्वक दर्ज की गई है। आपकी सूचना संख्या है: ' . $complaint_number);
     }
 
 
@@ -374,7 +645,6 @@ class OperatorController extends Controller
                 $html .= '<tr>';
                 $html .= '<td>' . ($index + 1) . '</td>';
                 // $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
-               $html .= '<td>' . ($index + 1) . '</td>';
                 $html .= '<td>
                 <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
                 <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
@@ -403,17 +673,25 @@ class OperatorController extends Controller
                     '</td>';
 
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
-                $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</td>';
-
-                // Pending Days or Status
-                if (in_array($complaint->complaint_status, [4, 5])) {
-                    $html .= '<td></td>';
+                $html .= '<td>
+                 <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
+                if ($complaint->complaint_status == 4) {
+                    $html .= 'पूर्ण';
+                } elseif ($complaint->complaint_status == 5) {
+                    $html .= 'रद्द';
                 } else {
-                    $html .= '<td>' . $complaint->pending_days . ' दिन</td>';
+                    $html .= $complaint->pending_days . ' दिन';
                 }
+                $html .= '</td>';
 
-                // Status Text
-                $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
+                $html .= '<td>' . ($latestReply->review_date ?? 'N/A') . '</td>';
+
+                // Importance
+                $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
+
+                // Criticality
+                $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
+
                 $html .= '<td>' . ($complaint->admin->admin_name ?? 'N/A') . '</td>';
 
                 $html .= '<td>' . $complaint->forwarded_to_name . '<br>' . $complaint->forwarded_reply_date . '</td>';
@@ -440,6 +718,199 @@ class OperatorController extends Controller
         $managers = User::where('role', 2)->get();
 
         return view('operator/view_complaint', compact(
+            'complaints',
+            'mandals',
+            'grams',
+            'pollings',
+            'areas',
+            'departments',
+            'subjects',
+            'replyOptions',
+            'managers'
+        ));
+    }
+
+
+    public function view_suchna(Request $request)
+    {
+        $userId = session('user_id');
+
+        if (!$userId) {
+            return redirect()->route('login')->with('error', 'कृपया पहले लॉगिन करें।');
+        }
+
+
+        $query = Complaint::with(['polling', 'area', 'admin', 'vidhansabha', 'mandal', 'gram', 'replies.forwardedToManager'])
+            ->where('complaint_created_by', $userId)
+            ->where('type', 2);
+
+        if ($request->filled('complaint_status')) {
+            $query->where('complaint_status', $request->complaint_status);
+        }
+
+        if ($request->filled('complaint_type')) {
+            $query->where('complaint_type', $request->complaint_type);
+        } else {
+            // Apply default filter for initial load or sabhi
+            $query->where('complaint_type', 'समस्या');
+        }
+
+        // if ($request->filled('department_id')) {
+        //     $query->where('complaint_department', $request->department_id);
+        // }
+
+        // if ($request->filled('subject_id')) {
+        //     $query->where('issue_title', $request->subject_id);
+        // }
+
+        if ($request->filled('department_id')) {
+            $department = Department::find($request->department_id);
+            if ($department) {
+                $query->where('complaint_department', $department->department_name);
+            }
+        }
+
+        if ($request->filled('admin_id')) {
+            $query->whereHas('latestReply', function ($q) use ($request) {
+                $q->where('forwarded_to', $request->admin_id);
+            });
+        }
+
+        if ($request->filled('reply_id')) {
+            $query->whereHas('replies', function ($q) use ($request) {
+                $q->where('selected_reply', $request->reply_id);
+            });
+        }
+
+        if ($request->filled('subject_id')) {
+            $subject = Subject::find($request->subject_id);
+            if ($subject) {
+                $query->where('issue_title', $subject->subject);
+            }
+        }
+
+        if ($request->filled('mandal_id')) {
+            $query->where('mandal_id', $request->mandal_id);
+        }
+
+        if ($request->filled('gram_id')) {
+            $query->where('gram_id', $request->gram_id);
+        }
+
+        if ($request->filled('polling_id')) {
+            $query->where('polling_id', $request->polling_id);
+        }
+
+        if ($request->filled('area_id')) {
+            $query->where('area_id', $request->area_id);
+        }
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('posted_date', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('posted_date', '<=', $request->to_date);
+        }
+
+        $complaints = $query->orderBy('posted_date', 'desc')->get();
+
+        foreach ($complaints as $complaint) {
+            if (!in_array($complaint->complaint_status, [4, 5])) {
+                $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+            } else {
+                $complaint->pending_days = 0;
+            }
+
+            $lastReply = $complaint->replies
+                ->whereNotNull('forwarded_to')
+                ->sortByDesc('reply_date')
+                ->first();
+
+            $complaint->forwarded_to_name = $lastReply?->forwardedToManager?->admin_name ?? '-';
+            $complaint->forwarded_reply_date = $lastReply?->reply_date?->format('d-m-Y h:i A') ?? '-';
+        }
+
+        if ($request->ajax()) {
+            $html = '';
+
+            foreach ($complaints as $index => $complaint) {
+                $html .= '<tr>';
+                $html .= '<td>' . ($index + 1) . '</td>';
+                // $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
+                $html .= '<td>
+                <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
+                <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
+                <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
+                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+              </td>';
+
+
+                $html .= '<td title="
+            विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
+            जिला: ' . ($complaint->district->district_name ?? 'N/A') . '
+            विधानसभा: ' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '
+            मंडल: ' . ($complaint->mandal->mandal_name ?? 'N/A') . '
+            नगर/ग्राम: ' . ($complaint->gram->nagar_name ?? 'N/A') . '
+            मतदान केंद्र: ' . ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')
+            क्षेत्र: ' . ($complaint->area->area_name ?? 'N/A') . '">
+            ' . ($complaint->division->division_name ?? 'N/A') . '<br>' .
+                    ($complaint->district->district_name ?? 'N/A') . '<br>' .
+                    ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '<br>' .
+                    ($complaint->mandal->mandal_name ?? 'N/A') . '<br>' .
+                    ($complaint->gram->nagar_name ?? 'N/A') . '<br>' .
+                    ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')<br>' .
+                    ($complaint->area->area_name ?? 'N/A') .
+                    '</td>';
+
+                $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
+                $html .= '<td>
+                 <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
+                if ($complaint->complaint_status == 4) {
+                    $html .= 'पूर्ण';
+                } elseif ($complaint->complaint_status == 5) {
+                    $html .= 'रद्द';
+                } else {
+                    $html .= $complaint->pending_days . ' दिन';
+                }
+                $html .= '</td>';
+
+                $html .= '<td>' . ($latestReply->review_date ?? 'N/A') . '</td>';
+
+                // Importance
+                $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
+
+                // Criticality
+                $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
+
+                $html .= '<td>' . ($complaint->admin->admin_name ?? 'N/A') . '</td>';
+
+                $html .= '<td>' . $complaint->forwarded_to_name . '<br>' . $complaint->forwarded_reply_date . '</td>';
+
+                $html .= '<td><a href="' . route('operator_complaint.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+
+                $html .= '</tr>';
+            }
+
+            return response()->json([
+                'html' => $html,
+                'count' => $complaints->count(),
+            ]);
+        }
+
+
+        $mandals = Mandal::where('vidhansabha_id', 49)->get();
+        $grams = $request->mandal_id ? Nagar::where('mandal_id', $request->mandal_id)->get() : collect();
+        $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
+        $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
+        $departments = Department::all();
+        $replyOptions = ComplaintReply::all();
+        $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
+        $managers = User::where('role', 2)->get();
+
+        return view('operator/view_suchna', compact(
             'complaints',
             'mandals',
             'grams',
@@ -666,6 +1137,7 @@ class OperatorController extends Controller
         $complaint = Complaint::with(
             'replies.predefinedReply',
             'replies.forwardedToManager',
+            'replies.replyfrom',
             'registration',
             'division',
             'district',
@@ -691,19 +1163,21 @@ class OperatorController extends Controller
     {
         $request->validate([
             'cmp_reply' => 'required|string',
-            'cmp_status' => 'required|in:1,2,3,4,5',
+            'cmp_status' => 'required|integer',
             'forwarded_to' => [
-                'required_if:cmp_status,1,2,3',
+                'required_if:cmp_status,1,2,3,11,12',
                 'nullable',
                 'exists:admin_master,admin_id'
             ],
             'selected_reply' => [
                 'nullable',
                 function ($attribute, $value, $fail) {
-                    if ((int)$value !== 0 && !\App\Models\ComplaintReply::where('reply_id', $value)->exists()) {
-                        $fail('The selected reply is invalid.');
+                    if ($value !== null && (int)$value !== 0) {
+                        if (!\App\Models\ComplaintReply::where('reply_id', $value)->exists()) {
+                            $fail('The selected reply is invalid.');
+                        }
                     }
-                }
+                },
             ],
             'cb_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'ca_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
@@ -714,11 +1188,15 @@ class OperatorController extends Controller
             'criticality' => 'nullable|string',
         ]);
 
+        $complaint = Complaint::findOrFail($id);
+
         $reply = new Reply();
         $reply->complaint_id = $id;
         $reply->complaint_reply = $request->cmp_reply;
-        $reply->selected_reply = $request->selected_reply ?? 0;
-        $reply->reply_from = auth()->id() ?? 2;
+        $reply->selected_reply = $request->filled('selected_reply')
+            ? (int) $request->selected_reply
+            : null;
+        $reply->reply_from = session('user_id') ?? 0;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;
         $reply->review_date = $request->review_date ?? null;
@@ -729,7 +1207,7 @@ class OperatorController extends Controller
             $reply->c_video = $request->c_video;
         }
 
-        if (in_array((int)$request->cmp_status, [4, 5])) {
+        if (in_array((int)$request->cmp_status, [4, 5, 18, 17, 16, 15, 14, 13])) {
             $reply->forwarded_to = 0;
         } else {
             $reply->forwarded_to = $request->forwarded_to;
@@ -764,13 +1242,25 @@ class OperatorController extends Controller
         $reply->save();
 
         if ($request->ajax()) {
+            $message = 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।';
+
+            if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना') {
+                $message = 'सूचना का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।';
+            }
+
             return response()->json([
-                'message' => 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।'
+                'message' => $message
             ]);
         }
 
+        $successMessage = 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।';
+
+        if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना') {
+            $successMessage = 'सूचना का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।';
+        }
+
         return redirect()->route('operator_complaint.view', $id)
-            ->with('success', 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।');
+            ->with('success', $successMessage);
     }
 
 

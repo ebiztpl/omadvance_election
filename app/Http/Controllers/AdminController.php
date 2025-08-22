@@ -1851,19 +1851,21 @@ class AdminController extends Controller
     {
         $request->validate([
             'cmp_reply' => 'required|string',
-            'cmp_status' => 'required|in:1,2,3,4,5',
+            'cmp_status' => 'required|integer',
             'forwarded_to' => [
-                'required_if:cmp_status,1,2,3',
+                'required_if:cmp_status,1,2,3,11,12',
                 'nullable',
                 'exists:admin_master,admin_id'
             ],
             'selected_reply' => [
                 'nullable',
                 function ($attribute, $value, $fail) {
-                    if ((int)$value !== 0 && !\App\Models\ComplaintReply::where('reply_id', $value)->exists()) {
-                        $fail('The selected reply is invalid.');
+                    if ($value !== null && (int)$value !== 0) {
+                        if (!\App\Models\ComplaintReply::where('reply_id', $value)->exists()) {
+                            $fail('The selected reply is invalid.');
+                        }
                     }
-                }
+                },
             ],
             'cb_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
             'ca_photo.*' => 'nullable|image|mimes:jpeg,png,jpg,bmp,gif|max:2048',
@@ -1874,11 +1876,13 @@ class AdminController extends Controller
             'criticality' => 'nullable|string',
         ]);
 
+        $complaint = Complaint::findOrFail($id);
+
         $reply = new Reply();
         $reply->complaint_id = $id;
         $reply->complaint_reply = $request->cmp_reply;
         $reply->selected_reply = $request->selected_reply ?? 0;
-        $reply->reply_from = auth()->id() ?? 2;
+        $reply->reply_from = session('user_id') ?? 0;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;
         $reply->review_date = $request->review_date ?? null;
@@ -1889,7 +1893,7 @@ class AdminController extends Controller
             $reply->c_video = $request->c_video;
         }
 
-        if (in_array((int)$request->cmp_status, [4, 5])) {
+        if (in_array((int)$request->cmp_status, [4, 5, 18, 17, 16, 15, 14, 13])) {
             $reply->forwarded_to = 0;
         } else {
             $reply->forwarded_to = $request->forwarded_to;
@@ -1923,9 +1927,21 @@ class AdminController extends Controller
 
         $reply->save();
 
+        // if ($request->ajax()) {
+        //     return response()->json([
+        //         'message' => 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।'
+        //     ]);
+        // }
+
         if ($request->ajax()) {
+            $message = 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।';
+
+            if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना') {
+                $message = 'सूचना का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।';
+            }
+
             return response()->json([
-                'message' => 'शिकायत का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।'
+                'message' => $message
             ]);
         }
 
@@ -3263,9 +3279,265 @@ class AdminController extends Controller
     // }
 
 
+    // public function uploadVoterData(Request $request)
+    // {
+    //     try {
+    //         $request->validate([
+    //             'voter_excel' => 'required|file|mimes:xlsx,xls,csv'
+    //         ]);
+
+    //         $file = $request->file('voter_excel');
+    //         $extension = strtolower($file->getClientOriginalExtension());
+
+    //         if ($extension === 'xls') {
+    //             $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xls();
+    //         } elseif ($extension === 'xlsx') {
+    //             $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+    //         } elseif ($extension === 'csv') {
+    //             $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
+    //             $reader->setInputEncoding('UTF-8');
+    //             $reader->setDelimiter(',');
+    //         } else {
+    //             throw new \Exception("Unsupported file format.");
+    //         }
+
+    //         $reader->setReadDataOnly(true);
+
+    //         // Get available sheet names
+    //         $sheetNames = $reader->listWorksheetNames($file->getPathname());
+
+    //         if (empty($sheetNames)) {
+    //             throw new \Exception("No sheets found in uploaded file.");
+    //         }
+
+    //         // Load the first available sheet
+    //         $reader->setLoadSheetsOnly($sheetNames);
+    //         $spreadsheet = $reader->load($file->getPathname());
+    //         $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+    //         unset($sheetData[1]); // remove header row
+
+    //         $successCount = 0;
+    //         $updateCount = 0;
+    //         $failedRows = [];
+
+    //         foreach ($sheetData as $index => $row) {
+    //             if (empty(array_filter($row, fn($value) => trim($value) !== ''))) {
+    //                 continue;
+    //             }
+
+    //             DB::beginTransaction();
+
+    //             try {
+    //                 $voter_id       = $row['G'] ?? '';
+    //                 $area_name      = $row['H'] ?? '';
+    //                 $house          = trim($row['D'] ?? '');
+    //                 $house = preg_replace('/[^\p{L}\p{N}\/\- ]+/u', '', $house);
+    //                 $house = mb_substr($house, 0, 50);
+    //                 $name           = $row['B'] ?? '-';
+    //                 $father_name    = $row['C'] ?? '';
+    //                 $age            = $row['E'] ?? '';
+    //                 $gender         = $row['F'] ?? '';
+    //                 $jati           = $row['I'] ?? 'N/A';
+    //                 $polling_no     = $row['J'] ?? 0;
+    //                 $total_family   = $row['K'] ?? 0;
+    //                 $mukhiya_mobile = $row['L'] ?? '';
+    //                 $death_or_left  = $row['M'] ?? '';
+
+    //                 if (!$voter_id) throw new \Exception("Missing voter_id");
+    //                 if (!$area_name) throw new \Exception("Missing area");
+
+    //                 $area = DB::table('area_master')->where('area_name', $area_name)->first();
+    //                 if (!$area) throw new \Exception("Invalid area");
+
+    //                 $polling = DB::table('gram_polling')->where('gram_polling_id', $area->polling_id)->first();
+    //                 if (!$polling) throw new \Exception("Polling info not found");
+
+    //                 if (!empty($house) && !preg_match('/^[\p{L}0-9\x{0966}-\x{096F}\/\- ]+$/u', $house)) {
+    //                     throw new \Exception("Invalid house format");
+    //                 }
+
+    //                 if (!is_numeric($polling_no)) throw new \Exception("Invalid polling number");
+    //                 if (!is_numeric($total_family)) throw new \Exception("Invalid total family number");
+    //                 if (!empty($mukhiya_mobile) && !preg_match('/^\d{10}$|^\d{12}$/', $mukhiya_mobile)) {
+    //                     throw new \Exception("Invalid Mukhiya mobile");
+    //                 }
+
+    //                 if (!empty($age) && !is_numeric($age)) {
+    //                     throw new \Exception("Invalid age format");
+    //                 }
+
+    //                 if (strlen($house) > 50) {
+    //                     throw new \Exception("House exceeds max length (50)");
+    //                 }
+
+    //                 $registrationData = [
+    //                     'reference_id'      => 0,
+    //                     'member_id'         => 0,
+    //                     'name'              => $name,
+    //                     'membership'        => "N/A",
+    //                     'gender'            => $gender,
+    //                     'dob'               => null,
+    //                     'age'               => $age,
+    //                     'mobile1'           => 'N/A',
+    //                     'mobile2'           => 'N/A',
+    //                     'mobile1_whatsapp'  => 0,
+    //                     'mobile2_whatsapp'  => 0,
+    //                     'religion'          => 'N/A',
+    //                     'caste'             => 'N/A',
+    //                     'jati'              => $jati,
+    //                     'education'         => 'N/A',
+    //                     'business'          => 'N/A',
+    //                     'position'          => 'N/A',
+    //                     'father_name'       => $father_name,
+    //                     'email'             => 'N/A',
+    //                     'photo'             => 'NA',
+    //                     'pincode'           => 'N/A',
+    //                     'samagra_id'        => 'N/A',
+    //                     'otp_recieved'      => 'NA',
+    //                     'position_id'       => 0,
+    //                     'date_time'         => now(),
+    //                     'type'              => 1,
+    //                     'voter_nature'      => 'no input',
+    //                     'death_left'        => $death_or_left
+    //                 ];
+
+    //                 $existing = DB::table('registration_form')->where('voter_id', $voter_id)->first();
+
+    //                 DB::table('registration_form')->updateOrInsert(
+    //                     ['voter_id' => $voter_id],
+    //                     $registrationData
+    //                 );
+
+    //                 $registrationId = DB::table('registration_form')
+    //                     ->where('voter_id', $voter_id)
+    //                     ->value('registration_id');
+
+    //                 if ($existing) {
+    //                     $updateCount++;
+    //                 } else {
+    //                     $successCount++;
+    //                 }
+
+    //                 DB::table('step2')->updateOrInsert(
+    //                     ['registration_id' => $registrationId],
+    //                     [
+    //                         'division_id'        => 2,
+    //                         'district'           => 11,
+    //                         'vidhansabha'        => 49,
+    //                         'mandal_type'        => 1,
+    //                         'mandal'             => $polling->mandal_id,
+    //                         'nagar'              => $polling->nagar_id,
+    //                         'matdan_kendra_no'   => $polling_no,
+    //                         'matdan_kendra_name' => $polling->polling_name,
+    //                         'area_id'            => $area->area_id,
+    //                         'loksabha'           => 'ग्वालियर',
+    //                         'voter_front'        => 'NA',
+    //                         'voter_back'         => 'NA',
+    //                         'voter_number'       => $voter_id,
+    //                         'house'              => $house,
+    //                         'post_date'          => now(),
+    //                     ]
+    //                 );
+
+    //                 DB::table('step3')->updateOrInsert(
+    //                     ['registration_id' => $registrationId],
+    //                     [
+    //                         'total_member'       => $total_family,
+    //                         'total_voter'        => 0,
+    //                         'member_job'         => 0,
+    //                         'member_name_1'      => 'NA',
+    //                         'member_mobile_1'    => 0,
+    //                         'member_name_2'      => 'NA',
+    //                         'member_mobile_2'    => 0,
+    //                         'friend_name_1'      => 'NA',
+    //                         'friend_mobile_1'    => 0,
+    //                         'friend_name_2'      => 'NA',
+    //                         'friend_mobile_2'    => 0,
+    //                         'intrest'            => 'NA',
+    //                         'vehicle1'           => 'NA',
+    //                         'vehicle2'           => 'NA',
+    //                         'vehicle3'           => 'NA',
+    //                         'permanent_address'  => 'NA',
+    //                         'temp_address'       => 'NA',
+    //                         'post_date'          => now(),
+    //                         'mukhiya_mobile'     => $mukhiya_mobile
+    //                     ]
+    //                 );
+
+    //                 DB::commit();
+    //             } catch (\Exception $e) {
+    //                 DB::rollBack();
+
+    //                 $originalMessage = strtolower($e->getMessage());
+
+    //                 $knownErrors = [
+    //                     'missing voter_id'               => 'Voter ID is missing',
+    //                     'missing area'                  => 'Area name is missing',
+    //                     'invalid area'                  => 'Area not found',
+    //                     'polling info not found'        => 'Polling info not found',
+    //                     'house information is missing'  => 'House is required',
+    //                     'invalid house format'          => 'Invalid house format',
+    //                     'house exceeds max length'       => 'House exceeds max length (50)',
+    //                     'invalid polling number'         => 'Polling number should be numeric',
+    //                     'invalid total family number'    => 'Family count should be numeric',
+    //                     'caste (jati) is required'      => 'Caste is required',
+    //                     'invalid mukhiya mobile'        => 'Mukhiya mobile must be 10 or 12 digits',
+    //                     'invalid age format'             => 'Age should be numeric',
+    //                     'unsupported file format'        => 'Unsupported file format',
+    //                     'data truncated'                 => 'Data too long for column (check "house")',
+    //                     'incorrect integer value'       => 'Wrong number format',
+    //                     'invalid datetime format'       => 'Invalid date format',
+    //                     'duplicate voter id'            => 'Duplicate voter ID',
+    //                     'unreadable file'                => 'Excel file corrupted or unreadable',
+    //                 ];
+
+    //                 $simpleReason = 'Data Processing Error';
+
+    //                 foreach ($knownErrors as $key => $value) {
+    //                     if (Str::contains($originalMessage, strtolower($key))) {
+    //                         $simpleReason = $value;
+    //                         break;
+    //                     }
+    //                 }
+
+    //                 $failedRows[] = [
+    //                     'name'           => $name,
+    //                     'father_name'    => $father_name,
+    //                     'house'          => $house,
+    //                     'age'            => $age,
+    //                     'gender'         => $gender,
+    //                     'voter_id'       => $voter_id,
+    //                     'area'           => $area_name,
+    //                     'jati'           => $jati,
+    //                     'polling_no'     => $polling_no,
+    //                     'family_count'   => $total_family,
+    //                     'mukhiya_mobile' => $mukhiya_mobile,
+    //                     'death_left'     => $death_or_left,
+    //                     'reason'         => $simpleReason,
+    //                 ];
+    //             }
+    //         }
+
+    //         return response()->json([
+    //             'status'        => count($failedRows) ? 'partial' : 'success',
+    //             'success_count' => $successCount,
+    //             'repeat_count'  => $updateCount,
+    //             'failed_count'  => count($failedRows),
+    //             'errors'        => $failedRows
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'status'  => 'error',
+    //             'message' => 'Server error: ' . $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
+
     public function uploadVoterData(Request $request)
     {
         try {
+            //  ini_set('memory_limit', '-1');
             $request->validate([
                 'voter_excel' => 'required|file|mimes:xlsx,xls,csv'
             ]);
@@ -3288,44 +3560,53 @@ class AdminController extends Controller
             $reader->setReadDataOnly(true);
 
             // Get available sheet names
-            $sheetNames = $reader->listWorksheetNames($file->getPathname());
-
-            if (empty($sheetNames)) {
-                throw new \Exception("No sheets found in uploaded file.");
-            }
-
-            // Load the first available sheet
-            $reader->setLoadSheetsOnly($sheetNames);
             $spreadsheet = $reader->load($file->getPathname());
-            $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
-            unset($sheetData[1]); // remove header row
+            $worksheet = $spreadsheet->getActiveSheet();
+            $rowIterator = $worksheet->getRowIterator();
 
             $successCount = 0;
             $updateCount = 0;
             $failedRows = [];
 
-            foreach ($sheetData as $index => $row) {
-                if (empty(array_filter($row, fn($value) => trim($value) !== ''))) {
+            foreach ($rowIterator as $row) {
+                $rowIndex = $row->getRowIndex();
+                if ($rowIndex === 1) {
+                    continue;
+                }
+
+                // Collect only non-empty cells
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(true);
+
+                $rowData = [];
+
+
+                foreach ($cellIterator as $cell) {
+                    $rowData[$cell->getColumn()] = trim((string)$cell->getValue());
+                }
+
+                // Skip completely empty rows
+                if (empty(array_filter($rowData, fn($v) => $v !== ''))) {
                     continue;
                 }
 
                 DB::beginTransaction();
 
                 try {
-                    $voter_id       = $row['G'] ?? '';
-                    $area_name      = $row['H'] ?? '';
-                    $house          = trim($row['D'] ?? '');
-                    $house = preg_replace('/[^\p{L}\p{N}\/\- ]+/u', '', $house);
-                    $house = mb_substr($house, 0, 50);
-                    $name           = $row['B'] ?? '-';
-                    $father_name    = $row['C'] ?? '';
-                    $age            = $row['E'] ?? '';
-                    $gender         = $row['F'] ?? '';
-                    $jati           = $row['I'] ?? 'N/A';
-                    $polling_no     = $row['J'] ?? 0;
-                    $total_family   = $row['K'] ?? 0;
-                    $mukhiya_mobile = $row['L'] ?? '';
-                    $death_or_left  = $row['M'] ?? '';
+                    $voter_id       = $rowData['G'] ?? '';
+                    $area_name      = $rowData['H'] ?? '';
+                    $house          = trim($rowData['D'] ?? '');
+                    $house          = preg_replace('/[^\p{L}\p{N}\/\- ]+/u', '', $house);
+                    $house          = mb_substr($house, 0, 50);
+                    $name           = $rowData['B'] ?? '-';
+                    $father_name    = $rowData['C'] ?? '';
+                    $age            = $rowData['E'] ?? '';
+                    $gender         = $rowData['F'] ?? '';
+                    $jati           = $rowData['I'] ?? 'N/A';
+                    $polling_no     = $rowData['J'] ?? 0;
+                    $total_family   = $rowData['K'] ?? 0;
+                    $mukhiya_mobile = $rowData['L'] ?? '';
+                    $death_or_left  = $rowData['M'] ?? '';
 
                     if (!$voter_id) throw new \Exception("Missing voter_id");
                     if (!$area_name) throw new \Exception("Missing area");
@@ -3516,6 +3797,7 @@ class AdminController extends Controller
             ], 500);
         }
     }
+
 
     // it is correct due to some error it is change according to just above but below and just above both and both are correct 
     // public function uploadVoterData(Request $request)
