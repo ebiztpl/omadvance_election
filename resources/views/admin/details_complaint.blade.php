@@ -289,9 +289,15 @@
         <div class="card">
             <div class="card-header" style="color: #000">Reply to {{ $complaint->complaint_number }}</div>
             <div class="card-body">
+                @if ($disableReply)
+                    <div class="alert alert-warning">
+                        इस शिकायत का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
+                    </div>
+                @endif
+                
                 <form id="replyForm" method="POST"
                     action="{{ route('operator_complaint.reply', $complaint->complaint_id) }}"
-                    enctype="multipart/form-data">
+                    enctype="multipart/form-data" @if ($disableReply) style="pointer-events: none; opacity: 0.6;" @endif>
                     @csrf
 
                     <div class="row mb-3">
@@ -304,14 +310,14 @@
                                 @endif
                                 <span class="tx-danger" style="color: red;">*</span>
                             </label>
-                            <select name="cmp_status" id="cmp_status" class="form-control" required>
+                            <select name="cmp_status" id="cmp_status" class="form-control" required @if ($disableReply) disabled @endif>
                                 <option value="">--चुने--</option>
                             </select>
                         </div>
 
                         <div class="col-md-2 toggle-field">
                             <label class="form-label">पूर्व निर्धारित उत्तर चुनें:</label>
-                            <select name="selected_reply" id="selected_reply" class="form-control">
+                            <select name="selected_reply" id="selected_reply" class="form-control" @if ($disableReply) disabled @endif>
                                 <option value="">--चयन करें--</option>
                                 @foreach ($replyOptions as $option)
                                     <option value="{{ $option->reply_id }}">{{ $option->reply }}</option>
@@ -323,7 +329,7 @@
                         <div class="col-md-2" id="forwarded_to_field">
                             <label class="form-label">अधिकारी चुनें (आगे भेजे)<span class="tx-danger"
                                     style="color: red;">*</span></label>
-                            <select name="forwarded_to" id="managers" class="form-control" required>
+                            <select name="forwarded_to" id="forwarded_to" class="form-control" required @if ($disableReply) disabled @endif>
                                 <option value="">--चयन करें--</option>
                                 @foreach ($managers as $manager)
                                     <option value="{{ $manager->admin_id }}">{{ $manager->admin_name }}</option>
@@ -334,12 +340,12 @@
 
                         <div class="col-md-2 toggle-field">
                             <label for="review_date">रीव्यू दिनांक</label>
-                            <input type="date" class="form-control" name="review_date">
+                            <input type="date" class="form-control" name="review_date" @if ($disableReply) disabled @endif>
                         </div>
 
                         <div class="col-md-2 toggle-field">
                             <label for="importance form-label">महत्त्व स्तर:</label>
-                            <select name="importance" class="form-control">
+                            <select name="importance" class="form-control" @if ($disableReply) disabled @endif>
                                 <option value="">--चयन करें--</option>
                                 <option value="उच्च">उच्च</option>
                                 <option value="मध्यम">मध्यम</option>
@@ -349,7 +355,7 @@
 
                         <div class="col-md-2 toggle-field">
                             <label for="criticality form-label">गंभीरता स्तर:</label>
-                            <select name="criticality" class="form-control">
+                            <select name="criticality" class="form-control" @if ($disableReply) disabled @endif >
                                 <option value="">--चयन करें--</option>
                                 <option value="अत्यधिक">अत्यधिक</option>
                                 <option value="मध्यम">मध्यम</option>
@@ -364,29 +370,29 @@
                         <div class="col-md-12">
                             <label class="form-label">विवरण<span class="tx-danger" style="color: red;">*</span></label>
                             <textarea name="cmp_reply" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें"
-                                class="form-control" rows="6" required></textarea>
+                                class="form-control" rows="6" required @if ($disableReply) disabled @endif></textarea>
                         </div>
                     </div>
 
                     <div class="row mt-3">
                         <div class="col-md-3 toggle-field">
                             <label class="form-label">पूर्व स्थिति की तस्वीर</label>
-                            <input type="file" name="cb_photo[]" class="form-control" multiple accept="image/*">
+                            <input type="file" name="cb_photo[]" class="form-control" multiple accept="image/*" @if ($disableReply) disabled @endif>
                         </div>
 
                         <div class="col-md-3 toggle-field">
                             <label class="form-label">बाद की तस्वीर</label>
-                            <input type="file" name="ca_photo[]" class="form-control" multiple accept="image/*">
+                            <input type="file" name="ca_photo[]" class="form-control" multiple accept="image/*" @if ($disableReply) disabled @endif>
                         </div>
 
                         <div class="col-md-3 toggle-field">
                             <label class="form-label">यूट्यूब लिंक</label>
-                            <input type="url" name="c_video" class="form-control">
+                            <input type="url" name="c_video" class="form-control" @if ($disableReply) disabled @endif>
                         </div>
                     </div>
 
                     <div class="col-12 mt-3">
-                        <button type="submit" class="btn btn-primary">फीडबैक दर्ज करें</button>
+                        <button type="submit" class="btn btn-primary" @if ($disableReply) disabled @endif>फीडबैक दर्ज करें</button>
                     </div>
 
                 </form>
@@ -397,12 +403,12 @@
 
     @push('scripts')
         <script>
-             $(document).on('click', '.view-details-btn', function() {
+            $(document).on('click', '.view-details-btn', function() {
                 const reply = $(this).data('reply') || '—';
                 const reply_from = $(this).data('reply_from') || '—';
                 const contact = $(this).data('contact') || '—';
                 const replyDate = $(this).data('reply-date') || '—';
-                 const statusHtml = $(this).data('status-html') || '—';
+                const statusHtml = $(this).data('status-html') || '—';
                 const admin = $(this).data('admin') || '—';
                 const predefinedRaw = $(this).data('predefined');
                 const predefined = predefinedRaw === 0 ? 'अन्य' : (predefinedRaw || '—');
@@ -416,7 +422,7 @@
                 const details = $(this).data('details') || '—';
 
                 $('#modal-reply').text(reply);
-               $('#modal-status').html(statusHtml);
+                $('#modal-status').html(statusHtml);
                 $('#modal-date').text(replyDate);
                 $('#modal-admin').text(admin);
                 $('#modal-predefined').text(predefined);
@@ -477,12 +483,14 @@
 
             document.addEventListener('DOMContentLoaded', function() {
                 const statusSelect = document.getElementById('cmp_status');
-                const forwardedSelect = document.getElementById('managers');
+                const forwardedSelect = document.getElementById('forwarded_to');
+                const replyForm = document.getElementById('replyForm');
 
                 function toggleForwardedField() {
                     const selectedValue = parseInt(statusSelect.value);
 
-                     if (selectedValue === 4 || selectedValue === 5 || selectedValue === 13 || selectedValue === 14 || selectedValue === 15 || selectedValue === 16 || selectedValue === 17 || selectedValue === 18) {
+                    if (selectedValue === 4 || selectedValue === 5 || selectedValue === 13 || selectedValue === 14 ||
+                        selectedValue === 15 || selectedValue === 16 || selectedValue === 17 || selectedValue === 18) {
                         forwardedSelect.disabled = true;
                         forwardedSelect.style.backgroundColor = '#e1e2e6';
                         forwardedSelect.removeAttribute('required');
@@ -496,6 +504,12 @@
                 toggleForwardedField();
 
                 statusSelect.addEventListener('change', toggleForwardedField);
+
+                var disableReply = "{{ $disableReply ? 'true' : 'false' }}" === 'true';
+
+                if (disableReply && replyForm) {
+                    Array.from(replyForm.elements).forEach(el => el.disabled = true);
+                }
             });
 
 

@@ -652,7 +652,7 @@ class OperatorController extends Controller
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
                 <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
                 <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
-                <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+                <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
 
 
@@ -823,7 +823,7 @@ class OperatorController extends Controller
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
                 <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
                 <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
-                <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+                <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
 
 
@@ -1124,17 +1124,24 @@ class OperatorController extends Controller
             'mandal',
             'gram',
             'polling',
-            'area',
-            'registrationDetails'
+            'area'
         )->findOrFail($id);
 
         $replyOptions = ComplaintReply::all();
         $managers = User::where('role', 2)->get();
 
+        $latestReply = $complaint->replies()->latest('reply_date')->first();
+        $disableReply = false;
+
+        if ($latestReply && in_array($latestReply->complaint_status, [4, 5, 13, 14, 15, 16, 17, 18])) {
+            $disableReply = true;
+        }
+
         return view('operator/details_complaints', [
             'complaint' => $complaint,
             'replyOptions' => $replyOptions,
             'managers' => $managers,
+            'disableReply' => $disableReply
         ]);
     }
 

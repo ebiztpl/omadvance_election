@@ -2467,7 +2467,7 @@ class ManagerController extends Controller
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
                 <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
                 <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
-                <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+                <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
 
 
@@ -2769,7 +2769,7 @@ class ManagerController extends Controller
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
                 <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
                 <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
-                <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+                <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
 
 
@@ -2978,7 +2978,7 @@ class ManagerController extends Controller
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
                 <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
                 <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
-                <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+                <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
             </td>';
 
 
@@ -3172,7 +3172,7 @@ class ManagerController extends Controller
             <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
             <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
             <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
-            <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+            <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
         </td>';
 
 
@@ -3366,13 +3366,21 @@ class ManagerController extends Controller
             ->where('admin_id', '!=', $loggedInManagerId) // exclude logged-in manager
             ->get();
 
+        $latestReply = $complaint->replies()->latest('reply_date')->first();
+        $disableReply = false;
+
+        if ($latestReply && in_array($latestReply->complaint_status, [4, 5])) {
+            $disableReply = true;
+        }
+
         return view('manager/details_complaints', [
             'complaint' => $complaint,
             'nagars' => $nagars,
             'replyOptions' => $replyOptions,
             'departments' => $departments,
             'managers' => $managers,
-            'loggedInManagerId' => $loggedInManagerId
+            'loggedInManagerId' => $loggedInManagerId,
+            'disableReply' => $disableReply
         ]);
     }
 
@@ -3406,13 +3414,21 @@ class ManagerController extends Controller
             ->where('admin_id', '!=', $loggedInManagerId) 
             ->get();
 
+        $latestReply = $complaint->replies()->latest('reply_date')->first();
+        $disableReply = false;
+
+        if ($latestReply && in_array($latestReply->complaint_status, [13, 14, 15, 16, 17, 18])) {
+            $disableReply = true;
+        }
+
         return view('manager/suchna_details', [
             'complaint' => $complaint,
             'nagars' => $nagars,
             'replyOptions' => $replyOptions,
             'departments' => $departments,
             'managers' => $managers,
-            'loggedInManagerId' => $loggedInManagerId
+            'loggedInManagerId' => $loggedInManagerId,
+            'disableReply' => $disableReply
         ]);
     }
 

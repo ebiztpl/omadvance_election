@@ -706,7 +706,7 @@ class MemberController extends Controller
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
                 <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
                 <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
-                <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+                <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
 
 
@@ -900,7 +900,7 @@ class MemberController extends Controller
         <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
         <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
         <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
-        <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
+        <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
         </td>';
 
                 $html .= '<td title="
