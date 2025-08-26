@@ -129,7 +129,7 @@ class Reply extends Model
     public function latestFollowupAlways()
     {
         return $this->hasOne(FollowupStatus::class, 'complaint_reply_id')
-            ->latest('followup_date');
+            ->latestOfMany('followup_date');
     }
 
 
@@ -146,5 +146,11 @@ class Reply extends Model
                     });
             })
             ->latest('followup_date');
+    }
+
+    public function latestFollowupForFilter()
+    {
+        return $this->hasOne(FollowupStatus::class, 'complaint_reply_id')
+            ->latestOfMany('followup_date');
     }
 }

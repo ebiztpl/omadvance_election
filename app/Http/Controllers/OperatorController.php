@@ -651,11 +651,11 @@ class OperatorController extends Controller
                 <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
                 <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
                 <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
 
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -794,6 +794,14 @@ class OperatorController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
+        if ($request->filled('programfrom_date')) {
+            $query->whereDate('program_date', '>=', $request->programfrom_date);
+        }
+
+        if ($request->filled('programto_date')) {
+            $query->whereDate('program_date', '<=', $request->programto_date);
+        }
+
         $complaints = $query->orderBy('posted_date', 'desc')->get();
 
         foreach ($complaints as $complaint) {
@@ -822,11 +830,11 @@ class OperatorController extends Controller
                 <strong>सुचना क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
                 <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
                 <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
 
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -1274,9 +1282,154 @@ class OperatorController extends Controller
     //     return view('operator/next_followup', compact('complaints'));
     // }
 
-    public function nextFollowup()
+    // public function nextFollowup(Request $request)
+    // {
+    //     $today = now()->toDateString();
+
+    //     $complaints = Complaint::with([
+    //         'division',
+    //         'district',
+    //         'vidhansabha',
+    //         'mandal',
+    //         'gram',
+    //         'polling',
+    //         'area',
+    //         'admin',
+    //         'registrationDetails',
+    //         'latestNonDefaultReply',
+    //         'latestNonDefaultReply.predefinedReply',
+    //         'latestNonDefaultReply.latestFollowupAlways',
+    //         'latestNonDefaultReply.latestFollowupNotCompleted',
+    //         'latestNonDefaultReply.forwardedToManager',
+    //         'latestNonDefaultReply.replyfrom',
+    //         'latestNonDefaultReply.latestFollowup'
+    //     ])
+    //         ->whereIn('complaint_type', ['समस्या', 'विकास'])
+    //         ->whereHas('latestNonDefaultReply') 
+    //         ->whereNotIn('complaint_status', [4, 5]); 
+
+    //     if ($request->filled('from_date')) {
+    //         $complaints->whereDate('followup_date', '>=', $request->from_date);
+    //     }
+    //     if ($request->filled('to_date')) {
+    //         $complaints->whereDate('followup_date', '<=', $request->to_date);
+    //     }
+
+    //     // Filter by followup status
+    //     if ($request->filled('followup_status_filter')) {
+    //         $filter = $request->followup_status_filter;
+
+    //         $complaints->whereHas('latestNonDefaultReply.latestFollowupAlways', function ($q) use ($filter, $today) {
+    //             if ($filter == 'upcoming') {
+    //                 $q->where('followup_status', 1)
+    //                     ->where('followup_date', '>', $today);
+    //             } elseif ($filter == 'completed') {
+    //                 $q->where('followup_status', 2);
+    //             } elseif ($filter == 'not_done') {
+    //                 $q->where('followup_status', 0);
+    //             } elseif ($filter == 'no_followup_latest') {
+    //                 $q->whereNull('followup_status');
+    //             }
+    //         });
+    //     }
+
+    //     $complaints = $complaints->get()->sortByDesc(fn($c) => optional($c->latestNonDefaultReply)->reply_date)->values();
+
+    //     // If AJAX, return HTML
+    //     if ($request->ajax()) {
+    //         $html = view('operator.partials.next_followup_table', compact('complaints'))->render();
+    //         return response()->json(['html' => $html]);
+    //     }
+
+
+    //     return view('operator/next_followup', compact('complaints'));
+    // }
+
+
+
+    public function nextFollowup(Request $request)
     {
-        $today = now()->startOfDay();
+        $complaints = Complaint::with([
+            'division',
+            'district',
+            'vidhansabha',
+            'mandal',
+            'gram',
+            'polling',
+            'area',
+            'admin',
+            'registrationDetails',
+            'latestReplyWithoutFollowup.predefinedReply',
+            'latestReplyWithoutFollowup.forwardedToManager',
+            'latestReplyWithoutFollowup.replyfrom',
+            'latestNonDefaultReply.latestFollowupAlways',
+            'latestNonDefaultReply.replyfrom',
+            'latestNonDefaultReply.forwardedToManager',
+        ])
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->whereNotIn('complaint_status', [4, 5])
+            ->whereHas('latestReplyWithoutFollowup')
+            ->get()
+            ->sortByDesc(fn($c) => optional($c->latestReplyWithoutFollowup)->reply_date)
+            ->values();
+
+        // if ($request->ajax()) {
+        //     $html = '';
+        //     foreach ($complaints as $index => $complaint) {
+        //         $latestReply = $complaint->latestReplyWithoutFollowup;
+        //         $html .= '<tr>';
+        //         $html .= '<td>' . ($index + 1) . '</td>';
+        //         $html .= '<td><strong>शिकायत क्र.: </strong>' . $complaint->complaint_number . '<br>
+        //          <strong>शिकायत प्रकार: </strong>' . $complaint->complaint_type . '<br>
+        //               <strong>नाम: </strong>' . $complaint->name . '<br>
+        //               <strong>मोबाइल: </strong>' . $complaint->mobile_number . '<br>
+        //               <strong>पुत्र श्री: </strong>' . $complaint->father_name . '<br>
+        //               <strong>आवेदक: </strong>' . ($complaint->type == 2 ? $complaint->admin->admin_name : $complaint->registrationDetails->name) . '<br>
+        //               <strong>विभाग: </strong>' . $complaint->complaint_department . '<br><br>
+        //               <strong>शिकायत तिथि: </strong>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '<br><br>
+        //               <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '</td>';
+
+        //         $html .= '<td>
+        //                 <strong>भेजने वाला:</strong> ' . ($latestReply->replyfrom->admin_name ?? 'N/A') . '<br>
+        //                 <strong>फॉरवर्ड:</strong> ' . ($latestReply->forwardedToManager->admin_name ?? 'N/A') . '<br>
+
+        //                 <strong>जवाब:</strong> ' . ($latestReply->complaint_reply ?? '') . '<br><br>
+        //                  <strong>तिथि:</strong> ' . ($latestReply->reply_date ?? '') . '
+        //              </td>';
+
+        //         $latestFollowup = optional($complaint->latestNonDefaultReply)->latestFollowupAlways;
+        //         if ($latestFollowup && $latestFollowup->followup_id) {
+        //             $html .= '<td>
+        //             <strong>फ़ॉलोअप तिथि:</strong> ' . \Carbon\Carbon::parse($latestFollowup->followup_date)->format('d-m-Y h:i A') . '<br>
+        //              <strong>फ़ॉलोअप दिया:</strong> ' . ($latestFollowup->createdByAdmin->admin_name ?? 'N/A') . '<br>
+        //             <strong>संपर्क स्थिति:</strong> ' . ($latestFollowup->followup_contact_status ?? 'N/A') . '<br>
+        //             <strong>संपर्क विवरण:</strong> ' . ($latestFollowup->followup_contact_description ?? 'N/A') . '<br><br>
+        //             <strong>स्थिति:</strong> ' . $latestFollowup->followup_status_text() . '<br>
+        //          </td>';
+        //         } else {
+        //             $html .= '<td><span class="text-muted">कोई फ़ॉलोअप उपलब्ध नहीं</span></td>';
+        //         }
+
+        //         $html .= '</td>';
+        //         $html .= '<td>
+        //                 <button class="btn btn-sm btn-warning" data-toggle="modal" data-target="#contactStatusModal' . $latestReply->complaint_reply_id . '">फ़ॉलोअप</button>
+        //               </td>';
+        //         $html .= '<td>
+        //                 <a href="' . route('follow_up.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a>
+        //               </td>';
+        //         $html .= '</tr>';
+        //     }
+
+        //     return response()->json(['html' => $html, 'count' => $complaints->count()]);
+        // }
+
+        return view('operator.next_followup', compact('complaints'));
+    }
+
+    public function nextFollowupFilter(Request $request)
+    {
+        $today = now()->toDateString();
+        $userId = session('user_id');
 
         $complaints = Complaint::with([
             'division',
@@ -1288,49 +1441,163 @@ class OperatorController extends Controller
             'area',
             'admin',
             'registrationDetails',
-            'latestNonDefaultReply',
-            'latestNonDefaultReply.predefinedReply',
+            'latestNonDefaultReply.latestFollowupForFilter',
             'latestNonDefaultReply.forwardedToManager',
-            'latestNonDefaultReply.latestFollowup'
+            'latestNonDefaultReply.replyfrom',
         ])
             ->whereIn('complaint_type', ['समस्या', 'विकास'])
-            ->whereHas('latestNonDefaultReply')
-            ->get()
-            ->filter(function ($complaint) use ($today) {
+            ->whereNotIn('complaint_status', [4, 5])
+            ->whereExists(function ($query) use ($request, $userId, $today) {
+                $query->selectRaw(1)
+                    ->from('complaint_reply as cr')
+                    ->whereColumn('cr.complaint_id', 'complaint.complaint_id')
+                    ->where('cr.complaint_reply', '!=', 'शिकायत दर्ज की गई है।')
+                    ->whereRaw('cr.reply_date = (
+                    SELECT MAX(cr2.reply_date) 
+                    FROM complaint_reply cr2 
+                    WHERE cr2.complaint_id = complaint.complaint_id 
+                    AND cr2.complaint_reply != "शिकायत दर्ज की गई है।"
+                )')
+                    ->when($request->filled('operator_followup_status') || $request->filled('followup_status_filter'), function ($q) use ($request, $userId, $today) {
+                        $q->whereExists(function ($f) use ($request, $userId, $today) {
+                            $f->selectRaw(1)
+                                ->from('followup_status as fs')
+                                ->whereColumn('fs.complaint_reply_id', 'cr.complaint_reply_id')
+                                ->whereRaw('fs.followup_date = (
+                                SELECT MAX(fs2.followup_date) 
+                                FROM followup_status fs2 
+                                WHERE fs2.complaint_reply_id = cr.complaint_reply_id
+                            )')
+                                ->when($request->filled('operator_followup_status'), function ($f2) use ($request, $userId, $today) {
+                                    $status = $request->operator_followup_status;
+                                    $f2->where('fs.followup_created_by', $userId)
+                                        ->when($status === 'completed_by_me', fn($q) => $q->where('fs.followup_status', 2))
+                                        ->when($status === 'pending_by_me', fn($q) => $q->where('fs.followup_status', 1)->whereDate('fs.followup_date', $today))
+                                        ->when($status === 'upcoming_by_me', fn($q) => $q->where('fs.followup_status', 1)->whereDate('fs.followup_date', '<=', $today));
+                                })
+                                ->when($request->filled('followup_status_filter'), function ($f2) use ($request, $today) {
+                                    $status = $request->followup_status_filter;
+                                    $f2->when($status === 'completed', fn($q) => $q->where('fs.followup_status', 2))
+                                        ->when($status === 'upcoming', fn($q) => $q->where('fs.followup_status', 1)->whereDate('fs.followup_date', '<=', $today))
+                                        ->when($status === 'not_done', fn($q) => $q->where('fs.followup_status', 1)->whereDate('fs.followup_date', $today));
+                                });
+                        });
+                    });
+            });
+
+        if ($request->filled('from_date') || $request->filled('to_date')) {
+            $complaints = $complaints->get()->filter(function ($complaint) use ($request) {
+                $from = $request->from_date;
+                $to = $request->to_date;
 
                 $latestReply = $complaint->latestNonDefaultReply;
-
-                if (!$latestReply) return false;
-
-                $latestFollowup = $latestReply->latestFollowup;
-
-                // Only consider the latest reply's followup
-                if ($latestFollowup) {
-                    // followup_status = 1 → do NOT show at all (permanently)   
-                    if ($latestFollowup->followup_status == 2) {
-                        return false;
-                    }
-
-                    // followup_status = 2 → hide only if followup done today
-                    if ($latestFollowup->followup_status == 1 && $latestFollowup->followup_date->isToday()) {
-                        return false;
-                    }
-                }
-
-                // Also filter out replies that are closed (complaint_status 4 or 5)
-                if (in_array($latestReply->complaint_status, [4, 5])) {
+                if (!$latestReply) {
                     return false;
                 }
 
-                return true;
-            })
-            ->sortByDesc(function ($complaint) {
-                return $complaint->latestNonDefaultReply->reply_date;
-            })
-            ->values();
+                $latestFollowup = $latestReply->latestFollowupForFilter;
 
-        return view('operator/next_followup', compact('complaints'));
+                // Check reply date
+                $replyDateValid = true;
+                if ($from && $latestReply->reply_date < $from) {
+                    $replyDateValid = false;
+                }
+                if ($to && $latestReply->reply_date > $to) {
+                    $replyDateValid = false;
+                }
+
+                // Check latest followup date (if exists)
+                $followupDateValid = false;
+                if ($latestFollowup) {
+                    $followupDateValid = true;
+                    if ($from && $latestFollowup->followup_date->toDateString() < $from) {
+                        $followupDateValid = false;
+                    }
+                    if ($to && $latestFollowup->followup_date->toDateString() > $to) {
+                        $followupDateValid = false;
+                    }
+                }
+
+                // Include if either reply date OR latest followup date is in range
+                return $replyDateValid || $followupDateValid;
+            });
+        } else {
+            $complaints = $complaints->get();
+        }
+
+        $complaints = $complaints->sortByDesc(function ($c) {
+            return optional(optional($c->latestNonDefaultReply)->latestFollowupForFilter)->followup_date;
+        })->values();
+
+
+        if ($request->ajax()) {
+            $html = '';
+            foreach ($complaints as $index => $complaint) {
+                $latestFollowup = optional($complaint->latestNonDefaultReply->latestFollowupForFilter);
+
+
+                $disableButton = false;
+                if ($latestFollowup) {
+                    if ($latestFollowup->followup_status == 2) {
+                        $disableButton = true;
+                    } elseif ($latestFollowup->followup_status == 1 && $latestFollowup->followup_date->toDateString() == now()->toDateString()) {
+                        $disableButton = true;
+                    }
+                }
+
+                $html .= '<tr>';
+                $html .= '<td>' . ($index + 1) . '</td>';
+                $html .= '<td><strong>शिकायत क्र.: </strong>' . $complaint->complaint_number . '<br>
+                 <strong>शिकायत प्रकार: </strong>' . $complaint->complaint_type . '<br>
+                      <strong>नाम: </strong>' . $complaint->name . '<br>
+                      <strong>मोबाइल: </strong>' . $complaint->mobile_number . '<br>
+                      <strong>पुत्र श्री: </strong>' . $complaint->father_name . '<br>
+                      <strong>आवेदक: </strong>' . ($complaint->type == 2 ? $complaint->admin->admin_name : $complaint->registrationDetails->name) . '<br>
+                      <strong>विभाग: </strong>' . $complaint->complaint_department . '<br><br>
+                      <strong>शिकायत तिथि: </strong>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '<br><br>
+                      <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '</td>';
+
+                $html .= '<td>
+                        <strong>भेजने वाला:</strong> ' . ($complaint->latestNonDefaultReply->replyfrom->admin_name ?? 'N/A') . '<br>
+                        <strong>फॉरवर्ड:</strong> ' . ($complaint->latestNonDefaultReply->forwardedToManager->admin_name ?? 'N/A') . '<br>
+                       
+                        <strong>जवाब:</strong> ' . ($complaint->latestNonDefaultReply->complaint_reply ?? '') . '<br><br>
+                         <strong>तिथि:</strong> ' . ($complaint->latestNonDefaultReply->reply_date ?? '') . '
+                     </td>';
+
+                if ($latestFollowup && $latestFollowup->followup_id) {
+                    $html .= '<td>
+                    <strong>फ़ॉलोअप तिथि:</strong> ' . \Carbon\Carbon::parse($latestFollowup->followup_date)->format('d-m-Y h:i A') . '<br>
+                     <strong>फ़ॉलोअप दिया:</strong> ' . ($latestFollowup->createdByAdmin->admin_name ?? 'N/A') . '<br>
+                    <strong>संपर्क स्थिति:</strong> ' . ($latestFollowup->followup_contact_status ?? 'N/A') . '<br>
+                    <strong>संपर्क विवरण:</strong> ' . ($latestFollowup->followup_contact_description ?? 'N/A') . '<br><br>
+                    <strong>स्थिति:</strong> ' . $latestFollowup->followup_status_text() . '<br>
+                 </td>';
+                } else {
+                    $html .= '<td><span class="text-muted">कोई फ़ॉलोअप उपलब्ध नहीं</span></td>';
+                }
+
+                $html .= '</td>';
+
+
+
+                $html .= '<td>
+                        <button class="btn btn-sm btn-warning openModalBtn" data-complaint-id="' . $complaint->complaint_id . '" data-complaint-reply-id="' . $complaint->latestNonDefaultReply->complaint_reply_id . '"' . ($disableButton ? ' disabled' : '') . '>फ़ॉलोअप</button>
+                      </td>';
+
+
+                $html .= '<td>
+                        <a href="' . route('follow_up.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a>
+                      </td>';
+                $html .= '</tr>';
+            }
+
+            return response()->json(['html' => $html, 'count' => $complaints->count()]);
+        }
+
+        return view('operator.next_followup', compact('complaints'));
     }
+
 
 
     public function updateContactStatus(Request $request, $id)
@@ -1338,6 +1605,7 @@ class OperatorController extends Controller
         $request->validate([
             'contact_status' => 'nullable|string|max:255',
             'contact_update' => 'nullable|string|max:500',
+            'complaint_id' => 'required|exists:complaint,complaint_id',
         ]);
 
         $reply = Reply::findOrFail($id);
@@ -1357,7 +1625,8 @@ class OperatorController extends Controller
         }
 
         FollowupStatus::create([
-            'complaint_reply_id'           => $reply->complaint_reply_id,
+            'complaint_reply_id' => $reply->complaint_reply_id,
+            'complaint_id' => $request->complaint_id,
             'followup_contact_status'      => $request->contact_status,
             'followup_contact_description' => $request->contact_update,
             'followup_status'              => $followupStatus,

@@ -174,6 +174,10 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/ajax/complaints/not_opened_count', [ManagerController::class, 'countUnheardComplaints']);
     Route::get('/ajax/complaints/not_opened_count_vikash', [ManagerController::class, 'countUnheardComplaintsVikash']);
     Route::get('/voters/details/download', [ManagerController::class, 'downloadVoters'])->name('voterlistdashboard.download');
+    Route::get('/dashboard/followup-counts', [ManagerController::class, 'getFollowupCounts'])->name('dashboard.followupCounts');
+    Route::get('/followup/followup-details', [ManagerController::class, 'followupDetails'])
+        ->name('complaints.followupDetails');
+
 
     // division routes
     Route::get('manager/division_master', [ManagerController::class, 'index'])->name('division.index');
@@ -433,6 +437,7 @@ Route::middleware('checklogin')->group(function () {
 
 
     Route::get('/operator/next_followup', [OperatorController::class, 'nextFollowup'])->name('next_followup.index');
+    Route::get('/operator/next_followups', [OperatorController::class, 'nextFollowupFilter'])->name('next_followup_filter.index');
     Route::post('/update-contact-status/{id}', [OperatorController::class, 'updateContactStatus'])->name('update.contact.status');
     Route::get('/operator/followup_details/{id}', [OperatorController::class, 'followup_show'])->name('follow_up.show');
 });
