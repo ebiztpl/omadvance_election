@@ -11,6 +11,7 @@ use App\Models\Step3;
 use App\Models\Step4;
 use App\Models\Department;
 use App\Models\ComplaintReply;
+use App\Models\FollowupStatus;
 use App\Models\Adhikari;
 use App\Models\Subject;
 use App\Models\Designation;
@@ -367,7 +368,7 @@ class OperatorController extends Controller
                 'txtpolling' => 'required|integer',
                 // 'txtarea' => 'required|integer',
                 'txtaddress' => 'nullable|string|max:1000',
-                'CharCounter' => 'nullable|string|max:100',
+                'CharCounter' => 'required|string|max:100',
                 'NameText' => 'required|string|max:2000',
                 'type' => 'required|string',
                 'department' => 'nullable',
@@ -757,7 +758,7 @@ class OperatorController extends Controller
             $query->where('complaint_type', 'शुभ सुचना');
         }
 
-       
+
 
         if ($request->filled('admin_id')) {
             $query->whereHas('latestReply', function ($q) use ($request) {
@@ -1251,7 +1252,32 @@ class OperatorController extends Controller
 
 
 
-    public function nextFollowup() {
+    // public function nextFollowup() {
+    //     $complaints = Complaint::with([
+    //         'division',
+    //         'district',
+    //         'vidhansabha',
+    //         'mandal',
+    //         'gram',
+    //         'polling',
+    //         'area',
+    //         'admin',
+    //         'registrationDetails',
+    //         'latestNonDefaultReply',
+    //         'latestNonDefaultReply.predefinedReply',
+    //         'latestNonDefaultReply.forwardedToManager'
+    //     ])->whereIn('complaint_type', ['समस्या', 'विकास'])
+    //         ->whereHas('latestNonDefaultReply')
+    //     ->orderBy('posted_date', 'desc')
+    //     ->get();
+
+    //     return view('operator/next_followup', compact('complaints'));
+    // }
+
+    public function nextFollowup()
+    {
+        $today = now()->startOfDay();
+
         $complaints = Complaint::with([
             'division',
             'district',
@@ -1264,28 +1290,81 @@ class OperatorController extends Controller
             'registrationDetails',
             'latestNonDefaultReply',
             'latestNonDefaultReply.predefinedReply',
-            'latestNonDefaultReply.forwardedToManager'
-        ])->whereIn('complaint_type', ['समस्या', 'विकास'])
+            'latestNonDefaultReply.forwardedToManager',
+            'latestNonDefaultReply.latestFollowup'
+        ])
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
             ->whereHas('latestNonDefaultReply')
-        ->orderBy('posted_date', 'desc')
-        ->get();
+            ->get()
+            ->filter(function ($complaint) use ($today) {
+
+                $latestReply = $complaint->latestNonDefaultReply;
+
+                if (!$latestReply) return false;
+
+                $latestFollowup = $latestReply->latestFollowup;
+
+                // Only consider the latest reply's followup
+                if ($latestFollowup) {
+                    // followup_status = 1 → do NOT show at all (permanently)   
+                    if ($latestFollowup->followup_status == 2) {
+                        return false;
+                    }
+
+                    // followup_status = 2 → hide only if followup done today
+                    if ($latestFollowup->followup_status == 1 && $latestFollowup->followup_date->isToday()) {
+                        return false;
+                    }
+                }
+
+                // Also filter out replies that are closed (complaint_status 4 or 5)
+                if (in_array($latestReply->complaint_status, [4, 5])) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->sortByDesc(function ($complaint) {
+                return $complaint->latestNonDefaultReply->reply_date;
+            })
+            ->values();
 
         return view('operator/next_followup', compact('complaints'));
     }
+
 
     public function updateContactStatus(Request $request, $id)
     {
         $request->validate([
             'contact_status' => 'nullable|string|max:255',
-            'contact_update' => 'nullable|string|max:255',
+            'contact_update' => 'nullable|string|max:500',
         ]);
 
-        $reply = \App\Models\Reply::findOrFail($id);
-        $reply->contact_status = $request->contact_status;
-        $reply->contact_update = $request->contact_update;
-        $reply->save();
+        $reply = Reply::findOrFail($id);
 
-        return redirect()->back()->with('success', 'संपर्क स्थिति सफलतापूर्वक अपडेट की गई।');
+        if (!$reply) {
+            return redirect()->back()->withErrors('Reply not found.');
+        }
+
+
+        $contactStatus = $request->contact_status;
+        if (!$contactStatus) {
+            $followupStatus = 0;
+        } elseif ($contactStatus === 'सूचना दे दी गई है') {
+            $followupStatus = 2;
+        } else {
+            $followupStatus = 1;
+        }
+
+        FollowupStatus::create([
+            'complaint_reply_id'           => $reply->complaint_reply_id,
+            'followup_contact_status'      => $request->contact_status,
+            'followup_contact_description' => $request->contact_update,
+            'followup_status'              => $followupStatus,
+            'followup_created_by'          => session('user_id'),
+        ]);
+
+        return redirect()->back()->with('success', 'फॉलो-अप सफलतापूर्वक दर्ज किया गया।');
     }
 
     public function followup_show($id)

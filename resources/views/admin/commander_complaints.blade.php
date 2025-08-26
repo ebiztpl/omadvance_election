@@ -171,6 +171,7 @@
                                     <tr>
                                        <th>क्र.</th>
                                         <th style="min-width: 100px;">शिकायतकर्ता</th>
+                                        <th>रेफरेंस</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
                                         <th>विभाग</th>
                                         <th>शिकायत की स्थिति</th>
@@ -191,10 +192,12 @@
                                            <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }} <br>
                                                 <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
                                                 <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
-                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br>
-                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }} <br><br>
+                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br><br>
                                                 <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
                                             </td>
+
+                                             <td>{{ $complaint->reference_name }}</td>
+                                             
                                             <td
                                                 title="
                                                 

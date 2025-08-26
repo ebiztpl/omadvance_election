@@ -38,12 +38,15 @@
                     if (in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना'])) {
                         $nameLabel = 'सूचनाकर्ता का नाम';
                         $mobileLabel = 'सूचनाकर्ता का मोबाइल';
+                        $date = 'सूचना दिनांक';
                     } elseif ($complaint->complaint_type === 'विकास') {
                         $nameLabel = 'मांगकर्ता का नाम';
                         $mobileLabel = 'मांगकर्ता का मोबाइल';
+                        $date = 'शिकायत दिनांक';
                     } else {
                         $nameLabel = 'शिकायतकर्ता का नाम';
                         $mobileLabel = 'शिकायतकर्ता का मोबाइल';
+                        $date = 'शिकायत दिनांक';
                     }
 
                     $fields = [
@@ -70,7 +73,7 @@
                         'Education' => $complaint->registration->education ?? '',
                         'Business' => $complaint->registration->business ?? '',
                         'Position' => $complaint->registration->position ?? '',
-                        'शिकायत का दिनांक' => $complaint->posted_date,
+                        $date => $complaint->posted_date,
                     ];
                 @endphp
 
@@ -131,7 +134,7 @@
                             @if (!in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
                                 <th>रीव्यू दिनांक</th>
                                 <th>महत्त्व स्तर</th>
-                                <th>गंभीरता स्तर</th>
+                                {{-- <th>गंभीरता स्तर</th> --}}
                             @endif
                             <th>विवरण देखें</th>
                         </tr>
@@ -151,7 +154,7 @@
                                 @if (!in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
                                     <td> {{ $reply->review_date ?? '' }}</td>
                                     <td> {{ $reply->importance ?? '' }}</td>
-                                    <td> {{ $reply->criticality ?? '' }}</td>
+                                    {{-- <td> {{ $reply->criticality ?? '' }}</td> --}}
                                 @endif
                                 <td>
                                     <button type="button" class="btn btn-sm btn-info view-details-btn" data-toggle="modal"
@@ -159,7 +162,7 @@
                                         data-contact="{{ $reply->contact_status }}"
                                         data-details="{{ $reply->contact_update }}"
                                         data-review="{{ $reply->review_date }}" data-importance="{{ $reply->importance }}"
-                                        data-critical="{{ $reply->criticality }}"
+                                        {{-- data-critical="{{ $reply->criticality }}" --}}
                                         data-reply_from="{{ $reply->replyfrom?->admin_name ?? '' }}"
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
@@ -234,7 +237,7 @@
                                                 <th>पूर्वनिर्धारित उत्तर</th>
                                                 <th>रीव्यू दिनांक</th>
                                                 <th>महत्त्व स्तर</th>
-                                                <th>गंभीरता स्तर</th>
+                                                {{-- <th>गंभीरता स्तर</th> --}}
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -242,7 +245,7 @@
                                                 <td id="modal-predefined">—</td>
                                                 <td id="modal-review">—</td>
                                                 <td id="modal-importance">—</td>
-                                                <td id="modal-critical">—</td>
+                                                {{-- <td id="modal-critical">—</td> --}}
                                             </tr>
                                         </tbody>
                                     </table>
@@ -290,9 +293,17 @@
             <div class="card-header" style="color: #000">Reply to {{ $complaint->complaint_number }}</div>
             <div class="card-body">
                 @if ($disableReply)
+                   @if (in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
                     <div class="alert alert-warning">
+                        इस सुचना का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
+                    </div>
+
+                     @else
+
+                     <div class="alert alert-warning">
                         इस शिकायत का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
                     </div>
+                     @endif
                 @endif
                 
                 <form id="replyForm" method="POST"
@@ -353,7 +364,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-2 toggle-field">
+                        {{-- <div class="col-md-2 toggle-field">
                             <label for="criticality form-label">गंभीरता स्तर:</label>
                             <select name="criticality" class="form-control" @if ($disableReply) disabled @endif >
                                 <option value="">--चयन करें--</option>
@@ -361,7 +372,7 @@
                                 <option value="मध्यम">मध्यम</option>
                                 <option value="कम">कम</option>
                             </select>
-                        </div>
+                        </div> --}}
 
 
                     </div>
@@ -418,7 +429,7 @@
                 const video = $(this).data('video');
                 const review = $(this).data('review');
                 const importance = $(this).data('importance');
-                const critical = $(this).data('critical');
+                // const critical = $(this).data('critical');
                 const details = $(this).data('details') || '—';
 
                 $('#modal-reply').text(reply);
@@ -429,7 +440,7 @@
                 $('#modal-contact').text(contact);
                 $('#modal-review').text(review);
                 $('#modal-importance').text(importance);
-                $('#modal-critical').text(critical);
+                // $('#modal-critical').text(critical);
                 $('#modal-details').text(details);
                 $('#modal-reply-from').text(reply_from);
 

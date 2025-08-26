@@ -1744,13 +1744,13 @@ class AdminController extends Controller
                 $html .= '<td>
                 <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
                 <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
-                <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br><br>
                 <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
 
-
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
+                
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -1884,6 +1884,14 @@ class AdminController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
+        if ($request->filled('programfrom_date')) {
+            $query->whereDate('program_date', '>=', $request->programfrom_date);
+        }
+
+        if ($request->filled('programto_date')) {
+            $query->whereDate('program_date', '<=', $request->programto_date);
+        }
+
 
         $complaints = $query->orderBy('posted_date', 'desc')->get();
 
@@ -1913,11 +1921,11 @@ class AdminController extends Controller
                 <strong>सुचना क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
                 <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
                 <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
             </td>';
 
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -2048,6 +2056,15 @@ class AdminController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
+
+        if ($request->filled('programfrom_date')) {
+            $query->whereDate('program_date', '>=', $request->programfrom_date);
+        }
+
+        if ($request->filled('programto_date')) {
+            $query->whereDate('program_date', '<=', $request->programto_date);
+        }
+
       
         $complaints = $query->orderBy('posted_date', 'desc')->get();
 
@@ -2078,12 +2095,11 @@ class AdminController extends Controller
             <strong>सुचना क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
             <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
             <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-            <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-            <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+            <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
             <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
         </td>';
 
-
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -2126,8 +2142,8 @@ class AdminController extends Controller
 
                 $html .= '<td>' . ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-') . '</td>';
 
-                $html .= '<td>' . ($complaint->program_date ?? '') . '</td>';
                 $html .= '<td>' . ($complaint->issue_title ?? '') . '</td>';
+                $html .= '<td>' . ($complaint->program_date ?? '') . '</td>';
 
                 $html .= '<td style="white-space: nowrap;">
                     <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" >क्लिक करें</a>
@@ -2230,7 +2246,9 @@ class AdminController extends Controller
         $reply = new Reply();
         $reply->complaint_id = $id;
         $reply->complaint_reply = $request->cmp_reply;
-        $reply->selected_reply = $request->selected_reply ?? 0;
+        $reply->selected_reply = $request->filled('selected_reply')
+            ? (int) $request->selected_reply
+            : null;
         $reply->reply_from = session('user_id') ?? 0;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;

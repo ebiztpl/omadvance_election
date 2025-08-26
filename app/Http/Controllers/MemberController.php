@@ -676,6 +676,14 @@ class MemberController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
+        if ($request->filled('programfrom_date')) {
+            $query->whereDate('program_date', '>=', $request->programfrom_date);
+        }
+
+        if ($request->filled('programto_date')) {
+            $query->whereDate('program_date', '<=', $request->programto_date);
+        }
+
         $complaints = $query->orderBy('posted_date', 'desc')->get();
 
         foreach ($complaints as $complaint) {
@@ -704,11 +712,11 @@ class MemberController extends Controller
                 <strong>सुचना क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
                 <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
                 <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
 
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -898,11 +906,12 @@ class MemberController extends Controller
         <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
         <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
         <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-        <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-        <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+        <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
         <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
         </td>';
 
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
+                
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
             जिला: ' . ($complaint->district->district_name ?? 'N/A') . '

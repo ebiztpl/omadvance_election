@@ -193,6 +193,15 @@
                                             style="white-space: nowrap;">कार्यक्रम समय</label>
                                         <input type="time" class="form-control" name="to_date">
                                     </div>
+
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="subject-select" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">विषय
+                                            <span class="error">*</span></label>
+                                        <select name="CharCounter" id="issue_title" class="form-control" required>
+                                            <option value="">--चुने--</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div class="form-group row">
@@ -391,6 +400,85 @@
                 }
 
                 $('#name, #father_name').on('blur', fetchVoterId);
+
+
+
+                const subjects = {
+                    "शुभ सुचना": [{
+                            title: "जन्मदिन"
+                        },
+                        {
+                            title: "विवाह/सगाई"
+                        },
+                        {
+                            title: "उपलब्धि/सम्मान/पदोन्नति"
+                        },
+                        {
+                            title: "धार्मिक/सामाजिक आयोजन/भंडारा"
+                        },
+                        {
+                            title: "नौकरी"
+                        },
+                        {
+                            title: "पदवी/परीक्षा उत्तीर्ण"
+                        },
+                        {
+                            title: "अच्छी उपज / नया साधन"
+                        },
+                        {
+                            title: "नये घर का निर्माण/गृह प्रवेश"
+                        },
+                        {
+                            title: "अन्य"
+                        },
+                    ],
+                    "अशुभ सुचना": [{
+                            title: "बीमारी/दुर्घटना"
+                        },
+                        {
+                            title: "मृत्यु/शोक समाचार"
+                        },
+                        {
+                            title: "प्राकृतिक आपदा"
+                        },
+                        {
+                            title: "फसल खराब/नुकसान"
+                        },
+                        {
+                            title: "पशु हानि"
+                        },
+                        {
+                            title: "चोरी/लूट/घटना"
+                        },
+                        {
+                            title: "अन्य"
+                        },
+                    ]
+                };
+
+
+                document.querySelectorAll('input[name="type"]').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        const type = this.value;
+                        const issueSelect = document.getElementById('issue_title');
+                        issueSelect.innerHTML = '<option value="">-- सभी --</option>'; // reset
+
+                        if (subjects[type]) {
+                            subjects[type].forEach(sub => {
+                                const opt = document.createElement('option');
+                                opt.value = sub.title;
+                                opt.textContent = sub.title;
+                                issueSelect.appendChild(opt);
+                            });
+                        }
+                    });
+                });
+
+                // Optional: trigger change if a radio is pre-selected
+                const checkedRadio = document.querySelector('input[name="type"]:checked');
+                if (checkedRadio) {
+                    checkedRadio.dispatchEvent(new Event('change'));
+                }
             });
         </script>
     @endpush

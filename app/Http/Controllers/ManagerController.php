@@ -114,6 +114,16 @@ class ManagerController extends Controller
                     SUM(CASE WHEN complaint_type = 'विकास' THEN 1 ELSE 0 END) as vikash
                 ")
                 ->whereBetween('posted_date', [$start, $end])
+                ->whereIn('complaint_id', function ($query) {
+                    $query->select(DB::raw('cr1.complaint_id'))
+                        ->from('complaint_reply as cr1')
+                        ->whereRaw('cr1.complaint_reply_id = (
+                        SELECT MAX(cr2.complaint_reply_id) 
+                        FROM complaint_reply cr2 
+                        WHERE cr2.complaint_id = cr1.complaint_id
+                    )')
+                        ->whereNotIn('cr1.complaint_status', [4, 5]); // exclude पूर्ण & रद्द
+                })
                 ->groupBy('type')
                 ->get();
 
@@ -872,10 +882,10 @@ class ManagerController extends Controller
                     ->whereIn('c.complaint_type', ['समस्या', 'विकास']);
 
                 $dates = match ($filter) {
-                    'आज' => [Carbon::today(), Carbon::today()],
-                    'कल' => [Carbon::yesterday(), Carbon::yesterday()],
-                    'पिछले सात दिन' => [Carbon::now()->subWeek(), Carbon::now()],
-                    'पिछले तीस दिन' => [Carbon::now()->subMonth(), Carbon::now()],
+                    'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+                    'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+                    'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+                    'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
                     default => null,
                 };
 
@@ -931,10 +941,10 @@ class ManagerController extends Controller
                     ->whereIn('c.complaint_type', ['शुभ सुचना', 'अशुभ सुचना']);
 
                 $dates = match ($filter) {
-                    'आज' => [Carbon::today(), Carbon::today()],
-                    'कल' => [Carbon::yesterday(), Carbon::yesterday()],
-                    'पिछले सात दिन' => [Carbon::now()->subWeek(), Carbon::now()],
-                    'पिछले तीस दिन' => [Carbon::now()->subMonth(), Carbon::now()],
+                    'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+                    'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+                    'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+                    'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
                     default => null,
                 };
 
@@ -1187,8 +1197,11 @@ class ManagerController extends Controller
 
     private function getComplaintsBetween($start, $end, $type = null, $user = null)
     {
-        $query = Complaint::with(['division', 'district', 'vidhansabha', 'mandal', 'gram', 'polling', 'area', 'registrationDetails', 'admin'])
-            ->whereBetween('posted_date', [$start, $end]);
+        $query = Complaint::with(['division', 'district', 'vidhansabha', 'mandal', 'gram', 'polling', 'area', 'registrationDetails', 'admin', 'latestReply'])
+            ->whereBetween('posted_date', [$start, $end])
+            ->whereDoesntHave('latestReply', function ($q) {
+                $q->whereIn('complaint_status', [4, 5]); 
+            });
 
         if ($type) {
             $query->where('complaint_type', $type);
@@ -3466,7 +3479,9 @@ class ManagerController extends Controller
         $reply = new Reply();
         $reply->complaint_id = $id;
         $reply->complaint_reply = $request->cmp_reply;
-        $reply->selected_reply = $request->selected_reply ?? 0;
+        $reply->selected_reply = $request->filled('selected_reply')
+            ? (int) $request->selected_reply
+            : null;
         $reply->reply_from = session('user_id') ?? 0;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;

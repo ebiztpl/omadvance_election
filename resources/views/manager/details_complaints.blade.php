@@ -282,7 +282,7 @@
                             <th>को भेजा गया</th>
                             <th>रीव्यू दिनांक</th>
                             <th>महत्त्व स्तर</th>
-                            <th>गंभीरता स्तर</th>
+                            {{-- <th>गंभीरता स्तर</th> --}}
                             <th>विवरण देखें</th>
                         </tr>
                     </thead>
@@ -298,7 +298,7 @@
                                 <td>{{ $reply->forwardedToManager?->admin_name ?? '' }}</td>
                                 <td>{{ $reply->review_date ?? '' }}</td>
                                 <td>{{ $reply->importance ?? '' }}</td>
-                                <td>{{ $reply->criticality ?? '' }}</td>
+                                {{-- <td>{{ $reply->criticality ?? '' }}</td> --}}
 
                                 <td>
                                     <button type="button" class="btn btn-sm btn-info view-details-btn"
@@ -308,7 +308,7 @@
                                         data-details="{{ $reply->contact_update }}"
                                         data-review="{{ $reply->review_date }}"
                                         data-importance="{{ $reply->importance }}"
-                                        data-critical="{{ $reply->criticality }}"
+                                        {{-- data-critical="{{ $reply->criticality }}" --}}
                                         data-reply_from="{{ $reply->replyfrom?->admin_name ?? '' }}"
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
@@ -382,7 +382,7 @@
                                             <th>पूर्वनिर्धारित उत्तर</th>
                                             <th>रीव्यू दिनांक</th>
                                             <th>महत्त्व स्तर</th>
-                                            <th>गंभीरता स्तर</th>
+                                            {{-- <th>गंभीरता स्तर</th> --}}
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -390,7 +390,7 @@
                                             <td id="modal-predefined">—</td>
                                             <td id="modal-review">—</td>
                                             <td id="modal-importance">—</td>
-                                            <td id="modal-critical">—</td>
+                                            {{-- <td id="modal-critical">—</td> --}}
                                         </tr>
                                     </tbody>
                                 </table>
@@ -514,7 +514,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-2">
+                        {{-- <div class="col-md-2">
                             <label for="criticality form-label">गंभीरता स्तर:</label>
                             <select name="criticality" class="form-control"
                                 @if ($disableReply) disabled @endif>
@@ -523,7 +523,7 @@
                                 <option value="मध्यम">मध्यम</option>
                                 <option value="कम">कम</option>
                             </select>
-                        </div>
+                        </div> --}}
                     </div>
 
                     <div class="row g-3">
@@ -581,7 +581,7 @@
                 const video = $(this).data('video');
                 const review = $(this).data('review');
                 const importance = $(this).data('importance');
-                const critical = $(this).data('critical');
+                // const critical = $(this).data('critical');
                 const details = $(this).data('details') || '—';
 
                 $('#modal-reply').text(reply);
@@ -592,7 +592,7 @@
                 $('#modal-contact').text(contact);
                 $('#modal-review').text(review);
                 $('#modal-importance').text(importance);
-                $('#modal-critical').text(critical);
+                // $('#modal-critical').text(critical);
                 $('#modal-details').text(details);
                 $('#modal-reply-from').text(reply_from);
 

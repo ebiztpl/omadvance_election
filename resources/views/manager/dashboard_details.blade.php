@@ -24,6 +24,7 @@
                                     <tr>
                                         <th>क्र.</th>
                                         <th style="min-width: 150px;">शिकायतकर्ता</th>
+                                        <th>रेफरेंस</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
                                         <th>विभाग</th>
                                         <th>शिकायत की स्थिति</th>
@@ -42,10 +43,11 @@
                                             <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }} <br>
                                                 <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
                                                 <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
-                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br>
-                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }} <br>
+                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br><br>
                                                 <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
                                             </td>
+
+                                             <td>{{ $complaint->reference_name }}</td>
 
                                             <td
                                                 title="
@@ -70,7 +72,8 @@
                                             </td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                            <td>
+                                            
+                                             <td>
                                                 <strong>तिथि:
                                                     {{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}</strong><br>
 
@@ -78,10 +81,23 @@
                                                     पूर्ण
                                                 @elseif ($complaint->complaint_status == 5)
                                                     रद्द
+                                                @elseif ($complaint->complaint_status == 13)
+                                                    सम्मिलित हुए
+                                                @elseif ($complaint->complaint_status == 14)
+                                                    सम्मिलित नहीं हुए
+                                                @elseif ($complaint->complaint_status == 15)
+                                                    फोन पर संपर्क किया
+                                                @elseif ($complaint->complaint_status == 16)
+                                                    ईमेल पर संपर्क किया
+                                                @elseif ($complaint->complaint_status == 17)
+                                                    व्हाट्सएप पर संपर्क किया
+                                                @elseif ($complaint->complaint_status == 18)
+                                                    रद्द
                                                 @else
                                                     {{ $complaint->pending_days }} दिन
                                                 @endif
                                             </td>
+
 
                                             <td>
                                                 @if ($complaint->type == 2)

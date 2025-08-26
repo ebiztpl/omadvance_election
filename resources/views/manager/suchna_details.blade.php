@@ -218,6 +218,16 @@
                                         <input type="time" class="form-control" name="to_date"
                                             value="{{ old('to_date', $complaint->news_time) }}">
                                     </div>
+
+                                    <div class="col-md-3 d-flex align-items-center">
+                                        <label for="subject-select" class="me-2 mr-2 mb-0"
+                                            style="white-space: nowrap;">विषय
+                                            <span class="error">*</span></label>
+                                        <select name="CharCounter" id="issue_title" class="form-control"
+                                            data-selected="{{ $complaint->issue_title }}" required>
+                                            <option value="">--चुने--</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div class="form-group row">
@@ -342,7 +352,7 @@
 
                 @if ($disableReply)
                     <div class="alert alert-warning">
-                        इस शिकायत का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
+                        इस सूचना का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
                     </div>
                 @endif
 
@@ -813,6 +823,93 @@
                     Array.from(replyForm.elements).forEach(el => el.disabled = true);
                 @endif
             });
+
+
+            const subjects = {
+                "शुभ सुचना": [{
+                        title: "जन्मदिन"
+                    },
+                    {
+                        title: "विवाह/सगाई"
+                    },
+                    {
+                        title: "उपलब्धि/सम्मान/पदोन्नति"
+                    },
+                    {
+                        title: "धार्मिक/सामाजिक आयोजन/भंडारा"
+                    },
+                    {
+                        title: "नौकरी"
+                    },
+                    {
+                        title: "पदवी/परीक्षा उत्तीर्ण"
+                    },
+                    {
+                        title: "अच्छी उपज / नया साधन"
+                    },
+                    {
+                        title: "नये घर का निर्माण/गृह प्रवेश"
+                    },
+                    {
+                        title: "अन्य"
+                    },
+                ],
+                "अशुभ सुचना": [{
+                        title: "बीमारी/दुर्घटना"
+                    },
+                    {
+                        title: "मृत्यु/शोक समाचार"
+                    },
+                    {
+                        title: "प्राकृतिक आपदा"
+                    },
+                    {
+                        title: "फसल खराब/नुकसान"
+                    },
+                    {
+                        title: "पशु हानि"
+                    },
+                    {
+                        title: "चोरी/लूट/घटना"
+                    },
+                    {
+                        title: "अन्य"
+                    },
+                ]
+            };
+
+            function populateSubjects(type, preselected = "") {
+                const issueSelect = document.getElementById('issue_title');
+                issueSelect.innerHTML = '<option value="">--चुने--</option>'; // reset
+
+                if (subjects[type]) {
+                    subjects[type].forEach(sub => {
+                        const opt = document.createElement('option');
+                        opt.value = sub.title;
+                        opt.textContent = sub.title;
+                        if (sub.title === preselected) {
+                            opt.selected = true; // mark saved subject
+                        }
+                        issueSelect.appendChild(opt);
+                    });
+                }
+            }
+
+            const issueSelect = document.getElementById('issue_title');
+            const preselectedSubject = issueSelect.dataset.selected || "";
+
+            // Handle radio change
+            document.querySelectorAll('input[name="type"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    populateSubjects(this.value);
+                });
+            });
+
+            // On page load, check if a radio is already selected
+            const checkedRadio = document.querySelector('input[name="type"]:checked');
+            if (checkedRadio) {
+                populateSubjects(checkedRadio.value, preselectedSubject);
+            }
         </script>
     @endpush
 

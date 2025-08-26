@@ -32,7 +32,7 @@
                         </div>
 
                         <div class="col-md-2">
-                            <label>शिकायत प्रकार</label>
+                            <label>सुचना प्रकार</label>
                             <select name="complaint_type" id="complaint_type" class="form-control">
                                 <option value="शुभ सुचना" selected>शुभ सुचना</option>
                                 <option value="अशुभ सुचना">अशुभ सुचना</option>
@@ -103,12 +103,36 @@
                         </div>
 
                         <div class="col-md-2">
+                            <label>कार्यक्रम दिनांक से</label>
+                            <input type="date" name="programfrom_date" id="programfrom_date" class="form-control">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>कार्यक्रम दिनांक तक</label>
+                            <input type="date" name="programto_date" id="programto_date" class="form-control">
+                        </div>
+
+                        <div class="col-md-2">
                             <label>फॉरवर्ड</label>
                             <select name="admin_id" id="admin_id" class="form-control">
                                 <option value="">-- सभी --</option>
                                 @foreach ($managers as $manager)
                                     <option value="{{ $manager->admin_id }}">{{ $manager->admin_name }}</option>
                                 @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2 mt-2">
+                            <label>अन्य फ़िल्टर चुनें</label>
+                            <select id="complaintOtherFilter" class="form-control">
+                                <option value="">सभी</option>
+                                <option value="forwarded_manager">निर्देशित सूचनाएँ</option>
+                                <option value="not_opened">नई सूचनाएँ</option>
+                                <option value="sammilit_done">सम्मिलित हुए</option>
+                                <option value="sammilit_notdone">सम्मिलित नहीं हुए</option>
+                                <option value="cancel">रद्द</option>
+                                <option value="reference_null">रेफरेंस नहीं है</option>
+                                <option value="reference">रेफरेंस है</option>
                             </select>
                         </div>
 
@@ -157,8 +181,24 @@
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'cancel' ? 'active' : '' }}"
                                     style="color: black"
-                                    href="{{ route('operator.complaints.view', ['filter' => 'cancel']) }}">रद्द
+                                    href="{{ route('operator.suchna.view', ['filter' => 'cancel']) }}">रद्द
                                     सूचनाएँ</a>
+                            </li>
+
+                             <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'sammilit_done' ? 'active' : '' }}"
+                                    style="color: black"
+                                    href="{{ route('operator.suchna.view', ['filter' => 'sammilit_done']) }}">सम्मिलित हुए
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference_null' ? 'active' : '' }}" style="color: black"
+                                    href="{{ route('operator.suchna.view', ['filter' => 'reference_null']) }}">रेफरेंस नहीं है</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference' ? 'active' : '' }}" style="color: black"
+                                    href="{{ route('operator.suchna.view', ['filter' => 'reference']) }}">रेफरेंस है</a>
                             </li>
                         </ul>
 
@@ -172,6 +212,7 @@
                                     <tr>
                                         <th>क्र.</th>
                                         <th style="min-width: 100px;">सूचनाकर्ता</th>
+                                        <th>रेफरेंस</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
                                         <th>सूचना की स्थिति</th>
                                         <th>आवेदक</th>
@@ -189,11 +230,11 @@
                                                 <br>
                                                 <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
                                                 <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
-                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br>
-                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }} <br><br>
+                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br><br>
                                                 <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
                                             </td>
 
+                                             <td>{{ $complaint->reference_name }}</td>
 
                                             <td
                                                 title="
@@ -347,6 +388,9 @@
                         to_date: $('#to_date').val(),
                         admin_id: $('#admin_id').val(),
                          issue_title: $('#issue_title').val(),
+                          programfrom_date: $('#programfrom_date').val(),
+                        programto_date: $('#programto_date').val(),
+                        complaintOtherFilter: $('#complaintOtherFilter').val()
                     };
 
                     $.ajax({

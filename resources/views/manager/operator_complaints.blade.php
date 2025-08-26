@@ -133,6 +133,22 @@
                             </select>
                         </div>
 
+                        <div class="col-md-2 mt-2">
+                            <label>अन्य फ़िल्टर चुनें</label>
+                            <select id="complaintOtherFilter" class="form-control">
+                                <option value="">सभी</option>
+                                <option value="forwarded_manager">निर्देशित</option>
+                                <option value="not_opened">नई शिकायतें</option>
+                                <option value="reviewed">रीव्यू की गई</option>
+                                <option value="important">महत्त्वपूर्ण</option>
+                                {{-- <option value="critical">गंभीर</option> --}}
+                                <option value="closed">पूर्ण</option>
+                                <option value="cancel">रद्द</option>
+                                <option value="reference_null">रेफरेंस नहीं है</option>
+                                <option value="reference">रेफरेंस है</option>
+                            </select>
+                        </div>
+
                         <div class="col-md-2 mt-4">
                             <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर लागू करें</button>
                         </div>
@@ -181,10 +197,10 @@
                                 <a class="nav-link filter-link {{ request('filter') === 'important' ? 'active' : '' }}" style="color: black"
                                     href="{{ route('operator.complaints.view', ['filter' => 'important']) }}">महत्त्वपूर्ण</a>
                             </li>
-                            <li class="nav-item">
+                            {{-- <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'critical' ? 'active' : '' }}" style="color: black"
                                     href="{{ route('operator.complaints.view', ['filter' => 'critical']) }}">गंभीर</a>
-                            </li>
+                            </li> --}}
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'closed' ? 'active' : '' }}" style="color: black"
                                     href="{{ route('operator.complaints.view', ['filter' => 'closed']) }}">पूर्ण शिकायतें</a>
@@ -192,6 +208,14 @@
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'cancel' ? 'active' : '' }}" style="color: black"
                                     href="{{ route('operator.complaints.view', ['filter' => 'cancel']) }}">रद्द शिकायतें</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference_null' ? 'active' : '' }}" style="color: black"
+                                    href="{{ route('operator.complaints.view', ['filter' => 'reference_null']) }}">रेफरेंस नहीं है</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference' ? 'active' : '' }}" style="color: black"
+                                    href="{{ route('operator.complaints.view', ['filter' => 'reference']) }}">रेफरेंस है</a>
                             </li>
                         </ul>
 
@@ -205,6 +229,7 @@
                                     <tr>
                                         <th>क्र.</th>
                                         <th style="min-width: 100px;">शिकायतकर्ता</th>
+                                        <th>रेफरेंस</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
                                         <th>विभाग</th>
                                         <th>शिकायत की स्थिति</th>
@@ -212,7 +237,7 @@
                                         {{-- <th>स्थिति</th> --}}
                                         <th>रीव्यू दिनांक</th>
                                         <th>महत्त्व स्तर</th>
-                                        <th>गंभीरता स्तर</th>
+                                        {{-- <th>गंभीरता स्तर</th> --}}
                                         <th>आवेदक</th>
                                         <th>फॉरवर्ड अधिकारी</th>
                                         <th>विस्तार से</th>
@@ -226,11 +251,11 @@
                                                 <br>
                                                 <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
                                                 <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
-                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br>
-                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }} <br><br>
+                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br><br>
                                                 <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
                                             </td>
 
+                                             <td>{{ $complaint->reference_name }}</td>
 
                                             <td
                                                 title="
@@ -276,9 +301,9 @@
                                                 {{ $complaint->latestReply?->importance ?? 'N/A' }}
                                             </td>
 
-                                            <td>
+                                            {{-- <td>
                                                 {{ $complaint->latestReply?->criticality ?? 'N/A' }}
-                                            </td>
+                                            </td> --}}
 
 
                                             {{-- <td>{{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}
@@ -429,7 +454,8 @@
                         from_date: $('#from_date').val(),
                         to_date: $('#to_date').val(),
                         reply_id: $('#reply_id').val(),
-                        admin_id: $('#admin_id').val()
+                        admin_id: $('#admin_id').val(),
+                        complaintOtherFilter: $('#complaintOtherFilter').val()
                     };
 
                     $.ajax({
