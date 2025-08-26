@@ -371,7 +371,31 @@
                 let table = $('#example').DataTable({
                     pageLength: 10,
                     responsive: true,
-                    destroy: true
+                    destroy: true,
+                    dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
+                        '<"row"<"col-sm-12"tr>>' +
+                        '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+                    buttons: [{
+                            extend: "csv",
+                            exportOptions: {
+                                modifier: {
+                                    page: "all"
+                                }
+                            },
+                        },
+                        {
+                            extend: "excel",
+                            exportOptions: {
+                                modifier: {
+                                    page: "all"
+                                }
+                            },
+                        },
+                    ],
+                    lengthMenu: [
+                        [10, 25, 50, 100, 500, -1],
+                        [10, 25, 50, 100, 500, "All"],
+                    ],
                 });
 
                 $('#applyFilters').on('click', function(e) {

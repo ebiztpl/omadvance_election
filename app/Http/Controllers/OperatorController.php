@@ -1473,12 +1473,12 @@ class OperatorController extends Controller
                                     $f2->where('fs.followup_created_by', $userId)
                                         ->when($status === 'completed_by_me', fn($q) => $q->where('fs.followup_status', 2))
                                         ->when($status === 'pending_by_me', fn($q) => $q->where('fs.followup_status', 1)->whereDate('fs.followup_date', $today))
-                                        ->when($status === 'upcoming_by_me', fn($q) => $q->where('fs.followup_status', 1)->whereDate('fs.followup_date', '<=', $today));
+                                        ->when($status === 'upcoming_by_me', fn($q) => $q->where('fs.followup_status', 1)->whereDate('fs.followup_date', '<', $today));
                                 })
                                 ->when($request->filled('followup_status_filter'), function ($f2) use ($request, $today) {
                                     $status = $request->followup_status_filter;
                                     $f2->when($status === 'completed', fn($q) => $q->where('fs.followup_status', 2))
-                                        ->when($status === 'upcoming', fn($q) => $q->where('fs.followup_status', 1)->whereDate('fs.followup_date', '<=', $today))
+                                        ->when($status === 'upcoming', fn($q) => $q->where('fs.followup_status', 1)->whereDate('fs.followup_date', '<', $today))
                                         ->when($status === 'not_done', fn($q) => $q->where('fs.followup_status', 1)->whereDate('fs.followup_date', $today));
                                 });
                         });
