@@ -114,4 +114,37 @@ class Reply extends Model
     {
         return $this->belongsTo(\App\Models\User::class, 'reply_from', 'admin_id');
     }
+
+    public function followups()
+    {
+        return $this->hasMany(FollowupStatus::class, 'complaint_reply_id', 'complaint_reply_id');
+    }
+
+    public function latestFollowup()
+    {
+        return $this->hasOne(FollowupStatus::class, 'complaint_reply_id')
+            ->latestOfMany('followup_id'); // use followup_id, not id
+    }
+
+    public function latestFollowupAlways()
+    {
+        return $this->hasOne(FollowupStatus::class, 'complaint_reply_id')
+            ->latest('followup_date');
+    }
+
+
+    public function latestFollowupNotCompleted()
+    {
+        $today = now()->toDateString();
+
+        return $this->hasOne(FollowupStatus::class, 'complaint_reply_id')
+            ->where(function ($q) use ($today) {
+                $q->where('followup_status', '!=', 2)
+                    ->orWhere(function ($q2) use ($today) {
+                        $q2->where('followup_status', 1)
+                            ->whereDate('followup_date', '!=', $today);
+                    });
+            })
+            ->latest('followup_date');
+    }
 }

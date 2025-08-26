@@ -32,7 +32,7 @@
                         </div>
 
                         <div class="col-md-2">
-                            <label>शिकायत प्रकार</label>
+                            <label>सुचना प्रकार</label>
                             <select name="complaint_type" id="complaint_type" class="form-control">
                                 <option value="शुभ सुचना" selected>शुभ सुचना</option>
                                 <option value="अशुभ सुचना">अशुभ सुचना</option>
@@ -94,12 +94,21 @@
                         <div class="col-md-2">
                             <label>सुचना तिथि से</label>
                             <input type="date" name="from_date" id="from_date" class="form-control">
-
                         </div>
 
                         <div class="col-md-2">
                             <label>सुचना तिथि तक</label>
                             <input type="date" name="to_date" id="to_date" class="form-control">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>कार्यक्रम दिनांक से</label>
+                            <input type="date" name="programfrom_date" id="programfrom_date" class="form-control">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>कार्यक्रम दिनांक तक</label>
+                            <input type="date" name="programto_date" id="programto_date" class="form-control">
                         </div>
 
                         <div class="col-md-2">
@@ -149,6 +158,7 @@
                                     <tr>
                                         <th>क्र.</th>
                                         <th style="min-width: 100px;">सूचनाकर्ता</th>
+                                        <th>रेफरेंस</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
                                         <th>सूचना की स्थिति</th>
                                         <th>आवेदक</th>
@@ -166,11 +176,11 @@
                                                 <br>
                                                 <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
                                                 <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
-                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br>
-                                                <strong>रेफरेंस: </strong>{{ $complaint->reference_name ?? '' }} <br><br>
+                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br><br>
                                                 <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
                                             </td>
 
+                                             <td>{{ $complaint->reference_name }}</td>
 
                                             <td
                                                 title="
@@ -310,6 +320,8 @@
                         area_id: $('#area_id').val(),
                         from_date: $('#from_date').val(),
                         to_date: $('#to_date').val(),
+                        programfrom_date: $('#programfrom_date').val(),
+                        programto_date: $('#programto_date').val(),
                         issue_title: $('#issue_title').val(),
                         admin_id: $('#admin_id').val()
                     };

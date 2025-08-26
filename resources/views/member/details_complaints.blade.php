@@ -1,9 +1,17 @@
 @php
-    $pageTitle = 'समस्याएँ देखे';
-    $breadcrumbs = [
-        'फ़ील्ड' => '#',
-        'समस्याएँ देखे' => '#',
-    ];
+    if (in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना'])) {
+        $pageTitle = 'सूचनाएँ देखे';
+        $breadcrumbs = [
+            'फ़ील्ड' => '#',
+            'सूचनाएँ देखे' => '#',
+        ];
+    } else {
+        $pageTitle = 'समस्याएँ देखें';
+        $breadcrumbs = [
+            'फ़ील्ड' => '#',
+            'समस्याएँ देखें' => '#',
+        ];
+    }
 @endphp
 
 @extends('layouts.app')
@@ -19,9 +27,24 @@
             </div>
             <div class="card-body row g-3">
                 @php
+
+                if (in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना'])) {
+                        $nameLabel = 'सूचनाकर्ता का नाम';
+                        $mobileLabel = 'सूचनाकर्ता का मोबाइल';
+                        $date = 'सूचना दिनांक';
+                    } elseif ($complaint->complaint_type === 'विकास') {
+                        $nameLabel = 'मांगकर्ता का नाम';
+                        $mobileLabel = 'मांगकर्ता का मोबाइल';
+                        $date = 'शिकायत दिनांक';
+                    } else {
+                        $nameLabel = 'शिकायतकर्ता का नाम';
+                        $mobileLabel = 'शिकायतकर्ता का मोबाइल';
+                        $date = 'शिकायत दिनांक';
+                    }
+
                     $fields = [
-                        'शिकायतकर्ता का नाम' => $complaint->name ?? '',
-                        'शिकायतकर्ता का मोबाइल' => $complaint->mobile_number ?? '',
+                         $nameLabel => $complaint->name,
+                        $mobileLabel => $complaint->mobile_number,
                         'पिता का नाम' => $complaint->father_name,
                         'रेफरेंस नाम' => $complaint->reference_name,
                         'मतदाता पहचान' => $complaint->voter_id ?? '',
@@ -50,7 +73,7 @@
                         'शिक्षा' => $complaint->registration->education ?? '',
                         'व्यवसाय' => $complaint->registration->business ?? '',
                         'पद' => $complaint->registration->position ?? '',
-                        'शिकायत का दिनांक' => $complaint->posted_date ?? '',
+                        $date => $complaint->posted_date,
                     ];
                 @endphp
 
@@ -105,48 +128,7 @@
             </div>
         </div>
 
-        {{-- Reply History --}}
-        {{-- <div class="card container" style="color: #000; ">
-            <h5 class="my-3">Reply History for {{ $complaint->complaint_number }}</h5>
-            <div class="row">
-                @foreach ($complaint->replies as $reply)
-                    <div class="col-md-4 mb-4">
-                        <div class="card h-100" style="border: 1px solid black">
-                            <div class="card-body">
-                                
-                                <p><strong>समस्या/समाधान:</strong> {{ $reply->complaint_reply }}</p>
-                                <p><strong>दिनांक:</strong>
-                                    {{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y') : 'N/A' }}
-                                </p>
-                                @php
-                                    $replyFromName =
-                                        $reply->reply_from == 1 ? $reply->complaint->user->name ?? 'User' : 'BJS Team';
-                                @endphp
-
-                                <p><strong>प्रतिक्रिया देने वाला:</strong> {{ $replyFromName }}</p>
-
-                                @if (!empty($reply->cb_photo))
-                                    <label class="form-label mr-3"><strong>पूर्व स्थिति की तस्वीर: </strong></label>
-                                    <a href="{{ asset($reply->cb_photo) }}" class="btn btn-primary mb-3"
-                                        target="_blank">अटैचमेंट खोलें</a>
-                                @endif
-
-                                @if (!empty($reply->ca_photo))
-                                    <label class="form-label mr-4"><strong>बाद की तस्वीर: </strong></label>
-                                    <a href="{{ asset($reply->ca_photo) }}" class="btn btn-primary" target="_blank">अटैचमेंट खोलें</a>
-                                @endif
-
-                                @if (!empty($reply->c_video))
-                                    <label class="form-label mr-4"><strong>यूट्यूब लिंक: </strong></label>
-                                    <a href="{{ asset($reply->c_video) }}" class="btn btn-primary"
-                                        target="_blank">{{ $reply->c_video }}</a>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div> --}}
+       
 
         <div class="card container" style="color: #000;">
             <h5 class="my-3">Reply History for {{ $complaint->complaint_number }}</h5>
@@ -155,84 +137,63 @@
                 <table class="table table-bordered">
                     <thead class="thead-dark">
                         <tr>
-                            <th>निर्धारित उत्तर</th>
+                            @if (!in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
+                                <th>निर्धारित उत्तर</th>
+                            @endif
                             <th>स्थिति</th>
                             <th>दिनांक</th>
-                            <th>भेजा गया</th>
-                            <th>रीव्यू दिनांक</th>
-                            <th>महत्त्व स्तर</th>
-                            <th>गंभीरता स्तर</th>
+                            <th>द्वारा भेजा गया</th>
+                            <th>को भेजा गया</th>
+                            @if (!in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
+                                <th>रीव्यू दिनांक</th>
+                                <th>महत्त्व स्तर</th>
+                                {{-- <th>गंभीरता स्तर</th> --}}
+                            @endif
                             <th>विवरण देखें</th>
-                            {{-- <th>समस्या/समाधान</th>
-                            <th>पूर्व स्थिति की तस्वीर</th>
-                            <th>बाद की तस्वीर</th>
-                            <th>यूट्यूब लिंक</th> --}}
                         </tr>
                     </thead>
                     <tbody style="color: #000;">
-                        @forelse ($complaint->replies as $reply)
-                            {{-- @php
-                                $replyFromName =
-                                    $reply->reply_from == 1 ? $reply->complaint->user->name ?? 'User' : 'BJS Team';
-                            @endphp --}}
+                       @forelse ($complaint->replies as $reply)
                             <tr>
-                                <td> {{ $reply->selected_reply === 0 ? 'अन्य' : $reply->predefinedReply->reply ?? '-' }}
-                                </td>
+                                @if (!in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
+                                    <td>{{ $reply->selected_reply === 0 ? 'अन्य' : $reply->predefinedReply->reply ?? '-' }}
+                                    </td>
+                                @endif
                                 <td>{!! $reply->statusTextPlain() !!}</td>
                                 <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') : 'N/A' }}
                                 </td>
+                                <td>{{ $reply->replyfrom?->admin_name ?? '' }}</td>
                                 <td> {{ $reply->forwardedToManager?->admin_name ?? '' }}</td>
-                                  <td> {{ $reply->review_date ?? '' }}</td>
-                                <td> {{ $reply->importance ?? '' }}</td>
-                                <td> {{ $reply->criticality ?? '' }}</td>
+                                @if (!in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
+                                    <td> {{ $reply->review_date ?? '' }}</td>
+                                    <td> {{ $reply->importance ?? '' }}</td>
+                                    {{-- <td> {{ $reply->criticality ?? '' }}</td> --}}
+                                @endif
                                 <td>
                                     <button type="button" class="btn btn-sm btn-info view-details-btn" data-toggle="modal"
                                         data-target="#detailsModal" data-reply="{{ $reply->complaint_reply }}"
                                         data-contact="{{ $reply->contact_status }}"
-                                         data-details="{{ $reply->contact_update }}"
-                                                                                data-review="{{ $reply->review_date }}"
-                                        data-importance="{{ $reply->importance }}"
-                                        data-critical="{{ $reply->criticality }}"
+                                        data-details="{{ $reply->contact_update }}"
+                                        data-review="{{ $reply->review_date }}" data-importance="{{ $reply->importance }}"
+                                        {{-- data-critical="{{ $reply->criticality }}" --}}
+                                        data-reply_from="{{ $reply->replyfrom?->admin_name ?? '' }}"
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
-                                         data-status="{{ strip_tags($reply->statusTextPlain()) }}"
-                                        data-predefined="{{ $reply->selected_reply === 0 ? 'अन्य' : ($reply->predefinedReply->reply ?? '-') }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
-                                        {{-- data-predefined="{{ $reply->predefinedReply->reply ?? '-' }}" --}}
+                                        data-status-html="{!! htmlspecialchars($reply->statusText(), ENT_QUOTES, 'UTF-8') !!}"
+                                        data-predefined="{{ $reply->selected_reply === 0 ? 'अन्य' : $reply->predefinedReply->reply ?? '-' }}"
                                         data-cb-photo="{{ $reply->cb_photo ? asset($reply->cb_photo) : '' }}"
                                         data-ca-photo="{{ $reply->ca_photo ? asset($reply->ca_photo) : '' }}"
                                         data-video="{{ $reply->c_video ? asset($reply->c_video) : '' }}">
                                         विवरण
                                     </button>
                                 </td>
-                                {{-- <td>{{ $replyFromName }}</td> --}}
-                                {{-- <td>
-                                    @if (!empty($reply->cb_photo))
-                                        <a href="{{ asset($reply->cb_photo) }}" class="btn btn-sm btn-primary"
-                                            target="_blank">खोलें</a>
-                                    @else
-                                        —
-                                    @endif
-                                </td>
-                                <td>
-                                    @if (!empty($reply->ca_photo))
-                                        <a href="{{ asset($reply->ca_photo) }}" class="btn btn-sm btn-primary"
-                                            target="_blank">खोलें</a>
-                                    @else
-                                        —
-                                    @endif
-                                </td>
-                                <td>
-                                    @if (!empty($reply->c_video))
-                                        <a href="{{ $reply->c_video }}" class="btn btn-sm btn-primary"
-                                            target="_blank">लिंक</a>
-                                    @else
-                                        —
-                                    @endif
-                                </td> --}}
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">कोई जवाब उपलब्ध नहीं है।</td>
+                                <td colspan="{{ in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']) ? 5 : 8 }}"
+                                    class="text-center">
+                                    कोई जवाब उपलब्ध नहीं है।
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -254,7 +215,7 @@
 
                     <div class="modal-body">
                         <div class="border p-2 rounded mb-4 bg-light">
-                            <h5>समस्या / समाधान</h5>
+                            <h5>विवरण</h5>
                             <p id="modal-reply">—</p>
                         </div>
 
@@ -285,55 +246,60 @@
                                 </table>
                             </div>
 
-                             <div class="table-responsive">
-                                <table style="color: black" class="table table-bordered text-center align-middle">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>रीव्यू दिनांक</th>
-                                            <th>महत्त्व स्तर</th>
-                                            <th>गंभीरता स्तर</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td id="modal-review">—</td>
-                                            <td id="modal-importance">—</td>
-                                            <td id="modal-critical">—</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="border p-2 rounded mb-3 bg-light">
-                                <h5 class="mb-3 text-center">अटैचमेंट्स</h5>
-                                <div class="d-flex flex-wrap justify-content-center gap-2">
-                                    <div class="card p-3 mr-2  border-0 shadow rounded" style="background-color: #ffffff;">
-                                        <div class="text-center" style="width: 200px;">
-                                            <div>पूर्व स्थिति की तस्वीर</div>
-                                            <a href="#" id="cb-photo-link" class="btn btn-sm btn-outline-primary mt-1"
-                                                target="_blank">खोलें</a>
-                                        </div>
-                                    </div>
-
-                                    <div class="card p-3 mr-2  border-0 shadow rounded" style="background-color: #ffffff;">
-                                        <div class="text-center" style="width: 200px;">
-                                            <div>बाद की तस्वीर</div>
-                                            <a href="#" id="ca-photo-link"
-                                                class="btn btn-sm btn-outline-primary mt-1" target="_blank">खोलें</a>
-                                        </div>
-                                    </div>
-
-                                    <div class="card p-3 mr-2  border-0 shadow rounded"
-                                        style="background-color: #ffffff;">
-                                        <div class="text-center" style="width: 200px;">
-                                            <div>वीडियो लिंक</div>
-                                            <a href="#" id="video-link" class="btn btn-sm btn-outline-primary mt-1"
-                                                target="_blank">खोलें</a>
-                                        </div>
-                                    </div>
-
+                              @if (!in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
+                                <div class="table-responsive">
+                                    <table style="color: black" class="table table-bordered text-center align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>पूर्वनिर्धारित उत्तर</th>
+                                                <th>रीव्यू दिनांक</th>
+                                                <th>महत्त्व स्तर</th>
+                                                {{-- <th>गंभीरता स्तर</th> --}}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td id="modal-predefined">—</td>
+                                                <td id="modal-review">—</td>
+                                                <td id="modal-importance">—</td>
+                                                {{-- <td id="modal-critical">—</td> --}}
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
-                            </div>
+
+                                <div class="border p-2 rounded mb-3 bg-light">
+                                    <h5 class="mb-3 text-center">अटैचमेंट्स</h5>
+                                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                                        <div class="card p-3 mr-2 border-0 shadow rounded"
+                                            style="background-color: #ffffff;">
+                                            <div class="text-center" style="width: 200px;">
+                                                <div>पूर्व स्थिति की तस्वीर</div>
+                                                <a href="#" id="cb-photo-link"
+                                                    class="btn btn-sm btn-outline-primary mt-1" target="_blank">खोलें</a>
+                                            </div>
+                                        </div>
+
+                                        <div class="card p-3 mr-2 border-0 shadow rounded"
+                                            style="background-color: #ffffff;">
+                                            <div class="text-center" style="width: 200px;">
+                                                <div>बाद की तस्वीर</div>
+                                                <a href="#" id="ca-photo-link"
+                                                    class="btn btn-sm btn-outline-primary mt-1" target="_blank">खोलें</a>
+                                            </div>
+                                        </div>
+
+                                        <div class="card p-3 mr-2 border-0 shadow rounded"
+                                            style="background-color: #ffffff;">
+                                            <div class="text-center" style="width: 200px;">
+                                                <div>वीडियो लिंक</div>
+                                                <a href="#" id="video-link"
+                                                    class="btn btn-sm btn-outline-primary mt-1" target="_blank">खोलें</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
 
                     </div>
@@ -445,7 +411,6 @@
                 const review = $(this).data('review');
                 const importance = $(this).data('importance');
                 const details = $(this).data('details') || '—';
-                const critical = $(this).data('critical');
 
                 $('#modal-reply').text(reply);
                 $('#modal-status').text(status);
@@ -455,7 +420,6 @@
                 $('#modal-contact').text(contact);
                 $('#modal-review').text(review);
                 $('#modal-importance').text(importance);
-                $('#modal-critical').text(critical);
                 $('#modal-details').text(details);
 
                 cbPhoto ? $('#cb-photo-link').attr('href', cbPhoto).show() : $('#cb-photo-link').hide();

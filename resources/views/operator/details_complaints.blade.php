@@ -126,7 +126,6 @@
                             @if (!in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
                                 <th>रीव्यू दिनांक</th>
                                 <th>महत्त्व स्तर</th>
-                                <th>गंभीरता स्तर</th>
                             @endif
                             <th>विवरण देखें</th>
                         </tr>
@@ -146,7 +145,6 @@
                                 @if (!in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
                                     <td>{{ $reply->review_date ?? '' }}</td>
                                     <td>{{ $reply->importance ?? '' }}</td>
-                                    <td>{{ $reply->criticality ?? '' }}</td>
                                 @endif
 
                                 <td>
@@ -231,7 +229,6 @@
                                                 <th>पूर्वनिर्धारित उत्तर</th>
                                                 <th>रीव्यू दिनांक</th>
                                                 <th>महत्त्व स्तर</th>
-                                                <th>गंभीरता स्तर</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -239,7 +236,6 @@
                                                 <td id="modal-predefined">—</td>
                                                 <td id="modal-review">—</td>
                                                 <td id="modal-importance">—</td>
-                                                <td id="modal-critical">—</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -288,9 +284,17 @@
             <div class="card-body">
 
                 @if ($disableReply)
+                @if (in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
                     <div class="alert alert-warning">
+                        इस सुचना का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
+                    </div>
+
+                     @else
+
+                     <div class="alert alert-warning">
                         इस शिकायत का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
                     </div>
+                     @endif
                 @endif
 
                 <form id="replyForm" method="POST"
@@ -351,15 +355,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-2 toggle-field">
-                            <label for="criticality form-label">गंभीरता स्तर:</label>
-                            <select name="criticality" class="form-control" @if ($disableReply) disabled @endif>
-                                <option value="">--चयन करें--</option>
-                                <option value="अत्यधिक">अत्यधिक</option>
-                                <option value="मध्यम">मध्यम</option>
-                                <option value="कम">कम</option>
-                            </select>
-                        </div>
+                        
 
 
                     </div>
@@ -417,7 +413,6 @@
                 const video = $(this).data('video');
                 const review = $(this).data('review');
                 const importance = $(this).data('importance');
-                const critical = $(this).data('critical');
                 const details = $(this).data('details') || '—';
 
                 $('#modal-reply').text(reply);
@@ -428,7 +423,6 @@
                 $('#modal-contact').text(contact);
                 $('#modal-review').text(review);
                 $('#modal-importance').text(importance);
-                $('#modal-critical').text(critical);
                 $('#modal-details').text(details);
                 $('#modal-reply-from').text(reply_from);
 
