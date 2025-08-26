@@ -21,6 +21,7 @@ class FollowupStatus extends Model
 
     protected $fillable = [
         'complaint_reply_id',
+        'complaint_id',
         'followup_contact_status',
         'followup_contact_description',
         'followup_status',
@@ -28,17 +29,17 @@ class FollowupStatus extends Model
         'followup_date',
     ];
 
-    // public function reply()
-    // {
-    //     return $this->belongsTo(Reply::class, 'complaint_reply_id');
-    // }
+    public function createdByAdmin()
+    {
+        return $this->belongsTo(User::class, 'followup_created_by');
+    }
 
     public function followup_status_text()
     {
         return match ($this->followup_status) {
             0 => 'Not Done',
-            1 => 'Done but Not Completed',
-            2 => 'Completed',
+            1 => 'फॉलोअप किया गया है, लेकिन कार्य अपूर्ण है',
+            2 => 'पूर्ण',
             default => 'Unknown',
         };
     }

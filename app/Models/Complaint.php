@@ -174,4 +174,13 @@ class Complaint extends Model
         return $this->hasOne(Reply::class, 'complaint_id')
             ->latestOfMany('reply_date'); 
     }
+
+    public function latestReplyWithoutFollowup()
+    {
+        return $this->hasOne(Reply::class, 'complaint_id')
+            ->latest('reply_date')
+            ->whereDoesntHave('followups')
+            ->where('complaint_reply', '!=', 'शिकायत दर्ज की गई है।')
+            ->latestOfMany('reply_date');
+    }
 }
