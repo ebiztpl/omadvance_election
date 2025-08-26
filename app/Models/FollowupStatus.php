@@ -38,8 +38,8 @@ class FollowupStatus extends Model
     {
         return match ($this->followup_status) {
             0 => 'Not Done',
-            1 => 'फॉलोअप किया गया है, लेकिन कार्य अपूर्ण है',
-            2 => 'पूर्ण',
+            1 => '<button class="btn btn-info">पूर्ण</button>',
+            2 => '<button class="btn btn-warning">फॉलोअप किया गया है, लेकिन कार्य अपूर्ण है</button>',
             default => 'Unknown',
         };
     }

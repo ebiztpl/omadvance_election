@@ -1641,6 +1641,7 @@ class OperatorController extends Controller
         $complaint = Complaint::with(
             'replies.predefinedReply',
             'replies.forwardedToManager',
+            'replies.followups.createdByAdmin',
             'registration',
             'division',
             'district',
