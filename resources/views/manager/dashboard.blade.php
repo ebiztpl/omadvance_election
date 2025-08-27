@@ -408,6 +408,42 @@
                         </div>
                     </div>
                 </div>
+
+
+                <div class="row">
+                    <div class="col-xl-12 col-lg-12 col-md-12">
+                        <div class="card" style="background-color: #E7FBE6">
+                            <div class="card-body">
+                                <div class="card-header mb-2" style="border-bottom: 2px solid gray;">
+                                    <h4 class="card-title suchna mb-0">फॉलोअप स्थिति</h4>
+
+                                    <select id="date-filter-followup" class="form-control w-auto">
+                                        <option value="सभी" selected>सभी</option>
+                                        <option value="आज">आज</option>
+                                        <option value="कल">कल</option>
+                                        <option value="पिछले सात दिन">पिछले सात दिन</option>
+                                        <option value="पिछले तीस दिन">पिछले तीस दिन</option>
+                                    </select>
+                                </div>
+                                <div class="table-responsive mt-3">
+                                    <table class="table text-center custom-bordered-table" style="color: black;">
+                                        <thead>
+                                            <tr>
+                                                <th>शिकायत प्रकार</th>
+                                                <th>पूर्ण</th>
+                                                <th>अपूर्ण</th>
+                                                <th>प्रक्रिया में</th>
+                                                {{-- <th>फॉलोअप बाकी</th> --}}
+                                            </tr>
+                                        </thead>
+                                        <tbody id="followup-table-body">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
 
@@ -894,13 +930,13 @@
                 //         } else {
                 //             data.forEach(item => {
                 //                 $list.append(`
-                //                  <a href="/complaints/status-details?status=${item.status}" target="_blank"                  class="text-decoration-none" style="color: black">
-                //             <li class="d-flex justify-content-between border-bottom py-1">
-                //                 <span>${item.status}</span>
-                //                 <span class="badge bg-success text-white">${item.total}</span>
-                //             </li>
-                //                     </a>
-                //         `);
+        //                  <a href="/complaints/status-details?status=${item.status}" target="_blank"                  class="text-decoration-none" style="color: black">
+        //             <li class="d-flex justify-content-between border-bottom py-1">
+        //                 <span>${item.status}</span>
+        //                 <span class="badge bg-success text-white">${item.total}</span>
+        //             </li>
+        //                     </a>
+        //         `);
                 //             });
                 //         }
                 //     },
@@ -1111,6 +1147,63 @@
                             `<tr><td colspan="5" class="text-danger text-center">डेटा लोड करने में त्रुटि</td></tr>`
                         );
                     }
+                });
+
+
+                function getFollowupUrl(status, filter, type) {
+                    let baseUrl = "{{ route('complaints.followupDetails') }}";
+                    return `${baseUrl}?status=${encodeURIComponent(status)}&filter=${encodeURIComponent(filter)}&type=${encodeURIComponent(type)}`;
+                }
+
+                function loadFollowupCounts(filter = 'सभी') {
+                    $.ajax({
+                        url: "{{ route('dashboard.followupCounts') }}",
+                        method: "GET",
+                        data: {
+                            date: filter
+                        },
+                        dataType: "json",
+                        success: function(data) {
+                            const $tbody = $("#followup-table-body");
+                            $tbody.empty();
+
+                            if (!data || data.length === 0) {
+                                $tbody.append(`
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">कोई डेटा उपलब्ध नहीं</td>
+                                    </tr>
+                                `);
+                                return;
+                            }
+
+                            data.forEach(row => {
+                                $tbody.append(`
+                                    <tr>
+                                        <td>${row.complaint_type}</td>
+                                        <td><a href="${getFollowupUrl('completed', filter, row.complaint_type)}"><span class="badge badge-pill badge-success text-white">${row.completed}</span></a></td>
+                                        <td><a href="${getFollowupUrl('pending', filter, row.complaint_type)}"><span class="badge badge-pill badge-primary text-white">${row.pending}</span></a></td>
+                                        <td><a href="${getFollowupUrl('in_process', filter, row.complaint_type)}"><span class="badge badge-pill badge-info text-white">${row.in_process}</span></a></td>
+                                       
+                                    </tr>
+                                `);
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching Followup Counts:", error);
+                            const $tbody = $("#followup-table-body");
+                            $tbody.html(`
+                                <tr>
+                                    <td colspan="4" class="text-danger text-center">डेटा लोड करने में त्रुटि</td>
+                                </tr>
+                            `);
+                        }
+                    });
+                }
+
+                loadFollowupCounts($('#date-filter-followup').val());
+
+                $('#date-filter-followup').on('change', function() {
+                    loadFollowupCounts($(this).val());
                 });
 
                 // $.ajax({
