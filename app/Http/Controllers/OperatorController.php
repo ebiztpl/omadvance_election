@@ -1553,7 +1553,7 @@ class OperatorController extends Controller
                       <strong>नाम: </strong>' . $complaint->name . '<br>
                       <strong>मोबाइल: </strong>' . $complaint->mobile_number . '<br>
                       <strong>पुत्र श्री: </strong>' . $complaint->father_name . '<br>
-                      <strong>आवेदक: </strong>' . ($complaint->type == 2 ? $complaint->admin->admin_name : $complaint->registrationDetails->name) . '<br>
+                       <strong>आवेदक: </strong>' . ($complaint->type == 2 ? ($complaint->admin->admin_name ?? 'N/A') : ($complaint->registrationDetails->name ?? 'N/A')) . '<br>
                       <strong>विभाग: </strong>' . $complaint->complaint_department . '<br><br>
                       <strong>शिकायत तिथि: </strong>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '<br><br>
                       <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '</td>';
