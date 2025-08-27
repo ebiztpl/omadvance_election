@@ -1180,9 +1180,9 @@
                                 $tbody.append(`
                                     <tr>
                                         <td>${row.complaint_type}</td>
-                                        <td><a href="${getFollowupUrl('completed', filter, row.complaint_type)}"><span class="badge badge-pill badge-success text-white">${row.completed}</span></a></td>
-                                        <td><a href="${getFollowupUrl('pending', filter, row.complaint_type)}"><span class="badge badge-pill badge-primary text-white">${row.pending}</span></a></td>
-                                        <td><a href="${getFollowupUrl('in_process', filter, row.complaint_type)}"><span class="badge badge-pill badge-info text-white">${row.in_process}</span></a></td>
+                                        <td><a href="${getFollowupUrl('completed', filter, row.complaint_type)}" target="_blank"><span class="badge badge-pill badge-success text-white">${row.completed}</span></a></td>
+                                        <td><a href="${getFollowupUrl('pending', filter, row.complaint_type)}" target="_blank"><span class="badge badge-pill badge-primary text-white">${row.pending}</span></a></td>
+                                        <td><a href="${getFollowupUrl('in_process', filter, row.complaint_type)}" target="_blank"><span class="badge badge-pill badge-info text-white">${row.in_process}</span></a></td>
                                        
                                     </tr>
                                 `);
