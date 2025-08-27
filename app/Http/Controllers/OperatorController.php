@@ -189,6 +189,7 @@ class OperatorController extends Controller
             'name' => $request->txtname,
             'mobile_number' => $request->mobile,
             'father_name' => $request->father_name,
+            'reference_name' => $request->reference,
             'email' => $request->mobile,
             'voter_id' => $request->voter,
             'complaint_type' => $request->type,

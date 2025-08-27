@@ -7,6 +7,7 @@ use App\Models\Division;
 use App\Models\Category;
 use App\Models\Interest;
 use App\Models\Business;
+use App\Models\FollowupStatus;
 use App\Models\Education;
 use App\Models\Politics;
 use App\Models\Religion;
@@ -121,8 +122,8 @@ class ManagerController extends Controller
                         SELECT MAX(cr2.complaint_reply_id) 
                         FROM complaint_reply cr2 
                         WHERE cr2.complaint_id = cr1.complaint_id
-                    )')
-                        ->whereNotIn('cr1.complaint_status', [4, 5]); // exclude पूर्ण & रद्द
+                    )');
+                        // ->whereNotIn('cr1.complaint_status', [4, 5]); // exclude पूर्ण & रद्द
                 })
                 ->groupBy('type')
                 ->get();
@@ -676,7 +677,7 @@ class ManagerController extends Controller
             ->whereHas('complaint', function ($query) {
                 $query->whereNotIn('complaint_status', [4, 5]);
             })
-            ->with('complaint:complaint_id,complaint_type') 
+            ->with('complaint:complaint_id,complaint_type')
             ->get();
 
         // Count complaints by manager + type
@@ -752,6 +753,151 @@ class ManagerController extends Controller
 
         return response()->json(['count' => $count]);
     }
+
+
+    public function getFollowupCounts(Request $request)
+    {
+        $today = now()->toDateString();
+
+        $complaints = Complaint::with([
+            'latestReplyWithoutFollowup',
+            'latestNonDefaultReply.latestFollowup',
+            'replies.followups'
+        ])
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->whereNotIn('complaint_status', [4, 5])
+            ->get();
+
+        $counts = [];
+
+        foreach ($complaints as $complaint) {
+            $type = $complaint->complaint_type;
+
+            if (!isset($counts[$type])) {
+                $counts[$type] = [
+                    'completed' => 0,
+                    'pending' => 0,
+                    'in_process' => 0,
+                    'not_done' => 0,
+                ];
+            }
+
+            // Pick **the latest relevant reply**: either without followup or non-default with followup
+            $latestReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+
+            // Get latest followup for this reply, if any
+            $latestFollowup = $latestReply?->latestFollowup ?? null;
+
+            if (!$latestFollowup) {
+                $counts[$type]['not_done']++;
+                continue;
+            }
+
+            switch ($latestFollowup->followup_status) {
+                case 2: // Completed
+                    $counts[$type]['completed']++;
+                    break;
+
+                case 1: // Followup done
+                    if ($latestFollowup->followup_date->toDateString() === $today) {
+                        $counts[$type]['pending']++;
+                    } else {
+                        // Check if there is a newer reply after this latest followup
+                        $hasNewReplyAfterFollowup = $complaint->replies()
+                            ->where('reply_date', '>', $latestFollowup->followup_date)
+                            ->where('complaint_reply', '!=', 'शिकायत दर्ज की गई है।')
+                            ->exists();
+
+                        if ($hasNewReplyAfterFollowup) {
+                            $counts[$type]['not_done']++;
+                        } else {
+                            $counts[$type]['in_process']++;
+                        }
+                    }
+                    break;
+
+                case 0: // Not done
+                default:
+                    $counts[$type]['in_process']++;
+                    break;
+            }
+        }
+
+        $result = [];
+        foreach ($counts as $type => $vals) {
+            $result[] = [
+                'complaint_type' => $type,
+                'completed' => $vals['completed'],
+                'pending' => $vals['pending'],
+                'in_process' => $vals['in_process'],
+                // 'not_done' => $vals['not_done'],
+            ];
+        }
+
+        if ($request->ajax()) {
+            return response()->json($result);
+        }
+
+        return view('manager.dashboard');
+    }
+
+
+    public function followupDetails(Request $request)
+    {
+        $status = $request->status;
+        $type = $request->type ?? null;
+        $dateFilter = $request->filter ?? null;
+
+        $today = now()->toDateString();
+
+        $complaints = Complaint::with([
+            'latestReplyWithoutFollowup.replyfrom',
+            'latestReplyWithoutFollowup.forwardedToManager',
+            'latestNonDefaultReply.latestFollowup',
+            'latestNonDefaultReply.replyfrom',
+        ])
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->when($type, fn($q) => $q->where('complaint_type', $type))
+            ->whereNotIn('complaint_status', [4, 5])
+            ->get()
+            ->map(function ($complaint) {
+                // Add a helper attribute for latest reply
+                $complaint->latestRelevantReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+                return $complaint;
+            })
+            ->filter(function ($complaint) use ($status, $today) {
+                // Pick the latest relevant reply per complaint (same as counts)
+                $latestReply = $complaint->latestRelevantReply;
+                $latestFollowup = $latestReply?->latestFollowup ?? null;
+
+                switch ($status) {
+                    case 'completed':
+                        return $latestFollowup && $latestFollowup->followup_status == 2;
+                    case 'pending':
+                        return $latestFollowup && $latestFollowup->followup_status == 1
+                            && $latestFollowup->followup_date->toDateString() === $today;
+                    case 'in_process':
+                        if (!$latestFollowup) return false;
+                        if ($latestFollowup->followup_status == 1 && $latestFollowup->followup_date->toDateString() < $today) {
+                            // Ensure no newer reply exists after latest followup
+                            $hasNewReplyAfterFollowup = $latestReply->complaint->replies()
+                                ->where('reply_date', '>', $latestFollowup->followup_date)
+                                ->where('complaint_reply', '!=', 'शिकायत दर्ज की गई है।')
+                                ->exists();
+                            return !$hasNewReplyAfterFollowup;
+                        }
+                        return $latestFollowup->followup_status == 0;
+                    case 'not_done':
+                        return !$latestFollowup;
+                    default:
+                        return true;
+                }
+            });
+
+        return view('manager/followup_details', compact('complaints', 'status', 'type', 'dateFilter'));
+    }
+
+
 
 
 
@@ -1198,10 +1344,8 @@ class ManagerController extends Controller
     private function getComplaintsBetween($start, $end, $type = null, $user = null)
     {
         $query = Complaint::with(['division', 'district', 'vidhansabha', 'mandal', 'gram', 'polling', 'area', 'registrationDetails', 'admin', 'latestReply'])
-            ->whereBetween('posted_date', [$start, $end])
-            ->whereDoesntHave('latestReply', function ($q) {
-                $q->whereIn('complaint_status', [4, 5]); 
-            });
+            ->whereBetween('posted_date', [$start, $end]);
+            
 
         if ($type) {
             $query->where('complaint_type', $type);
@@ -2292,6 +2436,84 @@ class ManagerController extends Controller
     {
         $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 1)->whereIn('complaint_type', ['समस्या', 'विकास']);
 
+
+        if ($request->filled('complaintOtherFilter')) {
+            switch ($request->complaintOtherFilter) {
+                case 'forwarded_manager':
+                    $loggedInId = session('user_id');
+                    $query->whereHas('replies', function ($q) use ($loggedInId) {
+                        $q->where('forwarded_to', $loggedInId)
+                            ->whereRaw('reply_date = (
+                      SELECT MAX(reply_date)
+                      FROM complaint_reply
+                      WHERE complaint_reply.complaint_id = complaint.complaint_id
+                  )');
+                    });
+                    break;
+
+                case 'not_opened':
+                    $query->whereHas('replies', function ($q) {
+                        $q->where('complaint_status', 1)
+                            ->where('complaint_reply', 'शिकायत दर्ज की गई है।')
+                            ->where('forwarded_to', 6)
+                            ->whereNull('selected_reply');
+                    })->has('replies', '=', 1);
+                    break;
+
+                case 'reviewed':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('review_date')
+                            ->whereRaw('reply_date = (
+                      SELECT MAX(reply_date)
+                      FROM complaint_reply
+                      WHERE complaint_reply.complaint_id = complaint.complaint_id
+                  )');
+                    });
+                    break;
+
+                case 'important':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('importance')
+                            ->whereRaw('reply_date = (
+                      SELECT MAX(reply_date)
+                      FROM complaint_reply
+                      WHERE complaint_reply.complaint_id = complaint.complaint_id
+                  )');
+                    })->orderByRaw("FIELD(
+                (SELECT importance 
+                 FROM complaint_reply 
+                 WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                 ORDER BY reply_date DESC 
+                 LIMIT 1),
+                'उच्च', 'मध्यम', 'कम'
+            )");
+                    break;
+
+                
+
+                case 'closed':
+                    $query->where('complaint_status', 4);
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 5);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+
+                default:
+                    // यदि कोई filter नहीं है या 'all', तो कोई extra condition नहीं लगाई जाएगी
+                    break;
+            }
+        }
+
+
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
         }
@@ -2408,34 +2630,26 @@ class ManagerController extends Controller
                         )");
                     break;
 
-                case 'critical':
-                    $query->whereHas('replies', function ($q) {
-                        $q->whereNotNull('criticality')
-                            ->whereRaw('reply_date = (
-                                    SELECT MAX(reply_date)
-                                    FROM complaint_reply
-                                    WHERE complaint_reply.complaint_id = complaint.complaint_id
-                                )');
-                    })->orderByRaw("FIELD(
-                                (SELECT criticality 
-                                FROM complaint_reply 
-                                WHERE complaint_reply.complaint_id = complaint.complaint_id 
-                                ORDER BY reply_date DESC 
-                                LIMIT 1),
-                                'अत्यधिक', 'मध्यम', 'कम'
-                            )");
-                    break;
+                
 
-                case 'closed': 
+                case 'closed':
                     $query->where('complaint_status', 4);
                     break;
 
-                case 'cancel': 
+                case 'cancel':
                     $query->where('complaint_status', 5);
                     break;
 
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+
                 case 'forwarded_manager':
-                    $loggedInId = session('user_id'); 
+                    $loggedInId = session('user_id');
 
                     $query->whereHas('replies', function ($q) use ($loggedInId) {
                         $q->where('forwarded_to', $loggedInId)
@@ -2446,7 +2660,6 @@ class ManagerController extends Controller
                     )');
                     });
                     break;
-
             }
         }
 
@@ -2478,11 +2691,11 @@ class ManagerController extends Controller
                 <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
                 <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
                 <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
 
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -2520,7 +2733,6 @@ class ManagerController extends Controller
                 $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
 
                 // Criticality
-                $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
 
                 $html .= '<td>' . ($complaint->registrationDetails->name ?? '') . '</td>';
 
@@ -2595,6 +2807,82 @@ class ManagerController extends Controller
         // ->where('vidhansabha_id', $vidhansabhaId);
 
         // Filters
+
+        if ($request->filled('complaintOtherFilter')) {
+            switch ($request->complaintOtherFilter) {
+                case 'forwarded_manager':
+                    $loggedInId = session('user_id');
+                    $query->whereHas('replies', function ($q) use ($loggedInId) {
+                        $q->where('forwarded_to', $loggedInId)
+                            ->whereRaw('reply_date = (
+                      SELECT MAX(reply_date)
+                      FROM complaint_reply
+                      WHERE complaint_reply.complaint_id = complaint.complaint_id
+                  )');
+                    });
+                    break;
+
+                case 'not_opened':
+                    $query->whereHas('replies', function ($q) {
+                        $q->where('complaint_status', 1)
+                            ->where('complaint_reply', 'शिकायत दर्ज की गई है।')
+                            ->where('forwarded_to', 6)
+                            ->whereNull('selected_reply');
+                    })->has('replies', '=', 1);
+                    break;
+
+                case 'reviewed':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('review_date')
+                            ->whereRaw('reply_date = (
+                      SELECT MAX(reply_date)
+                      FROM complaint_reply
+                      WHERE complaint_reply.complaint_id = complaint.complaint_id
+                  )');
+                    });
+                    break;
+
+                case 'important':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('importance')
+                            ->whereRaw('reply_date = (
+                      SELECT MAX(reply_date)
+                      FROM complaint_reply
+                      WHERE complaint_reply.complaint_id = complaint.complaint_id
+                  )');
+                    })->orderByRaw("FIELD(
+                (SELECT importance 
+                 FROM complaint_reply 
+                 WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                 ORDER BY reply_date DESC 
+                 LIMIT 1),
+                'उच्च', 'मध्यम', 'कम'
+            )");
+                    break;
+
+                
+
+                case 'closed':
+                    $query->where('complaint_status', 4);
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 5);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+
+                default:
+                    // यदि कोई filter नहीं है या 'all', तो कोई extra condition नहीं लगाई जाएगी
+                    break;
+            }
+        }
 
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
@@ -2701,7 +2989,7 @@ class ManagerController extends Controller
                         FROM complaint_reply
                         WHERE complaint_reply.complaint_id = complaint.complaint_id
                             )');
-                            })->orderByRaw("FIELD(
+                    })->orderByRaw("FIELD(
                             (SELECT importance 
                             FROM complaint_reply 
                             WHERE complaint_reply.complaint_id = complaint.complaint_id 
@@ -2711,23 +2999,7 @@ class ManagerController extends Controller
                         )");
                     break;
 
-                case 'critical':
-                    $query->whereHas('replies', function ($q) {
-                        $q->whereNotNull('criticality')
-                            ->whereRaw('reply_date = (
-                            SELECT MAX(reply_date)
-                            FROM complaint_reply
-                            WHERE complaint_reply.complaint_id = complaint.complaint_id
-                        )');
-                                    })->orderByRaw("FIELD(
-                        (SELECT criticality 
-                        FROM complaint_reply 
-                        WHERE complaint_reply.complaint_id = complaint.complaint_id 
-                        ORDER BY reply_date DESC 
-                        LIMIT 1),
-                        'अत्यधिक', 'मध्यम', 'कम'
-                    )");
-                    break;
+        
 
                 case 'closed':
                     $query->where('complaint_status', 4);
@@ -2735,6 +3007,14 @@ class ManagerController extends Controller
 
                 case 'cancel':
                     $query->where('complaint_status', 5);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
                     break;
 
                 case 'forwarded_manager':
@@ -2780,12 +3060,11 @@ class ManagerController extends Controller
                 <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
                 <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
                 <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
 
-
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -2823,7 +3102,7 @@ class ManagerController extends Controller
                 $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
 
                 // Criticality
-                $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
+                // $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
                 // $html .= '<td>' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y') . '</td>';
 
                 // // Pending Days or Status
@@ -2885,6 +3164,52 @@ class ManagerController extends Controller
     {
         $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 1)->whereIn('complaint_type', ['अशुभ सुचना', 'शुभ सुचना']);
 
+        if ($request->filled('complaintOtherFilter')) {
+            switch ($request->complaintOtherFilter) {
+                case 'not_opened':
+                    $query->whereHas('replies', function ($q) {
+                        $q->where('complaint_status', 11)
+                            ->where('complaint_reply', 'सुचना दर्ज की गई है।')
+                            ->where('forwarded_to', 6)
+                            ->whereNull('selected_reply');
+                    })->has('replies', '=', 1);
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 18);
+                    break;
+
+                case 'sammilit_done':
+                    $query->where('complaint_status', 13);
+                    break;
+
+                case 'sammilit_notdone':
+                    $query->where('complaint_status', 14);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+
+                case 'forwarded_manager':
+                    $loggedInId = session('user_id');
+
+                    $query->whereHas('replies', function ($q) use ($loggedInId) {
+                        $q->where('forwarded_to', $loggedInId)
+                            ->whereRaw('reply_date = (
+                        SELECT MAX(reply_date)
+                        FROM complaint_reply
+                        WHERE complaint_reply.complaint_id = complaint.complaint_id
+                        )');
+                    });
+                    break;
+            }
+        }
+
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
         }
@@ -2930,6 +3255,14 @@ class ManagerController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
+        if ($request->filled('programfrom_date')) {
+            $query->whereDate('program_date', '>=', $request->programfrom_date);
+        }
+
+        if ($request->filled('programto_date')) {
+            $query->whereDate('program_date', '<=', $request->programto_date);
+        }
+
 
         if ($request->filled('filter')) {
             switch ($request->filter) {
@@ -2944,6 +3277,22 @@ class ManagerController extends Controller
 
                 case 'cancel':
                     $query->where('complaint_status', 18);
+                    break;
+
+                case 'sammilit_done':
+                    $query->where('complaint_status', 13);
+                    break;
+
+                case 'sammilit_notdone':
+                    $query->where('complaint_status', 14);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
                     break;
 
                 case 'forwarded_manager':
@@ -2964,7 +3313,7 @@ class ManagerController extends Controller
         $complaints = $query->orderBy('posted_date', 'desc')->get();
 
         foreach ($complaints as $complaint) {
-            if (!in_array($complaint->complaint_status, [13,14,15,16,17,18])) {
+            if (!in_array($complaint->complaint_status, [13, 14, 15, 16, 17, 18])) {
                 $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
             } else {
                 $complaint->pending_days = 0;
@@ -2989,11 +3338,11 @@ class ManagerController extends Controller
                 <strong>सुचना क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
                 <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
                 <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
             </td>';
 
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -3079,7 +3428,53 @@ class ManagerController extends Controller
     public function viewOperatorSuchnas(Request $request)
     {
         $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 2)->whereIn('complaint_type', ['अशुभ सुचना', 'शुभ सुचना']);
-      
+
+        if ($request->filled('complaintOtherFilter')) {
+            switch ($request->complaintOtherFilter) {
+                case 'not_opened':
+                    $query->whereHas('replies', function ($q) {
+                        $q->where('complaint_status', 11)
+                            ->where('complaint_reply', 'सुचना दर्ज की गई है।')
+                            ->where('forwarded_to', 6)
+                            ->whereNull('selected_reply');
+                    })->has('replies', '=', 1);
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 18);
+                    break;
+
+                case 'sammilit_done':
+                    $query->where('complaint_status', 13);
+                    break;
+
+                case 'sammilit_notdone':
+                    $query->where('complaint_status', 14);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+
+                case 'forwarded_manager':
+                    $loggedInId = session('user_id');
+
+                    $query->whereHas('replies', function ($q) use ($loggedInId) {
+                        $q->where('forwarded_to', $loggedInId)
+                            ->whereRaw('reply_date = (
+                        SELECT MAX(reply_date)
+                        FROM complaint_reply
+                        WHERE complaint_reply.complaint_id = complaint.complaint_id
+                        )');
+                    });
+                    break;
+            }
+        }
+
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
         }
@@ -3125,6 +3520,14 @@ class ManagerController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
+        if ($request->filled('programfrom_date')) {
+            $query->whereDate('program_date', '>=', $request->programfrom_date);
+        }
+
+        if ($request->filled('programto_date')) {
+            $query->whereDate('program_date', '<=', $request->programto_date);
+        }
+
         if ($request->filled('filter')) {
             switch ($request->filter) {
                 case 'not_opened':
@@ -3138,6 +3541,22 @@ class ManagerController extends Controller
 
                 case 'cancel':
                     $query->where('complaint_status', 18);
+                    break;
+
+                case 'sammilit_done':
+                    $query->where('complaint_status', 13);
+                    break;
+
+                case 'sammilit_notdone':
+                    $query->where('complaint_status', 14);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
                     break;
 
                 case 'forwarded_manager':
@@ -3183,12 +3602,11 @@ class ManagerController extends Controller
             <strong>सुचना क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
             <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
             <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-            <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-            <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+            <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
             <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
         </td>';
 
-
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -3231,8 +3649,9 @@ class ManagerController extends Controller
 
                 $html .= '<td>' . ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-') . '</td>';
 
-                $html .= '<td>' . ($complaint->program_date ?? '') . '</td>';
                 $html .= '<td>' . ($complaint->issue_title ?? '') . '</td>';
+                
+                $html .= '<td>' . ($complaint->program_date ?? '') . '</td>';
 
                 // Action Button
                 if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना') {
@@ -3270,7 +3689,7 @@ class ManagerController extends Controller
     }
 
 
-    
+
 
     public function getSubjects($department_id)
     {
@@ -3424,7 +3843,7 @@ class ManagerController extends Controller
         $loggedInManagerId = session('user_id');
 
         $managers = User::where('role', 2)
-            ->where('admin_id', '!=', $loggedInManagerId) 
+            ->where('admin_id', '!=', $loggedInManagerId)
             ->get();
 
         $latestReply = $complaint->replies()->latest('reply_date')->first();
@@ -3550,7 +3969,7 @@ class ManagerController extends Controller
             ]);
         }
 
-        if ($complaint->type == 1) { 
+        if ($complaint->type == 1) {
             if ($complaint->complaint_type === 'शुभ सुचना' || $complaint->complaint_type === 'अशुभ सुचना') {
                 $successMessage = 'कमांडर सूचना का उत्तर सफलतापूर्वक दर्ज किया गया और स्थिति अपडेट हो गई।';
             } else {
