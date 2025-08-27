@@ -1160,7 +1160,7 @@
                         url: "{{ route('dashboard.followupCounts') }}",
                         method: "GET",
                         data: {
-                            date: filter
+                            filter: filter
                         },
                         dataType: "json",
                         success: function(data) {

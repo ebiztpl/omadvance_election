@@ -123,7 +123,7 @@ class ManagerController extends Controller
                         FROM complaint_reply cr2 
                         WHERE cr2.complaint_id = cr1.complaint_id
                     )');
-                        // ->whereNotIn('cr1.complaint_status', [4, 5]); // exclude पूर्ण & रद्द
+                    // ->whereNotIn('cr1.complaint_status', [4, 5]); // exclude पूर्ण & रद्द
                 })
                 ->groupBy('type')
                 ->get();
@@ -757,7 +757,8 @@ class ManagerController extends Controller
 
     public function getFollowupCounts(Request $request)
     {
-        $today = now()->toDateString();
+        $today = Carbon::today();
+        $dateFilter = $request->filter ?? null;
 
         $complaints = Complaint::with([
             'latestReplyWithoutFollowup',
@@ -767,6 +768,30 @@ class ManagerController extends Controller
             ->whereIn('complaint_type', ['समस्या', 'विकास'])
             ->whereNotIn('complaint_status', [4, 5])
             ->get();
+
+        $dateRanges = [
+            'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+            'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+            'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+            'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
+        ];
+
+
+        if ($dateFilter && isset($dateRanges[$dateFilter])) {
+            [$start, $end] = $dateRanges[$dateFilter];
+
+            $complaints = $complaints->filter(function ($complaint) use ($start, $end) {
+                $followup = $complaint->latestReplyWithoutFollowup?->latestFollowup
+                    ?? $complaint->latestNonDefaultReply?->latestFollowup;
+
+                if (!$followup) return false;
+
+                $followupDate = Carbon::parse($followup->followup_date);
+
+                return $followupDate->between($start, $end);
+            });
+        }
+
 
         $counts = [];
 
@@ -848,7 +873,7 @@ class ManagerController extends Controller
         $type = $request->type ?? null;
         $dateFilter = $request->filter ?? null;
 
-        $today = now()->toDateString();
+        $today = Carbon::today();
 
         $complaints = Complaint::with([
             'latestReplyWithoutFollowup.replyfrom',
@@ -861,38 +886,64 @@ class ManagerController extends Controller
             ->whereNotIn('complaint_status', [4, 5])
             ->get()
             ->map(function ($complaint) {
-                // Add a helper attribute for latest reply
                 $complaint->latestRelevantReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
                 return $complaint;
-            })
-            ->filter(function ($complaint) use ($status, $today) {
-                // Pick the latest relevant reply per complaint (same as counts)
+            });
+
+
+
+        $dateRanges = [
+            'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+            'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+            'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+            'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
+        ];
+
+        // Apply date filter if selected
+        if ($dateFilter && isset($dateRanges[$dateFilter])) {
+            [$start, $end] = $dateRanges[$dateFilter];
+
+            $complaints = $complaints->filter(function ($complaint) use ($start, $end) {
                 $latestReply = $complaint->latestRelevantReply;
                 $latestFollowup = $latestReply?->latestFollowup ?? null;
 
-                switch ($status) {
-                    case 'completed':
-                        return $latestFollowup && $latestFollowup->followup_status == 2;
-                    case 'pending':
-                        return $latestFollowup && $latestFollowup->followup_status == 1
-                            && $latestFollowup->followup_date->toDateString() === $today;
-                    case 'in_process':
-                        if (!$latestFollowup) return false;
-                        if ($latestFollowup->followup_status == 1 && $latestFollowup->followup_date->toDateString() < $today) {
-                            // Ensure no newer reply exists after latest followup
-                            $hasNewReplyAfterFollowup = $latestReply->complaint->replies()
-                                ->where('reply_date', '>', $latestFollowup->followup_date)
-                                ->where('complaint_reply', '!=', 'शिकायत दर्ज की गई है।')
-                                ->exists();
-                            return !$hasNewReplyAfterFollowup;
-                        }
-                        return $latestFollowup->followup_status == 0;
-                    case 'not_done':
-                        return !$latestFollowup;
-                    default:
-                        return true;
-                }
+                if (!$latestFollowup) return false;
+
+                $followupDate = Carbon::parse($latestFollowup->followup_date);
+
+                return $followupDate->between($start, $end);
             });
+        }
+
+
+
+        $complaints = $complaints->filter(function ($complaint) use ($status, $today) {
+            $latestReply = $complaint->latestRelevantReply;
+            $latestFollowup = $latestReply?->latestFollowup ?? null;
+
+            switch ($status) {
+                case 'completed':
+                    return $latestFollowup && $latestFollowup->followup_status == 2;
+                case 'pending':
+                    return $latestFollowup && $latestFollowup->followup_status == 1
+                        && $latestFollowup->followup_date->toDateString() === $today;
+                case 'in_process':
+                    if (!$latestFollowup) return false;
+                    if ($latestFollowup->followup_status == 1 && $latestFollowup->followup_date->toDateString() < $today) {
+                        // Ensure no newer reply exists after latest followup
+                        $hasNewReplyAfterFollowup = $latestReply->complaint->replies()
+                            ->where('reply_date', '>', $latestFollowup->followup_date)
+                            ->where('complaint_reply', '!=', 'शिकायत दर्ज की गई है।')
+                            ->exists();
+                        return !$hasNewReplyAfterFollowup;
+                    }
+                    return $latestFollowup->followup_status == 0;
+                case 'not_done':
+                    return !$latestFollowup;
+                default:
+                    return true;
+            }
+        });
 
         return view('manager/followup_details', compact('complaints', 'status', 'type', 'dateFilter'));
     }
@@ -1345,7 +1396,7 @@ class ManagerController extends Controller
     {
         $query = Complaint::with(['division', 'district', 'vidhansabha', 'mandal', 'gram', 'polling', 'area', 'registrationDetails', 'admin', 'latestReply'])
             ->whereBetween('posted_date', [$start, $end]);
-            
+
 
         if ($type) {
             $query->where('complaint_type', $type);
@@ -2489,7 +2540,7 @@ class ManagerController extends Controller
             )");
                     break;
 
-                
+
 
                 case 'closed':
                     $query->where('complaint_status', 4);
@@ -2630,7 +2681,7 @@ class ManagerController extends Controller
                         )");
                     break;
 
-                
+
 
                 case 'closed':
                     $query->where('complaint_status', 4);
@@ -2860,7 +2911,7 @@ class ManagerController extends Controller
             )");
                     break;
 
-                
+
 
                 case 'closed':
                     $query->where('complaint_status', 4);
@@ -2999,7 +3050,7 @@ class ManagerController extends Controller
                         )");
                     break;
 
-        
+
 
                 case 'closed':
                     $query->where('complaint_status', 4);
@@ -3650,7 +3701,7 @@ class ManagerController extends Controller
                 $html .= '<td>' . ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-') . '</td>';
 
                 $html .= '<td>' . ($complaint->issue_title ?? '') . '</td>';
-                
+
                 $html .= '<td>' . ($complaint->program_date ?? '') . '</td>';
 
                 // Action Button
