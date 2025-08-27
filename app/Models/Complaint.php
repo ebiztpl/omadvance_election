@@ -183,4 +183,21 @@ class Complaint extends Model
             ->where('complaint_reply', '!=', 'शिकायत दर्ज की गई है।')
             ->latestOfMany('reply_date');
     }
+
+    public function followups()
+    {
+        return $this->hasMany(FollowupStatus::class, 'complaint_id', 'complaint_id');
+    }
+
+    public function latestFollowup()
+    {
+        return $this->hasOne(FollowupStatus::class, 'complaint_id')
+            ->latestOfMany('followup_date');
+    }
+
+    public function allFollowups()
+    {
+        return $this->hasMany(FollowupStatus::class, 'complaint_id')
+            ->orderBy('followup_date', 'desc');
+    }
 }

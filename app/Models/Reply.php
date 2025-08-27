@@ -153,4 +153,33 @@ class Reply extends Model
         return $this->hasOne(FollowupStatus::class, 'complaint_reply_id')
             ->latestOfMany('followup_date');
     }
+
+
+    public function allFollowups()
+    {
+        return $this->hasMany(FollowupStatus::class, 'complaint_reply_id')
+            ->orderBy('followup_date', 'desc');
+    }
+
+    // Count of followups for this reply
+    public function followupsCount()
+    {
+        return $this->followups()->count();
+    }
+
+    // Get pending followups (not completed)
+    public function pendingFollowups()
+    {
+        return $this->hasMany(FollowupStatus::class, 'complaint_reply_id')
+            ->where('followup_status', '!=', 2)
+            ->orderBy('followup_date', 'desc');
+    }
+
+    // Get completed followups
+    public function completedFollowups()
+    {
+        return $this->hasMany(FollowupStatus::class, 'complaint_reply_id')
+            ->where('followup_status', 2)
+            ->orderBy('followup_date', 'desc');
+    }
 }
