@@ -4841,4 +4841,127 @@ class ManagerController extends Controller
         Politics::destroy($id);
         return redirect()->back()->with('delete_msg', 'राजनीति हटाई गई!');
     }
+
+
+
+
+
+
+    // all followups show in details routes 
+
+    public function followupindex(Request $request)
+    {
+        $operators = User::where('role', 3)->get(['admin_id', 'admin_name']);
+
+        $complaints = Complaint::whereHas('replies.followups', function ($q) use ($request) {
+            $this->applyFollowupFilters($q, $request);
+        })
+            ->with([
+                'replies' => function ($q) use ($request) {
+                    $q->whereHas('followups', function ($q2) use ($request) {
+                        $this->applyFollowupFilters($q2, $request);
+                    })
+                        ->orderBy('reply_date', 'desc')
+                        ->with(['followups' => function ($q2) use ($request) {
+                            $this->applyFollowupFilters($q2, $request)
+                                ->orderBy('followup_date', 'desc')
+                                ->with('createdByAdmin');
+                        }]);
+                },
+                'admin',
+                'registrationDetails',
+                'division',
+                'district',
+                'vidhansabha',
+                'mandal',
+                'gram',
+                'polling',
+                'area'
+            ])
+            ->orderBy('posted_date', 'desc')
+            ->get();
+
+        return view('manager.allfollowups_details', compact('complaints', 'operators'));
+    }
+
+
+    protected function applyFollowupFilters($query, $request)
+    {
+        // Filter by followup status
+        if ($request->filled('status')) {
+            $query->where('followup_status', $request->status);
+        }
+
+        // Filter by followup date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('followup_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('followup_date', '<=', $request->date_to);
+        }
+
+        // Filter by operator who created the followup
+        if ($request->filled('followup_by')) {
+            $query->where('followup_created_by', $request->followup_by);
+        }
+
+        // Filter by complaint details
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('reply.complaint', function ($q) use ($search) {
+                $q->where('complaint_number', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('mobile_number', 'like', "%{$search}%");
+            });
+        }
+
+        // Always order followups by latest first
+        return $query->orderBy('followup_date', 'desc');
+    }
+
+
+
+    // public function allfollowupsdetails(Request $request)
+    // {
+    //     $query = FollowupStatus::with([
+    //         'createdByAdmin',
+    //         'reply.complaint.registrationDetails',
+    //         'reply.complaint.division',
+    //         'reply.complaint.district',
+    //         'reply.complaint.vidhansabha',
+    //         'reply.complaint.mandal',
+    //         'reply.complaint.gram',
+    //         'reply.complaint.area',
+    //         'reply.replyfrom'
+    //     ])->orderBy('followup_date', 'desc');
+
+    //     if ($request->filled('status')) {
+    //         $query->where('followup_status', $request->status);
+    //     }
+
+    //     if ($request->filled('date_from')) {
+    //         $query->whereDate('followup_date', '>=', $request->date_from);
+    //     }
+
+    //     if ($request->filled('date_to')) {
+    //         $query->whereDate('followup_date', '<=', $request->date_to);
+    //     }
+
+    //     if ($request->filled('contact_status')) {
+    //         $query->where('followup_contact_status', $request->contact_status);
+    //     }
+
+    //     if ($request->filled('search')) {
+    //         $search = $request->search;
+    //         $query->whereHas('reply.complaint', function ($q) use ($search) {
+    //             $q->where('complaint_number', 'like', "%{$search}%")
+    //                 ->orWhere('name', 'like', "%{$search}%")
+    //                 ->orWhere('mobile_number', 'like', "%{$search}%");
+    //         });
+    //     }
+
+    //     $followups = $query->paginate(20);
+
+    //     return view('manager.allfollowups_details', compact('followups'));
+    // }
 }
