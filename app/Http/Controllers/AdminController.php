@@ -1525,10 +1525,11 @@ class AdminController extends Controller
                 <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
                 <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
                 <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br>
-                <strong>रेफरेंस: </strong>' . ($complaint->reference_name ?? '') . '<br><br>
+                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
                 <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
               </td>';
+
+                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
 
 
@@ -1549,6 +1550,9 @@ class AdminController extends Controller
                     ($complaint->area->area_name ?? 'N/A') .
                     '</td>';
 
+                $html .= '<td>' . ($complaint->issue_description ?? '') . '</td>';
+
+
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
 
                 $html .= '<td>
@@ -1567,8 +1571,6 @@ class AdminController extends Controller
                 // Importance
                 $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
 
-                // Criticality
-                $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
                 $html .= '<td>' . ($complaint->admin_name ?? '') . '</td>';
 
                 $html .= '<td>' . $complaint->forwarded_to_name . '<br>' . $complaint->forwarded_reply_date . '</td>';
@@ -1749,8 +1751,6 @@ class AdminController extends Controller
               </td>';
 
                 $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
-                
-                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
 
                 $html .= '<td title="
             विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
@@ -1769,6 +1769,9 @@ class AdminController extends Controller
                     ($complaint->area->area_name ?? 'N/A') .
                     '</td>';
 
+                $html .= '<td>' . ($complaint->issue_description ?? '') . '</td>';
+
+
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
                 $html .= '<td>
         <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
@@ -1786,8 +1789,6 @@ class AdminController extends Controller
                 // Importance
                 $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
 
-                // Criticality
-                $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
 
                 $html .= '<td>' . ($complaint->admin_name ?? '') . '</td>';
 

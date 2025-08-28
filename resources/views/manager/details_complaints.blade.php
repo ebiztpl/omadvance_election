@@ -282,7 +282,7 @@
                             <th>को भेजा गया</th>
                             <th>रीव्यू दिनांक</th>
                             <th>महत्त्व स्तर</th>
-                             <th>फ़ॉलोअप विवरण</th>
+                            <th>फ़ॉलोअप विवरण</th>
 
                             {{-- <th>गंभीरता स्तर</th> --}}
                             <th>विवरण देखें</th>
@@ -301,7 +301,7 @@
                                 <td>{{ $reply->review_date ?? '' }}</td>
                                 <td>{{ $reply->importance ?? '' }}</td>
 
-                                  <td>
+                                <td>
                                     @php
                                         $replyData = [
                                             'complaint_reply' => $reply->complaint_reply,
@@ -334,12 +334,10 @@
                                 <td>
                                     <button type="button" class="btn btn-sm btn-info view-details-btn"
                                         data-toggle="modal" data-target="#detailsModal"
-                                        data-reply="{{ $reply->complaint_reply }}"
-                                        {{-- data-contact="{{ $reply->contact_status }}"
+                                        data-reply="{{ $reply->complaint_reply }}" {{-- data-contact="{{ $reply->contact_status }}"
                                         data-details="{{ $reply->contact_update }}" --}}
                                         data-review="{{ $reply->review_date }}"
-                                        data-importance="{{ $reply->importance }}"
-                                        {{-- data-critical="{{ $reply->criticality }}" --}}
+                                        data-importance="{{ $reply->importance }}" {{-- data-critical="{{ $reply->criticality }}" --}}
                                         data-reply_from="{{ $reply->replyfrom?->admin_name ?? '' }}"
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
@@ -366,7 +364,7 @@
 
 
 
-           {{-- followup history modal --}}
+        {{-- followup history modal --}}
         <div class="modal fade" id="followupHistoryModal" tabindex="-1" role="dialog"
             aria-labelledby="followupHistoryModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
@@ -539,10 +537,10 @@
                         इस शिकायत का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
                     </div>
                 @endif
-                
+
                 <form id="replyForm" method="POST"
-                    action="{{ route('complaint_reply.reply', $complaint->complaint_id) }}"
-                    enctype="multipart/form-data" @if ($disableReply) style="pointer-events: none; opacity: 0.6;" @endif>
+                    action="{{ route('complaint_reply.reply', $complaint->complaint_id) }}" enctype="multipart/form-data"
+                    @if ($disableReply) style="pointer-events: none; opacity: 0.6;" @endif>
                     @csrf
 
                     <div class="row mb-3">
@@ -602,7 +600,7 @@
                                 @if ($disableReply) disabled @endif>
                         </div>
 
-                        <div class="col-md-2">
+                        {{-- <div class="col-md-2">
                             <label for="importance form-label">महत्त्व स्तर:</label>
                             <select name="importance" class="form-control"
                                 @if ($disableReply) disabled @endif>
@@ -611,7 +609,23 @@
                                 <option value="मध्यम">मध्यम</option>
                                 <option value="कम">कम</option>
                             </select>
+                        </div> --}}
+
+                        <div class="col-md-2">
+                            <br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input importance" type="checkbox" id="importanceHigh"
+                                    name="importance" value="उच्च"
+                                    @if ($disableReply) disabled @endif>
+                                <label
+                                    class="form-check-label importance-label btn btn-outline-primary px-4 py-2 rounded shadow-sm fw-bold"
+                                    for="importanceHigh" style="font-size: 1.1rem; transition: all 0.2s;">
+                                    उच्च
+                                </label>
+                            </div>
                         </div>
+
+
 
                         {{-- <div class="col-md-2">
                             <label for="criticality form-label">गंभीरता स्तर:</label>

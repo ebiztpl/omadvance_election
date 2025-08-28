@@ -30,7 +30,10 @@
 
 
                         &nbsp;|&nbsp;
-                        <strong>{{ $dateFilter ?? 'सभी' }}</strong>
+                        <strong>{{ $dateFilter ?? 'कुल' }} </strong>
+
+                         &nbsp;|&nbsp;
+                        <strong>({{ $operatorName  ?? 'सभी' }}) ऑपरेटर</strong>
                     </h5>
                 </div>
 

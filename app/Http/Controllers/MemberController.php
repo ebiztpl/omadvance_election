@@ -929,6 +929,9 @@ class MemberController extends Controller
                     ($complaint->area->area_name ?? 'N/A') .
                     '</td>';
 
+                $html .= '<td>' . ($complaint->issue_description ?? '') . '</td>';
+
+
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
                 $html .= '<td>
                  <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
@@ -946,9 +949,7 @@ class MemberController extends Controller
                 // Importance
                 $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
 
-                // Criticality
-                $html .= '<td>' . ($complaint->latestReply?->criticality ?? 'N/A') . '</td>';
-
+               
                 // Status Text
                 // $html .= '<td>' . strip_tags($complaint->statusTextPlain()) . '</td>';
                 $html .= '<td>' . ($complaint->registrationDetails->name ?? '') . '</td>';
