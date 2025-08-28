@@ -11,7 +11,7 @@
 
 @section('content')
     <div class="container">
-        <div class="row page-titles mx-0">
+        {{-- <div class="row page-titles mx-0">
             <div class="col-md-12 col-sm-12 col-xs-12">
                 <form method="GET" id="complaintFilterForm">
                     <div class="row mt-3">
@@ -132,7 +132,78 @@
                         title="फ़िल्टर छुपाएं"></i>
                 </div>
             </div>
-        </div>
+        </div> --}}
+
+        {{-- <div class="row page-titles mx-0">
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <form method="GET" id="complaintFilterForm">
+                    <div class="row mt-3">
+
+                        <div class="col-xs-2">
+                            <label>सुचना प्रकार</label>
+                            <select name="complaint_type" id="complaint_type" class="form-control">
+                                <option value="शुभ सुचना" selected>शुभ सुचना</option>
+                                <option value="अशुभ सुचना">अशुभ सुचना</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>स्थिति</label>
+                            <select name="complaint_status" id="complaint_status" class="form-control">
+                                <option value="">-- सभी --</option>
+                                <option value="11">सूचना प्राप्त</option>
+                                <option value="12">फॉरवर्ड किया</option>
+                                <option value="13">सम्मिलित हुए</option>
+                                <option value="14">सम्मिलित नहीं हुए</option>
+                                <option value="15">फोन पर संपर्क किया</option>
+                                <option value="16">ईमेल पर संपर्क किया</option>
+                                <option value="17">व्हाट्सएप पर संपर्क किया</option>
+                                <option value="18">रद्द</option>
+                            </select>
+                        </div>
+                   
+                        <div class="col-md-2">
+                            <label>सूचना का विषय</label>
+                            <select name="issue_title" id="issue_title" class="form-control">
+                                <option value="">-- सभी --</option>
+
+                            </select>
+                        </div>
+
+                        <div class="col-xs-1  mr-1">
+                            <label>सुचना तिथि से</label>
+                            <input type="date" name="from_date" id="from_date" class="form-control">
+
+                        </div>
+
+                        <div class="col-xs-1 mr-1">
+                            <label>सुचना तिथि तक</label>
+                            <input type="date" name="to_date" id="to_date" class="form-control">
+                        </div>
+
+                        <div class="col-xs-1 mr-1">
+                            <label>कार्यक्रम दिनांक से</label>
+                            <input type="date" name="programfrom_date" id="programfrom_date" class="form-control">
+                        </div>
+
+                        <div class="col-xs-1 mr-1">
+                            <label>कार्यक्रम दिनांक तक</label>
+                            <input type="date" name="programto_date" id="programto_date" class="form-control">
+                        </div>
+
+                        <div class="col-md-1 mt-2">
+                            <br>
+                            <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="text-center mt-2">
+                    <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
+                        title="फ़िल्टर छुपाएं"></i>
+                </div>
+            </div>
+        </div> --}}
 
         <div class="row">
             <div class="col-12">
@@ -263,7 +334,7 @@
                     $('#area_id').html('<option value="">क्षेत्र</option>');
 
                     if (mandalId) {
-                        $.get('/operator/get-nagar/' + mandalId, function(data) {
+                        $.get('/get-nagar/' + mandalId, function(data) {
                             $('#gram_id').append(data);
                         });
                     }
@@ -275,7 +346,7 @@
                     $('#area_id').html('<option value="">क्षेत्र</option>');
 
                     if (gramId) {
-                        $.get('/operator/get-gram_pollings/' + gramId, function(data) {
+                        $.get('/member/get-gram_pollings/' + gramId, function(data) {
                             let html = '<option value="">मतदान केंद्र</option>';
                             data.forEach(function(polling) {
                                 html +=
@@ -291,7 +362,7 @@
                     $('#area_id').html('<option value="">क्षेत्र</option>');
 
                     if (pollingId) {
-                        $.get('/operator/get-areas/' + pollingId, function(data) {
+                        $.get('/member/get-areas/' + pollingId, function(data) {
                             let html = '<option value="">क्षेत्र</option>';
                             data.forEach(function(area) {
                                 html +=

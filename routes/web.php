@@ -177,6 +177,10 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/dashboard/followup-counts', [ManagerController::class, 'getFollowupCounts'])->name('dashboard.followupCounts');
     Route::get('/followup/followup-details', [ManagerController::class, 'followupDetails'])
         ->name('complaints.followupDetails');
+    Route::get('/dashboard/followup-not-done-details', [ManagerController::class, 'notDoneDetails'])
+        ->name('dashboard.notDoneDetails');
+    Route::get('/dashboard/followup-not-done-counts', [ManagerController::class, 'getNotDoneCounts'])
+        ->name('dashboard.notDoneCounts');
 
 
     // division routes

@@ -23,7 +23,7 @@
                         @elseif($status === 'in_process')
                             (प्रक्रिया में)
                         @elseif($status === 'not_done')
-                            (नहीं किया गया)
+                            (फॉलोअप बाकी)
                         @else
                             (सभी)
                         @endif
@@ -84,14 +84,14 @@
                                             </td>
                                             <td>
                                                 <strong>भेजने वाला:
-                                                </strong>{{ $complaint->latestRelevantReply->replyfrom->admin_name ?? 'N/A' }}
+                                                </strong>{{ $complaint->latestReplyWithoutFollowup->replyfrom->admin_name ?? 'N/A' }}
                                                 <br>
                                                 <strong>फॉरवर्ड:
-                                                </strong>{{ $complaint->latestRelevantReply->forwardedToManager->admin_name ?? 'N/A' }}<br>
+                                                </strong>{{ $complaint->latestReplyWithoutFollowup->forwardedToManager->admin_name ?? 'N/A' }}<br>
                                                 <strong>जवाब:
-                                                </strong>{{ $complaint->latestRelevantReply->complaint_reply ?? '' }}<br><br>
+                                                </strong>{{ $complaint->latestReplyWithoutFollowup->complaint_reply ?? '' }}<br><br>
                                                 <strong>तिथि:
-                                                </strong>{{ $complaint->latestRelevantReply->reply_date ?? '' }}
+                                                </strong>{{ $complaint->latestReplyWithoutFollowup->reply_date ?? '' }}
                                                 <br>
                                             </td>
 

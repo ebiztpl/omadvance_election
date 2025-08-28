@@ -172,6 +172,7 @@
                                         <th style="min-width: 100px;">शिकायतकर्ता</th>
                                         <th>रेफरेंस</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
+                                        <th style="min-width: 100px;">शिकायत विवरण</th>
                                         <th>विभाग</th>
                                         <th>शिकायत की स्थिति</th>
                                         {{-- <th>से बकाया</th> --}}
@@ -219,6 +220,8 @@
                                                 <br>
                                                 {{ $complaint->area->area_name ?? 'N/A' }}
                                             </td>
+
+                                            <td>{{ $complaint->issue_description }}</td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
                                          

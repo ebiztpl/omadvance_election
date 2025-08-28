@@ -418,7 +418,7 @@
                                     <h4 class="card-title suchna mb-0">फॉलोअप स्थिति</h4>
 
                                     <select id="date-filter-followup" class="form-control w-auto">
-                                        <option value="सभी" selected>सभी</option>
+                                        <option value="कुल" selected>कुल</option>
                                         <option value="आज">आज</option>
                                         <option value="कल">कल</option>
                                         <option value="पिछले सात दिन">पिछले सात दिन</option>
@@ -431,9 +431,11 @@
                                             <tr>
                                                 <th>शिकायत प्रकार</th>
                                                 <th>पूर्ण</th>
-                                                <th>अपूर्ण</th>
                                                 <th>प्रक्रिया में</th>
                                                 {{-- <th>फॉलोअप बाकी</th> --}}
+                                                {{-- <td><a href="${getFollowupUrl('not_done', row.complaint_type)}" target="_blank">
+                                                    <span class="badge badge-pill badge-primary text-white">${not_done_count}</span>
+                                                </a></td> --}}
                                             </tr>
                                         </thead>
                                         <tbody id="followup-table-body">
@@ -1155,57 +1157,81 @@
                     return `${baseUrl}?status=${encodeURIComponent(status)}&filter=${encodeURIComponent(filter)}&type=${encodeURIComponent(type)}`;
                 }
 
-                function loadFollowupCounts(filter = 'सभी') {
-                    $.ajax({
-                        url: "{{ route('dashboard.followupCounts') }}",
-                        method: "GET",
-                        data: {
-                            filter: filter
-                        },
-                        dataType: "json",
-                        success: function(data) {
-                            const $tbody = $("#followup-table-body");
-                            $tbody.empty();
+                function getNotdoneFollowupUrl(status, type) {
+                    let baseUrl = "{{ route('dashboard.notDoneDetails') }}";
+                    return `${baseUrl}?status=${encodeURIComponent(status)}&type=${encodeURIComponent(type)}`;
+                }
 
-                            if (!data || data.length === 0) {
-                                $tbody.append(`
-                                    <tr>
-                                        <td colspan="4" class="text-center text-muted">कोई डेटा उपलब्ध नहीं</td>
-                                    </tr>
-                                `);
-                                return;
-                            }
+                function loadAllFollowupCounts(filter = 'कुल') {
+                    $.when(
+                        $.ajax({
+                            url: "{{ route('dashboard.followupCounts') }}",
+                            method: "GET",
+                            data: {
+                                filter: filter
+                            },
+                            dataType: "json"
+                        }),
+                        $.ajax({
+                            url: "{{ route('dashboard.notDoneCounts') }}",
+                            method: "GET",
+                            data: {
+                                filter: filter
+                            },
+                            dataType: "json"
+                        })
+                    ).done(function(followupData, notDoneData) {
+                        const $tbody = $("#followup-table-body");
+                        $tbody.empty();
 
-                            data.forEach(row => {
-                                $tbody.append(`
-                                    <tr>
-                                        <td>${row.complaint_type}</td>
-                                        <td><a href="${getFollowupUrl('completed', filter, row.complaint_type)}" target="_blank"><span class="badge badge-pill badge-success text-white">${row.completed}</span></a></td>
-                                        <td><a href="${getFollowupUrl('pending', filter, row.complaint_type)}" target="_blank"><span class="badge badge-pill badge-primary text-white">${row.pending}</span></a></td>
-                                        <td><a href="${getFollowupUrl('in_process', filter, row.complaint_type)}" target="_blank"><span class="badge badge-pill badge-info text-white">${row.in_process}</span></a></td>
-                                       
-                                    </tr>
-                                `);
-                            });
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Error fetching Followup Counts:", error);
-                            const $tbody = $("#followup-table-body");
-                            $tbody.html(`
+                        const followups = followupData[0];
+                        const notDone = notDoneData[0];
+
+                        if (!followups || followups.length === 0) {
+                            $tbody.append(`
                                 <tr>
-                                    <td colspan="4" class="text-danger text-center">डेटा लोड करने में त्रुटि</td>
+                                    <td colspan="3" class="text-center text-muted">कोई डेटा उपलब्ध नहीं</td>
                                 </tr>
                             `);
+                            return;
                         }
+
+                        // Merge not_done counts into followups
+                        followups.forEach(row => {
+                            const nd = notDone.find(n => n.complaint_type === row.complaint_type);
+                            const not_done_count = nd ? nd.not_done : 0;
+
+                            $tbody.append(`
+                                <tr>
+                                    <td>${row.complaint_type}<a href="${getNotdoneFollowupUrl('not_done', row.complaint_type)}" target="_blank">
+                                        <span class="badge badge-warning text-white">${not_done_count}</span>
+                                    </a></td>
+                                    <td><a href="${getFollowupUrl('completed', filter, row.complaint_type)}" target="_blank">
+                                        <span class="badge badge-success text-white">${row.completed}</span>
+                                    </a></td>
+                                    <td><a href="${getFollowupUrl('in_process', filter, row.complaint_type)}" target="_blank">
+                                        <span class="badge badge-info text-white">${row.in_process}</span>
+                                    </a></td>         
+                                </tr>
+                            `);
+                        });
+                    }).fail(function(xhr, status, error) {
+                        console.error("Error fetching followup counts:", error);
+                        $("#followup-table-body").html(`
+                            <tr>
+                                <td colspan="3" class="text-danger text-center">डेटा लोड करने में त्रुटि</td>
+                            </tr>
+                        `);
                     });
                 }
 
-                loadFollowupCounts($('#date-filter-followup').val());
+                // Initial load
+                loadAllFollowupCounts($('#date-filter-followup').val());
 
+                // Reload on date filter change
                 $('#date-filter-followup').on('change', function() {
-                    loadFollowupCounts($(this).val());
+                    loadAllFollowupCounts($(this).val());
                 });
-
                 // $.ajax({
                 //     url: "/fetch-forwards",
                 //     method: "GET",
