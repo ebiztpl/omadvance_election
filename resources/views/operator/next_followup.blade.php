@@ -32,7 +32,7 @@
                             <input type="date" name="to_date" id="to_date" class="form-control">
                         </div>
 
-                        @php
+                        {{-- @php
                             $userName = session('logged_in_user') ?? 'आप';
                         @endphp
 
@@ -43,22 +43,34 @@
                                 <option value="completed_by_me">पूर्ण ({{ $userName }})</option>
                                 <option value="pending_by_me">अपूर्ण ({{ $userName }})</option>
                                 <option value="upcoming_by_me">प्रक्रिया फ़ॉलोअप ({{ $userName }})</option>
-                                {{-- <option value="not_done_by_me">फ़ॉलोअप नहीं हुआ ({{ $userName }})</option> --}}
                             </select>
+                        </div> --}}
+
+                        <div class="col-md-2">
+                            <label>फ़ॉलोअप स्थिति:</label><br>
+                            <div class="form-check custom-radio-box">
+                                <input class="form-check-input" type="radio" name="followup_status_filter" id="upcoming"
+                                    value="upcoming">
+                                <label class="form-check-label" for="upcoming">प्रक्रिया फ़ॉलोअप</label>
+                            </div>
+                        </div>
+
+
+                        <div class="col-md-2 mt-2">
+                            <br>
+                            <button type="button" class="btn btn-warning" id="resetFollowup">फ़ॉलोअप नहीं किया</button>
+                        </div>
+
+                        <div class="col-md-2 mt-2">
+                            <br>
+                            <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर लागू करें</button>
                         </div>
                     </div>
 
-                    <div class="row mt-2">
-
+                    {{-- <div class="row mt-2">
                         <div class="col-md-8">
                             <label>फ़ॉलोअप स्थिति:</label><br>
                             <div class="d-flex flex-wrap">
-                                {{-- <div class="form-check custom-radio-box mr-2 mb-2">
-                                    <input class="form-check-input" type="radio" name="followup_status_filter"
-                                        id="no_followup_default" value="no_followup_latest">
-                                    <label class="form-check-label" for="no_followup_latest">फ़ॉलोअप नहीं किया</label>
-                                </div> --}}
-
                                 <div class="form-check custom-radio-box mr-2 mb-2">
                                     <input class="form-check-input" type="radio" name="followup_status_filter"
                                         id="upcoming" value="upcoming">
@@ -80,16 +92,8 @@
                             </div>
                         </div>
 
-                        <div class="col-md-2 mt-2">
-                            <br>
-                            <button type="button" class="btn btn-secondary" id="resetFollowup">फ़ॉलोअप नहीं किया</button>
-                        </div>
-
-                        <div class="col-md-2 mt-2">
-                            <br>
-                            <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर लागू करें</button>
-                        </div>
-                    </div>
+                       
+                    </div> --}}
 
                 </form>
             </div>

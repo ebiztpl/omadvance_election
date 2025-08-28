@@ -311,8 +311,8 @@
                                     <tbody>
                                         <tr>
                                             <td id="modal-date">—</td>
-                                            <td id="modal-reply-from">—</td>
-                                            <td id="modal-admin">—</td>
+                                            <td id="modal-r">—</td>
+                                            <td id="modal-a">—</td>
                                             {{-- <td id="modal-contact">—</td>
                                             <td id="modal-details">—</td> --}}
                                         </tr>
@@ -517,13 +517,13 @@
                 $('#modal-reply').text(reply);
                 $('#modal-status').html(statusHtml);
                 $('#modal-date').text(replyDate);
-                $('#modal-admin').text(admin);
+                $('#modal-a').text(admin);
                 $('#modal-predefined').text(predefined);
                 $('#modal-contact').text(contact);
                 $('#modal-review').text(review);
                 $('#modal-importance').text(importance);
                 $('#modal-details').text(details);
-                $('#modal-reply-from').text(reply_from);
+                $('#modal-r').text(reply_from);
 
                 cbPhoto ? $('#cb-photo-link').attr('href', cbPhoto).show() : $('#cb-photo-link').hide();
                 caPhoto ? $('#ca-photo-link').attr('href', caPhoto).show() : $('#ca-photo-link').hide();

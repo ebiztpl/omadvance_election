@@ -1368,7 +1368,7 @@ class OperatorController extends Controller
             'latestNonDefaultReply.forwardedToManager',
         ])
             ->whereIn('complaint_type', ['समस्या', 'विकास'])
-            ->whereNotIn('complaint_status', [4, 5])
+            ->where('complaint_status', '!=', 5)
             ->whereHas('latestReplyWithoutFollowup')
             ->get()
             ->sortByDesc(fn($c) => optional($c->latestReplyWithoutFollowup)->reply_date)
@@ -1447,7 +1447,7 @@ class OperatorController extends Controller
             'latestNonDefaultReply.replyfrom',
         ])
             ->whereIn('complaint_type', ['समस्या', 'विकास'])
-            ->whereNotIn('complaint_status', [4, 5])
+            ->where('complaint_status', '!=', 5)
             ->whereExists(function ($query) use ($request, $userId, $today) {
                 $query->selectRaw(1)
                     ->from('complaint_reply as cr')

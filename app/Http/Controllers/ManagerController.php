@@ -754,6 +754,86 @@ class ManagerController extends Controller
         return response()->json(['count' => $count]);
     }
 
+    public function getNotDoneCounts(Request $request)
+    {
+        $today = now()->toDateString();
+
+        $complaints = Complaint::with([
+            'latestReplyWithoutFollowup',
+            'latestNonDefaultReply.latestFollowupAlways',
+        ])
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->where('complaint_status', '!=', 5)
+            ->whereHas('latestReplyWithoutFollowup')
+            ->get()
+            ->sortByDesc(fn($c) => optional($c->latestReplyWithoutFollowup)->reply_date)
+            ->values();
+
+        $counts = [];
+
+        foreach ($complaints as $complaint) {
+            $type = $complaint->complaint_type;
+
+            if (!isset($counts[$type])) {
+                $counts[$type] = [
+                    'not_done' => 0,
+                ];
+            }
+
+            // Pick the latest relevant reply
+            $latestReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+            $latestFollowup = $latestReply?->latestFollowupAlways;
+
+            // Count as not done if no followup exists or followup is today and incomplete
+            if (!$latestFollowup || ($latestFollowup->followup_status == 1 && $latestFollowup->followup_date->toDateString() === $today)) {
+                $counts[$type]['not_done']++;
+            }
+        }
+
+        // Format for JSON response
+        $result = [];
+        foreach ($counts as $type => $val) {
+            $result[] = [
+                'complaint_type' => $type,
+                'not_done' => $val['not_done'],
+            ];
+        }
+
+        return response()->json($result);
+    }
+
+    public function notDoneDetails(Request $request)
+    {
+        $status = $request->status;
+        $type = $request->type ?? null;
+        $complaints = Complaint::with([
+            'latestReplyWithoutFollowup',
+            'latestNonDefaultReply.latestFollowupAlways',
+            'registrationDetails',
+            'admin',
+        ])
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->where('complaint_status', '!=', 5)
+            ->when($type, fn($q) => $q->where('complaint_type', $type))
+            ->whereHas('latestReplyWithoutFollowup')
+            ->get()
+            ->sortByDesc(fn($c) => optional($c->latestReplyWithoutFollowup)->reply_date)
+            ->values();
+
+        $notDoneComplaints = $complaints->filter(function ($complaint) {
+            $latestReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+            $latestFollowup = $latestReply?->latestFollowupAlways;
+
+            return !$latestFollowup || ($latestFollowup->followup_status == 1 && $latestFollowup->followup_date->toDateString() === now()->toDateString());
+        });
+
+        return view('manager.followup_notdone_details', [
+            'complaints' => $notDoneComplaints,
+            'status' => $status,
+            'type' => $type,
+        ]);
+    }
+
 
     public function getFollowupCounts(Request $request)
     {
@@ -766,7 +846,7 @@ class ManagerController extends Controller
             'replies.followups'
         ])
             ->whereIn('complaint_type', ['समस्या', 'विकास'])
-            ->whereNotIn('complaint_status', [4, 5])
+            ->where('complaint_status', '!=', 5)
             ->get();
 
         $dateRanges = [
@@ -853,9 +933,7 @@ class ManagerController extends Controller
             $result[] = [
                 'complaint_type' => $type,
                 'completed' => $vals['completed'],
-                'pending' => $vals['pending'],
                 'in_process' => $vals['in_process'],
-                // 'not_done' => $vals['not_done'],
             ];
         }
 
@@ -883,7 +961,7 @@ class ManagerController extends Controller
         ])
             ->whereIn('complaint_type', ['समस्या', 'विकास'])
             ->when($type, fn($q) => $q->where('complaint_type', $type))
-            ->whereNotIn('complaint_status', [4, 5])
+            ->where('complaint_status', '!=', 5)
             ->get()
             ->map(function ($complaint) {
                 $complaint->latestRelevantReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
@@ -944,6 +1022,11 @@ class ManagerController extends Controller
                     return true;
             }
         });
+
+        $complaints = $complaints->sortByDesc(function ($complaint) {
+            $latestFollowup = $complaint->latestRelevantReply?->latestFollowup;
+            return $latestFollowup?->followup_date?->timestamp ?? 0;
+        })->values();
 
         return view('manager/followup_details', compact('complaints', 'status', 'type', 'dateFilter'));
     }

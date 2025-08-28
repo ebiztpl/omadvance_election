@@ -11,11 +11,20 @@
 
 @section('content')
 
-    <div class="row page-titles mx-0">
+    {{-- this filter is not necessary for member panel so comment it uncomment if needable  --}}
+    {{-- <div class="row page-titles mx-0">
         <div class="col-md-12 col-sm-12 col-xs-12">
             <div id="complaintFilterForm">
                 <div class="row mt-3">
                     <div class="col-md-2">
+                        <label>शिकायत प्रकार</label>
+                        <select name="complaint_type" id="complaint_type" class="form-control">
+                            <option value="समस्या" selected>समस्या</option>
+                            <option value="विकास">विकास</option>
+                        </select>
+                    </div>
+
+                    <div class="col-xs-1 mr-2">
                         <label>स्थिति</label>
                         <select name="complaint_status" id="complaint_status" class="form-control">
                             <option value="">-- सभी --</option>
@@ -27,17 +36,7 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2">
-                        <label>शिकायत प्रकार</label>
-                        <select name="complaint_type" id="complaint_type" class="form-control">
-                            {{-- <option value="शुभ सुचना">शुभ सुचना</option>
-                            <option value="अशुभ सुचना">अशुभ सुचना</option> --}}
-                            <option value="समस्या" selected>समस्या</option>
-                            <option value="विकास">विकास</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-2">
+                    <div class="col-xs-1">
                         <label>विभाग</label>
                         <select name="department_id" id="department_id" class="form-control">
                             <option value="">-- सभी --</option>
@@ -57,7 +56,22 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-xs-2 mr-2">
+                        <label>तिथि से</label>
+                        <input type="date" name="from_date" id="from_date" class="form-control">
+                    </div>
+
+                     <div class="col-xs-2 mr-2">
+                        <label>तिथि तक</label>
+                        <input type="date" name="to_date" id="to_date" class="form-control">
+                    </div>
+
+                    <div class="col-md-1 mt-2">
+                        <br>
+                        <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर</button>
+                    </div> --}}
+
+                    {{-- <div class="col-md-2">
                         <label>मंडल</label>
                         <select name="mandal_id" id="mandal_id" class="form-control">
                             <option value="">-- सभी --</option>
@@ -75,11 +89,9 @@
                                 <option value="{{ $g->nagar_id }}">{{ $g->nagar_name }}</option>
                             @endforeach
                         </select>
-                    </div>
-                </div>
+                    </div> --}}
 
-                <div class="row mt-2">
-                    <div class="col-md-2">
+                    {{-- <div class="col-md-2">
                         <label>मतदान केंद्र</label>
                         <select name="polling_id" id="polling_id" class="form-control">
                             <option value="">-- सभी --</option>
@@ -99,9 +111,9 @@
                                 <option value="{{ $a->area_id }}">{{ $a->area_name }}</option>
                             @endforeach
                         </select>
-                    </div>
+                    </div> --}}
 
-                    <div class="col-md-2">
+                    {{-- <div class="col-md-2">
                         <label>उत्तर</label>
                         <select name="reply_id" id="reply_id" class="form-control">
                             <option value="">-- सभी --</option>
@@ -109,20 +121,9 @@
                                 <option value="{{ $option->reply_id }}">{{ $option->reply }}</option>
                             @endforeach
                         </select>
-                    </div>
+                    </div> --}}
 
-                    <div class="col-md-2">
-                        <label>तिथि से</label>
-                        <input type="date" name="from_date" id="from_date" class="form-control">
-
-                    </div>
-
-                    <div class="col-md-2">
-                        <label>तिथि तक</label>
-                        <input type="date" name="to_date" id="to_date" class="form-control">
-                    </div>
-
-                    <div class="col-md-2">
+                    {{-- <div class="col-md-2">
                         <label>फॉरवर्ड</label>
                         <select name="admin_id" id="admin_id" class="form-control">
                             <option value="">-- सभी --</option>
@@ -130,12 +131,8 @@
                                 <option value="{{ $manager->admin_id }}">{{ $manager->admin_name }}</option>
                             @endforeach
                         </select>
-                    </div>
-
-                    <div class="col-md-2 mt-4">
-                        <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर लागू करें</button>
-                    </div>
-                </div>
+                    </div> --}}
+                {{-- </div>
             </div>
 
             <div class="text-center mt-2">
@@ -143,7 +140,7 @@
                     title="फ़िल्टर छुपाएं"></i>
             </div>
         </div>
-    </div>
+    </div> --}}
 
 
     <div class="container">
@@ -173,6 +170,7 @@
                                         <th style="min-width: 100px;">शिकायतकर्ता</th>
                                         <th>रेफरेंस</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
+                                        <th style="min-width: 100px;">शिकायत विवरण</th>
                                         <th>विभाग</th>
                                         <th>शिकायत की स्थिति</th>
                                         {{-- <th>से बकाया</th> --}}
@@ -222,6 +220,9 @@
                                                 <br>
                                                 {{ $complaint->area->area_name ?? 'N/A' }}
                                             </td>
+
+                                            <td>{{ $complaint->issue_description }}</td>
+
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
 
@@ -372,7 +373,7 @@
                     $('#subject_id').html('<option value="">विषय</option>');
 
                     if (departmentId) {
-                        $.get('/admin/get-subjects/' + departmentId, function(data) {
+                        $.get('/member/get-subjects/' + departmentId, function(data) {
                             let html = '<option value="">विषय</option>';
                             data.forEach(function(subject) {
                                 html +=
@@ -385,7 +386,7 @@
 
                 // Apply Filters
                 $('#applyFilters').click(function(e) {
-                     e.preventDefault();
+                    e.preventDefault();
                     let data = {
                         complaint_status: $('#complaint_status').val(),
                         complaint_type: $('#complaint_type').val(),
@@ -405,19 +406,19 @@
                         url: "{{ route('complaints.view') }}",
                         type: 'GET',
                         data: data,
-                         beforeSend: function() {
+                        beforeSend: function() {
                             $("#loader-wrapper").show();
                         },
                         success: function(response) {
-                         
+
                             if ($.fn.DataTable.isDataTable('#example')) {
                                 $('#example').DataTable().destroy();
                             }
 
-                               $('#complaintsTableBody').html(response.html);
+                            $('#complaintsTableBody').html(response.html);
                             $('#complaint-count').text(response.count);
 
-                            
+
                             $('#example').DataTable({
                                 dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
                                     '<"row"<"col-sm-12"tr>>' +
