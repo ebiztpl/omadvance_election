@@ -390,6 +390,12 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/manager/get-district-from-id/{district_id}', [ManagerController::class, 'getDistrictOptionsFromId']);
     Route::get('/manager/get-division-from-id/{division_id}', [ManagerController::class, 'getDivisionOptionsFromId']);
 
+
+
+    // all followups show in details routes 
+    Route::get('/manager/allfollowups_details', [ManagerController::class, 'allfollowupsdetails'])->name('allfollowup_details.index');
+    Route::get('/manager/allfollowups', [ManagerController::class, 'followupindex'])
+        ->name('allfollowups.index');
 });
 
 
