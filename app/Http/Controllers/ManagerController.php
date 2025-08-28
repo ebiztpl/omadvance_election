@@ -839,6 +839,7 @@ class ManagerController extends Controller
     {
         $today = Carbon::today();
         $dateFilter = $request->filter ?? null;
+        $operatorId = $request->operator ?? 'सभी';
 
         $complaints = Complaint::with([
             'latestReplyWithoutFollowup',
@@ -869,6 +870,21 @@ class ManagerController extends Controller
                 $followupDate = Carbon::parse($followup->followup_date);
 
                 return $followupDate->between($start, $end);
+            });
+        }
+
+        if ($operatorId !== 'सभी') {
+            $complaints = $complaints->filter(function ($complaint) use ($operatorId) {
+                // Get the latest relevant reply
+                $latestReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+                if (!$latestReply) return false;
+
+                // Get the latest followup for this reply
+                $latestFollowup = $latestReply->latestFollowup;
+                if (!$latestFollowup) return false;
+
+                // Compare operator ID
+                return $latestFollowup->followup_created_by == $operatorId;
             });
         }
 
@@ -950,6 +966,7 @@ class ManagerController extends Controller
         $status = $request->status;
         $type = $request->type ?? null;
         $dateFilter = $request->filter ?? null;
+        $operatorId = $request->operator ?? 'सभी';
 
         $today = Carbon::today();
 
@@ -993,7 +1010,28 @@ class ManagerController extends Controller
             });
         }
 
+        if ($operatorId !== 'सभी') {
+            $complaints = $complaints->filter(function ($complaint) use ($operatorId) {
+                // Get the latest relevant reply
+                $latestReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+                if (!$latestReply) return false;
 
+                // Get the latest followup for this reply
+                $latestFollowup = $latestReply->latestFollowup;
+                if (!$latestFollowup) return false;
+
+                // Compare operator ID
+                return $latestFollowup->followup_created_by == $operatorId;
+            });
+        }
+
+        $operatorName = 'सभी';
+        if ($operatorId !== 'सभी') {
+            $operator = User::find($operatorId);
+            if ($operator) {
+                $operatorName = $operator->admin_name; 
+            }
+        }
 
         $complaints = $complaints->filter(function ($complaint) use ($status, $today) {
             $latestReply = $complaint->latestRelevantReply;
@@ -1028,7 +1066,7 @@ class ManagerController extends Controller
             return $latestFollowup?->followup_date?->timestamp ?? 0;
         })->values();
 
-        return view('manager/followup_details', compact('complaints', 'status', 'type', 'dateFilter'));
+        return view('manager/followup_details', compact('complaints', 'status', 'type', 'dateFilter', 'operatorId', 'operatorName'));
     }
 
 
@@ -2848,6 +2886,9 @@ class ManagerController extends Controller
                     ($complaint->area->area_name ?? 'N/A') .
                     '</td>';
 
+                $html .= '<td>' . ($complaint->issue_description ?? '') . '</td>';
+
+
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
 
                 $html .= '<td>
@@ -3216,6 +3257,8 @@ class ManagerController extends Controller
                     ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')<br>' .
                     ($complaint->area->area_name ?? 'N/A') .
                     '</td>';
+
+                $html .= '<td>' . ($complaint->issue_description ?? '') . '</td>';
 
                 $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
 

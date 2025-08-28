@@ -444,14 +444,18 @@
                             <input type="date" class="form-control" name="review_date" @if ($disableReply) disabled @endif>
                         </div>
 
-                        <div class="col-md-2 toggle-field">
-                            <label for="importance form-label">महत्त्व स्तर:</label>
-                            <select name="importance" class="form-control" @if ($disableReply) disabled @endif>
-                                <option value="">--चयन करें--</option>
-                                <option value="उच्च">उच्च</option>
-                                <option value="मध्यम">मध्यम</option>
-                                <option value="कम">कम</option>
-                            </select>
+                       <div class="col-md-2">
+                            <br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input importance" type="checkbox" id="importanceHigh"
+                                    name="importance" value="उच्च"
+                                    @if ($disableReply) disabled @endif>
+                                <label
+                                    class="form-check-label importance-label btn btn-outline-primary px-4 py-2 rounded shadow-sm fw-bold"
+                                    for="importanceHigh" style="font-size: 1.1rem; transition: all 0.2s;">
+                                    उच्च
+                                </label>
+                            </div>
                         </div>
 
                         

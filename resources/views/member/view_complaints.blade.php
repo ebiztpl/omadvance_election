@@ -177,7 +177,6 @@
                                         {{-- <th>स्थिति</th> --}}
                                         <th>रीव्यू दिनांक</th>
                                         <th>महत्त्व स्तर</th>
-                                        <th>गंभीरता स्तर</th>
                                         <th>आवेदक</th>
                                         <th>फॉरवर्ड अधिकारी</th>
                                         <th>विस्तार से</th>
@@ -246,9 +245,7 @@
                                                 {{ $complaint->latestReply?->importance ?? 'N/A' }}
                                             </td>
 
-                                            <td>
-                                                {{ $complaint->latestReply?->criticality ?? 'N/A' }}
-                                            </td>
+                                            
 
                                             <td>{{ $complaint->registrationDetails->name ?? '' }}</td>
                                             <td>

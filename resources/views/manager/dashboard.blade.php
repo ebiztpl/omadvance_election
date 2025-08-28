@@ -425,6 +425,15 @@
                                         <option value="पिछले तीस दिन">पिछले तीस दिन</option>
                                     </select>
                                 </div>
+
+                                <select id="operator-filter" class="form-control w-auto">
+                                    <option value="सभी" selected>सभी ऑपरेटर</option>
+                                    @foreach (\App\Models\User::where('role', 3)->get() as $operator)
+                                        <option value="{{ $operator->admin_id }}">{{ $operator->admin_name }}</option>
+                                    @endforeach
+                                </select>
+
+
                                 <div class="table-responsive mt-3">
                                     <table class="table text-center custom-bordered-table" style="color: black;">
                                         <thead>
@@ -1152,9 +1161,9 @@
                 });
 
 
-                function getFollowupUrl(status, filter, type) {
+                function getFollowupUrl(status, filter, type, operator) {
                     let baseUrl = "{{ route('complaints.followupDetails') }}";
-                    return `${baseUrl}?status=${encodeURIComponent(status)}&filter=${encodeURIComponent(filter)}&type=${encodeURIComponent(type)}`;
+                    return `${baseUrl}?status=${encodeURIComponent(status)}&filter=${encodeURIComponent(filter)}&type=${encodeURIComponent(type)}&operator=${encodeURIComponent(operator)}`;
                 }
 
                 function getNotdoneFollowupUrl(status, type) {
@@ -1162,13 +1171,14 @@
                     return `${baseUrl}?status=${encodeURIComponent(status)}&type=${encodeURIComponent(type)}`;
                 }
 
-                function loadAllFollowupCounts(filter = 'कुल') {
+                function loadAllFollowupCounts(filter = 'कुल', operator = 'सभी') {
                     $.when(
                         $.ajax({
                             url: "{{ route('dashboard.followupCounts') }}",
                             method: "GET",
                             data: {
-                                filter: filter
+                                filter: filter,
+                                operator: operator
                             },
                             dataType: "json"
                         }),
@@ -1176,7 +1186,8 @@
                             url: "{{ route('dashboard.notDoneCounts') }}",
                             method: "GET",
                             data: {
-                                filter: filter
+                                filter: filter,
+                                operator: operator
                             },
                             dataType: "json"
                         })
@@ -1206,10 +1217,10 @@
                                     <td>${row.complaint_type}<a href="${getNotdoneFollowupUrl('not_done', row.complaint_type)}" target="_blank">
                                         <span class="badge badge-warning text-white">${not_done_count}</span>
                                     </a></td>
-                                    <td><a href="${getFollowupUrl('completed', filter, row.complaint_type)}" target="_blank">
+                                    <td><a href="${getFollowupUrl('completed', filter, row.complaint_type, operator)}" target="_blank">
                                         <span class="badge badge-success text-white">${row.completed}</span>
                                     </a></td>
-                                    <td><a href="${getFollowupUrl('in_process', filter, row.complaint_type)}" target="_blank">
+                                    <td><a href="${getFollowupUrl('in_process', filter, row.complaint_type, operator)}" target="_blank">
                                         <span class="badge badge-info text-white">${row.in_process}</span>
                                     </a></td>         
                                 </tr>
@@ -1226,12 +1237,13 @@
                 }
 
                 // Initial load
-                loadAllFollowupCounts($('#date-filter-followup').val());
+                loadAllFollowupCounts($('#date-filter-followup').val(), $('#operator-filter').val());
 
                 // Reload on date filter change
-                $('#date-filter-followup').on('change', function() {
-                    loadAllFollowupCounts($(this).val());
+                $('#date-filter-followup, #operator-filter').on('change', function() {
+                    loadAllFollowupCounts($('#date-filter-followup').val(), $('#operator-filter').val());
                 });
+
                 // $.ajax({
                 //     url: "/fetch-forwards",
                 //     method: "GET",
