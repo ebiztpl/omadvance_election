@@ -42,6 +42,190 @@ class OperatorController extends Controller
         return view('operator/dashboard');
     }
 
+    public function getComplaintSummary(Request $request)
+    {
+        $from = $request->query('from');
+        $to = $request->query('to');
+        $now = Carbon::now();
+        $userId = session('user_id');
+
+        $ranges = [];
+
+        // If custom date filter is provided, use it as a single range
+        if ($from && $to) {
+            $start = Carbon::parse($from)->startOfDay();
+            $end = Carbon::parse($to)->endOfDay();
+            $label = "$from – $to"; 
+            $ranges[$label] = [$start, $end];
+        } else {
+            // Default ranges
+            $ranges = [
+                'आज' => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
+                'कल' => [$now->copy()->subDay()->startOfDay(), $now->copy()->subDay()->endOfDay()],
+                'इस सप्ताह' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],
+                'इस माह' => [$now->copy()->startOfMonth(), $now],
+                'कुल' => [
+                    Carbon::create(2000, 1, 1)->format('Y-m-d H:i:s'),
+                    $now->format('Y-m-d H:i:s')
+                ]
+            ];
+        }
+
+        $sectionMap = [
+            'आज' => 'today',
+            'कल' => 'yesterday',
+            'इस सप्ताह' => 'current-week',
+            'इस माह' => 'current-month',
+            'कुल' => 'all',
+        ];
+
+        $result = [];
+
+        foreach ($ranges as $label => [$start, $end]) {
+            $records = DB::table('complaint')
+                ->selectRaw("
+                SUM(CASE WHEN complaint_type = 'समस्या' THEN 1 ELSE 0 END) as samasya,
+                SUM(CASE WHEN complaint_type = 'विकास' THEN 1 ELSE 0 END) as vikash,
+                SUM(CASE WHEN complaint_type = 'अशुभ सुचना' THEN 1 ELSE 0 END) as asubh,
+                SUM(CASE WHEN complaint_type = 'शुभ सुचना' THEN 1 ELSE 0 END) as subh
+            ")
+                ->where('complaint_created_by', $userId)
+                ->where('type', 2)
+                ->whereBetween('posted_date', [$start, $end])
+                ->first();
+
+            $entry = [
+                'samay' => $label,
+                'section' => $sectionMap[$label] ?? null,
+                'samasya' => $records ? ($records->samasya + $records->vikash) : 0,
+                'samasya_details' => [
+                    'samasya' => $records->samasya ?? 0,
+                    'vikash'  => $records->vikash ?? 0,
+                ],
+                'suchna' => $records ? ($records->subh + $records->asubh) : 0,
+                'suchna_details' => [
+                    'subh'  => $records->subh ?? 0,
+                    'asubh' => $records->asubh ?? 0,
+                ],
+            ];
+
+            $result[] = $entry;
+        }
+
+        return response()->json($result);
+    }
+
+
+
+    public function getTodaysFollowups()
+    {
+        $todayStart = Carbon::today()->startOfDay();
+        $todayEnd   = Carbon::today()->endOfDay();
+        $userId     = session('user_id');
+
+        $todaysFollowups = FollowupStatus::whereBetween('followup_date', [$todayStart, $todayEnd])
+            ->where('followup_created_by', $userId)
+            ->get()
+            ->groupBy('complaint_reply_id');
+
+        $newFollowups = 0;
+        $newPending = 0;
+        $newCompleted = 0;
+        $oldFollowups = 0;
+        $oldPending = 0;
+        $oldCompleted = 0;
+
+        foreach ($todaysFollowups as $replyId => $followups) {
+            $firstFollowupToday = $followups->sortBy('followup_date')->first();
+
+            $hadBefore = FollowupStatus::where('complaint_reply_id', $replyId)
+                ->where('followup_date', '<', $todayStart)
+                ->exists();
+
+            if ($hadBefore) {
+                $oldFollowups++;
+                if ($firstFollowupToday->followup_status == 1) {
+                    $oldPending++;
+                }
+
+                if ($firstFollowupToday->followup_status == 2) {
+                    $oldCompleted++;
+                }
+            } else {
+                $newFollowups++;
+                if ($firstFollowupToday->followup_status == 1) {
+                    $newPending++;
+                }
+
+                if ($firstFollowupToday->followup_status == 2) {
+                    $newCompleted++;
+                }
+            }
+        }
+
+        return response()->json([
+            'new_followups' => $newFollowups,
+            'new_pending'   => $newPending,
+            'new_completed'   => $newCompleted,
+            'old_followups' => $oldFollowups,
+            'old_pending'   => $oldPending,
+            'old_completed'   => $oldCompleted,
+        ]);
+    }
+
+    public function getFollowupSummary(Request $request)
+    {
+        $from = $request->query('from');
+        $to = $request->query('to');
+        $now = Carbon::now();
+        $userId = session('user_id');
+
+        $ranges = [];
+
+        if ($from && $to) {
+            $start = Carbon::parse($from)->startOfDay();
+            $end = Carbon::parse($to)->endOfDay();
+            $ranges["$from – $to"] = [$start, $end];
+        } else {
+            $ranges = [
+                'आज' => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
+                'कल' => [$now->copy()->subDay()->startOfDay(), $now->copy()->subDay()->endOfDay()],
+                'इस सप्ताह' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],
+                'इस माह' => [$now->copy()->startOfMonth(), $now],
+                'कुल' => [Carbon::create(2000, 1, 1)->format('Y-m-d H:i:s'), $now->format('Y-m-d H:i:s')],
+            ];
+        }
+
+        $result = [];
+
+        foreach ($ranges as $label => [$start, $end]) {
+            $latestFollowups = FollowupStatus::select('complaint_reply_id', 'followup_status')
+                ->where('followup_created_by', $userId)
+                ->whereBetween('followup_date', [$start, $end])
+                ->orderBy('followup_date', 'desc')
+                ->get()
+                ->groupBy('complaint_reply_id')
+                ->map(function ($group) {
+                    return $group->first();
+                });
+
+            $completed = $latestFollowups->where('followup_status', 2)->count();
+            $pending = $latestFollowups->where('followup_status', 1)->count();
+
+            $result[] = [
+                'samay' => $label,
+                'completed' => $completed,
+                'pending' => $pending,
+            ];
+        }
+
+        return response()->json($result);
+    }
+
+
+
+
+
     public function index()
     {
         $states = State::orderBy('name')->get();
