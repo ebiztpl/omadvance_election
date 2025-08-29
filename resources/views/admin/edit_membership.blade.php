@@ -1,13 +1,13 @@
 @php
-    $pageTitle = 'सदस्यता फाॅर्म';
+    $pageTitle = 'अपडेट सदस्यता फाॅर्म';
     $breadcrumbs = [
         'एडमिन' => '#',
-        'सदस्यता फाॅर्म' => '#',
+        'अपडेट सदस्यता फाॅर्म' => '#',
     ];
 @endphp
 
 @extends('layouts.app')
-@section('title', 'Membership form')
+@section('title', 'Edit Membership form')
 
 @section('content')
     <div class="container">
@@ -34,7 +34,8 @@
         <h2 class="mb-4 text-center">सदस्यता फॉर्म</h2>
         <div class="row page-titles mx-0">
             <div class="col-md-12 col-sm-12 col-xs-12">
-                <form method="POST" action="{{ route('membership.store') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('membership.update', $registration->registration_id) }}"
+                    enctype="multipart/form-data">
                     @csrf
                     <fieldset>
                         <div
@@ -48,10 +49,12 @@
                                 <div class="text">
                                     <label>आपको बीजेएस संगठन से जोड़ने वाले साथी का मोबाइल नं./संकल्प पत्र क्र. (अगर कोई
                                         है तो)</label>
-                                    <input type="text" class="form-control" name="member_id_post" id="member_id_post">
+                                    <input type="text" class="form-control" name="member_id_post" id="member_id_post"
+                                        value="{{ old('member_id_post', $registration->member_id_post ?? '') }}">
                                 </div>
 
-                                <input type="hidden" id="reference_id" name="reference_id" />
+                                <input type="hidden" id="reference_id" name="reference_id"
+                                    value="{{ old('reference_id', $registration->reference_id ?? '') }}" />
                             </div>
 
                             <div class="col-md-6" style="display:none;">
@@ -79,14 +82,16 @@
                             <div class="col-md-2 mb-2">
                                 <label for="first_name" class="form-label label-heading">संकल्प पत्रकर्ता का नाम <span
                                         class="error">*</span></label>
-                                <input type="text" class="form-control" name="name" id="name" required>
+                                <input type="text" class="form-control" name="name" id="name" required
+                                    value="{{ old('name', $registration->name) }}">
                             </div>
 
 
                             <div class="col-md-2 mb-2">
                                 <label for="first_name" class="form-label label-heading">पिता/पति का नाम <span
                                         class="error">*</span></label>
-                                <input type="text" class="form-control" name="father_name" id="father_name" required>
+                                <input type="text" class="form-control" name="father_name" id="father_name"
+                                    value="{{ old('father_name', $registration->father_name) }}" required>
                             </div>
 
                             <div class="col-md-2 mb-2">
@@ -95,7 +100,9 @@
                                 <select name="jati" class="form-control" required>
                                     <option value="">--जाति चुनें--</option>
                                     @foreach ($jatis as $jati)
-                                        <option value="{{ $jati->jati_name }}">{{ $jati->jati_name }}
+                                        <option value="{{ $jati->jati_name }}"
+                                            {{ old('jati', $registration->jati) == $jati->jati_name ? 'selected' : '' }}>
+                                            {{ $jati->jati_name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -107,7 +114,9 @@
                                 <select name="caste" id="caste" class="form-control" required>
                                     <option value="">--चुनें--</option>
                                     @foreach ($categories as $category)
-                                        <option value="{{ $category->category }}">{{ $category->category }}
+                                        <option value="{{ $category->category }}"
+                                            {{ old('caste', $registration->caste) == $category->category ? 'selected' : '' }}>
+                                            {{ $category->category }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -119,7 +128,9 @@
                                 <select name="religion" id="religion" class="form-control" required>
                                     <option value="">--चुनें--</option>
                                     @foreach ($religions as $religion)
-                                        <option value="{{ $religion->religion_name }}">{{ $religion->religion_name }}
+                                        <option value="{{ $religion->religion_name }}"
+                                            {{ old('religion', $registration->religion) == $religion->religion_name ? 'selected' : '' }}>
+                                            {{ $religion->religion_name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -128,13 +139,15 @@
                             <div class="col-md-2 mb-2">
                                 <label for="dob" class="form-label label-heading">जन्म दिनांक <span
                                         class="error">*</span></label>
-                                <input type="date" id="date" name="date" class="form-control" required>
+                                <input type="date" id="date" name="date" class="form-control"
+                                    value="{{ old('date', $registration->dob) }}" required>
                             </div>
 
                             <div class="col-md-2 mb-2">
                                 <label for="age" class="form-label label-heading">आयु <span
                                         class="error">*</span></label>
-                                <input type="text" name="age" id="age" class="form-control" required>
+                                <input type="text" name="age" id="age" class="form-control"
+                                    value="{{ old('age', $registration->age) }}" required>
                             </div>
 
                             <div class="col-md-2 mb-2">
@@ -142,9 +155,15 @@
                                         class="error">*</span></label>
                                 <select name="gender" id="gender" class="form-control" required>
                                     <option value="">--चुनें--</option>
-                                    <option value="पुरुष">पुरुष</option>
-                                    <option value="स्त्री">स्त्री</option>
-                                    <option value="अन्य">अन्य</option>
+                                    <option value="पुरुष"
+                                        {{ old('gender', $registration->gender) == 'पुरुष' ? 'selected' : '' }}>पुरुष
+                                    </option>
+                                    <option value="स्त्री"
+                                        {{ old('gender', $registration->gender) == 'स्त्री' ? 'selected' : '' }}>स्त्री
+                                    </option>
+                                    <option value="अन्य"
+                                        {{ old('gender', $registration->gender) == 'अन्य' ? 'selected' : '' }}>अन्य
+                                    </option>
                                 </select>
                             </div>
 
@@ -153,25 +172,25 @@
                                         class="error">*</span></label>
                                 <span id="msg"></span>
                                 <input type="number" name="mobile_1" class="form-control" id="mobile_1"
-                                    pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10" required autocomplete="">
+                                    pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10"
+                                    value="{{ old('mobile_1', $registration->mobile1) }}" required autocomplete="">
                             </div>
 
                             <div class="col-md-2 mb-2">
                                 <div class="form-check custom-control form-control-lg custom-checkbox">
                                     <input type="checkbox" class="form-check-input custom-control-input"
-                                        id="mobile_1_whatsapp" name="mobile_1_whatsapp" value="1">
-                                    <label class="custom-control-label form-check-label" for="mobile_1_whatsapp">
-                                        व्हाट्सएप नं.?
-                                    </label>
+                                        id="mobile_1_whataspp" name="mobile_1_whataspp" value="1"
+                                        {{ old('mobile_1_whataspp', $registration->mobile1_whatsapp ?? 0) == 1 ? 'checked' : '' }}>
+                                    <label class="custom-control-label form-check-label" for="mobile_1_whataspp">
+                                        व्हाट्सएप नं.?</label>
                                 </div>
                             </div>
-
-
 
                             <div class="col-md-2 mb-2">
                                 <label for="mobile_2" class="form-label label-heading">मोबाइल 2</label>
                                 <input type="number" name="mobile_2" class="form-control" id="mobile_2"
-                                    pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10">
+                                    pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10"
+                                    value="{{ old('mobile_2', $registration->mobile2) }}">
                             </div>
 
 
@@ -184,17 +203,18 @@
                             <div class="col-md-2 mb-2">
                                 <div class="form-check custom-control form-control-lg custom-checkbox">
                                     <input type="checkbox" class="form-check-input custom-control-input"
-                                        id="mobile_2_whatsapp" name="mobile_2_whatsapp" value="1">
-                                    <label class="custom-control-label form-check-label" for="mobile_2_whatsapp">
-                                        व्हाट्सएप नं.?
-                                    </label>
+                                        id="mobile_2_whataspp" name="mobile_2_whataspp" value="1"
+                                        {{ old('mobile_2_whataspp', $registration->mobile2_whatsapp ?? 0) == 1 ? 'checked' : '' }}>
+                                    <label class="custom-control-label form-check-label" for="mobile_2_whataspp">
+                                        व्हाट्सएप नं.?</label>
                                 </div>
                             </div>
 
                             <div class="col-md-2 mb-2">
                                 <label for="email" class="form-label label-heading">ईमेल आईडी <span
                                         class="error">*</span></label>
-                                <input type="email" name="email" class="form-control" id="email" required>
+                                <input type="email" value="{{ old('email', $registration->email) }}" name="email"
+                                    class="form-control" id="email" required>
                             </div>
 
                             <div class="col-md-2 mb-2">
@@ -203,7 +223,9 @@
                                 <select name="education" id="education" class="form-control" required>
                                     <option value="">--चुनें--</option>
                                     @foreach ($educations as $education)
-                                        <option value="{{ $education->education_name }}">{{ $education->education_name }}
+                                        <option value="{{ $education->education_name }}"
+                                            {{ old('education', $registration->education) == $education->education_name ? 'selected' : '' }}>
+                                            {{ $education->education_name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -215,7 +237,9 @@
                                 <select name="business" id="business" class="form-control" required>
                                     <option value="">--चुनें--</option>
                                     @foreach ($businesses as $business)
-                                        <option value="{{ $business->business_name }}">{{ $business->business_name }}
+                                        <option value="{{ $business->business_name }}"
+                                            {{ old('business', $registration->business) == $business->business_name ? 'selected' : '' }}>
+                                            {{ $business->business_name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -225,16 +249,23 @@
                                 <label class="form-label label-heading required">बी.जे.एस सदस्यता </label>
                                 <select name="membership" class="form-control" id="membership" required>
                                     <option value="">--चुनें--</option>
-                                    <option value="समर्पित कार्यकर्ता">समर्पित कार्यकर्ता</option>
-                                    <option value="सक्रिय कार्यकर्ता">सक्रिय कार्यकर्ता</option>
-                                    <option value="साधारण कार्यकर्ता">साधारण कार्यकर्ता</option>
+                                    <option value="समर्पित कार्यकर्ता"
+                                        {{ old('membership', $registration->membership) == 'समर्पित कार्यकर्ता' ? 'selected' : '' }}>
+                                        समर्पित कार्यकर्ता</option>
+                                    <option value="सक्रिय कार्यकर्ता"
+                                        {{ old('membership', $registration->membership) == 'सक्रिय कार्यकर्ता' ? 'selected' : '' }}>
+                                        सक्रिय कार्यकर्ता</option>
+                                    <option value="साधारण कार्यकर्ता"
+                                        {{ old('membership', $registration->membership) == 'साधारण कार्यकर्ता' ? 'selected' : '' }}>
+                                        साधारण कार्यकर्ता</option>
                                 </select>
                             </div>
 
                             <div class="col-md-2 mb-2" style="display: none;">
                                 <label for="position" class="form-label label-heading">व्यवसायिक पद </label>
                                 <div class="form-select">
-                                    <input type="text" name="position" id="position" class="form-control">
+                                    <input type="text" name="position" id="position" class="form-control"
+                                        value="{{ old('position', $registration->position) }}">
                                 </div>
                             </div>
 
@@ -244,7 +275,9 @@
                                 <select name="party_name" id="party_name" class="form-control" required>
                                     <option value="">--चुनें--</option>
                                     @foreach ($politics as $politic)
-                                        <option value="{{ $politic->name }}">{{ $politic->name }}
+                                        <option value="{{ $politic->name }}"
+                                            {{ old('party_name', $registration->step4->party_name) == $politic->name ? 'selected' : '' }}>
+                                            {{ $politic->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -253,7 +286,7 @@
                             <div class="col-md-2 mb-2">
                                 <label class="form-label label-heading">पद वर्तमान/भूतपूर्व </label>
                                 <input type="text" name="present_post" class="form-control" id="present_post"
-                                    placeholder="">
+                                    value="{{ old('present_post', $registration->step4->present_post) }}" placeholder="">
                             </div>
                         </div>
 
@@ -267,8 +300,17 @@
                                 <div class="col-md-2 mb-2">
                                     <label for="interestSelect" class="form-label label-heading">रुचि चुनें</label>
                                     <select name="interest[]" id="interestSelect" class="form-control" multiple>
+                                        @php
+                                            $selectedInterests = [];
+                                            if ($registration->step3 && $registration->step3->intrest) {
+                                                $selectedInterests = explode(',', $registration->step3->intrest);
+                                            }
+                                        @endphp
+
                                         @foreach ($interests as $interest)
-                                            <option value="{{ $interest->interest_name }}">{{ $interest->interest_name }}
+                                            <option value="{{ $interest->interest_name }}"
+                                                {{ in_array($interest->interest_name, old('interest', $selectedInterests)) ? 'selected' : '' }}>
+                                                {{ $interest->interest_name }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -279,14 +321,16 @@
                                             class="error">*</span>
                                     </label>
                                     <input type="text" name="total_member" id="total_member" class="form-control"
-                                        placeholder="" required>
+                                        placeholder=""
+                                        value="{{ old('total_member', $registration->step3->total_member) }}" required>
                                 </div>
                                 <div class="col-md-2 mb-2">
                                     <label for="total_voter" class="form-label label-heading ">परिवार में कुल मतदाता <span
                                             class="error">*</span>
                                     </label>
-                                    <input type="text" name="total_voter" id="total_voter" class="form-control"
-                                        placeholder="" required>
+                                    <input type="text" name="total_voter" id="total_voter"
+                                        value="{{ old('total_voter', $registration->step3->total_voter) }}"
+                                        class="form-control" placeholder="" required>
                                 </div>
 
                                 <div class="col-md-2 mb-2" style="display:none;">
@@ -301,7 +345,7 @@
                                             class="error">*</span></label>
 
                                     <input type="text" name="member_name_1" class="form-control" id="member_name_1"
-                                        required>
+                                        required value="{{ old('member_name_1', $registration->step3->member_name_1) }}">
                                 </div>
 
                                 <div class="col-md-2 mb-2">
@@ -309,7 +353,8 @@
                                             class="error">*</span></label>
                                     <input type="number" name="member_mobile_1" class="form-control"
                                         id="member_mobile_1" pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10"
-                                        required>
+                                        required
+                                        value="{{ old('member_mobile_1', $registration->step3->member_mobile_1) }}">
                                 </div>
                             </div>
                         </fieldset>
@@ -335,19 +380,19 @@
                                 <div class="col-md-2 mb-2">
                                     <label class="form-label label-heading">मोटरसाइकिल</label>
                                     <input type="text" name="vehicle3" class="form-control" id="vehicle3"
-                                        value="">
+                                        value="{{ old('vehicle3', $registration->step3->vehicle3) }}">
                                 </div>
 
                                 <div class="col-md-2 mb-2">
                                     <label class="form-label label-heading">कार</label>
                                     <input type="text" class="form-control" name="vehicle1" id="vehicle1"
-                                        value="">
+                                        value="{{ old('vehicle1', $registration->step3->vehicle1) }}">
                                 </div>
 
                                 <div class="col-md-2 mb-2">
                                     <label class="form-label label-heading">ट्रेक्टर</label>
                                     <input type="text" class="form-control" name="vehicle2" id="vehicle2"
-                                        value="">
+                                        value="{{ old('vehicle2', $registration->step3->vehicle2) }}">
                                 </div>
                             </div>
                         </fieldset>
@@ -395,7 +440,9 @@
                                 <select name="division_name" class="form-control" required>
                                     <option value="">--संभाग चुनें--</option>
                                     @foreach ($divisions as $division)
-                                        <option value="{{ $division->division_id }}">{{ $division->division_name }}
+                                        <option value="{{ $division->division_id }}"
+                                            {{ $registration->step2 && $registration->step2->division_id == $division->division_id ? 'selected' : '' }}>
+                                            {{ $division->division_name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -405,28 +452,59 @@
                                 <label for="district" class="form-label label-heading required">जिले का नाम <span
                                         class="error">*</span></label>
                                 <select name="district" id="district" required class="form-control">
+                                    @if ($registration->step2 && $registration->step2->districtRelation)
+                                        <option value="{{ $registration->step2->district }}">
+                                            {{ $registration->step2->districtRelation->district_name ?? 'N/A' }}
+                                        </option>
+                                    @endif
                                 </select>
                             </div>
+
+
 
                             <div class="col-md-2 mb-2">
                                 <label for="loksabha" class="form-label label-heading required">लोकसभा <span
                                         class="error">*</span></label>
                                 <select name="loksabha" id="loksabha" required class="form-control">
+                                    @php
+                                        $loksabha = $registration->step2
+                                            ? $registration->step2->loksabhaRelation()
+                                            : null;
+                                    @endphp
+                                    @if ($loksabha)
+                                        <option value="{{ $registration->step2->loksabha }}" selected>
+                                            {{ $loksabha->loksabha ?? 'N/A' }}
+                                        </option>
+                                    @else
+                                        <option value="{{ $registration->step2->loksabha ?? '' }}" selected>
+                                            {{ $registration->step2->loksabha ?? 'N/A' }}
+                                        </option>
+                                    @endif
                                 </select>
                             </div>
 
+
                             <div class="col-md-2 mb-2">
                                 <label for="vidhansabha" class="form-label label-heading required">विधानसभा नाम/क्रमांक
-                                    <span class="error">*</span>
-                                </label>
+                                    <span class="error">*</span></label>
                                 <select name="vidhansabha" id="vidhansabha" required class="form-control">
+                                    @if ($registration->step2 && $registration->step2->vidhansabhaRelation)
+                                        <option value="{{ $registration->step2->vidhansabha }}">
+                                            {{ $registration->step2->vidhansabhaRelation->vidhansabha ?? 'N/A' }}
+                                        </option>
+                                    @endif
                                 </select>
                             </div>
 
                             <div class="col-md-2 mb-2">
                                 <label for="mandal" class="form-label label-heading">मंडल का नाम <span
                                         class="error">*</span></label>
-                                <select name="mandal" id="mandal" disabled class="form-control">
+                                <select name="mandal" id="mandal" class="form-control">
+                                    @if ($registration->step2 && $registration->step2->mandalRelation)
+                                        <option value="{{ $registration->step2->mandal }}" selected>
+                                            {{ $registration->step2->mandalRelation->mandal_name ?? 'N/A' }}
+                                        </option>
+                                    @endif
                                 </select>
                             </div>
 
@@ -434,33 +512,56 @@
                                 <label for="mandal_type" class="form-label label-heading">मंडल का प्रकार </label>
                                 <select name="mandal_type" id="mandal_type" class="form-control">
                                     <option value=''>--चुनें--</option>
-                                    <option value="1">ग्रामीण मंडल</option>
-                                    <option value="2">नगर मंडल</option>
+                                    <option value="1"
+                                        {{ old('mandal_type', $registration->step2->mandal_type ?? '') == 1 ? 'selected' : '' }}>
+                                        ग्रामीण मंडल</option>
+                                    <option value="2"
+                                        {{ old('mandal_type', $registration->step2->mandal_type ?? '') == 2 ? 'selected' : '' }}>
+                                        नगर मंडल</option>
                                 </select>
                             </div>
 
                             <div class="col-md-2 mb-2">
                                 <label for="nagar" class="form-label label-heading">कमांड एरिया <span
                                         class="error">*</span></label>
-                                <select name="nagar" id="nagar" disabled class="form-control">
+                                <select name="nagar" id="nagar" class="form-control">
+                                    @if ($registration->step2 && $registration->step2->nagarRelation)
+                                        <option value="{{ $registration->step2->nagar }}">
+                                            {{ $registration->step2->nagarRelation->nagar_name ?? 'N/A' }}
+                                        </option>
+                                    @endif
                                 </select>
                             </div>
 
 
                             <div class="col-md-2 mb-2">
                                 <label for="matdan_kendra_name" class="form-label label-heading">मतदान केंद्र/क्रमांक
-                                    <span class="error">*</span>
-                                </label>
-                                <select name="matdan_kendra_name" class="form-control" id="matdan_kendra_name" disabled>
+                                    <span class="error">*</span></label>
+                                <select name="matdan_kendra_name" class="form-control" id="matdan_kendra_name">
+                                    @if ($registration->step2 && $registration->step2->polling)
+                                        <option value="{{ $registration->step2->polling->gram_polling_id }}"
+                                            data-polling-no="{{ $registration->step2->matdan_kendra_no }}" selected>
+                                            {{ $registration->step2->matdan_kendra_no }} -
+                                            {{ $registration->step2->polling->polling_name }}
+                                        </option>
+                                    @endif
                                 </select>
-                                 <input type="hidden" name="matdan_kendra_no" id="matdan_kendra_no" value="">
+
+                                <input type="hidden" name="matdan_kendra_no" id="matdan_kendra_no"
+                                    value="{{ $registration->step2->matdan_kendra_no ?? 0 }}">
                             </div>
+
 
 
                             <div class="col-md-2 mb-2">
                                 <label for="area" class="form-label label-heading">निवासी ग्राम/वार्ड चौपाल <span
                                         class="error">*</span></label>
-                                <select name="area_name" class="form-control" id="area_name" disabled>
+                                <select name="area_name" class="form-control" id="area_name">
+                                    @if ($registration->step2 && $registration->step2->areaRelation)
+                                        <option value="{{ $registration->step2->area_id }}">
+                                            {{ $registration->step2->areaRelation->area_name ?? 'N/A' }}
+                                        </option>
+                                    @endif
                                 </select>
                             </div>
 
@@ -468,7 +569,7 @@
                                 <label for="permanent_address" class="form-label label-heading required">स्थाई पता <span
                                         class="error">*</span></label>
                                 <textarea type="textarea" class="form-control" name="permanent_address" id="permanent_address" rows="2"
-                                    required=""></textarea>
+                                    required="">{{ old('permanent_address', $registration->step3->permanent_address) }}</textarea>
                             </div>
 
 
@@ -478,10 +579,11 @@
                                     <span class="d-flex align-items-center">
                                         स्थाई पता के समान&nbsp;
                                         <input type="checkbox" name="permanent_address_check"
-                                            id="permanent_address_check">
+                                            id="permanent_address_check"
+                                            {{ old('permanent_address_check', $registration->step3->temp_address == $registration->step3->permanent_address ? 'checked' : '') }}>
                                     </span>
                                 </label>
-                                <textarea class="form-control" name="temp_address" id="temp_address" rows="2"></textarea>
+                                <textarea class="form-control" name="temp_address" id="temp_address" rows="2">{{ old('temp_address', $registration->step3->temp_address) }}</textarea>
                             </div>
 
                             <div class="col-md-2 mb-2" style="display: none;">
@@ -512,27 +614,48 @@
                             <div class="col-md-4 mb-2">
                                 <label for="voter_front" class="form-label label-heading">वोटर आई.डी. आगे का फोटो <span
                                         class="error">*</span></label>
-                                <input type="file" name="voter_front" id="voter_front" class="form-control file"
-                                    required>
-                                <img id="voter_front_photo" src="#" alt="" width="210"
-                                    style="padding-top:10px;" />
+
+                                @if (!empty($registration->step2) && !empty($registration->step2->voter_front))
+                                    <img id="voter_front_photo"
+                                        src="{{ asset('assets/upload/step2/' . $registration->step2->voter_front) }}"
+                                        alt="Voter Front" style="padding-top:10px; width:200px; height:200px; object-fit: cover;">
+                                @else
+                                    <img id="voter_front_photo" src="#" alt="" width="210"
+                                        style="padding-top:10px; width:200px; height:200px; object-fit: cover; display:none;">
+                                @endif
+                                <input type="file" name="voter_front" id="voter_front"
+                                    class="form-control file mt-2">
                             </div>
 
                             <div class="col-md-4 mb-2">
                                 <label for="voter_back" class="form-label label-heading">वोटर आई.डी. पीछे का फोटो <span
                                         class="error">*</span></label>
-                                <input type="file" name="voter_back" id="voter_back" class="form-control file"
-                                    required>
-                                <img id="voter_back_photo" src="#" alt="" width="210"
-                                    style="padding-top:10px;" />
+
+                                @if (!empty($registration->step2) && !empty($registration->step2->voter_back))
+                                    <img id="voter_back_photo"
+                                        src="{{ asset('assets/upload/step2/' . $registration->step2->voter_back) }}"
+                                        alt="Voter Back" style="padding-top:10px; width:200px; height:200px; object-fit: cover;">
+                                @else
+                                    <img id="voter_back_photo" src="#" alt="" width="210"
+                                        style="padding-top:10px; width:200px; height:200px; object-fit: cover; display:none;">
+                                @endif
+                                <input type="file" name="voter_back" id="voter_back" class="form-control file mt-2">
                             </div>
 
                             <div class="col-md-4 mb-2">
                                 <label for="photo" class="form-label label-heading required">संकल्प कर्ता का फोटो <span
                                         class="error">*</span>
                                 </label>
-                                <input type="file" accept="" class="form-control file" id="photo"
-                                    name="file" required />
+
+                                 @if (!empty($registration->photo))
+                                    <img id="photo_preview" src="{{ asset('assets/upload/' . $registration->photo) }}"
+                                        alt="Member Photo" style="padding-top:10px; width:200px; height:200px; object-fit: cover;">
+                                @else
+                                    <img id="photo_preview" src="#" alt=""
+                                        style="padding-top:10px; width:200px; height:200px; object-fit: cover; display:none;">
+                                @endif
+                                <input type="file" accept="" class="form-control file mt-2" id="photo"
+                                    name="file" />
                             </div>
 
                             {{-- <div class="col-lg-3 col-md-3 col-12">
@@ -546,13 +669,14 @@
                                 <label class="form-label label-heading">सदस्यता का कारण/उदेश्य : आप बीजेएस के सदस्य क्यों
                                     बन रहे हैं
                                 </label>
-                                <textarea name="reason_join" id="reason_join" placeholder="" rows="3" class="form-control"> </textarea>
+                                <textarea name="reason_join" id="reason_join" placeholder="" rows="3" class="form-control"> {{ old('reason_join', $registration->step4->reason_join) }}</textarea>
                             </div>
 
                             <div class="col-lg-12">
                                 <lable class="form-label label-heading required"></label>
                                     <input type="checkbox" id="final_check"
-                                        style="width: 14px;display: initial;height:14px;" class="form-control" required>
+                                        style="width: 14px;display: initial;height:14px;" class="form-control" checked
+                                        required>
                                     अंतरात्मा को साक्षी मानकर मैं संकल्प लेता हूं कि भारतीय जनसेवा संगठन के माध्यम से बिना
                                     जाति, लिंग, धर्म, समाज का भेद किये गरीब शोषित पीड़ित उपेक्षित आखरी व्यक्ति के जीवन
                                     उत्थान के लिए समर्पण भाव से कार्य करुंगा तथा इसमें बाधक किसी भी प्रकार के शोषण
@@ -798,12 +922,10 @@
 
                 $('#matdan_kendra_name').on('change', function() {
                     const selected = $(this).find('option:selected');
-                    const pollingNo = selected.data('polling-no');
-                    const pollingName = selected.data('polling-name');
+                    const pollingNo = selected.data('polling-no') || 0;
+                    const pollingName = selected.data('polling-name') || '';
 
                     $('#matdan_kendra_no').val(pollingNo);
-
-
                     console.log('Polling No:', pollingNo, 'Polling Name:', pollingName);
                 });
 

@@ -18,6 +18,13 @@ use App\Models\Mandal;
 use App\Models\Nagar;
 use App\Models\Area;
 use App\Models\Polling;
+use App\Models\Jati;
+use App\Models\Interest;
+use App\Models\Business;
+use App\Models\Politics;
+use App\Models\Education;
+use App\Models\Category;
+use App\Models\Religion;
 use App\Models\Level;
 use App\Models\Position;
 use App\Models\Complaint;
@@ -302,9 +309,13 @@ class AdminController extends Controller
                 'entry_date' => date('d-m-Y', strtotime($row->date_time)),
                 'action' => '
                     <div style="display: flex;">
-                        <a href="' . route('register.show', $row->registration_id) . '" class="btn btn-sm btn-success mr-2">View</a>
-                        <a href="' . route('register.card', $row->registration_id) . '" class="btn btn-sm btn-primary mr-2">Card</a>
-                        <a href="' . route('register.destroy', $row->registration_id) . '" class="btn btn-sm btn-danger">Delete</a>
+                        <a href="' . route('register.show', $row->registration_id) . '" class="btn btn-sm btn-success mr-2">विवरण</a>
+                        <a href="' . route('register.card', $row->registration_id) . '" class="btn btn-sm btn-primary mr-2">कार्ड</a>
+                        <a href="' . route('register.destroy', $row->registration_id) . '" class="btn btn-sm btn-danger">हटाएं</a>
+                    </div>',
+                'edit' => '
+                    <div style="display: flex;">
+                        <a href="' . route('membership.edit', $row->registration_id) . '" class="btn btn-sm btn-info mr-2">अपडेट</a>
                     </div>'
             ];
         }
@@ -892,9 +903,9 @@ class AdminController extends Controller
             ->orderByDesc('assign_position_id')
             ->first();
 
-        $positionName = $assignPosition->position->position_name;
-        $fromDate = Carbon::parse($assignPosition->from_date)->format('d-M-Y');
-        $toDate = Carbon::parse($assignPosition->to_date)->format('d-M-Y');
+        $positionName = $assignPosition->position->position_name ?? 'दायित्व नहीं दिया';
+        $fromDate = $assignPosition ? Carbon::parse($assignPosition->from_date)->format('d-M-Y') : 'नहीं है';
+        $toDate   = $assignPosition ? Carbon::parse($assignPosition->to_date)->format('d-M-Y') : '';
 
         $photoPath = public_path('assets/upload/' . $member->photo);
         $backgroundPath = public_path('assets/images/member_back.jpg');
@@ -2066,7 +2077,7 @@ class AdminController extends Controller
             $query->whereDate('program_date', '<=', $request->programto_date);
         }
 
-      
+
         $complaints = $query->orderBy('posted_date', 'desc')->get();
 
         // Add extra data to each complaint
@@ -4532,7 +4543,7 @@ class AdminController extends Controller
         ]);
     }
 
-// it is working but for more data it is not working
+    // it is working but for more data it is not working
     // public function downloadvoterFullData(Request $request)
     // {
     //     $query = DB::table('registration_form')->where('type', 1);
@@ -4912,7 +4923,14 @@ class AdminController extends Controller
     public function membercreate()
     {
         $divisions = Division::all();
-        return view('admin/membership_form', compact('divisions'));
+        $jatis = Jati::all();
+        $categories = Category::all();
+        $religions = Religion::all();
+        $educations = Education::all();
+        $businesses = Business::all();
+        $politics = Politics::all();
+        $interests = Interest::all();
+        return view('admin/membership_form', compact('divisions', 'jatis', 'categories', 'religions', 'educations', 'businesses', 'politics', 'interests'));
     }
 
     public function getDistricts(Request $request)
@@ -4938,7 +4956,6 @@ class AdminController extends Controller
         DB::beginTransaction();
 
         try {
-            // 1. Save to registration_form
             $registration = new RegistrationForm();
             $registration->reference_id = $request->reference_id ?? 0;
             $registration->member_id = $request->mobile_1;
@@ -4949,19 +4966,24 @@ class AdminController extends Controller
             $registration->age = $request->age;
             $registration->mobile1 = $request->mobile_1;
             $registration->mobile2 = $request->mobile_2;
-            $registration->mobile1_whatsapp = $request->has('mobile_1_whatsapp') ? 1 : 0;
-            $registration->mobile2_whatsapp = $request->has('mobile_2_whatsapp') ? 1 : 0;
+            $registration->mobile1_whatsapp = $request->input('mobile_1_whatsapp') == '1' ? 1 : 0;
+            $registration->mobile2_whatsapp = $request->input('mobile_2_whatsapp') == '1' ? 1 : 0;
             $registration->religion = $request->religion;
             $registration->caste = $request->caste;
             $registration->jati = $request->jati;
             $registration->education = $request->education;
             $registration->business = $request->business;
-            $registration->position = $request->position;
+            $registration->position_id = $request->position_id ?? 0;
+            $registration->position = $request->position ?? '';
             $registration->father_name = $request->father_name;
             $registration->email = $request->email;
             $registration->pincode = $request->pincode;
-            $registration->samagra_id = $request->samagra_id;
+            $registration->samagra_id = $request->samagra_id ?? '';
+            $registration->otp_recieved = 0;
             $registration->date_time = now();
+            $registration->type = 2;
+            $registration->voter_id = '';
+            $registration->pincode = '';
 
             // Upload photo
             if ($request->hasFile('file')) {
@@ -4982,12 +5004,158 @@ class AdminController extends Controller
             $step2->mandal_type = $request->mandal_type;
             $step2->mandal = $request->mandal;
             $step2->nagar = $request->nagar;
-            $step2->matdan_kendra_no = $request->matdan_kendra_no;
+            $step2->matdan_kendra_no = $request->matdan_kendra_no ?? 0;
             $step2->matdan_kendra_name = $request->matdan_kendra_name;
             $step2->area_id = $request->area_name;
             $step2->loksabha = $request->loksabha;
-            $step2->voter_number = $request->voter_number;
+            $step2->voter_number = $request->voter_number ?? '';
+            $step2->house = $request->house ?? '';
             $step2->post_date = now();
+
+            if ($request->hasFile('voter_front')) {
+                $frontName = 'front_' . time() . '.' . $request->voter_front->extension();
+                $request->voter_front->move(public_path('assets/upload/step2'), $frontName);
+                $step2->voter_front = $frontName ?? '';
+            }
+
+            if ($request->hasFile('voter_back')) {
+                $backName = 'back_' . time() . '.' . $request->voter_back->extension();
+                $request->voter_back->move(public_path('assets/upload/step2'), $backName);
+                $step2->voter_back = $backName ?? '';
+            }
+
+            $step2->save();
+
+            // 3. Step 3
+            $step3 = new Step3();
+            $step3->registration_id = $registration_id;
+            $step3->total_member = $request->total_member;
+            $step3->total_voter = $request->total_voter;
+            $step3->member_job = $request->member_job ?? '';
+            $step3->member_name_1 = $request->member_name_1 ?? '';
+            $step3->member_mobile_1 = $request->member_mobile_1 ?? '';
+            $step3->member_name_2 = $request->member_name_2 ?? '';
+            $step3->member_mobile_2 = $request->member_mobile_2 ?? '';
+            $step3->friend_name_1 = $request->friend_name_1 ?? '';
+            $step3->friend_mobile_1 = $request->friend_mobile_1 ?? '';
+            $step3->friend_name_2 = $request->friend_name_2 ?? '';
+            $step3->friend_mobile_2 = $request->friend_mobile_2 ?? '';
+            $step3->intrest = is_array($request->interest) ? implode(',', $request->interest) : '';
+            $step3->vehicle1 = $request->vehicle1 ?? '';
+            $step3->vehicle2 = $request->vehicle2 ?? '';
+            $step3->vehicle3 = $request->vehicle3 ?? '';
+            $step3->mukhiya_mobile = $request->mukhiya_mobile ?? '';
+            $step3->permanent_address = $request->permanent_address ?? '';
+            $step3->temp_address = $request->temp_address ?? '';
+            $step3->post_date = now();
+            $step3->save();
+
+            // 4. Step 4
+            $step4 = new Step4();
+            $step4->registration_id = $registration_id;
+            $step4->party_name = $request->party_name ?? '';
+            $step4->present_post = $request->present_post ?? '';
+            $step4->reason_join = $request->reason_join ?? '';
+            $step4->post_date = now();
+            $step4->save();
+
+            DB::commit();
+            // return redirect()->route('register.card', ['id' => $registration_id]);
+            return redirect()
+                ->route('membership.create')
+                ->with('success', 'सदस्यता सफलतापूर्वक सबमिट की गई!');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+
+        // return redirect()->route('membership.create')->with('success', 'सदस्यता सफलतापूर्वक सबमिट की गई!');
+    }
+
+    public function memberedit($id)
+    {
+        $registration = RegistrationForm::with(['step2', 'step3', 'step4',
+            'step2.vidhansabhaRelation',
+            'step2.division',
+            'step2.districtRelation',
+            'step2.mandalRelation',
+            'step2.polling',
+            'step2.areaRelation',
+            'step2.nagarRelation',])->findOrFail($id);
+        $divisions = Division::all();
+        $jatis = Jati::all();
+        $categories = Category::all();
+        $religions = Religion::all();
+        $educations = Education::all();
+        $businesses = Business::all();
+        $politics = Politics::all();
+        $interests = Interest::all();
+        return view('admin/edit_membership', compact('registration', 'divisions', 'jatis', 'categories', 'religions', 'educations', 'businesses', 'politics', 'interests'));
+    }
+
+    public function memberupdate(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'membership' => 'required|string',
+            'mobile_1' => 'required|digits:10',
+            'file' => 'nullable|image|max:2048',
+            'voter_front' => 'nullable|image|max:2048',
+            'voter_back' => 'nullable|image|max:2048',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            // 1. Update Step1
+            $registration = RegistrationForm::findOrFail($id);
+            $registration->reference_id = $request->reference_id ?? 0;
+            $registration->member_id = $request->mobile_1;
+            $registration->name = $request->name;
+            $registration->membership = $request->membership;
+            $registration->gender = $request->gender;
+            $registration->dob = Carbon::createFromFormat('Y-m-d', "{$request->date}");
+            $registration->age = $request->age;
+            $registration->mobile1 = $request->mobile_1;
+            $registration->mobile2 = $request->mobile_2;
+            $registration->mobile1_whatsapp = $request->input('mobile_1_whatsapp') == '1' ? 1 : 0;
+            $registration->mobile2_whatsapp = $request->input('mobile_2_whatsapp') == '1' ? 1 : 0;
+            $registration->religion = $request->religion;
+            $registration->caste = $request->caste;
+            $registration->jati = $request->jati;
+            $registration->education = $request->education;
+            $registration->business = $request->business;
+            $registration->position_id = $request->position_id ?? 0;
+            $registration->position = $request->position ?? '';
+            $registration->father_name = $request->father_name;
+            $registration->email = $request->email;
+            $registration->pincode = $request->pincode ?? 0;
+            $registration->samagra_id = $request->samagra_id ?? '';
+
+            // Upload photo if new one provided
+            if ($request->hasFile('file')) {
+                $photoName = 'photo_' . time() . '.' . $request->file->extension();
+                $request->file->move(public_path('assets/upload'), $photoName);
+                $registration->photo = $photoName;
+            }
+            $registration->save();
+
+            // 2. Step2 update
+            $step2 = Step2::where('registration_id', $id)->first() ?? new Step2();
+            $step2->registration_id = $id;
+            $step2->division_id = $request->division_name;
+            $step2->district = $request->district;
+            $step2->vidhansabha = $request->vidhansabha;
+            $step2->mandal_type = $request->mandal_type;
+            $step2->mandal = $request->mandal;
+            $step2->nagar = $request->nagar;
+            $step2->matdan_kendra_no = $request->matdan_kendra_no ?? 0;
+            $step2->matdan_kendra_name = $request->matdan_kendra_name;
+            $step2->area_id = $request->area_name;
+            $step2->loksabha = $request->loksabha;
+            $step2->voter_number = $request->voter_number ?? '';
+            $step2->house = $request->house ?? '';
 
             if ($request->hasFile('voter_front')) {
                 $frontName = 'front_' . time() . '.' . $request->voter_front->extension();
@@ -5000,50 +5168,49 @@ class AdminController extends Controller
                 $request->voter_back->move(public_path('assets/upload/step2'), $backName);
                 $step2->voter_back = $backName;
             }
-
             $step2->save();
 
-            // 3. Step 3
-            $step3 = new Step3();
-            $step3->registration_id = $registration_id;
+            // 3. Step3 update
+            $step3 = Step3::where('registration_id', $id)->first() ?? new Step3();
+            $step3->registration_id = $id;
             $step3->total_member = $request->total_member;
             $step3->total_voter = $request->total_voter;
-            $step3->member_job = $request->member_job;
-            $step3->member_name_1 = $request->member_name_1;
-            $step3->member_mobile_1 = $request->member_mobile_1;
-            $step3->member_name_2 = $request->member_name_2;
-            $step3->member_mobile_2 = $request->member_mobile_2;
-            $step3->friend_name_1 = $request->friend_name_1;
-            $step3->friend_mobile_1 = $request->friend_mobile_1;
-            $step3->friend_name_2 = $request->friend_name_2;
-            $step3->friend_mobile_2 = $request->friend_mobile_2;
+            $step3->member_job = $request->member_job ?? '';
+            $step3->member_name_1 = $request->member_name_1 ?? '';
+            $step3->member_mobile_1 = $request->member_mobile_1 ?? '';
+            $step3->member_name_2 = $request->member_name_2 ?? '';
+            $step3->member_mobile_2 = $request->member_mobile_2 ?? '';
+            $step3->friend_name_1 = $request->friend_name_1 ?? '';
+            $step3->friend_mobile_1 = $request->friend_mobile_1 ?? '';
+            $step3->friend_name_2 = $request->friend_name_2 ?? '';
+            $step3->friend_mobile_2 = $request->friend_mobile_2 ?? '';
             $step3->intrest = is_array($request->interest) ? implode(',', $request->interest) : '';
-            $step3->vehicle1 = $request->vehicle1;
-            $step3->vehicle2 = $request->vehicle2;
-            $step3->vehicle3 = $request->vehicle3;
-            $step3->permanent_address = $request->permanent_address;
-            $step3->temp_address = $request->temp_address;
-            $step3->post_date = now();
+            $step3->vehicle1 = $request->vehicle1 ?? '';
+            $step3->vehicle2 = $request->vehicle2 ?? '';
+            $step3->vehicle3 = $request->vehicle3 ?? '';
+            $step3->mukhiya_mobile = $request->mukhiya_mobile ?? '';
+            $step3->permanent_address = $request->permanent_address ?? '';
+            $step3->temp_address = $request->temp_address ?? '';
             $step3->save();
 
-            // 4. Step 4
-            $step4 = new Step4();
-            $step4->registration_id = $registration_id;
-            $step4->party_name = $request->party_name;
-            $step4->present_post = $request->present_post;
-            $step4->reason_join = $request->reason_join;
-            $step4->post_date = now();
+            // 4. Step4 update
+            $step4 = Step4::where('registration_id', $id)->first() ?? new Step4();
+            $step4->registration_id = $id;
+            $step4->party_name = $request->party_name ?? '';
+            $step4->present_post = $request->present_post ?? '';
+            $step4->reason_join = $request->reason_join ?? '';
             $step4->save();
 
             DB::commit();
-            return redirect()->route('register.card', ['id' => $registration_id]);
+            return redirect()
+                ->route('membership.edit', $id)
+                ->with('success', 'सदस्यता सफलतापूर्वक अपडेट की गई!');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => $e->getMessage()]);
         }
-
-        // return redirect()->route('membership.create')->with('success', 'सदस्यता सफलतापूर्वक सबमिट की गई!');
     }
+
 
 
     public function getSubjects($department_id)

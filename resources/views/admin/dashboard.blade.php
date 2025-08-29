@@ -267,13 +267,14 @@
                             <table class="display table-bordered" style="min-width: 845px" id="example">
                                 <thead>
                                     <tr>
-                                        <th>Sr.No.</th>
-                                        <th>Member ID</th>
-                                        <th>Name</th>
-                                        <th>Mobile</th>
-                                        <th>Gender</th>
-                                        <th>Entry Date</th>
-                                        <th>Action</th>
+                                        <th>क्र.</th>
+                                        <th>सदस्य आईडी</th>
+                                        <th>नाम</th>
+                                        <th>मोबाइल</th>
+                                        <th>लिंग</th>
+                                        <th>सदस्यता दिनांक</th>
+                                        <th>क्रिया</th>
+                                        <th>अपडेट</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -404,6 +405,12 @@
                         {
                             data: 'action',
                             name: 'action',
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
+                            data: 'edit',
+                            name: 'edit',
                             orderable: false,
                             searchable: false
                         }
