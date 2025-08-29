@@ -37,8 +37,9 @@
                                         <th>कार्य क्षेत्र</th>
                                         <th>दायित्व</th>
                                         <th>दायित्व क्षेत्र</th>
-                                        <th>Action</th>
-                                        <th>Edit</th>
+                                        <th>क्रिया</th>
+                                        <th>अपडेट दायित्व</th>
+                                        <th>अपडेट विवरण</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -109,15 +110,15 @@
                                             <td>
                                                 <div class="d-flex">
                                                     <a href="{{ route('register.show', $assign->member->registration_id) }}"
-                                                        class="btn btn-success btn-sm mr-2">View</a>
+                                                        class="btn btn-success btn-sm mr-2">विवरण</a>
                                                     <a href="{{ route('register.card', $assign->member->registration_id) }}"
-                                                        class="btn btn-warning btn-sm mr-2" target="_blank">IDCard</a>
+                                                        class="btn btn-warning btn-sm mr-2" target="_blank">कार्ड</a>
                                                     <form
                                                         action="{{ route('assign.destroy', $assign->assign_position_id) }}"
                                                         method="POST">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                                                        <button class="btn btn-danger btn-sm" type="submit">हटाएं</button>
                                                     </form>
                                                 </div>
                                             </td>
@@ -125,7 +126,13 @@
                                                 <a href="#" class="btn btn-primary btn-sm chk"
                                                     data-id="{{ $assign->member_id }}"
                                                     data-assign-id="{{ $assign->assign_position_id }}" data-toggle="modal"
-                                                    data-target="#assignModal">Edit</a>
+                                                    data-target="#assignModal">अपडेट</a>
+                                            </td>
+
+                                            <td>
+                                                <a href="{{ route('membership.edit', $assign->member->registration_id) }}"
+                                                    class="btn btn-info btn-sm mr-2">अपडेट</a>
+
                                             </td>
                                         </tr>
                                     @empty
@@ -663,7 +670,7 @@
                                 } else {
                                     alert(
                                         'त्रुटि: नगर केंद्र/ग्राम केंद्र जोड़ने में विफल'
-                                        );
+                                    );
                                 }
                                 console.log(xhr.responseText);
                             }

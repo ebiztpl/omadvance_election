@@ -136,6 +136,8 @@ Route::middleware('checklogin')->group(function () {
     // member data upload routes
     Route::get('/admin/membership_form', [AdminController::class, 'membercreate'])->name('membership.create');
     Route::post('/admin/membership_form', [AdminController::class, 'memberstore'])->name('membership.store');
+    Route::get('/admin/member/{id}/edit', [AdminController::class, 'memberedit'])->name('membership.edit');
+    Route::post('/admin/member/{id}/update', [AdminController::class, 'memberupdate'])->name('membership.update');
     Route::post('/get-districts', [AdminController::class, 'getDistricts'])->name('get.districts');
     Route::post('/get-vidhansabhas', [AdminController::class, 'getVidhansabhasByDistrict'])->name('get.vidhansabhaD');
 

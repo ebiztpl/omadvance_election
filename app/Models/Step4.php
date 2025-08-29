@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Step4 extends Model
 {
     protected $table = 'step4';
-    protected $primaryKey = 'registration_id';
+    protected $primaryKey = 'step4_id';
     public $timestamps = false;
 
     protected $fillable = ['registration_id', 'party_name', 'present_post', 'reason_join'];
