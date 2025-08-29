@@ -408,6 +408,9 @@ Route::middleware('checklogin')->group(function () {
 Route::middleware('checklogin')->group(function () {
 
     Route::get('/operator/dashboard', [OperatorController::class, 'dashboard'])->name('operator.dashboard');
+    Route::get('/operator/complaint-summary', [OperatorController::class, 'getComplaintSummary']);
+    Route::get('/operator/todays-followups', [OperatorController::class, 'getTodaysFollowups']);
+    Route::get('/operator/followup-summary', [OperatorController::class, 'getFollowupSummary']);
 
     Route::get('/operator/complaints', [OperatorController::class, 'index'])->name('operator_complaint.index');
     Route::get('/get-voter', [OperatorController::class, 'getVoter'])->name('get.voter');
