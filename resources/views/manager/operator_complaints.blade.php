@@ -15,7 +15,7 @@
         <div class="row page-titles mx-0">
             <div class="col-md-12 col-sm-12 col-xs-12">
                 <form method="GET" id="complaintFilterForm">
-                    <div class="row mt-3">
+                    <div class="row mt-1">
                         <div class="col-md-2">
                             <label>स्थिति</label>
                             <select name="complaint_status" id="complaint_status" class="form-control">
@@ -77,9 +77,7 @@
                                 @endforeach
                             </select>
                         </div>
-                    </div>
 
-                    <div class="row mt-2">
                         <div class="col-md-2">
                             <label>मतदान केंद्र</label>
                             <select name="polling_id" id="polling_id" class="form-control">
@@ -133,7 +131,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-2 mt-2">
+                        <div class="col-md-2">
                             <label>अन्य फ़िल्टर चुनें</label>
                             <select id="complaintOtherFilter" class="form-control">
                                 <option value="">सभी</option>
@@ -149,13 +147,14 @@
                             </select>
                         </div>
 
-                        <div class="col-md-2 mt-4">
-                            <button type="submit" class="btn btn-primary" id="applyFilters">फ़िल्टर लागू करें</button>
+                        <div class="col-md-2 mt-2">
+                            <br>
+                            <button type="submit" class="btn btn-primary" style="font-size: 12px" id="applyFilters">फ़िल्टर</button>
                         </div>
                     </div>
                 </form>
 
-                <div class="text-center mt-2">
+                <div class="text-center">
                     <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
                         title="फ़िल्टर छुपाएं"></i>
                 </div>
@@ -176,7 +175,7 @@
                             </div>
                         @endif
 
-                          <ul class="nav nav-tabs nav-filters mb-3">
+                          <ul class="nav nav-tabs nav-filters mb-1">
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'forwarded_manager' ? 'active' : '' }}" style="color: black"
                                     href="{{ route('operator.complaints.view', ['filter' => 'forwarded_manager']) }}">निर्देशित</a>
@@ -220,8 +219,8 @@
                         </ul>
 
                         <div class="table-responsive">
-                            <span
-                                style="margin-bottom: 8px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
+                            <span id="count-button"
+                                style="margin-bottom: 0px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
                                 शिकायत - <span id="complaint-count">{{ $complaints->count() }}</span></span>
 
                             <table id="example" style="min-width: 845px" class="display table-bordered">
