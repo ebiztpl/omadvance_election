@@ -34,7 +34,7 @@
 
         <div class="row">
             <div class="col-12">
-                <div class="text-center my-3">
+                <div class="text-center">
                     <button type="button" class="btn btn-primary btn-lg" id="show-data">देखें</button>
                 </div>
 

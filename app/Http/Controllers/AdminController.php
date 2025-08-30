@@ -108,9 +108,18 @@ class AdminController extends Controller
     public function index()
     {
         $districts = District::all();
+        $divisions = Division::all();
+        $jaties = Jati::all();
+        $categories = Category::all();
+        $religions = Religion::all();
+        $educations = Education::all();
+        $businesses = Business::all();
+        $politics = Politics::all();
+        $interests = Interest::all();
+        
         $jatis = RegistrationForm::select('jati')->distinct()->get();
 
-        return view('admin/dashboard', compact('districts', 'jatis'));
+        return view('admin/dashboard', compact('districts', 'jatis', 'divisions', 'jaties', 'categories', 'religions', 'educations', 'businesses', 'politics', 'interests'));
     }
 
     // public function filter(Request $request)

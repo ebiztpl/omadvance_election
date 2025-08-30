@@ -220,7 +220,7 @@
                         @endif
 
                         <span
-                            style="margin-bottom: 8px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
+                            style="margin-bottom: 0px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
                             सूचना - <span id="complaint-count">{{ $complaints->count() }}</span></span>
 
                         <div class="table-responsive">

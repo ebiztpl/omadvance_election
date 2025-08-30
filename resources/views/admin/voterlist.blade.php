@@ -54,7 +54,7 @@
 
         <div class="row">
             <div class="col-12">
-                <div class="text-center my-4">
+                <div class="text-center">
                     <button type="button" id="show-voters" class="btn btn-primary btn-lg">मतदाता देखें</button>
                 </div>
                 <div class="card" id="table_card" style="display: none">
