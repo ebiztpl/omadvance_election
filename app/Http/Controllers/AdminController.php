@@ -825,17 +825,26 @@ class AdminController extends Controller
 
         // $interests = explode(' ', $step3->intrest);
         $interests = isset($step3->intrest) ? explode(' ', $step3->intrest) : [];
-        $interestOptions = [
-            'कृषि',
-            'समाजसेवा',
-            'राजनीति',
-            'पर्यावरण',
-            'शिक्षा',
-            'योग',
-            'स्वास्थ्य',
-            'स्वच्छता',
-            'साधना'
-        ];
+        // $interestOptions = [
+        //     'कृषि',
+        //     'समाजसेवा',
+        //     'राजनीति',
+        //     'पर्यावरण',
+        //     'शिक्षा',
+        //     'योग',
+        //     'स्वास्थ्य',
+        //     'स्वच्छता',
+        //     'साधना'
+        // ];
+
+
+        $jatis       = Jati::all();
+        $categories  = Category::all();
+        $religions   = Religion::all();
+        $educations  = Education::all();
+        $businesses  = Business::all();
+        $politics    = Politics::all();
+        $interestsDB = Interest::all();
 
         return view('admin.details_register', compact(
             'registration',
@@ -851,7 +860,14 @@ class AdminController extends Controller
             'districts',
             'district_id',
             'interests',
-            'interestOptions'
+            // 'interestOptions',
+            'jatis',
+            'categories',
+            'religions',
+            'educations',
+            'businesses',
+            'politics',
+            'interestsDB'
         ));
     }
 
@@ -996,11 +1012,13 @@ class AdminController extends Controller
                 'B.registration_id as added_member_id'
             )
             ->whereNotNull('A.mobile1')
-            ->where('A.mobile1', '!=', '');
+            ->where('A.mobile1', '!=', '')
+            ->where('A.type', 2);
 
         $registrations = $query->get();
+        $count = $registrations->count();
 
-        return view('admin/dashboard2', compact('registrations'));
+        return view('admin/dashboard2', compact('registrations', 'count'));
     }
 
     public function dashboard2_filter(Request $request)
@@ -1028,7 +1046,7 @@ class AdminController extends Controller
             $query->whereRaw($condition);
         }
 
-        $query->whereNotNull('A.mobile1')->where('A.mobile1', '!=', '');
+        $query->whereNotNull('A.mobile1')->where('A.mobile1', '!=', '')->where('A.type', 2);
 
         $registrations = $query->get();
         $count = $registrations->count();
@@ -4982,7 +5000,7 @@ class AdminController extends Controller
             $registration->otp_recieved = 0;
             $registration->date_time = now();
             $registration->type = 2;
-            $registration->voter_id = '';
+            $registration->voter_id = $request->voter_id ?? '';
             $registration->pincode = '';
 
             // Upload photo
@@ -5008,7 +5026,7 @@ class AdminController extends Controller
             $step2->matdan_kendra_name = $request->matdan_kendra_name;
             $step2->area_id = $request->area_name;
             $step2->loksabha = $request->loksabha;
-            $step2->voter_number = $request->voter_number ?? '';
+            $step2->voter_number = $request->voter_id ?? '';
             $step2->house = $request->house ?? '';
             $step2->post_date = now();
 
@@ -5096,6 +5114,7 @@ class AdminController extends Controller
 
     public function memberupdate(Request $request, $id)
     {
+        // dd($request->all());
         $request->validate([
             'name' => 'required|string',
             'membership' => 'required|string',
@@ -5132,6 +5151,7 @@ class AdminController extends Controller
             $registration->email = $request->email;
             $registration->pincode = $request->pincode ?? 0;
             $registration->samagra_id = $request->samagra_id ?? '';
+            $registration->voter_id = $request->voter_id ?? '';
 
             // Upload photo if new one provided
             if ($request->hasFile('file')) {
@@ -5154,7 +5174,7 @@ class AdminController extends Controller
             $step2->matdan_kendra_name = $request->matdan_kendra_name;
             $step2->area_id = $request->area_name;
             $step2->loksabha = $request->loksabha;
-            $step2->voter_number = $request->voter_number ?? '';
+            $step2->voter_number = $request->voter_id ?? '';
             $step2->house = $request->house ?? '';
 
             if ($request->hasFile('voter_front')) {
@@ -5192,7 +5212,6 @@ class AdminController extends Controller
             $step3->permanent_address = $request->permanent_address ?? '';
             $step3->temp_address = $request->temp_address ?? '';
             $step3->save();
-
             // 4. Step4 update
             $step4 = Step4::where('registration_id', $id)->first() ?? new Step4();
             $step4->registration_id = $id;
