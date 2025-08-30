@@ -171,16 +171,16 @@
                         $list.empty();
 
                         $list.append(
-                            ` <li class="d-flex justify-content-between border-bottom py-1">नये फॉलोअप
+                            `<li class="d-flex justify-content-between border-bottom py-1">नये फॉलोअप
                                 <span class="badge bg-info">${data.new_followups}</span></li>`
                         );
                         $list.append(
                             `<li class="d-flex justify-content-between border-bottom py-1">नये पूर्ण 
-                                <span class="badge bg-success">${data.new_completed}</span></li>`
+                                <span class="badge bg-success text-light">${data.new_completed}</span></li>`
                         );
                         $list.append(
                             `<li class="d-flex justify-content-between border-bottom py-1">नये पेंडिंग 
-                                <span class="badge bg-danger">${data.new_pending}</span></li>`
+                                <span class="badge bg-danger text-light">${data.new_pending}</span></li>`
                         );
 
                         // Separator between new and old
@@ -191,15 +191,15 @@
 
                         $list.append(
                             `<li class="d-flex justify-content-between border-bottom py-1">पुराने फॉलोअप 
-                                <span class="badge bg-primary">${data.old_followups}</span></li>`
+                                <span class="badge bg-primary text-light">${data.old_followups}</span></li>`
                         );
                         $list.append(
                             `<li class="d-flex justify-content-between border-bottom py-1">पुराने पूर्ण 
-                                <span class="badge bg-success">${data.old_completed}</span></li>`
+                                <span class="badge bg-success text-light">${data.old_completed}</span></li>`
                         );
                         $list.append(
                             `<li class="d-flex justify-content-between border-bottom py-1">पुराने पेंडिंग 
-                                <span class="badge bg-warning">${data.old_pending}</span></li>`
+                                <span class="badge bg-warning text-light">${data.old_pending}</span></li>`
                         );
                     },
                     error: function(xhr, status, error) {
@@ -225,8 +225,8 @@
                                 const tr = `
                                     <tr>
                                         <td><strong>${row.samay}</strong></td>
-                                        <td><span class="badge bg-info">${row.completed}</span></td>
-                                        <td><span class="badge bg-danger">${row.pending}</span></td>
+                                        <td><span class="badge bg-info ">${row.completed}</span></td>
+                                        <td><span class="badge bg-danger text-light">${row.pending}</span></td>
                                     </tr>
                                 `;
                                 $tbody.append(tr);

@@ -77,7 +77,7 @@
 
                         <div class="row">
                             <div class="col-md-2 mb-2">
-                                <label for="first_name" class="form-label label-heading">संकल्प पत्रकर्ता का नाम <span
+                                <label for="first_name" class="form-label label-heading">संकल्प पत्रकर्ता नाम <span
                                         class="error">*</span></label>
                                 <input type="text" class="form-control" name="name" id="name" required>
                             </div>
@@ -275,6 +275,13 @@
                                 </div>
 
                                 <div class="col-md-2 mb-2">
+                                    <label for="voter_id" class="form-label label-heading">मतदान आई.डी. 
+                                    </label>
+                                    <input type="text" name="voter_id" id="voter_id" class="form-control"
+                                        placeholder="" >
+                                </div>
+
+                                <div class="col-md-2 mb-2">
                                     <label for="total_member" class="form-label label-heading">परिवार में कुल सदस्य <span
                                             class="error">*</span>
                                     </label>
@@ -297,7 +304,7 @@
                                 </div>
 
                                 <div class="col-md-2 mb-2">
-                                    <label for="member_name_1" class="form-label label-heading">नाम <span
+                                    <label for="member_name_1" class="form-label label-heading">परिवार सदस्य नाम <span
                                             class="error">*</span></label>
 
                                     <input type="text" name="member_name_1" class="form-control" id="member_name_1"
@@ -305,12 +312,24 @@
                                 </div>
 
                                 <div class="col-md-2 mb-2">
-                                    <label for="member_mobile_1" class="form-label label-heading">मोबाइल <span
+                                    <label for="member_mobile_1" class="form-label label-heading">परिवार सदस्य मोबाइल <span
                                             class="error">*</span></label>
                                     <input type="number" name="member_mobile_1" class="form-control"
                                         id="member_mobile_1" pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10"
                                         required>
                                 </div>
+
+                                {{-- <div class="col-md-2 mb-2">
+                                    <label for="friend_name_1" class="form-label label-heading">मित्र नाम</label>
+                                    <input type="text" name="friend_name_1" class="form-control" id="friend_name_1">
+                                </div>
+
+                                <div class="col-md-2 mb-2">
+                                    <label for="friend_mobile_1" class="form-label label-heading">मित्र मोबाइल </label>
+                                    <input type="number" name="friend_mobile_1" class="form-control"
+                                        id="friend_mobile_1" pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10">
+                                </div> --}}
+                                
                             </div>
                         </fieldset>
 
@@ -809,12 +828,12 @@
 
 
 
-                $('#permanent_address_check').on('change', function() {
+               $('#permanent_address_check').on('change', function() {
                     if ($(this).is(':checked')) {
                         let permAddress = $('#permanent_address').val();
-                        $('#temp_address').val(permAddress).prop('disabled', true);
+                        $('#temp_address').val(permAddress).prop('readonly', true);
                     } else {
-                        $('#temp_address').val('').prop('disabled', false);
+                        $('#temp_address').val('').prop('readonly', false);
                     }
                 });
 

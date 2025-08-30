@@ -80,7 +80,7 @@
 
                         <div class="row">
                             <div class="col-md-2 mb-2">
-                                <label for="first_name" class="form-label label-heading">संकल्प पत्रकर्ता का नाम <span
+                                <label for="first_name" class="form-label label-heading">संकल्प पत्रकर्ता नाम <span
                                         class="error">*</span></label>
                                 <input type="text" class="form-control" name="name" id="name" required
                                     value="{{ old('name', $registration->name) }}">
@@ -179,8 +179,8 @@
                             <div class="col-md-2 mb-2">
                                 <div class="form-check custom-control form-control-lg custom-checkbox">
                                     <input type="checkbox" class="form-check-input custom-control-input"
-                                        id="mobile_1_whataspp" name="mobile_1_whataspp" value="1"
-                                        {{ old('mobile_1_whataspp', $registration->mobile1_whatsapp ?? 0) == 1 ? 'checked' : '' }}>
+                                        id="mobile_1_whataspp" name="mobile_1_whatsapp" value="1"
+                                        {{ old('mobile_1_whatsapp', $registration->mobile1_whatsapp ?? 0) == 1 ? 'checked' : '' }}>
                                     <label class="custom-control-label form-check-label" for="mobile_1_whataspp">
                                         व्हाट्सएप नं.?</label>
                                 </div>
@@ -203,8 +203,8 @@
                             <div class="col-md-2 mb-2">
                                 <div class="form-check custom-control form-control-lg custom-checkbox">
                                     <input type="checkbox" class="form-check-input custom-control-input"
-                                        id="mobile_2_whataspp" name="mobile_2_whataspp" value="1"
-                                        {{ old('mobile_2_whataspp', $registration->mobile2_whatsapp ?? 0) == 1 ? 'checked' : '' }}>
+                                        id="mobile_2_whataspp" name="mobile_2_whatsapp" value="1"
+                                        {{ old('mobile_2_whatsapp', $registration->mobile2_whatsapp ?? 0) == 1 ? 'checked' : '' }}>
                                     <label class="custom-control-label form-check-label" for="mobile_2_whataspp">
                                         व्हाट्सएप नं.?</label>
                                 </div>
@@ -317,6 +317,13 @@
                                 </div>
 
                                 <div class="col-md-2 mb-2">
+                                    <label for="voter_id" class="form-label label-heading">मतदान आई.डी.
+                                    </label>
+                                    <input type="text" name="voter_id" id="voter_id" class="form-control"
+                                        value="{{ old('voter_id', $registration->voter_id) }}" placeholder="">
+                                </div>
+
+                                <div class="col-md-2 mb-2">
                                     <label for="total_member" class="form-label label-heading">परिवार में कुल सदस्य <span
                                             class="error">*</span>
                                     </label>
@@ -341,7 +348,7 @@
                                 </div>
 
                                 <div class="col-md-2 mb-2">
-                                    <label for="member_name_1" class="form-label label-heading">नाम <span
+                                    <label for="member_name_1" class="form-label label-heading">परिवार सदस्य नाम <span
                                             class="error">*</span></label>
 
                                     <input type="text" name="member_name_1" class="form-control" id="member_name_1"
@@ -349,13 +356,26 @@
                                 </div>
 
                                 <div class="col-md-2 mb-2">
-                                    <label for="member_mobile_1" class="form-label label-heading">मोबाइल <span
-                                            class="error">*</span></label>
+                                    <label for="member_mobile_1" class="form-label label-heading">परिवार सदस्य मोबाइल
+                                        <span class="error">*</span></label>
                                     <input type="number" name="member_mobile_1" class="form-control"
                                         id="member_mobile_1" pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10"
                                         required
                                         value="{{ old('member_mobile_1', $registration->step3->member_mobile_1) }}">
                                 </div>
+
+                                {{-- <div class="col-md-2 mb-2">
+                                    <label for="friend_name_1" class="form-label label-heading">मित्र नाम</label>
+                                    <input type="text" name="friend_name_1" class="form-control" id="friend_name_1"
+                                        value="{{ old('friend_name_1', $registration->step3->friend_name_1 ?? '') }}">
+                                </div>
+
+                                <div class="col-md-2 mb-2">
+                                    <label for="friend_mobile_1" class="form-label label-heading">मित्र मोबाइल </label>
+                                    <input type="text" name="friend_mobile_1" class="form-control"
+                                        id="friend_mobile_1" pattern="[1-9]{1}[0-9]{9}" maxlength="10"
+                                        value="{{ old('friend_mobile_1', $registration->step3->friend_mobile_1 ?? '') }}">
+                                </div> --}}
                             </div>
                         </fieldset>
 
@@ -612,51 +632,52 @@
                             </div>
 
                             <div class="col-md-4 mb-2">
-                                <label for="voter_front" class="form-label label-heading">वोटर आई.डी. आगे का फोटो <span
-                                        class="error">*</span></label>
+                                <label for="voter_front" class="form-label label-heading d-block">वोटर आई.डी. आगे का फोटो
+                                    <span class="error">*</span></label>
 
                                 @if (!empty($registration->step2) && !empty($registration->step2->voter_front))
                                     <img id="voter_front_photo"
                                         src="{{ asset('assets/upload/step2/' . $registration->step2->voter_front) }}"
-                                        alt="Voter Front" style="padding-top:10px; width:200px; height:200px; object-fit: cover;">
+                                        alt="Voter Front" width="200" class="img-thumbnail">
                                 @else
-                                    <img id="voter_front_photo" src="#" alt="" width="210"
-                                        style="padding-top:10px; width:200px; height:200px; object-fit: cover; display:none;">
+                                    <img id="voter_front_photo" src="#" alt="" width="200"
+                                        style="display:none;" class="img-thumbnail">
                                 @endif
                                 <input type="file" name="voter_front" id="voter_front"
                                     class="form-control file mt-2">
                             </div>
 
                             <div class="col-md-4 mb-2">
-                                <label for="voter_back" class="form-label label-heading">वोटर आई.डी. पीछे का फोटो <span
-                                        class="error">*</span></label>
+                                <label for="voter_back" class="form-label label-heading d-block">वोटर आई.डी. पीछे का फोटो
+                                    <span class="error">*</span></label>
 
                                 @if (!empty($registration->step2) && !empty($registration->step2->voter_back))
                                     <img id="voter_back_photo"
                                         src="{{ asset('assets/upload/step2/' . $registration->step2->voter_back) }}"
-                                        alt="Voter Back" style="padding-top:10px; width:200px; height:200px; object-fit: cover;">
+                                        alt="Voter Back" width="200" class="img-thumbnail">
                                 @else
-                                    <img id="voter_back_photo" src="#" alt="" width="210"
-                                        style="padding-top:10px; width:200px; height:200px; object-fit: cover; display:none;">
+                                    <img id="voter_back_photo" src="#" alt="" width="200"
+                                        style="display:none;" class="img-thumbnail">
                                 @endif
                                 <input type="file" name="voter_back" id="voter_back" class="form-control file mt-2">
                             </div>
 
                             <div class="col-md-4 mb-2">
-                                <label for="photo" class="form-label label-heading required">संकल्प कर्ता का फोटो <span
-                                        class="error">*</span>
+                                <label for="photo" class="form-label label-heading d-block required">संकल्प कर्ता का
+                                    फोटो <span class="error">*</span>
                                 </label>
 
-                                 @if (!empty($registration->photo))
+                                @if (!empty($registration->photo))
                                     <img id="photo_preview" src="{{ asset('assets/upload/' . $registration->photo) }}"
-                                        alt="Member Photo" style="padding-top:10px; width:200px; height:200px; object-fit: cover;">
+                                        alt="Member Photo" width="200" class="img-thumbnail">
                                 @else
-                                    <img id="photo_preview" src="#" alt=""
-                                        style="padding-top:10px; width:200px; height:200px; object-fit: cover; display:none;">
+                                    <img id="photo_preview" src="#" alt="" width="200"
+                                        style="display:none;" class="img-thumbnail">
                                 @endif
                                 <input type="file" accept="" class="form-control file mt-2" id="photo"
                                     name="file" />
                             </div>
+
 
                             {{-- <div class="col-lg-3 col-md-3 col-12">
                                 <div style="background-image:url('img/back_side.png'); height: 574px; width: 266px;"
@@ -691,7 +712,7 @@
 
                     <div class="form-group mt-3">
                         <button type="submit" class="btn btn-primary">
-                            सबमिट करें
+                            अपडेट करें
                         </button>
                     </div>
 
@@ -934,9 +955,9 @@
                 $('#permanent_address_check').on('change', function() {
                     if ($(this).is(':checked')) {
                         let permAddress = $('#permanent_address').val();
-                        $('#temp_address').val(permAddress).prop('disabled', true);
+                        $('#temp_address').val(permAddress).prop('readonly', true);
                     } else {
-                        $('#temp_address').val('').prop('disabled', false);
+                        $('#temp_address').val('').prop('readonly', false);
                     }
                 });
 

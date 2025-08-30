@@ -24,7 +24,7 @@
                             <div class="col-md-6 mt-2" style="color:rgb(55, 64, 75)">
                                 <br />
                                 <button type="button" id="data-filter" class="btn btn-success mr-4">सर्च करें</button>
-                                Data Count: <span id="total">0</span>
+                                Data Count: <span id="total">{{ $count }}</span>
                             </div>
                         </div>
                     </div>
