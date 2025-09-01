@@ -83,7 +83,7 @@
                                 <label for="first_name" class="form-label label-heading">संकल्प पत्रकर्ता नाम <span
                                         class="error">*</span></label>
                                 <input type="text" class="form-control" name="name" id="name" required
-                                    value="{{ old('name', $registration->name) }}">
+                                    value="{{ old('name', $registration->name ?? '') }}">
                             </div>
 
 
@@ -91,7 +91,7 @@
                                 <label for="first_name" class="form-label label-heading">पिता/पति का नाम <span
                                         class="error">*</span></label>
                                 <input type="text" class="form-control" name="father_name" id="father_name"
-                                    value="{{ old('father_name', $registration->father_name) }}" required>
+                                    value="{{ old('father_name', $registration->father_name ?? '') }}" required>
                             </div>
 
                             <div class="col-md-2 mb-2">
@@ -101,7 +101,7 @@
                                     <option value="">--जाति चुनें--</option>
                                     @foreach ($jatis as $jati)
                                         <option value="{{ $jati->jati_name }}"
-                                            {{ old('jati', $registration->jati) == $jati->jati_name ? 'selected' : '' }}>
+                                            {{ old('jati', $registration->jati ?? '') == $jati->jati_name ? 'selected' : '' }}>
                                             {{ $jati->jati_name }}
                                         </option>
                                     @endforeach
@@ -115,7 +115,7 @@
                                     <option value="">--चुनें--</option>
                                     @foreach ($categories as $category)
                                         <option value="{{ $category->category }}"
-                                            {{ old('caste', $registration->caste) == $category->category ? 'selected' : '' }}>
+                                            {{ old('caste', $registration->caste ?? '') == $category->category ? 'selected' : '' }}>
                                             {{ $category->category }}
                                         </option>
                                     @endforeach
@@ -129,7 +129,7 @@
                                     <option value="">--चुनें--</option>
                                     @foreach ($religions as $religion)
                                         <option value="{{ $religion->religion_name }}"
-                                            {{ old('religion', $registration->religion) == $religion->religion_name ? 'selected' : '' }}>
+                                            {{ old('religion', $registration->religion ?? '') == $religion->religion_name ? 'selected' : '' }}>
                                             {{ $religion->religion_name }}
                                         </option>
                                     @endforeach
@@ -140,14 +140,14 @@
                                 <label for="dob" class="form-label label-heading">जन्म दिनांक <span
                                         class="error">*</span></label>
                                 <input type="date" id="date" name="date" class="form-control"
-                                    value="{{ old('date', $registration->dob) }}" required>
+                                    value="{{ old('date', $registration->dob ?? '') }}" required>
                             </div>
 
                             <div class="col-md-2 mb-2">
                                 <label for="age" class="form-label label-heading">आयु <span
                                         class="error">*</span></label>
                                 <input type="text" name="age" id="age" class="form-control"
-                                    value="{{ old('age', $registration->age) }}" required>
+                                    value="{{ old('age', $registration->age ?? '') }}" required>
                             </div>
 
                             <div class="col-md-2 mb-2">
@@ -156,13 +156,13 @@
                                 <select name="gender" id="gender" class="form-control" required>
                                     <option value="">--चुनें--</option>
                                     <option value="पुरुष"
-                                        {{ old('gender', $registration->gender) == 'पुरुष' ? 'selected' : '' }}>पुरुष
+                                        {{ old('gender', $registration->gender ?? '') == 'पुरुष' ? 'selected' : '' }}>पुरुष
                                     </option>
                                     <option value="स्त्री"
-                                        {{ old('gender', $registration->gender) == 'स्त्री' ? 'selected' : '' }}>स्त्री
+                                        {{ old('gender', $registration->gender ?? '') == 'स्त्री' ? 'selected' : '' }}>स्त्री
                                     </option>
                                     <option value="अन्य"
-                                        {{ old('gender', $registration->gender) == 'अन्य' ? 'selected' : '' }}>अन्य
+                                        {{ old('gender', $registration->gender ?? '') == 'अन्य' ? 'selected' : '' }}>अन्य
                                     </option>
                                 </select>
                             </div>
@@ -173,7 +173,7 @@
                                 <span id="msg"></span>
                                 <input type="number" name="mobile_1" class="form-control" id="mobile_1"
                                     pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10"
-                                    value="{{ old('mobile_1', $registration->mobile1) }}" required autocomplete="">
+                                    value="{{ old('mobile_1', $registration->mobile1 ?? '') }}" required autocomplete="">
                             </div>
 
                             <div class="col-md-2 mb-2">
@@ -190,7 +190,7 @@
                                 <label for="mobile_2" class="form-label label-heading">मोबाइल 2</label>
                                 <input type="number" name="mobile_2" class="form-control" id="mobile_2"
                                     pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10"
-                                    value="{{ old('mobile_2', $registration->mobile2) }}">
+                                    value="{{ old('mobile_2', $registration->mobile2 ?? '') }}">
                             </div>
 
 
@@ -213,7 +213,7 @@
                             <div class="col-md-2 mb-2">
                                 <label for="email" class="form-label label-heading">ईमेल आईडी <span
                                         class="error">*</span></label>
-                                <input type="email" value="{{ old('email', $registration->email) }}" name="email"
+                                <input type="email" value="{{ old('email', $registration->email ?? '') }}" name="email"
                                     class="form-control" id="email" required>
                             </div>
 
@@ -224,7 +224,7 @@
                                     <option value="">--चुनें--</option>
                                     @foreach ($educations as $education)
                                         <option value="{{ $education->education_name }}"
-                                            {{ old('education', $registration->education) == $education->education_name ? 'selected' : '' }}>
+                                            {{ old('education', $registration->education ?? '') == $education->education_name ? 'selected' : '' }}>
                                             {{ $education->education_name }}
                                         </option>
                                     @endforeach
@@ -238,7 +238,7 @@
                                     <option value="">--चुनें--</option>
                                     @foreach ($businesses as $business)
                                         <option value="{{ $business->business_name }}"
-                                            {{ old('business', $registration->business) == $business->business_name ? 'selected' : '' }}>
+                                            {{ old('business', $registration->business ?? '') == $business->business_name ? 'selected' : '' }}>
                                             {{ $business->business_name }}
                                         </option>
                                     @endforeach
@@ -250,13 +250,13 @@
                                 <select name="membership" class="form-control" id="membership" required>
                                     <option value="">--चुनें--</option>
                                     <option value="समर्पित कार्यकर्ता"
-                                        {{ old('membership', $registration->membership) == 'समर्पित कार्यकर्ता' ? 'selected' : '' }}>
+                                        {{ old('membership', $registration->membership ?? '') == 'समर्पित कार्यकर्ता' ? 'selected' : '' }}>
                                         समर्पित कार्यकर्ता</option>
                                     <option value="सक्रिय कार्यकर्ता"
-                                        {{ old('membership', $registration->membership) == 'सक्रिय कार्यकर्ता' ? 'selected' : '' }}>
+                                        {{ old('membership', $registration->membership ?? '') == 'सक्रिय कार्यकर्ता' ? 'selected' : '' }}>
                                         सक्रिय कार्यकर्ता</option>
                                     <option value="साधारण कार्यकर्ता"
-                                        {{ old('membership', $registration->membership) == 'साधारण कार्यकर्ता' ? 'selected' : '' }}>
+                                        {{ old('membership', $registration->membership ?? '') == 'साधारण कार्यकर्ता' ? 'selected' : '' }}>
                                         साधारण कार्यकर्ता</option>
                                 </select>
                             </div>
@@ -265,7 +265,7 @@
                                 <label for="position" class="form-label label-heading">व्यवसायिक पद </label>
                                 <div class="form-select">
                                     <input type="text" name="position" id="position" class="form-control"
-                                        value="{{ old('position', $registration->position) }}">
+                                        value="{{ old('position', $registration->position ?? '') }}">
                                 </div>
                             </div>
 
@@ -276,7 +276,7 @@
                                     <option value="">--चुनें--</option>
                                     @foreach ($politics as $politic)
                                         <option value="{{ $politic->name }}"
-                                            {{ old('party_name', $registration->step4->party_name) == $politic->name ? 'selected' : '' }}>
+                                            {{ old('party_name', $registration->step4->party_name ?? '') == $politic->name ? 'selected' : '' }}>
                                             {{ $politic->name }}
                                         </option>
                                     @endforeach
@@ -286,7 +286,7 @@
                             <div class="col-md-2 mb-2">
                                 <label class="form-label label-heading">पद वर्तमान/भूतपूर्व </label>
                                 <input type="text" name="present_post" class="form-control" id="present_post"
-                                    value="{{ old('present_post', $registration->step4->present_post) }}" placeholder="">
+                                    value="{{ old('present_post', $registration->step4->present_post ?? '') }}" placeholder="">
                             </div>
                         </div>
 
@@ -309,7 +309,7 @@
 
                                         @foreach ($interests as $interest)
                                             <option value="{{ $interest->interest_name }}"
-                                                {{ in_array($interest->interest_name, old('interest', $selectedInterests)) ? 'selected' : '' }}>
+                                                {{ in_array($interest->interest_name, old('interest', $selectedInterests ?? [])) ? 'selected' : '' }}>
                                                 {{ $interest->interest_name }}
                                             </option>
                                         @endforeach
@@ -320,7 +320,7 @@
                                     <label for="voter_id" class="form-label label-heading">मतदान आई.डी.
                                     </label>
                                     <input type="text" name="voter_id" id="voter_id" class="form-control"
-                                        value="{{ old('voter_id', $registration->voter_id) }}" placeholder="">
+                                        value="{{ old('voter_id', $registration->voter_id ?? '') }}" placeholder="">
                                 </div>
 
                                 <div class="col-md-2 mb-2">
@@ -329,14 +329,14 @@
                                     </label>
                                     <input type="text" name="total_member" id="total_member" class="form-control"
                                         placeholder=""
-                                        value="{{ old('total_member', $registration->step3->total_member) }}" required>
+                                        value="{{ old('total_member', $registration->step3->total_member ?? '') }}" required>
                                 </div>
                                 <div class="col-md-2 mb-2">
                                     <label for="total_voter" class="form-label label-heading ">परिवार में कुल मतदाता <span
                                             class="error">*</span>
                                     </label>
                                     <input type="text" name="total_voter" id="total_voter"
-                                        value="{{ old('total_voter', $registration->step3->total_voter) }}"
+                                        value="{{ old('total_voter', $registration->step3->total_voter ?? '') }}"
                                         class="form-control" placeholder="" required>
                                 </div>
 
@@ -347,12 +347,12 @@
                                         placeholder="">
                                 </div>
 
-                                <div class="col-md-2 mb-2">
+                                 <div class="col-md-2 mb-2">
                                     <label for="member_name_1" class="form-label label-heading">परिवार सदस्य नाम <span
                                             class="error">*</span></label>
 
                                     <input type="text" name="member_name_1" class="form-control" id="member_name_1"
-                                        required value="{{ old('member_name_1', $registration->step3->member_name_1) }}">
+                                        required value="{{ old('member_name_1', $registration->step3->member_name_1 ?? '') }}">
                                 </div>
 
                                 <div class="col-md-2 mb-2">
@@ -361,7 +361,7 @@
                                     <input type="number" name="member_mobile_1" class="form-control"
                                         id="member_mobile_1" pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10"
                                         required
-                                        value="{{ old('member_mobile_1', $registration->step3->member_mobile_1) }}">
+                                        value="{{ old('member_mobile_1', $registration->step3->member_mobile_1 ?? '') }}">
                                 </div>
 
                                 {{-- <div class="col-md-2 mb-2">
@@ -400,19 +400,19 @@
                                 <div class="col-md-2 mb-2">
                                     <label class="form-label label-heading">मोटरसाइकिल</label>
                                     <input type="text" name="vehicle3" class="form-control" id="vehicle3"
-                                        value="{{ old('vehicle3', $registration->step3->vehicle3) }}">
+                                        value="{{ old('vehicle3', $registration->step3->vehicle3 ?? '') }}">
                                 </div>
 
                                 <div class="col-md-2 mb-2">
                                     <label class="form-label label-heading">कार</label>
                                     <input type="text" class="form-control" name="vehicle1" id="vehicle1"
-                                        value="{{ old('vehicle1', $registration->step3->vehicle1) }}">
+                                        value="{{ old('vehicle1', $registration->step3->vehicle1 ?? '') }}">
                                 </div>
 
                                 <div class="col-md-2 mb-2">
                                     <label class="form-label label-heading">ट्रेक्टर</label>
                                     <input type="text" class="form-control" name="vehicle2" id="vehicle2"
-                                        value="{{ old('vehicle2', $registration->step3->vehicle2) }}">
+                                        value="{{ old('vehicle2', $registration->step3->vehicle2 ?? '') }}">
                                 </div>
                             </div>
                         </fieldset>
@@ -561,8 +561,8 @@
                                     @if ($registration->step2 && $registration->step2->polling)
                                         <option value="{{ $registration->step2->polling->gram_polling_id }}"
                                             data-polling-no="{{ $registration->step2->matdan_kendra_no }}" selected>
-                                            {{ $registration->step2->matdan_kendra_no }} -
-                                            {{ $registration->step2->polling->polling_name }}
+                                            {{ $registration->step2->matdan_kendra_no  ?? ''}} -
+                                            {{ $registration->step2->polling->polling_name  ?? ''}}
                                         </option>
                                     @endif
                                 </select>
@@ -589,7 +589,7 @@
                                 <label for="permanent_address" class="form-label label-heading required">स्थाई पता <span
                                         class="error">*</span></label>
                                 <textarea type="textarea" class="form-control" name="permanent_address" id="permanent_address" rows="2"
-                                    required="">{{ old('permanent_address', $registration->step3->permanent_address) }}</textarea>
+                                    required="">{{ old('permanent_address', $registration->step3->permanent_address ?? '') }}</textarea>
                             </div>
 
 
@@ -603,7 +603,7 @@
                                             {{ old('permanent_address_check', $registration->step3->temp_address == $registration->step3->permanent_address ? 'checked' : '') }}>
                                     </span>
                                 </label>
-                                <textarea class="form-control" name="temp_address" id="temp_address" rows="2">{{ old('temp_address', $registration->step3->temp_address) }}</textarea>
+                                <textarea class="form-control" name="temp_address" id="temp_address" rows="2">{{ old('temp_address', $registration->step3->temp_address ?? '') }}</textarea>
                             </div>
 
                             <div class="col-md-2 mb-2" style="display: none;">
@@ -638,10 +638,10 @@
                                 @if (!empty($registration->step2) && !empty($registration->step2->voter_front))
                                     <img id="voter_front_photo"
                                         src="{{ asset('assets/upload/step2/' . $registration->step2->voter_front) }}"
-                                        alt="Voter Front" width="200" class="img-thumbnail">
+                                        alt="Voter Front" width="200" height="180" class="img-thumbnail2">
                                 @else
-                                    <img id="voter_front_photo" src="#" alt="" width="200"
-                                        style="display:none;" class="img-thumbnail">
+                                    <img id="voter_front_photo"  src="{{ asset('assets/no-image.png') }}"  alt="No Voter Front Image" width="200" height="180"
+                                         class="img-thumbnail2">
                                 @endif
                                 <input type="file" name="voter_front" id="voter_front"
                                     class="form-control file mt-2">
@@ -654,10 +654,9 @@
                                 @if (!empty($registration->step2) && !empty($registration->step2->voter_back))
                                     <img id="voter_back_photo"
                                         src="{{ asset('assets/upload/step2/' . $registration->step2->voter_back) }}"
-                                        alt="Voter Back" width="200" class="img-thumbnail">
+                                        alt="Voter Back" width="200" height="180" class="img-thumbnail2">
                                 @else
-                                    <img id="voter_back_photo" src="#" alt="" width="200"
-                                        style="display:none;" class="img-thumbnail">
+                                    <img id="voter_back_photo" src="{{ asset('assets/no-image.png') }}"  alt="No Voter Back Image" width="200" height="180" class="img-thumbnail2">
                                 @endif
                                 <input type="file" name="voter_back" id="voter_back" class="form-control file mt-2">
                             </div>
@@ -669,15 +668,13 @@
 
                                 @if (!empty($registration->photo))
                                     <img id="photo_preview" src="{{ asset('assets/upload/' . $registration->photo) }}"
-                                        alt="Member Photo" width="200" class="img-thumbnail">
+                                        alt="Member Photo" width="200" height="180" class="img-thumbnail2">
                                 @else
-                                    <img id="photo_preview" src="#" alt="" width="200"
-                                        style="display:none;" class="img-thumbnail">
+                                    <img id="photo_preview" src="{{ asset('assets/no-image.png') }}"  alt="No Member Image" width="200" height="180" class="img-thumbnail2">
                                 @endif
                                 <input type="file" accept="" class="form-control file mt-2" id="photo"
                                     name="file" />
                             </div>
-
 
                             {{-- <div class="col-lg-3 col-md-3 col-12">
                                 <div style="background-image:url('img/back_side.png'); height: 574px; width: 266px;"
@@ -690,7 +687,7 @@
                                 <label class="form-label label-heading">सदस्यता का कारण/उदेश्य : आप बीजेएस के सदस्य क्यों
                                     बन रहे हैं
                                 </label>
-                                <textarea name="reason_join" id="reason_join" placeholder="" rows="3" class="form-control"> {{ old('reason_join', $registration->step4->reason_join) }}</textarea>
+                                <textarea name="reason_join" id="reason_join" placeholder="" rows="3" class="form-control"> {{ old('reason_join', $registration->step4->reason_join ?? '') }}</textarea>
                             </div>
 
                             <div class="col-lg-12">

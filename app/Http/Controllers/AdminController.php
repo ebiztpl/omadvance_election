@@ -1534,8 +1534,16 @@ class AdminController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
-        $complaints = $query->orderBy('posted_date', 'desc')->get();
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
 
+        $recordsFiltered = $query->count();
+        $recordsTotal = $query->count();
+
+        $complaints = $query->orderBy('posted_date', 'desc')
+            ->offset($start)
+            ->limit($length)
+            ->get();
 
         foreach ($complaints as $complaint) {
             if (!in_array($complaint->complaint_status, [4, 5])) {
@@ -1550,82 +1558,60 @@ class AdminController extends Controller
                 ->first();
 
             $complaint->forwarded_to_name = $lastReply?->forwardedToManager?->admin_name ?? '-';
-            $complaint->forwarded_reply_date = $lastReply?->reply_date?->format('d-m-Y h:i A') ?? '-';
+            $complaint->forwarded_reply_date = $lastReply?->reply_date?->format('d-m-Y h:i') ?? '-';
         }
 
         if ($request->ajax()) {
-            $html = '';
-
+            $data = [];
             foreach ($complaints as $index => $complaint) {
-                $html .= '<tr>';
-                $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td>
-                <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
-                <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
-                <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
-                <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
-              </td>';
 
-                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
+                $pendingText = $complaint->complaint_status == 4 ? 'पूर्ण' : ($complaint->complaint_status == 5 ? 'रद्द' : $complaint->pending_days . ' दिन');
 
 
+                $data[] = [
+                    'index' => $start + $index + 1,
+                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>
+                           <strong>नाम: </strong>{$complaint->name}<br>
+                           <strong>मोबाइल: </strong>{$complaint->mobile_number}<br>
+                           <strong>पुत्र श्री: </strong>{$complaint->father_name}<br>
+                           <strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+                    'reference_name' => $complaint->reference_name ?? '',
+                    'area_details' => '<span title="
+विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
+जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
+विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
+मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
+नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
+मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
+क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
+            ' . ($complaint->division?->division_name ?? '') . '<br>' .
+                        ($complaint->district?->district_name ?? '') . '<br>' .
+                        ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
+                        ($complaint->mandal?->mandal_name ?? '') . '<br>' .
+                        ($complaint->gram?->nagar_name ?? '') . '<br>' .
+                        ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
+                        ($complaint->area?->area_name ?? '') .
+                        '</span>',
+                    'issue_description' => $complaint->issue_description,
+                    'complaint_department' => $complaint->complaint_department,
+                    'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
 
-                $html .= '<td title="
-            विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
-            जिला: ' . ($complaint->district->district_name ?? 'N/A') . '
-            विधानसभा: ' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '
-            मंडल: ' . ($complaint->mandal->mandal_name ?? 'N/A') . '
-            नगर/ग्राम: ' . ($complaint->gram->nagar_name ?? 'N/A') . '
-            मतदान केंद्र: ' . ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')
-            क्षेत्र: ' . ($complaint->area->area_name ?? 'N/A') . '">
-            ' . ($complaint->division->division_name ?? 'N/A') . '<br>' .
-                    ($complaint->district->district_name ?? 'N/A') . '<br>' .
-                    ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '<br>' .
-                    ($complaint->mandal->mandal_name ?? 'N/A') . '<br>' .
-                    ($complaint->gram->nagar_name ?? 'N/A') . '<br>' .
-                    ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')<br>' .
-                    ($complaint->area->area_name ?? 'N/A') .
-                    '</td>';
-
-                $html .= '<td>' . ($complaint->issue_description ?? '') . '</td>';
-
-
-                $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
-
-                $html .= '<td>
-        <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
-                if ($complaint->complaint_status == 4) {
-                    $html .= 'पूर्ण';
-                } elseif ($complaint->complaint_status == 5) {
-                    $html .= 'रद्द';
-                } else {
-                    $html .= $complaint->pending_days . ' दिन';
-                }
-                $html .= '</td>';
-
-                $html .= '<td>' . ($latestReply->review_date ?? 'N/A') . '</td>';
-
-                // Importance
-                $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
-
-                $html .= '<td>' . ($complaint->admin_name ?? '') . '</td>';
-
-                $html .= '<td>' . $complaint->forwarded_to_name . '<br>' . $complaint->forwarded_reply_date . '</td>';
-
-
-                // Action Button
-                $html .= '<td style="white-space: nowrap;">
-                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" >क्लिक करें</a>
+                    'review_date' => optional($complaint->replies->sortByDesc('reply_date')->first())->review_date ?? 'N/A',
+                    'importance' => $complaint->latestReply?->importance ?? 'N/A',
+                    'applicant_name' => $complaint->registrationDetails->name ?? '',
+                    'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
+                    'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
+                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
-                </td>';
-
-                $html .= '</tr>';
+                    </div>'
+                ];
             }
 
             return response()->json([
-                'html' => $html,
-                'count' => $complaints->count(),
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $data
             ]);
         }
 
@@ -1756,7 +1742,17 @@ class AdminController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
-        $complaints = $query->orderBy('posted_date', 'desc')->get();
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+
+        $recordsFiltered = $query->count(); // total after filters
+        $recordsTotal = $query->count();
+
+        $complaints = $query->orderBy('posted_date', 'desc')
+            ->offset($start)
+            ->limit($length)
+            ->get();
+
 
         // Add extra data to each complaint
         foreach ($complaints as $complaint) {
@@ -1776,75 +1772,56 @@ class AdminController extends Controller
         }
 
         if ($request->ajax()) {
-            $html = '';
-
+            $data = [];
             foreach ($complaints as $index => $complaint) {
-                $html .= '<tr>';
-                $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td>
-                <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
-                <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
-                <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br><br>
-                <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
-              </td>';
 
-                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
-
-                $html .= '<td title="
-            विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
-            जिला: ' . ($complaint->district->district_name ?? 'N/A') . '
-            विधानसभा: ' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '
-            मंडल: ' . ($complaint->mandal->mandal_name ?? 'N/A') . '
-            नगर/ग्राम: ' . ($complaint->gram->nagar_name ?? 'N/A') . '
-            मतदान केंद्र: ' . ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')
-            क्षेत्र: ' . ($complaint->area->area_name ?? 'N/A') . '">
-            ' . ($complaint->division->division_name ?? 'N/A') . '<br>' .
-                    ($complaint->district->district_name ?? 'N/A') . '<br>' .
-                    ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '<br>' .
-                    ($complaint->mandal->mandal_name ?? 'N/A') . '<br>' .
-                    ($complaint->gram->nagar_name ?? 'N/A') . '<br>' .
-                    ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')<br>' .
-                    ($complaint->area->area_name ?? 'N/A') .
-                    '</td>';
-
-                $html .= '<td>' . ($complaint->issue_description ?? '') . '</td>';
+                $pendingText = $complaint->complaint_status == 4 ? 'पूर्ण' : ($complaint->complaint_status == 5 ? 'रद्द' : $complaint->pending_days . ' दिन');
 
 
-                $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
-                $html .= '<td>
-        <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
-                if ($complaint->complaint_status == 4) {
-                    $html .= 'पूर्ण';
-                } elseif ($complaint->complaint_status == 5) {
-                    $html .= 'रद्द';
-                } else {
-                    $html .= $complaint->pending_days . ' दिन';
-                }
-                $html .= '</td>';
+                $data[] = [
+                    'index' => $start + $index + 1,
+                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>
+                           <strong>नाम: </strong>{$complaint->name}<br>
+                           <strong>मोबाइल: </strong>{$complaint->mobile_number}<br>
+                           <strong>पुत्र श्री: </strong>{$complaint->father_name}<br>
+                           <strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+                    'reference_name' => $complaint->reference_name ?? '',
+                    'area_details' => '<span title="
+विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
+जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
+विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
+मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
+नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
+मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
+क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
+                        ' . ($complaint->division?->division_name ?? '') . '<br>' .
+                        ($complaint->district?->district_name ?? '') . '<br>' .
+                        ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
+                        ($complaint->mandal?->mandal_name ?? '') . '<br>' .
+                        ($complaint->gram?->nagar_name ?? '') . '<br>' .
+                        ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
+                        ($complaint->area?->area_name ?? '') .
+                        '</span>',
+                    'issue_description' => $complaint->issue_description,
+                    'complaint_department' => $complaint->complaint_department,
+                    'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
 
-                $html .= '<td>' . ($latestReply->review_date ?? 'N/A') . '</td>';
-
-                // Importance
-                $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
-
-
-                $html .= '<td>' . ($complaint->admin_name ?? '') . '</td>';
-
-                $html .= '<td>' . ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-') . '</td>';
-
-
-                // Action Button
-                $html .= '<td style="white-space: nowrap;">
-                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" >क्लिक करें</a>
+                    'review_date' => optional($complaint->replies->sortByDesc('reply_date')->first())->review_date ?? 'N/A',
+                    'importance' => $complaint->latestReply?->importance ?? 'N/A',
+                    'applicant_name' => $complaint->registrationDetails->name ?? '',
+                    'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
+                    'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
+                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
-                </td>';
-
-                $html .= '</tr>';
+                    </div>'
+                ];
             }
 
             return response()->json([
-                'html' => $html,
-                'count' => $complaints->count(),
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $data
             ]);
         }
 
@@ -1932,7 +1909,16 @@ class AdminController extends Controller
         }
 
 
-        $complaints = $query->orderBy('posted_date', 'desc')->get();
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+
+        $recordsFiltered = $query->count();
+        $recordsTotal = $query->count();
+
+        $complaints = $query->orderBy('posted_date', 'desc')
+            ->offset($start)
+            ->limit($length)
+            ->get();
 
         foreach ($complaints as $complaint) {
             if (!in_array($complaint->complaint_status, [13, 14, 15, 16, 17, 18])) {
@@ -1951,80 +1937,76 @@ class AdminController extends Controller
         }
 
         if ($request->ajax()) {
-            $html = '';
+            $data = [];
 
             foreach ($complaints as $index => $complaint) {
-                $html .= '<tr>';
-                $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td>
-                <strong>सुचना क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
-                <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
-                <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
-                <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
-            </td>';
-
-                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
-
-                $html .= '<td title="
-            विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
-            जिला: ' . ($complaint->district->district_name ?? 'N/A') . '
-            विधानसभा: ' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '
-            मंडल: ' . ($complaint->mandal->mandal_name ?? 'N/A') . '
-            नगर/ग्राम: ' . ($complaint->gram->nagar_name ?? 'N/A') . '
-            मतदान केंद्र: ' . ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')
-            क्षेत्र: ' . ($complaint->area->area_name ?? 'N/A') . '">
-                ' . ($complaint->division->division_name ?? 'N/A') . '<br>' .
-                    ($complaint->district->district_name ?? 'N/A') . '<br>' .
-                    ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '<br>' .
-                    ($complaint->mandal->mandal_name ?? 'N/A') . '<br>' .
-                    ($complaint->gram->nagar_name ?? 'N/A') . '<br>' .
-                    ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')<br>' .
-                    ($complaint->area->area_name ?? 'N/A') .
-                    '</td>';
-
-
-                $html .= '<td>
-                <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
                 if ($complaint->complaint_status == 13) {
-                    $html .= 'सम्मिलित हुए';
+                    $pendingText = 'सम्मिलित हुए';
                 } elseif ($complaint->complaint_status == 14) {
-                    $html .= 'सम्मिलित नहीं हुए';
+                    $pendingText = 'सम्मिलित नहीं हुए';
                 } elseif ($complaint->complaint_status == 15) {
-                    $html .= 'फोन पर संपर्क किया';
+                    $pendingText = 'फोन पर संपर्क किया';
                 } elseif ($complaint->complaint_status == 16) {
-                    $html .= 'ईमेल पर संपर्क किया';
+                    $pendingText = 'ईमेल पर संपर्क किया';
                 } elseif ($complaint->complaint_status == 17) {
-                    $html .= 'व्हाट्सएप पर संपर्क किया';
+                    $pendingText = 'व्हाट्सएप पर संपर्क किया';
                 } elseif ($complaint->complaint_status == 18) {
-                    $html .= 'रद्द';
+                    $pendingText = 'रद्द';
                 } else {
-                    $html .= $complaint->pending_days . ' दिन';
+                    $pendingText = $complaint->pending_days . ' दिन';
                 }
-                $html .= '
-            </td>';
 
-                $html .= '<td>' . ($complaint->registrationDetails->name ?? '') . '</td>';
+                $data[] = [
+                    'index' => $start + $index + 1,
+                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>
+                           <strong>नाम: </strong>{$complaint->name}<br>
+                           <strong>मोबाइल: </strong>{$complaint->mobile_number}<br>
+                           <strong>पुत्र श्री: </strong>{$complaint->father_name}<br>
+                           <strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
 
-                $html .= '<td>' . ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-') . '</td>';
+                    'reference_name' => $complaint->reference_name ?? '',
 
-                $html .= '<td>' . ($complaint->issue_title ?? '') . '</td>';
-                $html .= '<td>' . ($complaint->program_date ?? '') . '</td>';
+                    'area_details' => '<span title="
+विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
+जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
+विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
+मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
+नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
+मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
+क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
+            ' . ($complaint->division?->division_name ?? '') . '<br>' .
+                        ($complaint->district?->district_name ?? '') . '<br>' .
+                        ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
+                        ($complaint->mandal?->mandal_name ?? '') . '<br>' .
+                        ($complaint->gram?->nagar_name ?? '') . '<br>' .
+                        ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
+                        ($complaint->area?->area_name ?? '') .
+                        '</span>',
 
-                // Action Button
-                $html .= '<td style="white-space: nowrap;">
-                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" >क्लिक करें</a>
+                    'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
+
+
+                    'applicant_name' => $complaint->registrationDetails->name ?? '',
+
+                    'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
+
+                    'issue_title' => $complaint->issue_title,
+                    'program_date' => $complaint->program_date,
+                    'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
+                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
-                </td>';
-
-                $html .= '</tr>';
+                    </div>'
+                ];
             }
 
             return response()->json([
-                'html' => $html,
-                'count' => $complaints->count(),
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $data
             ]);
         }
+
 
         $mandals = Mandal::where('vidhansabha_id', 49)->get();
         $grams = $request->mandal_id ? Nagar::where('mandal_id', $request->mandal_id)->get() : collect();
@@ -2105,15 +2087,23 @@ class AdminController extends Controller
         }
 
 
-        $complaints = $query->orderBy('posted_date', 'desc')->get();
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
 
-        // Add extra data to each complaint
+        $recordsFiltered = $query->count();
+        $recordsTotal = $query->count();
+
+        $complaints = $query->orderBy('posted_date', 'desc')
+            ->offset($start)
+            ->limit($length)
+            ->get();
+
         foreach ($complaints as $complaint) {
-            $admin = DB::table('admin_master')->where('admin_id', $complaint->complaint_created_by)->first();
-            $complaint->admin_name = $admin->admin_name ?? '';
-            $complaint->pending_days = in_array($complaint->complaint_status, [13, 14, 15, 16, 17, 18])
-                ? 0
-                : \Carbon\Carbon::parse($complaint->posted_date)->diffInDays(now());
+            if (!in_array($complaint->complaint_status, [13, 14, 15, 16, 17, 18])) {
+                $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+            } else {
+                $complaint->pending_days = 0;
+            }
 
             $lastReply = $complaint->replies
                 ->whereNotNull('forwarded_to')
@@ -2125,76 +2115,73 @@ class AdminController extends Controller
         }
 
         if ($request->ajax()) {
-            $html = '';
+            $data = [];
 
             foreach ($complaints as $index => $complaint) {
-                $html .= '<tr>';
-                $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td>
-            <strong>सुचना क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
-            <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
-            <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-            <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
-            <strong>स्थिति: </strong>' . strip_tags($complaint->statusTextPlain()) . '
-        </td>';
-
-                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
-
-                $html .= '<td title="
-            विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
-            जिला: ' . ($complaint->district->district_name ?? 'N/A') . '
-            विधानसभा: ' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '
-            मंडल: ' . ($complaint->mandal->mandal_name ?? 'N/A') . '
-            नगर/ग्राम: ' . ($complaint->gram->nagar_name ?? 'N/A') . '
-            मतदान केंद्र: ' . ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')
-            क्षेत्र: ' . ($complaint->area->area_name ?? 'N/A') . '">
-            ' . ($complaint->division->division_name ?? 'N/A') . '<br>' .
-                    ($complaint->district->district_name ?? 'N/A') . '<br>' .
-                    ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '<br>' .
-                    ($complaint->mandal->mandal_name ?? 'N/A') . '<br>' .
-                    ($complaint->gram->nagar_name ?? 'N/A') . '<br>' .
-                    ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')<br>' .
-                    ($complaint->area->area_name ?? 'N/A') .
-                    '</td>';
-
-                $html .= '<td>
-            <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
                 if ($complaint->complaint_status == 13) {
-                    $html .= 'सम्मिलित हुए';
+                    $pendingText = 'सम्मिलित हुए';
                 } elseif ($complaint->complaint_status == 14) {
-                    $html .= 'सम्मिलित नहीं हुए';
+                    $pendingText = 'सम्मिलित नहीं हुए';
                 } elseif ($complaint->complaint_status == 15) {
-                    $html .= 'फोन पर संपर्क किया';
+                    $pendingText = 'फोन पर संपर्क किया';
                 } elseif ($complaint->complaint_status == 16) {
-                    $html .= 'ईमेल पर संपर्क किया';
+                    $pendingText = 'ईमेल पर संपर्क किया';
                 } elseif ($complaint->complaint_status == 17) {
-                    $html .= 'व्हाट्सएप पर संपर्क किया';
+                    $pendingText = 'व्हाट्सएप पर संपर्क किया';
                 } elseif ($complaint->complaint_status == 18) {
-                    $html .= 'रद्द';
+                    $pendingText = 'रद्द';
                 } else {
-                    $html .= $complaint->pending_days . ' दिन';
+                    $pendingText = $complaint->pending_days . ' दिन';
                 }
-                $html .= '
-        </td>';
 
-                $html .= '<td>' . ($complaint->admin_name ?? '') . '</td>';
+                $data[] = [
+                    'index' => $start + $index + 1,
+                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>
+                           <strong>नाम: </strong>{$complaint->name}<br>
+                           <strong>मोबाइल: </strong>{$complaint->mobile_number}<br>
+                           <strong>पुत्र श्री: </strong>{$complaint->father_name}<br>
+                           <strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
 
-                $html .= '<td>' . ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-') . '</td>';
+                    'reference_name' => $complaint->reference_name ?? '',
 
-                $html .= '<td>' . ($complaint->issue_title ?? '') . '</td>';
-                $html .= '<td>' . ($complaint->program_date ?? '') . '</td>';
+                    'area_details' => '<span title="
+विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
+जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
+विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
+मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
+नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
+मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
+क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
+            ' . ($complaint->division?->division_name ?? '') . '<br>' .
+                        ($complaint->district?->district_name ?? '') . '<br>' .
+                        ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
+                        ($complaint->mandal?->mandal_name ?? '') . '<br>' .
+                        ($complaint->gram?->nagar_name ?? '') . '<br>' .
+                        ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
+                        ($complaint->area?->area_name ?? '') .
+                        '</span>',
 
-                $html .= '<td style="white-space: nowrap;">
-                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" >क्लिक करें</a>
+                    'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
+
+
+                    'applicant_name' => $complaint->registrationDetails->name ?? '',
+
+                    'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
+
+                    'issue_title' => $complaint->issue_title,
+                    'program_date' => $complaint->program_date,
+                    'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
+                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
-                </td>';
-
-                $html .= '</tr>';
+                    </div>'
+                ];
             }
 
             return response()->json([
-                'html' => $html,
-                'count' => $complaints->count(),
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $data
             ]);
         }
 

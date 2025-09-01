@@ -163,7 +163,7 @@
 
                             <span
                                 style="margin-bottom: 0px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
-                                शिकायत - <span id="complaint-count">{{ $complaints->count() }}</span></span>
+                                शिकायत - <span id="complaint-count"></span></span>
 
                             <table id="example" style="min-width: 845px " class="display table-bordered">
                                 <thead>
@@ -185,89 +185,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="complaintsTableBody">
-                                    @foreach ($complaints as $index => $complaint)
-                                        <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                           <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }} <br>
-                                                <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
-                                                <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
-                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br><br>
-                                                <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
-                                            </td>
-
-                                             <td>{{ $complaint->reference_name }}</td>
-                                             
-                                            <td
-                                                title="
-                                                
-                                                
-विभाग:  {{ $complaint->division->division_name ?? 'N/A' }}
-जिला:  {{ $complaint->district->district_name ?? 'N/A' }}
-विधानसभा:  {{ $complaint->vidhansabha->vidhansabha ?? 'N/A' }}
-मंडल:  {{ $complaint->mandal->mandal_name ?? 'N/A' }}
-नगर/ग्राम:  {{ $complaint->gram->nagar_name ?? 'N/A' }}
-मतदान केंद्र:  {{ $complaint->polling->polling_name ?? 'N/A' }} ({{ $complaint->polling->polling_no ?? 'N/A' }})
-क्षेत्र:  {{ $complaint->area->area_name ?? 'N/A' }}
-">
-                                                {{ $complaint->division->division_name ?? 'N/A' }}<br>
-                                                {{ $complaint->district->district_name ?? 'N/A' }}<br>
-                                                {{ $complaint->vidhansabha->vidhansabha ?? 'N/A' }}<br>
-                                                {{ $complaint->mandal->mandal_name ?? 'N/A' }}<br>
-                                                {{ $complaint->gram->nagar_name ?? 'N/A' }}<br>
-                                                {{ $complaint->polling->polling_name ?? 'N/A' }}
-                                                ({{ $complaint->polling->polling_no ?? 'N/A' }})
-                                                <br>
-                                                {{ $complaint->area->area_name ?? 'N/A' }}
-                                            </td>
-
-                                             <td>{{ $complaint->issue_description }}</td>
-
-                                            <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                            
-                                           <td>
-                                                <strong>तिथि:
-                                                    {{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}</strong><br>
-
-                                                @if ($complaint->complaint_status == 4)
-                                                    पूर्ण
-                                                @elseif ($complaint->complaint_status == 5)
-                                                    रद्द
-                                                @else
-                                                    {{ $complaint->pending_days }} दिन
-                                                @endif
-                                            </td>
-
-                                            <td> {{ optional($complaint->replies->sortByDesc('reply_date')->first())->review_date ?? 'N/A' }}
-                                            </td>
-
-                                            <td>
-                                                {{ $complaint->latestReply?->importance ?? 'N/A' }}
-                                            </td>
-
-                                           
-
-                                            <td>{{ $complaint->registrationDetails->name ?? '' }}</td>
-                                             <td>
-                                                 {{ $complaint->forwarded_to_name ?? '-' }} <br>
-                                               {{ $complaint->forwarded_reply_date }}
-                                            </td>
-
-                                            <td>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <a href="{{ route('complaints.show', $complaint->complaint_id) }}"
-                                                        class="btn btn-sm btn-primary" style="white-space: nowrap;">
-                                                        क्लिक करें
-                                                    </a>
-
-                                                    <button type="button" class="btn btn-sm btn-danger delete-complaint"
-                                                        data-id="{{ $complaint->complaint_id }}"
-                                                        style="white-space: nowrap; margin-left: 5px;">
-                                                        हटाएं
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
+                                    
                                 </tbody>
                             </table>
                         </div>
@@ -356,76 +274,7 @@
                     }
                 });
 
-                // Apply Filters
-                $('#applyFilters').click(function(e) {
-                     e.preventDefault();
-                    let data = {
-                        complaint_status: $('#complaint_status').val(),
-                        complaint_type: $('#complaint_type').val(),
-                        department_id: $('#department_id').val(),
-                        subject_id: $('#subject_id').val(),
-                        mandal_id: $('#mandal_id').val(),
-                        gram_id: $('#gram_id').val(),
-                        polling_id: $('#polling_id').val(),
-                        area_id: $('#area_id').val(),
-                        from_date: $('#from_date').val(),
-                        to_date: $('#to_date').val(),
-                        reply_id: $('#reply_id').val(),
-                        admin_id: $('#admin_id').val()
-                    };
-
-                    $.ajax({
-                        url: "{{ route('commander.complaint.view') }}",
-                        type: 'GET',
-                        data: data,
-                         beforeSend: function() {
-                            $("#loader-wrapper").show();
-                        },
-                        success: function(response) {
-                         
-
-                            if ($.fn.DataTable.isDataTable('#example')) {
-                                $('#example').DataTable().destroy();
-                            }
-
-                               $('#complaintsTableBody').html(response.html);
-                            $('#complaint-count').text(response.count);
-
-                            $('#example').DataTable({
-                                dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
-                                    '<"row"<"col-sm-12"tr>>' +
-                                    '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
-                                buttons: [{
-                                        extend: "csv",
-                                        exportOptions: {
-                                            modifier: {
-                                                page: "all"
-                                            },
-                                        },
-                                    },
-                                    {
-                                        extend: "excel",
-                                        exportOptions: {
-                                            modifier: {
-                                                page: "all"
-                                            },
-                                        },
-                                    }
-                                ],
-                                lengthMenu: [
-                                    [10, 25, 50, 100, 500, -1],
-                                    [10, 25, 50, 100, 500, "All"],
-                                ],
-                            });
-                        },
-                         complete: function() {
-                            $("#loader-wrapper").hide();
-                        },
-                        error: function() {
-                            alert('कुछ गड़बड़ हो गई। कृपया पुनः प्रयास करें।');
-                        }
-                    });
-                });
+              
 
 
 
@@ -457,6 +306,115 @@
                                 'title', 'फ़िल्टर दिखाएं');
                         }
                     });
+                });
+
+
+
+                let table = $('#example').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    destroy: true,
+                    dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
+                        '<"row"<"col-sm-12"tr>>' +
+                        '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+                    buttons: [{
+                            extend: "csv",
+                            exportOptions: {
+                                modifier: {
+                                    page: "all"
+                                }
+                            },
+                        },
+                        {
+                            extend: "excel",
+                            exportOptions: {
+                                modifier: {
+                                    page: "all"
+                                }
+                            },
+                        }
+
+                    ],
+                    lengthMenu: [
+                        [10, 25, 50, 100, 500, 1000],
+                        [10, 25, 50, 100, 500, 1000],
+                    ],
+                    ajax: {
+                        url: "{{ route('commander.complaint.view') }}",
+                        data: function(d) {
+                            d.complaint_status = $('#complaint_status').val();
+                            d.complaint_type = $('#complaint_type').val();
+                            d.department_id = $('#department_id').val();
+                            d.subject_id = $('#subject_id').val();
+                            d.mandal_id = $('#mandal_id').val();
+                            d.gram_id = $('#gram_id').val();
+                            d.polling_id = $('#polling_id').val();
+                            d.area_id = $('#area_id').val();
+                            d.from_date = $('#from_date').val();
+                            d.to_date = $('#to_date').val();
+                            d.reply_id = $('#reply_id').val();
+                            d.admin_id = $('#admin_id').val();
+                            d.complaintOtherFilter = $('#complaintOtherFilter').val();
+
+                        }
+                    },
+                    columns: [{
+                            data: 'index'
+                        },
+                        {
+                            data: 'name'
+                        },
+                        {
+                            data: 'reference_name'
+                        },
+                        {
+                            data: 'area_details'
+                        },
+                        {
+                            data: 'issue_description'
+                        },
+                        {
+                            data: 'complaint_department'
+                        },
+                        {
+                            data: 'posted_date'
+                        },
+                        {
+                            data: 'review_date'
+                        },
+                        {
+                            data: 'importance'
+                        },
+                        {
+                            data: 'applicant_name'
+                        },
+                        {
+                            data: 'forwarded_to_name'
+                        },
+                        {
+                            data: 'action',
+                            orderable: false,
+                            searchable: false
+                        },
+                    ]
+                });
+
+                table.on('preXhr.dt', function() {
+                    $('#loader-wrapper').show();
+                });
+
+                table.on('xhr.dt', function() {
+                    $('#loader-wrapper').hide();
+                });
+
+                table.on('draw', function() {
+                    let info = table.page.info();
+                    $('#complaint-count').text(info.recordsDisplay);
+                });
+
+                $('#applyFilters').click(function(e) {
+                    e.preventDefault();
+                    table.ajax.reload();
                 });
             });
 
