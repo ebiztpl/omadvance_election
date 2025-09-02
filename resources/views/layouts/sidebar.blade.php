@@ -46,8 +46,8 @@
                     </ul>
                 </li>
 
-                <li><a class="has-arrow" href="#" aria-expanded="false"><i
-                            class="icon icon-arrow-right"></i><span class="nav-text">सूचनाएँ देखे</span></a>
+                <li><a class="has-arrow" href="#" aria-expanded="false"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">सूचनाएँ देखे</span></a>
                     <ul aria-expanded="false">
                         <li><a href="{{ route('commander.suchnas.view') }}">कमांडर सूचनाएँ</a></li>
                         <li><a href="{{ route('operator.suchnas.view') }}">कार्यालय सूचनाएँ</a></li>
@@ -157,7 +157,7 @@
                         <li><a href="{{ route('operator.complaints.view') }}">कार्यालय समस्याएँ</a></li>
                     </ul>
                 </li>
-                
+
                 <li><a class="has-arrow" href="#" aria-expanded="false"><i
                             class="icon icon-arrow-right"></i><span class="nav-text">सूचनाएँ देखे</span></a>
                     <ul aria-expanded="false">
@@ -168,6 +168,9 @@
 
                 <li><a href="{{ route('allfollowups.index') }}"><i class=" icon icon-arrow-right"></i><span
                             class="nav-text">फ़ॉलोअप विवरण</span></a></li>
+
+                <li><a href="{{ route('dailyreport.index') }}"><i class=" icon icon-arrow-right"></i><span
+                            class="nav-text">दैनिक रिपोर्ट</span></a></li>
 
                 <li><a href="{{ route('change_password.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">पासवर्ड बदलें</span></a></li>
@@ -235,7 +238,7 @@
                         कार्यालय टूल्स
                     </a>
                 </li>
-                
+
                 <li><a href="{{ route('operator_complaint.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
                 <li><a href="{{ route('operator_suchna.index') }}"><i class="icon icon-arrow-right"></i><span
@@ -244,7 +247,8 @@
                             class="nav-text">समस्याएँ देखे</span></a></li>
                 <li><a href="{{ route('operator_suchna.view') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">सूचनाएँ देखे</span></a></li> --}}
-                <li><a href="{{ route('next_followup.index') }}"><i class="icon icon-arrow-right"></i><span class="nav-text">फ़ॉलोअप</span></a>
+                <li><a href="{{ route('next_followup.index') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">फ़ॉलोअप</span></a>
                 </li>
 
                 {{-- <li><a href="#"><i class="icon icon-arrow-right"></i><span class="nav-text">सुचना</span></a></li>

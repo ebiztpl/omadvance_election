@@ -2838,7 +2838,7 @@ class ManagerController extends Controller
         $start = $request->input('start', 0);
         $length = $request->input('length', 10);
 
-        $recordsFiltered = $query->count(); 
+        $recordsFiltered = $query->count();
         $recordsTotal = $query->count();
 
         $complaints = $query->orderBy('posted_date', 'desc')
@@ -3226,7 +3226,7 @@ class ManagerController extends Controller
 
                 $pendingText = $complaint->complaint_status == 4 ? 'पूर्ण' : ($complaint->complaint_status == 5 ? 'रद्द' : $complaint->pending_days . ' दिन');
 
-                
+
                 $data[] = [
                     'index' => $start + $index + 1,
                     'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>
@@ -3520,10 +3520,10 @@ class ManagerController extends Controller
                         ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
                         ($complaint->area?->area_name ?? '') .
                         '</span>',
-                   
+
                     'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
 
-                   
+
                     'applicant_name' => $complaint->registrationDetails->name ?? '',
 
                     'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
@@ -5050,4 +5050,61 @@ class ManagerController extends Controller
 
     //     return view('manager.allfollowups_details', compact('followups'));
     // }
+
+
+
+
+
+
+
+
+
+    // daily report routes 
+    public function daily_report(Request $request)
+    {
+        $managers = User::where('role', 2)->get();
+        $selectedManagerId = $request->input('admin_id');
+        $manager = $selectedManagerId ? User::find($selectedManagerId) : null;
+        $today = Carbon::today()->toDateString();
+
+        $complaintsQuery = Complaint::with(['replies' => function ($q) {
+            $q->orderBy('reply_date', 'desc');
+        }]);
+
+        if ($selectedManagerId) {
+            $complaintsQuery->where(function ($q) use ($selectedManagerId, $today) {
+                $q->whereIn('complaint_type', ['समस्या', 'विकास'])
+                    ->whereHas('replies', function ($q2) use ($selectedManagerId, $today) {
+                        $q2->where('forwarded_to', $selectedManagerId)
+                            ->whereDate('reply_date', $today);
+                    });
+            })
+                // For शुभ सुचना & अशुभ सुचना → filter by program_date
+                ->orWhere(function ($q) use ($selectedManagerId, $today) {
+                    $q->whereIn('complaint_type', ['शुभ सुचना', 'अशुभ सुचना'])
+                        ->where('program_date', $today)
+                        ->whereHas('replies', function ($q2) use ($selectedManagerId) {
+                            $q2->where('forwarded_to', $selectedManagerId);
+                        });
+                });
+        }
+
+        $complaints = $complaintsQuery->get();
+
+        // Separate by complaint type
+        $samasya     = $complaints->where('complaint_type', 'समस्या');
+        $vikash      = $complaints->where('complaint_type', 'विकास');
+        $subhSuchna  = $complaints->where('complaint_type', 'शुभ सुचना');
+        $asubhSuchna = $complaints->where('complaint_type', 'अशुभ सुचना');
+
+        return view('manager.daily_report', compact(
+            'managers',
+            'selectedManagerId',
+            'manager',
+            'samasya',
+            'vikash',
+            'subhSuchna',
+            'asubhSuchna'
+        ));
+    }
 }

@@ -402,6 +402,11 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/manager/allfollowups_details', [ManagerController::class, 'allfollowupsdetails'])->name('allfollowup_details.index');
     Route::get('/manager/allfollowups', [ManagerController::class, 'followupindex'])
         ->name('allfollowups.index');
+
+
+
+    // daily report routes 
+    Route::get('/manager/daily_report', [ManagerController::class, 'daily_report'])->name('dailyreport.index');
 });
 
 
