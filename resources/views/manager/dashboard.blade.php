@@ -832,7 +832,7 @@
                                        <button class="btn btn-sm btn-primary view-details-btn" data-id="${row.complaint_id}">
                                             विवरण
                                         </button>
-                                         <a href="/manager/details_complaints/${row.complaint_id}" 
+                                         <a href="/manager/details_suchnas/${row.complaint_id}" 
                                         class="btn btn-sm btn-warning">
                                             क्लिक करें
                                         </a>

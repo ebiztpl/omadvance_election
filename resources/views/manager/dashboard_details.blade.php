@@ -18,7 +18,7 @@
                         <div class="table-responsive">
                             <span
                                 style="margin-bottom: 8px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
-                                 - <span id="complaint-count">{{ $complaints->count() }}</span></span>
+                                - <span id="complaint-count">{{ $complaints->count() }}</span></span>
                             <table id="example" style="min-width: 845px" class="display table table-bordered">
                                 <thead>
                                     <tr>
@@ -37,17 +37,17 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($complaints as $index => $complaint)
-                                        
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }} <br>
+                                            <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }}
+                                                <br>
                                                 <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
                                                 <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
                                                 <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br><br>
                                                 <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
                                             </td>
 
-                                             <td>{{ $complaint->reference_name }}</td>
+                                            <td>{{ $complaint->reference_name }}</td>
 
                                             <td
                                                 title="
@@ -72,8 +72,8 @@
                                             </td>
 
                                             <td>{{ $complaint->complaint_department ?? 'N/A' }}</td>
-                                            
-                                             <td>
+
+                                            <td>
                                                 <strong>तिथि:
                                                     {{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}</strong><br>
 
@@ -111,8 +111,8 @@
                                             <td>{{ $complaint->issue_title ?? '' }}</td>
 
                                             <td>
-                                               {{ $complaint->forwarded_to_name ?? '-' }} <br>
-                                               {{ $complaint->forwarded_to_date }}
+                                                {{ $complaint->forwarded_to_name ?? '-' }} <br>
+                                                {{ $complaint->forwarded_to_date }}
                                                 {{-- @if (!empty($complaint->issue_attachment))
                                                     <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
                                                         target="_blank" class="btn btn-sm btn-success">
@@ -121,12 +121,19 @@
                                                  
                                                 @endif --}}
                                             </td>
-                                            
+
                                             <td>
-                                                <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"
-                                                    class="btn btn-sm btn-primary" style="white-space: nowrap;">
-                                                    क्लिक करें
-                                                </a>
+                                                @if (in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
+                                                    <a href="{{ route('suchna_show.details', $complaint->complaint_id) }}"
+                                                        class="btn btn-sm btn-primary" style="white-space: nowrap;">
+                                                        क्लिक करें
+                                                    </a>
+                                                @else
+                                                    <a href="{{ route('complaints_show.details', $complaint->complaint_id) }}"
+                                                        class="btn btn-sm btn-primary" style="white-space: nowrap;">
+                                                        क्लिक करें
+                                                    </a>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
