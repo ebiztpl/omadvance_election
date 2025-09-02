@@ -14,7 +14,7 @@
     <div class="container">
         <div class="row page-titles mx-0">
             <div class="col-md-12 col-sm-12 col-xs-12">
-                <form method="GET" action="{{ route('allfollowups.index') }}" class="row g-3 mb-4">
+                <form method="GET" action="{{ route('allfollowups.index') }}" class="row g-3 mb-1 mt-1">
                     <div class="col-md-2">
                         <select class="form-control" name="status">
                             <option value="">सभी स्थिति</option>
@@ -45,8 +45,8 @@
                     </div>
 
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary">फ़िल्टर</button>
-                        <a href="{{ route('allfollowups.index') }}" class="btn btn-secondary">रीसेट</a>
+                        <button type="submit" class="btn btn-primary" style="font-size: 12px">फ़िल्टर</button>
+                        <a href="{{ route('allfollowups.index') }}" class="btn btn-danger" style="font-size: 12px">रीसेट</a>
                     </div>
                 </form>
             </div>
@@ -58,17 +58,17 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="table-responsive">
-                             <span
+                            <span
                                 style="margin-bottom: 8px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
                                 फॉलोअप - <span id="complaint-count">{{ $complaints->count() }}</span></span>
                             <table style="width: 100%; table-layout: fixed;" id="example"
                                 class="table display table-bordered table-striped">
                                 <thead>
                                     <tr>
-                                        <th style="width: 50px">क्र.</th>
-                                        <th style="width: 250px">शिकायत विवरण</th>
-                                        <th style="width: 150px">क्षेत्र</th>
-                                        <th style="width: 500px">रिप्लाई/फॉलोअप विवरण</th>
+                                        <th style="width: 2%">क्र.</th>
+                                        <th style="width: 20%">शिकायत विवरण</th>
+                                        <th style="width: 10%">क्षेत्र</th>
+                                        <th style="width: 40%">रिप्लाई/फॉलोअप विवरण</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -105,25 +105,28 @@
                                             </td>
 
                                             <td>
-                                                {{ optional($complaint->division)->division_name ?? '-' }}<br>
-                                                {{ optional($complaint->district)->district_name ?? '-' }}<br>
-                                                {{ optional($complaint->vidhansabha)->vidhansabha ?? '-' }}<br>
-                                                {{ optional($complaint->mandal)->mandal_name ?? '-' }}<br>
-                                                {{ optional($complaint->gram)->nagar_name ?? '-' }}<br>
-                                                {{ optional($complaint->polling)->polling_name ?? '-' }}
+                                                <strong>विभाग: </strong>{{ optional($complaint->division)->division_name ?? '-' }}<br>
+                                                <strong>जिला: </strong>{{ optional($complaint->district)->district_name ?? '-' }}<br>
+                                                <strong>विधानसभा: </strong>{{ optional($complaint->vidhansabha)->vidhansabha ?? '-' }}<br>
+                                                <strong>मंडल: </strong>{{ optional($complaint->mandal)->mandal_name ?? '-' }}<br>
+                                                <strong>नगर/ग्राम: </strong>{{ optional($complaint->gram)->nagar_name ?? '-' }}<br>
+                                                <strong>मतदान केंद्र/क्र.: </strong>{{ optional($complaint->polling)->polling_name ?? '-' }}
                                                 ({{ optional($complaint->polling)->polling_no ?? '-' }})<br>
-                                                {{ optional($complaint->area)->area_name ?? '-' }}
+                                                <strong>क्षेत्र: </strong>{{ optional($complaint->area)->area_name ?? '-' }}
                                             </td>
 
-                                            <td>
-                                                <div style="display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto;">
-                                                    @forelse($complaint->replies as $reply)
+                                            <td style="max-width: 100%; overflow-x: auto;">
+                                                <div style="display: flex; flex-wrap: nowrap; gap: 10px; ">
+                                                    @php
+                                                        $totalReplies = $complaint->replies->count();
+                                                    @endphp
+                                                    @forelse($complaint->replies as $index => $reply)
                                                         <div
                                                             style="border:1px solid #ccc; border-radius:8px; padding:10px; background:#f9f9f9; flex: 0 0 auto; box-sizing: border-box;">
                                                             <strong>
                                                                 <span
                                                                     style="background-color: #616361; padding: 4px 6px; border-radius: 3px; display: inline-block; margin-bottom: 8px; color: white">
-                                                                    रिप्लाई: {{ $loop->iteration }}
+                                                                    रिप्लाई: {{ $totalReplies - $index }}
                                                                 </span>
                                                             </strong><br>
                                                             <strong>भेजने वाला:
@@ -137,16 +140,21 @@
                                                             </strong>{{ $reply->reply_date ?? '' }}
                                                             <br>
 
+                                                            @php
+                                                                $totalFollowups = $reply->allFollowups->count();
+                                                            @endphp
 
+                                                            {{-- <div style="display: flex; flex-wrap: nowrap; gap: 8px; margin-top:5px;"> --}}
                                                             <div
-                                                                style="display: flex; flex-wrap: nowrap; gap: 8px; margin-top:5px;">
+                                                                style="max-height: 210px; overflow-y: auto; margin-top: 10px;">
                                                                 @forelse($reply->allFollowups as $key => $f)
+                                                                    {{-- <div style="border:1px solid #bbb; border-radius:5px; padding:8px; background:#fff; flex: 0 0 auto; box-sizing: border-box;"> --}}
                                                                     <div
-                                                                        style="border:1px solid #bbb; border-radius:5px; padding:8px; background:#fff; flex: 0 0 auto; box-sizing: border-box;">
+                                                                        style="border:1px solid #bbb; border-radius:5px; padding:8px; background:#fff; flex: 0 0 auto; box-sizing: border-box; margin-top: 5px;">
                                                                         <strong>
                                                                             <span
                                                                                 style="background-color: #343534; padding: 4px 6px; border-radius: 3px; display: inline-block; margin-bottom: 8px; color: white">
-                                                                                {{ ['पहला', 'दूसरा', 'तीसरा', 'चौथा', 'पांचवा'][$key] ?? $key + 1 . 'वां' }}
+                                                                                {{ ['पहला', 'दूसरा', 'तीसरा', 'चौथा', 'पांचवा'][$totalFollowups - $key - 1] ?? $totalFollowups - $key . 'वां' }}
                                                                                 फॉलोअप:
                                                                             </span>
                                                                         </strong><br><br>
@@ -194,4 +202,15 @@
             </div>
         </div>
     </div>
+
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const url = new URL(window.location.href);
+                const cleanUrl = url.origin + url.pathname;
+                window.history.replaceState({}, '', cleanUrl);
+            });
+        </script>
+    @endpush
 @endsection
