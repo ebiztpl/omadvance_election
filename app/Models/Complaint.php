@@ -54,6 +54,7 @@ class Complaint extends Model
         'news_date',
         'program_date',
         'complaint_created_by',
+        'complaint_created_by_member',
         'type'
     ];
 
@@ -153,7 +154,7 @@ class Complaint extends Model
 
     public function registrationDetails()
     {
-        return $this->belongsTo(RegistrationForm::class, 'complaint_created_by', 'registration_id');
+        return $this->belongsTo(RegistrationForm::class, 'complaint_created_by_member', 'registration_id');
     }
     
     public function admin()

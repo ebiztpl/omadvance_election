@@ -4038,7 +4038,7 @@ class ManagerController extends Controller
         $reply->selected_reply = $request->filled('selected_reply')
             ? (int) $request->selected_reply
             : null;
-        $reply->reply_from = session('user_id') ?? 0;
+        $reply->reply_from = session('user_id') ?? null;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;
         $reply->review_date = $request->review_date ?? null;
@@ -4053,7 +4053,7 @@ class ManagerController extends Controller
         $userRole = session('logged_in_role');
 
         if (in_array((int)$request->cmp_status, [4, 5, 18, 17, 16, 15, 14, 13])) {
-            $reply->forwarded_to = 0;
+            $reply->forwarded_to = null;
         } else {
             if ($request->filled('forwarded_to')) {
                 // Use the selected forwarded_to if present

@@ -20,10 +20,10 @@
     <link href="{{ asset('focus/assets/icons/font-awesome-old/css/font-awesome.min.css') }}" rel="stylesheet">
     <link href="{{ asset('focus/assets/vendor/datatables/css/jquery.dataTables.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <!-- Buttons extension CSS & JS -->
-   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
 
 
 
@@ -87,6 +87,94 @@
         $("#loader-wrapper").show();
         $(window).on('load', () => $("#loader-wrapper").hide());
     </script>
+
+
+    <script>
+        let latestFile = null;
+
+        function showToast(message, timeout = 5000) {
+            $('#download-toast-container').empty(); 
+
+            const toastId = 'toast-' + Date.now();
+            const toastHtml = `
+            <div id="${toastId}" class="toast custom-toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="${timeout}">
+                <div class="toast-header bg-success text-white">
+                    <strong class="mr-auto">सूचना</strong>
+                    <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="toast-body text-white">
+                    ${message}
+                </div>
+            </div>`;
+
+            $('#download-toast-container').append(toastHtml);
+            $('#' + toastId).toast('show');
+
+            $('#' + toastId).on('hidden.bs.toast', function() {
+                $(this).remove();
+            });
+        }
+
+        $('#download_full_data').on('click', function(e) {
+            e.preventDefault();
+
+            const voterId = $('#main_voter_id').val();
+
+            $.post("{{ route('voterlist.request') }}", {
+                _token: "{{ csrf_token() }}",
+                voter_id: voterId
+            }, function(res) {
+                if (res.status === 'success') {
+                    showToast(res.message, 5000);
+                    pollNewDownload();
+                } else {
+                    showToast('कुछ गलत हुआ।', 5000);
+                }
+            }, 'json');
+        });
+
+        function pollNewDownload() {
+            const pollInterval = setInterval(function() {
+                $.getJSON("{{ route('voterlist.files.json') }}", function(files) {
+                    if (files.length === 0) return;
+
+                    const completedFiles = files.filter(f => f.status === 'completed');
+
+                    if (completedFiles.length === 0) return;
+
+                    const newestFile = completedFiles[0];
+                    if (latestFile && newestFile.id === latestFile.id) return;
+
+                    latestFile = newestFile;
+                    const fileLink = '/admin/voterlist/file/' + newestFile.id;
+                    showToast(
+                        `CSV तैयार है। <a href="${fileLink}" class="text-white font-weight-bold">Download करें</a>`,
+                        10000);
+
+                    clearInterval(pollInterval);
+                });
+            }, 5000);
+        }
+
+      
+        $('#reopen-downloads').on('click', function() {
+            if (latestFile) {
+                const fileLink = '/admin/voterlist/file/' + latestFile.id;
+                showToast(
+                    `CSV तैयार है। <a href="${fileLink}" class="text-white font-weight-bold">Download करें</a>`,
+                    10000);
+            } else {
+                alert('कोई भी डाउनलोड अभी तक उपलब्ध नहीं है।');
+            }
+        });
+    </script>
+
+    <div aria-live="polite" aria-atomic="true" style="position: fixed; top: 20px; right: 20px; z-index: 1080;">
+        <div id="download-toast-container"></div>
+    </div>
+    
 
     @stack('scripts')
 </body>

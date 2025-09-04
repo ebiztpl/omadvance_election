@@ -23,16 +23,32 @@
                                 <thead>
                                     <tr>
                                         <th>क्र.</th>
-                                        <th style="min-width: 150px;">शिकायतकर्ता</th>
-                                        <th>रेफरेंस</th>
-                                        <th style="min-width: 100px;">क्षेत्र</th>
-                                        <th>विभाग</th>
-                                        <th>शिकायत की स्थिति</th>
-                                        <th>आवेदक</th>
-                                        <th>शिकायत प्रकार</th>
-                                        <th>शिकायत विषय</th>
-                                        <th>फॉरवर्ड अधिकारी</th>
-                                        <th>आगे देखें</th>
+
+                                        @if ($complaints->isNotEmpty() && in_array($complaints->first()->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
+                                            <th style="min-width: 150px;">सूचनाकर्ता</th>
+                                            <th>रेफरेंस</th>
+                                            <th style="min-width: 100px;">क्षेत्र</th>
+                                            <th>विभाग</th>
+                                            <th>सूचना की स्थिति</th>
+                                            <th>आवेदक</th>
+                                            <th>सूचना प्रकार</th>
+                                            <th>सूचना विषय</th>
+                                            <th>फॉरवर्ड अधिकारी</th>
+                                            <th>आगे देखें</th>
+                                        @else
+                                            <th style="min-width: 150px;">शिकायतकर्ता</th>
+                                            <th>रेफरेंस</th>
+                                            <th style="min-width: 100px;">क्षेत्र</th>
+                                            <th>विभाग</th>
+                                            <th>शिकायत की स्थिति</th>
+                                            <th>आवेदक</th>
+                                            <th>शिकायत प्रकार</th>
+                                            <th>शिकायत विषय</th>
+                                            <th>फॉरवर्ड अधिकारी</th>
+                                            <th>आगे देखें</th>
+                                        @endif
+
+
                                     </tr>
                                 </thead>
                                 <tbody>

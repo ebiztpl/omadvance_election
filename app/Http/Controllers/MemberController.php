@@ -234,6 +234,7 @@ class MemberController extends Controller
         if (!$registrationId) {
             return back()->with('error', 'Session expired. Please log in again.');
         }
+        // dd($registrationId);
 
         $areaId = $request->area_id;
         $complaintType = $request->complaint_type ?: 'समस्या';
@@ -324,7 +325,8 @@ class MemberController extends Controller
             'complaint_designation' => '',
             'complaint_department' => 'अन्य',
             'type' => $type,
-            'complaint_created_by' => $registrationId,
+            'complaint_created_by_member' => $registrationId,
+            'complaint_created_by' => null,
             'complaint_status' => $complaintStatus,
             'issue_title' => '',
             'issue_description' => '',
@@ -339,7 +341,7 @@ class MemberController extends Controller
         Reply::create([
             'complaint_id' => $complaint->complaint_id,
             'forwarded_to' => 6,
-            'reply_from' => 0,
+            'reply_from' => null,
             'reply_date' => now(),
             'selected_reply' => null,
             'complaint_status' => $replyStatus,
@@ -625,7 +627,7 @@ class MemberController extends Controller
 
 
         $query = Complaint::with(['polling', 'area', 'admin', 'vidhansabha', 'mandal', 'gram', 'replies.forwardedToManager'])
-            ->where('complaint_created_by', $registrationId)
+            ->where('complaint_created_by_member', $registrationId)
             ->where('type', 1)
             ->whereIn('complaint_type', ['अशुभ सुचना', 'शुभ सुचना']);
 
@@ -633,12 +635,12 @@ class MemberController extends Controller
             $query->where('complaint_status', $request->complaint_status);
         }
 
-        if ($request->filled('complaint_type')) {
-            $query->where('complaint_type', $request->complaint_type);
-        } else {
-            // Apply default filter for initial load or sabhi
-            $query->where('complaint_type', 'शुभ सुचना');
-        }
+        // if ($request->filled('complaint_type')) {
+        //     $query->where('complaint_type', $request->complaint_type);
+        // } else {
+        //     // Apply default filter for initial load or sabhi
+        //     $query->where('complaint_type', 'शुभ सुचना');
+        // }
 
 
 
@@ -804,7 +806,7 @@ class MemberController extends Controller
 
 
         $query = Complaint::with(['polling', 'area', 'replies.forwardedToManager'])
-            ->where('complaint_created_by', $registrationId)
+            ->where('complaint_created_by_member', $registrationId)
             ->where('type', 1)
             ->whereIn('complaint_type', ['समस्या', 'विकास']);
 
@@ -813,12 +815,12 @@ class MemberController extends Controller
             $query->where('complaint_status', $request->complaint_status);
         }
 
-        if ($request->filled('complaint_type')) {
-            $query->where('complaint_type', $request->complaint_type);
-        } else {
-            // Apply default filter for initial load or sabhi
-            $query->where('complaint_type', 'समस्या');
-        }
+        // if ($request->filled('complaint_type')) {
+        //     $query->where('complaint_type', $request->complaint_type);
+        // } else {
+        //     // Apply default filter for initial load or sabhi
+        //     $query->where('complaint_type', 'समस्या');
+        // }
 
         // if ($request->filled('department_id')) {
         //     $query->where('complaint_department', $request->department_id);
@@ -1044,8 +1046,8 @@ class MemberController extends Controller
         $reply = new Reply();
         $reply->complaint_id = $id;
         $reply->complaint_reply = $request->cmp_reply;
-        $reply->selected_reply = $request->selected_reply ?? 0;
-        $reply->reply_from = session('user_id') ?? 0;
+        $reply->selected_reply = $request->selected_reply ?? null;
+        $reply->reply_from = session('user_id') ?? null;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;
         $reply->review_date = $request->review_date ?? null;
@@ -1057,7 +1059,7 @@ class MemberController extends Controller
         }
 
         if (in_array((int)$request->cmp_status, [4, 5])) {
-            $reply->forwarded_to = 0;
+            $reply->forwarded_to = null;
         } else {
             $reply->forwarded_to = $request->forwarded_to;
         }

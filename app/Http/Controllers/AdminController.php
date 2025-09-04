@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Department;
 use App\Models\Adhikari;
 use App\Models\Subject;
@@ -2275,7 +2276,7 @@ class AdminController extends Controller
         $reply->selected_reply = $request->filled('selected_reply')
             ? (int) $request->selected_reply
             : null;
-        $reply->reply_from = session('user_id') ?? 0;
+        $reply->reply_from = session('user_id') ?? null;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;
         $reply->review_date = $request->review_date ?? null;
@@ -2287,7 +2288,7 @@ class AdminController extends Controller
         }
 
         if (in_array((int)$request->cmp_status, [4, 5, 18, 17, 16, 15, 14, 13])) {
-            $reply->forwarded_to = 0;
+            $reply->forwarded_to = null;
         } else {
             $reply->forwarded_to = $request->forwarded_to;
         }
@@ -4052,7 +4053,7 @@ class AdminController extends Controller
                         'pincode'           => 'N/A',
                         'samagra_id'        => 'N/A',
                         'otp_recieved'      => 'NA',
-                        'position_id'       => 0,
+                        'position_id'       => null,
                         'date_time'         => now(),
                         'type'              => 1,
                         'voter_nature'      => 'no input',
@@ -4086,7 +4087,7 @@ class AdminController extends Controller
                             'mandal'             => $polling->mandal_id,
                             'nagar'              => $polling->nagar_id,
                             'matdan_kendra_no'   => $polling_no,
-                            'matdan_kendra_name' => $polling->polling_name,
+                            'matdan_kendra_name' => $polling->gram_polling_id,
                             'area_id'            => $area->area_id,
                             'loksabha'           => 'ग्वालियर',
                             'voter_front'        => 'NA',
@@ -4631,77 +4632,125 @@ class AdminController extends Controller
     // }
 
     // download in excel
-    public function downloadvoterFullData(Request $request)
+    // public function downloadvoterFullData(Request $request)
+    // {
+    //     $query = DB::table('registration_form')->where('type', 1);
+
+    //     // Optional filters 
+    //     if ($request->filled('voter_id')) {
+    //         $query->where('voter_id', $request->input('voter_id'));
+    //     }
+    //     if ($request->filled('area_id')) {
+    //         $areaId = $request->input('area_id');
+    //         $query->whereIn('registration_id', function ($subquery) use ($areaId) {
+    //             $subquery->select('registration_id')
+    //                 ->from('step2')
+    //                 ->where('area_id', $areaId);
+    //         });
+    //     }
+
+    //     $fileName = "voterlist.csv";
+    //     $headers = [
+    //         "Content-type" => "text/csv",
+    //         "Content-Disposition" => "attachment; filename=$fileName",
+    //         "Pragma" => "no-cache",
+    //         "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+    //         "Expires" => "0"
+    //     ];
+
+    //     $callback = function () use ($query) {
+    //         $file = fopen('php://output', 'w');
+
+    //         // Write header only once
+    //         $headerWritten = false;
+    //         $sr = 1;
+
+    //         $query->orderBy('registration_id')
+    //             ->chunk(1000, function ($results) use (&$headerWritten, &$sr, $file) {
+    //                 foreach ($results as $voter) {
+    //                     $step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
+    //                     $step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
+    //                     $area_name = DB::table('area_master')->where('area_id', optional($step2)->area_id)->value('area_name');
+
+    //                     $row = [
+    //                         'SR No' => $sr++,
+    //                         'Name' => $voter->name ?? '',
+    //                         'Father Name' => $voter->father_name ?? '',
+    //                         'House' => $step2->house ?? '',
+    //                         'Age' => $voter->age ?? '',
+    //                         'Gender' => $voter->gender ?? '',
+    //                         'Voter ID' => $voter->voter_id ?? '',
+    //                         'Area Name' => $area_name ?? '',
+    //                         'Jati' => $voter->jati ?? '',
+    //                         'Matdan Kendra No' => $step2->matdan_kendra_no ?? '',
+    //                         'Total Member' => $step3->total_member ?? '',
+    //                         'Mukhiya Mobile' => $step3->mukhiya_mobile ?? '',
+    //                         'Death/Left' => $voter->death_left ?? '',
+    //                         'Date Time' => $voter->date_time ? \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') : '',
+    //                     ];
+
+    //                     if (!$headerWritten) {
+    //                         fputcsv($file, array_keys($row));
+    //                         $headerWritten = true;
+    //                     }
+
+    //                     fputcsv($file, $row);
+    //                 }
+    //             });
+
+    //         fclose($file);
+    //     };
+
+    //     return response()->stream($callback, 200, $headers);
+    // }
+
+
+    public function requestDownload(Request $request)
     {
-        $query = DB::table('registration_form')->where('type', 1);
+        $filters = $request->only(['voter_id', 'area_id']);
+        $userId = session('user_id');
+        
 
-        // Optional filters 
-        if ($request->filled('voter_id')) {
-            $query->where('voter_id', $request->input('voter_id'));
-        }
-        if ($request->filled('area_id')) {
-            $areaId = $request->input('area_id');
-            $query->whereIn('registration_id', function ($subquery) use ($areaId) {
-                $subquery->select('registration_id')
-                    ->from('step2')
-                    ->where('area_id', $areaId);
-            });
-        }
+        // Job dispatch
+        \App\Jobs\GenerateVoterListJob::dispatch($filters, $userId);
 
-        $fileName = "voterlist.csv";
-        $headers = [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
-        ];
-
-        $callback = function () use ($query) {
-            $file = fopen('php://output', 'w');
-
-            // Write header only once
-            $headerWritten = false;
-            $sr = 1;
-
-            $query->orderBy('registration_id')
-                ->chunk(1000, function ($results) use (&$headerWritten, &$sr, $file) {
-                    foreach ($results as $voter) {
-                        $step2 = DB::table('step2')->where('registration_id', $voter->registration_id)->first();
-                        $step3 = DB::table('step3')->where('registration_id', $voter->registration_id)->first();
-                        $area_name = DB::table('area_master')->where('area_id', optional($step2)->area_id)->value('area_name');
-
-                        $row = [
-                            'SR No' => $sr++,
-                            'Name' => $voter->name ?? '',
-                            'Father Name' => $voter->father_name ?? '',
-                            'House' => $step2->house ?? '',
-                            'Age' => $voter->age ?? '',
-                            'Gender' => $voter->gender ?? '',
-                            'Voter ID' => $voter->voter_id ?? '',
-                            'Area Name' => $area_name ?? '',
-                            'Jati' => $voter->jati ?? '',
-                            'Matdan Kendra No' => $step2->matdan_kendra_no ?? '',
-                            'Total Member' => $step3->total_member ?? '',
-                            'Mukhiya Mobile' => $step3->mukhiya_mobile ?? '',
-                            'Death/Left' => $voter->death_left ?? '',
-                            'Date Time' => $voter->date_time ? \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y') : '',
-                        ];
-
-                        if (!$headerWritten) {
-                            fputcsv($file, array_keys($row));
-                            $headerWritten = true;
-                        }
-
-                        fputcsv($file, $row);
-                    }
-                });
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'डेटा background में डाउनलोड हो रहा है। तैयार होने पर link मिल जाएगा।'
+        ]);
     }
+
+    public function downloadList()
+    {
+        $files = DB::table('downloads')
+            ->where('user_id', session('user_id'))
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('admin.downloads', compact('files'));
+    }
+
+    public function downloadFile($id)
+    {
+        $file = DB::table('downloads')->where('id', $id)->where('user_id', session('user_id'))->first();
+
+        if (!$file || !Storage::exists($file->file_path)) {
+            abort(404);
+        }
+
+        return Storage::download($file->file_path, $file->file_name);
+    }
+
+    public function downloadFilesJson()
+    {
+        $files = DB::table('downloads')
+            ->where('user_id', session('user_id'))
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json($files);
+    }
+
 
     // download in zip
     // public function downloadvoterFullData(Request $request)
@@ -4863,7 +4912,7 @@ class AdminController extends Controller
             'step3' => $step3,
             'divisions' => $divisions,
             'districts' => $districts,
-            'polling' => $polling->polling_name ?? '',
+            'polling' => $polling->gram_polling_id ?? '',
             'mandal' => $polling->mandal_id ?? '',
             'nagar' => $polling->nagar_id ?? '',
             'vidhansabha' => $step2->vidhansabha ?? '',
@@ -4987,7 +5036,7 @@ class AdminController extends Controller
             $registration->jati = $request->jati;
             $registration->education = $request->education;
             $registration->business = $request->business;
-            $registration->position_id = $request->position_id ?? 0;
+            $registration->position_id = $request->position_id ?? null;
             $registration->position = $request->position ?? '';
             $registration->father_name = $request->father_name;
             $registration->email = $request->email;
@@ -5141,7 +5190,7 @@ class AdminController extends Controller
             $registration->jati = $request->jati;
             $registration->education = $request->education;
             $registration->business = $request->business;
-            $registration->position_id = $request->position_id ?? 0;
+            $registration->position_id = $request->position_id ?? null;
             $registration->position = $request->position ?? '';
             $registration->father_name = $request->father_name;
             $registration->email = $request->email;

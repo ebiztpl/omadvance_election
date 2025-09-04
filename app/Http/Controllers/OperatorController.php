@@ -404,7 +404,7 @@ class OperatorController extends Controller
             'complaint_id' => $complaint->complaint_id,
             'forwarded_to' => 6,
             'complaint_status' => 1,
-            'reply_from' => 0,
+            'reply_from' => null,
             'reply_date' => now(),
             'complaint_reply' => 'शिकायत दर्ज की गई है।',
         ]);
@@ -660,7 +660,7 @@ class OperatorController extends Controller
             'complaint_id' => $complaint->complaint_id,
             'forwarded_to' => 6,
             'complaint_status' => 11,
-            'reply_from' => 0,
+            'reply_from' => null,
             'reply_date' => now(),
             'complaint_reply' => 'सूचना दर्ज की गई है।',
         ]);
@@ -1376,7 +1376,7 @@ class OperatorController extends Controller
         $reply->selected_reply = $request->filled('selected_reply')
             ? (int) $request->selected_reply
             : null;
-        $reply->reply_from = session('user_id') ?? 0;
+        $reply->reply_from = session('user_id') ?? null;
         $reply->reply_date = now();
         $reply->complaint_status = $request->cmp_status;
         $reply->review_date = $request->review_date ?? null;
@@ -1388,7 +1388,7 @@ class OperatorController extends Controller
         }
 
         if (in_array((int)$request->cmp_status, [4, 5, 18, 17, 16, 15, 14, 13])) {
-            $reply->forwarded_to = 0;
+            $reply->forwarded_to = null;
         } else {
             $reply->forwarded_to = $request->forwarded_to;
         }

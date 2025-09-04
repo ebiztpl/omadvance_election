@@ -291,7 +291,7 @@
                     <tbody style="color: #000;">
                         @forelse ($complaint->replies as $reply)
                             <tr>
-                                <td>{{ $reply->selected_reply === 0 ? 'अन्य' : $reply->predefinedReply->reply ?? '-' }}
+                                <td>{{ $reply->predefinedReply->reply ?? '-' }}
                                 </td>
                                 <td>{!! $reply->statusTextPlain() !!}</td>
                                 <td>{{ $reply->reply_date ? \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') : 'N/A' }}
@@ -342,7 +342,7 @@
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
                                         data-status-html="{!! htmlspecialchars($reply->statusText(), ENT_QUOTES, 'UTF-8') !!}"
-                                        data-predefined="{{ $reply->selected_reply === 0 ? 'अन्य' : $reply->predefinedReply->reply ?? '-' }}"
+                                        data-predefined="{{ $reply->predefinedReply->reply ?? '-' }}"
                                         data-cb-photo="{{ $reply->cb_photo ? asset($reply->cb_photo) : '' }}"
                                         data-ca-photo="{{ $reply->ca_photo ? asset($reply->ca_photo) : '' }}"
                                         data-video="{{ $reply->c_video ? asset($reply->c_video) : '' }}">
@@ -576,7 +576,7 @@
                                 @foreach ($replyOptions as $option)
                                     <option value="{{ $option->reply_id }}">{{ $option->reply }}</option>
                                 @endforeach
-                                <option value="0">अन्य</option>
+                                {{-- <option value="0">अन्य</option> --}}
                             </select>
                         </div>
 
@@ -687,7 +687,7 @@
                 const statusHtml = $(this).data('status-html') || '—';
                 const admin = $(this).data('admin') || '—';
                 const predefinedRaw = $(this).data('predefined');
-                const predefined = predefinedRaw === 0 ? 'अन्य' : (predefinedRaw || '—');
+                // const predefined = predefinedRaw === 0 ? 'अन्य' : (predefinedRaw || '—');
 
                 const cbPhoto = $(this).data('cb-photo');
                 const caPhoto = $(this).data('ca-photo');

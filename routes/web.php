@@ -132,6 +132,17 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/admin/voterlist/view', [AdminController::class, 'viewvoter'])->name('viewvoter.index');
     Route::post('admin/voterlist', [AdminController::class, 'voterdata'])->name('voterdata.index');
     Route::get('/admin/voterlist/download', [AdminController::class, 'downloadvoterFullData'])->name('voterlist.download');
+    Route::get('/admin/voterlist/files/json', [AdminController::class, 'downloadFilesJson'])->name('voterlist.files.json');
+
+
+    Route::post('/admin/voterlist/request-download', [AdminController::class, 'requestDownload'])
+        ->name('voterlist.request');
+
+    Route::get('/admin/voterlist/downloads', [AdminController::class, 'downloadList'])
+        ->name('voterlist.files');
+
+    Route::get('/admin/voterlist/file/{id}', [AdminController::class, 'downloadFile'])
+        ->name('voterlist.file');
 
     // member data upload routes
     Route::get('/admin/membership_form', [AdminController::class, 'membercreate'])->name('membership.create');
@@ -141,13 +152,13 @@ Route::middleware('checklogin')->group(function () {
     Route::post('/get-districts', [AdminController::class, 'getDistricts'])->name('get.districts');
     Route::post('/get-vidhansabhas', [AdminController::class, 'getVidhansabhasByDistrict'])->name('get.vidhansabhaD');
 
-     Route::get('/admin/get-districts/{division_id}', [AdminController::class, 'districtsfetch']);
+    Route::get('/admin/get-districts/{division_id}', [AdminController::class, 'districtsfetch']);
     Route::get('/admin/get-vidhansabha/{district_id}', [AdminController::class, 'vidhansabhafetch']);
     Route::get('/admin/get-mandal/{vidhansabha_id}', [AdminController::class, 'getMandals']);
     Route::get('/admin/get-nagar/{mandal_id}', [AdminController::class, 'getNagars']);
     Route::get('/admin/get-pollings/{mandal_id}', [AdminController::class, 'getPollings']);
     Route::get('/admin/get-areas/{polling_id}', [AdminController::class, 'getAreas']);
-     Route::get('/admin/get-gram_pollings/{mandal_id}', [AdminController::class, 'getgramPollings']);
+    Route::get('/admin/get-gram_pollings/{mandal_id}', [AdminController::class, 'getgramPollings']);
     Route::get('/admin/get-subjects/{department_id}', [AdminController::class, 'getSubjects']);
 });
 

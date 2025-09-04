@@ -39,6 +39,11 @@
         <h1>400 - Page Not Found</h1>
     <p>The page you are looking for doesn't exist.</p>
         <a href="{{ url()->previous() }}">Go back</a>
+
+         {{-- @if (config('app.debug'))
+            <h3>{{ $exception->getMessage() }}</h3>
+            <pre>{{ $exception->getTraceAsString() }}</pre> 
+        @endif --}}
     </div>
 </body>
 </html>
