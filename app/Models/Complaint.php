@@ -55,7 +55,8 @@ class Complaint extends Model
         'program_date',
         'complaint_created_by',
         'complaint_created_by_member',
-        'type'
+        'type',
+        'jati_id'
     ];
 
 
@@ -200,5 +201,11 @@ class Complaint extends Model
     {
         return $this->hasMany(FollowupStatus::class, 'complaint_id')
             ->orderBy('followup_date', 'desc');
+    }
+
+
+    public function jati()
+    {
+        return $this->belongsTo(Jati::class, 'jati_id', 'jati_id');
     }
 }

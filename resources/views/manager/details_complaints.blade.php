@@ -55,7 +55,7 @@
                     <div id="form_container" style="color: #000;">
                         <fieldset class="scheduler-border mb-3">
                             <div class="form-group row">
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         <span class="data-text">नाम</span> <span class="error">*</span>
                                     </label>
@@ -65,7 +65,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         पिता का नाम <span class="error">*</span>
                                     </label>
@@ -75,7 +75,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         <span class="mobile-label">मोबाइल</span>
                                     </label>
@@ -91,7 +91,7 @@
 
 
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">संभाग का नाम <span
                                             class="error">*</span></label>
                                     <select class="form-control bg-light text-muted" name="division_id" id="division_id"
@@ -103,7 +103,7 @@
                                     <input type="hidden" name="division_id" value="2">
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">जिले का नाम <span
                                             class="error">*</span></label>
                                     <select class="form-control bg-light text-muted" name="txtdistrict_name"
@@ -115,7 +115,7 @@
                                     <input type="hidden" name="txtdistrict_name" value="11">
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">विधानसभा <span
                                             class="error">*</span></label>
                                     <select name="txtvidhansabha" class="form-control bg-light text-muted"
@@ -128,7 +128,7 @@
                                 </div>
 
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">नगर/मंडल<span
                                             class="error">*</span></label>
                                     <select name="txtgram" class="form-control" id="txtgram" required>
@@ -143,7 +143,7 @@
                                 </div>
 
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">मतदान
                                         केंद्र/ग्राम/वार्ड<span class="error">*</span></label>
                                     <select name="txtpolling" class="form-control" id="txtpolling" required>
@@ -158,17 +158,21 @@
                                 </div>
 
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                        रेफरेंस नाम
+                                <div class="col-md-3 d-flex align-items-center">
+                                    <label for="jati-select" class="me-2 mr-2 mb-0" style="white-space: nowrap;">जाति
                                     </label>
-                                    <div class="flex-grow-1">
-                                        <input type="text" class="form-control" name="reference"
-                                            value="{{ old('reference', $complaint->reference_name) }}">
-                                    </div>
+                                    <select name="jati" id="jati-select" class="form-control">
+                                        <option value="">--चुने--</option>
+                                        @foreach ($jatis as $jati)
+                                            <option value="{{ $jati->jati_id }}"
+                                                {{ old('jati', $complaint->jati->jati_id ?? '') == $jati->jati_id ? 'selected' : '' }}>
+                                                {{ $jati->jati_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         मतदाता पहचान <span class="error">*</span>
                                     </label>
@@ -180,7 +184,20 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        रेफरेंस नाम
+                                    </label>
+                                    <div class="flex-grow-1">
+                                        <input type="text" class="form-control" name="reference"
+                                            value="{{ old('reference', $complaint->reference_name) }}">
+                                    </div>
+                                </div>
+
+
+
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         @if ($complaint->type == 1)
                                             कमांडर द्वारा भेजा गया वीडियो
@@ -204,7 +221,7 @@
 
                                 {{-- Department --}}
                                 <div class="form-group row department_row">
-                                    <div class="col-md-4 d-flex align-items-center">
+                                    <div class="col-md-3 d-flex align-items-center">
                                         <label for="department-select" class="me-2 mr-2 mb-0"
                                             style="white-space: nowrap;">विभाग <span class="error">*</span></label>
                                         <select name="department" id="department-select" class="form-control" required>
@@ -218,7 +235,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-md-4 d-flex align-items-center">
+                                    <div class="col-md-3 d-flex align-items-center">
                                         <label for="post-select" class="me-2 mr-2 mb-0" style="white-space: nowrap;">पद
                                             <span class="error">*</span></label>
                                         <select name="post" class="form-control" id="post-select" required>
@@ -232,7 +249,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-md-4 d-flex align-items-center">
+                                    <div class="col-md-3 d-flex align-items-center">
                                         <label for="subject-select" class="me-2 mr-2 mb-0"
                                             style="white-space: nowrap;">विषय
                                             <span class="error">*</span></label>
@@ -611,20 +628,32 @@
                             </select>
                         </div> --}}
 
-                        <div class="col-md-2">
+                        <div class="col-md-1">
                             <br>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input importance" type="checkbox" id="importanceHigh"
-                                    name="importance" value="उच्च"
-                                    @if ($disableReply) disabled @endif>
+                                    name="importance" value="उच्च" @if ($disableReply) disabled @endif>
                                 <label
-                                    class="form-check-label importance-label btn btn-outline-primary px-4 py-2 rounded shadow-sm fw-bold"
-                                    for="importanceHigh" style="font-size: 1.1rem; transition: all 0.2s;">
+                                    class="form-check-label importance-label btn btn-outline-primary px-2 py-2 rounded shadow-sm fw-bold"
+                                    for="importanceHigh" style="font-size: 14px; transition: all 0.2s;">
                                     उच्च
                                 </label>
                             </div>
                         </div>
 
+
+                        <div class="col-md-2">
+                            <br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input needfollowup" type="checkbox" id="needfollowup"
+                                    name="needfollowup" value="1" @if ($disableReply) disabled @endif>
+                                <label
+                                    class="form-check-label needfollowup-label btn btn-outline-warning px-1 py-2 rounded shadow-sm fw-bold"
+                                    for="needfollowup" style="font-size: 12px; transition: all 0.2s; color: black">
+                                    फ़ॉलोअप नहीं करना
+                                </label>
+                            </div>
+                        </div>
 
 
                         {{-- <div class="col-md-2">

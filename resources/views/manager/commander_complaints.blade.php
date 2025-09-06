@@ -101,6 +101,16 @@
                         </div>
 
                         <div class="col-md-2">
+                            <label>जाति</label>
+                            <select name="jati_id" id="jati_id" class="form-control">
+                                <option value="">-- सभी --</option>
+                                @foreach ($jatis as $j)
+                                    <option value="{{ $j->jati_id }}">{{ $j->jati_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
                             <label>उत्तर</label>
                             <select name="reply_id" id="reply_id" class="form-control">
                                 <option value="">-- सभी --</option>
@@ -495,6 +505,7 @@
                             d.gram_id = $('#gram_id').val();
                             d.polling_id = $('#polling_id').val();
                             d.area_id = $('#area_id').val();
+                            d.jati_id = $('#jati_id').val();
                             d.from_date = $('#from_date').val();
                             d.to_date = $('#to_date').val();
                             d.reply_id = $('#reply_id').val();

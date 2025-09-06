@@ -129,7 +129,7 @@
                 </li>
 
                 <li><a class="has-arrow" href="#" aria-expanded="false"> <i
-                            class="icon icon-arrow-right"></i><span class="nav-text">जनसंख्या</span></a>
+                            class="icon icon-arrow-right"></i><span class="nav-text">डेमोग्राफिक्स</span></a>
                     <ul aria-expanded="false">
                         <li><a href="{{ route('jati.index') }}">जाति जोड़े</a></li>
                         <li><a href="{{ route('education.index') }}">शिक्षा जोड़े</a></li>
@@ -243,10 +243,10 @@
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
                 <li><a href="{{ route('operator_suchna.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">सूचना पंजीयन करे</span></a></li>
-                {{-- <li><a href="{{ route('operator_complaint.view') }}"><i class="icon icon-arrow-right"></i><span
+                <li><a href="{{ route('operator_complaint.view') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्याएँ देखे</span></a></li>
                 <li><a href="{{ route('operator_suchna.view') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">सूचनाएँ देखे</span></a></li> --}}
+                            class="nav-text">सूचनाएँ देखे</span></a></li>
                 <li><a href="{{ route('next_followup.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">फ़ॉलोअप</span></a>
                 </li>

@@ -117,7 +117,7 @@ class AdminController extends Controller
         $businesses = Business::all();
         $politics = Politics::all();
         $interests = Interest::all();
-        
+
         $jatis = RegistrationForm::select('jati')->distinct()->get();
 
         return view('admin/dashboard', compact('districts', 'jatis', 'divisions', 'jaties', 'categories', 'religions', 'educations', 'businesses', 'politics', 'interests'));
@@ -1492,6 +1492,10 @@ class AdminController extends Controller
             }
         }
 
+        if ($request->filled('jati_id')) {
+            $query->where('jati_id', $request->jati_id);
+        }
+
         if ($request->filled('admin_id')) {
             $query->whereHas('latestReply', function ($q) use ($request) {
                 $q->where('forwarded_to', $request->admin_id);
@@ -1571,11 +1575,12 @@ class AdminController extends Controller
 
                 $data[] = [
                     'index' => $start + $index + 1,
-                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>
-                           <strong>नाम: </strong>{$complaint->name}<br>
-                           <strong>मोबाइल: </strong>{$complaint->mobile_number}<br>
-                           <strong>पुत्र श्री: </strong>{$complaint->father_name}<br>
-                           <strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>" .
+                        "<strong>नाम: </strong>{$complaint->name}<br>" .
+                        "<strong>मोबाइल: </strong>{$complaint->mobile_number}<br>" .
+                        "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
+                        "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
+                        "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
                     'reference_name' => $complaint->reference_name ?? '',
                     'area_details' => '<span title="
 विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
@@ -1602,7 +1607,7 @@ class AdminController extends Controller
                     'applicant_name' => $complaint->registrationDetails->name ?? '',
                     'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
                     'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
-                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a>
+                     <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
                     </div>'
                 ];
@@ -1621,6 +1626,7 @@ class AdminController extends Controller
         $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
         $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
         $departments = Department::all();
+        $jatis = Jati::all();
         $replyOptions = ComplaintReply::all();
         $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
         $managers = User::where('role', 2)->get();
@@ -1634,7 +1640,8 @@ class AdminController extends Controller
             'departments',
             'subjects',
             'replyOptions',
-            'managers'
+            'managers',
+            'jatis'
         ));
     }
 
@@ -1712,6 +1719,10 @@ class AdminController extends Controller
             });
         }
 
+        if ($request->filled('jati_id')) {
+            $query->where('jati_id', $request->jati_id);
+        }
+
         if ($request->filled('subject_id')) {
             $subject = Subject::find($request->subject_id);
             if ($subject) {
@@ -1781,11 +1792,12 @@ class AdminController extends Controller
 
                 $data[] = [
                     'index' => $start + $index + 1,
-                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>
-                           <strong>नाम: </strong>{$complaint->name}<br>
-                           <strong>मोबाइल: </strong>{$complaint->mobile_number}<br>
-                           <strong>पुत्र श्री: </strong>{$complaint->father_name}<br>
-                           <strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>" .
+                        "<strong>नाम: </strong>{$complaint->name}<br>" .
+                        "<strong>मोबाइल: </strong>{$complaint->mobile_number}<br>" .
+                        "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
+                        "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
+                        "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
                     'reference_name' => $complaint->reference_name ?? '',
                     'area_details' => '<span title="
 विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
@@ -1809,10 +1821,10 @@ class AdminController extends Controller
 
                     'review_date' => optional($complaint->replies->sortByDesc('reply_date')->first())->review_date ?? 'N/A',
                     'importance' => $complaint->latestReply?->importance ?? 'N/A',
-                    'applicant_name' => $complaint->registrationDetails->name ?? '',
+                    'applicant_name' => $complaint->admin->admin_name ?? '',
                     'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
                     'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
-                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a>
+                    <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
                     </div>'
                 ];
@@ -1831,6 +1843,7 @@ class AdminController extends Controller
         $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
         $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
         $departments = Department::all();
+        $jatis = Jati::all();
         $replyOptions = ComplaintReply::all();
         $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
         $managers = User::where('role', 2)->get();
@@ -1844,7 +1857,8 @@ class AdminController extends Controller
             'departments',
             'subjects',
             'replyOptions',
-            'managers'
+            'managers',
+            'jatis'
         ));
     }
 
@@ -1909,6 +1923,10 @@ class AdminController extends Controller
             $query->whereDate('program_date', '<=', $request->programto_date);
         }
 
+        if ($request->filled('jati_id')) {
+            $query->where('jati_id', $request->jati_id);
+        }
+
 
         $start = $request->input('start', 0);
         $length = $request->input('length', 10);
@@ -1959,11 +1977,12 @@ class AdminController extends Controller
 
                 $data[] = [
                     'index' => $start + $index + 1,
-                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>
-                           <strong>नाम: </strong>{$complaint->name}<br>
-                           <strong>मोबाइल: </strong>{$complaint->mobile_number}<br>
-                           <strong>पुत्र श्री: </strong>{$complaint->father_name}<br>
-                           <strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>" .
+                        "<strong>नाम: </strong>{$complaint->name}<br>" .
+                        "<strong>मोबाइल: </strong>{$complaint->mobile_number}<br>" .
+                        "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
+                        "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
+                        "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
 
                     'reference_name' => $complaint->reference_name ?? '',
 
@@ -1994,7 +2013,7 @@ class AdminController extends Controller
                     'issue_title' => $complaint->issue_title,
                     'program_date' => $complaint->program_date,
                     'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
-                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a>
+                    <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
                     </div>'
                 ];
@@ -2014,6 +2033,7 @@ class AdminController extends Controller
         $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
         $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
         $departments = Department::all();
+        $jatis = Jati::all();
         $replyOptions = ComplaintReply::all();
         $managers = User::where('role', 2)->get();
 
@@ -2025,7 +2045,8 @@ class AdminController extends Controller
             'areas',
             'departments',
             'replyOptions',
-            'managers'
+            'managers',
+            'jatis'
         ));
     }
 
@@ -2068,6 +2089,10 @@ class AdminController extends Controller
 
         if ($request->filled('area_id')) {
             $query->where('area_id', $request->area_id);
+        }
+
+        if ($request->filled('jati_id')) {
+            $query->where('jati_id', $request->jati_id);
         }
 
         if ($request->filled('from_date')) {
@@ -2137,11 +2162,12 @@ class AdminController extends Controller
 
                 $data[] = [
                     'index' => $start + $index + 1,
-                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>
-                           <strong>नाम: </strong>{$complaint->name}<br>
-                           <strong>मोबाइल: </strong>{$complaint->mobile_number}<br>
-                           <strong>पुत्र श्री: </strong>{$complaint->father_name}<br>
-                           <strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>" .
+                        "<strong>नाम: </strong>{$complaint->name}<br>" .
+                        "<strong>मोबाइल: </strong>{$complaint->mobile_number}<br>" .
+                        "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
+                        "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
+                        "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
 
                     'reference_name' => $complaint->reference_name ?? '',
 
@@ -2165,14 +2191,14 @@ class AdminController extends Controller
                     'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
 
 
-                    'applicant_name' => $complaint->registrationDetails->name ?? '',
+                    'applicant_name' => $complaint->admin->admin_name ?? '',
 
                     'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
 
                     'issue_title' => $complaint->issue_title,
                     'program_date' => $complaint->program_date,
                     'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
-                    <a href="' . route('complaints.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary">क्लिक करें</a>
+                    <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
                     </div>'
                 ];
@@ -2191,6 +2217,7 @@ class AdminController extends Controller
         $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
         $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
         $departments = Department::all();
+        $jatis = Jati::all();
         $replyOptions = ComplaintReply::all();
         $managers = User::where('role', 2)->get();
 
@@ -2202,7 +2229,8 @@ class AdminController extends Controller
             'areas',
             'departments',
             'replyOptions',
-            'managers'
+            'managers',
+            'jatis'
         ));
     }
 
@@ -2267,7 +2295,6 @@ class AdminController extends Controller
             'importance' => 'nullable|string',
             'criticality' => 'nullable|string',
         ]);
-
         $complaint = Complaint::findOrFail($id);
 
         $reply = new Reply();
@@ -2282,6 +2309,9 @@ class AdminController extends Controller
         $reply->review_date = $request->review_date ?? null;
         $reply->importance = $request->importance ?? null;
         $reply->criticality = $request->criticality ?? null;
+        $reply->need_followup = $request->input('needfollowup') ? 1 : 0;
+
+
 
         if ($request->filled('c_video')) {
             $reply->c_video = $request->c_video;
@@ -4709,7 +4739,7 @@ class AdminController extends Controller
     {
         $filters = $request->only(['voter_id', 'area_id']);
         $userId = session('user_id');
-        
+
 
         // Job dispatch
         \App\Jobs\GenerateVoterListJob::dispatch($filters, $userId);
@@ -5127,7 +5157,6 @@ class AdminController extends Controller
             return redirect()
                 ->route('membership.create')
                 ->with('success', 'सदस्यता सफलतापूर्वक सबमिट की गई!');
-
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -5138,14 +5167,18 @@ class AdminController extends Controller
 
     public function memberedit($id)
     {
-        $registration = RegistrationForm::with(['step2', 'step3', 'step4',
+        $registration = RegistrationForm::with([
+            'step2',
+            'step3',
+            'step4',
             'step2.vidhansabhaRelation',
             'step2.division',
             'step2.districtRelation',
             'step2.mandalRelation',
             'step2.polling',
             'step2.areaRelation',
-            'step2.nagarRelation',])->findOrFail($id);
+            'step2.nagarRelation',
+        ])->findOrFail($id);
         $divisions = Division::all();
         $jatis = Jati::all();
         $categories = Category::all();
@@ -5346,5 +5379,25 @@ class AdminController extends Controller
         ]);
 
         return response()->json($pollings);
+    }
+
+
+     public function summary($id)
+    {
+        $complaint = Complaint::with(['replies.followups'])->findOrFail($id);
+
+        $complaint->replies = $complaint->replies->sortByDesc('reply_date');
+
+        $complaint->replies->each(function ($reply) {
+            $reply->followups = $reply->followups->sortByDesc('followup_date');
+        });
+
+        $totalReplies = $complaint->replies->count();
+
+        $totalFollowups = $complaint->replies->reduce(function ($carry, $reply) {
+            return $carry + $reply->followups->count();
+        }, 0);
+
+        return view('admin/details_summary', compact('complaint', 'totalReplies', 'totalFollowups'));
     }
 }

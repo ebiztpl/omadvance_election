@@ -221,7 +221,7 @@
 
                         <span
                             style="margin-bottom: 0px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
-                            सूचना - <span id="complaint-count">{{ $complaints->count() }}</span></span>
+                            सूचना - <span id="complaint-count"></span></span>
 
                         <div class="table-responsive">
                             <table id="example" style="min-width: 845px" class="display table-bordered">
@@ -240,80 +240,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="complaintsTableBody">
-                                    @foreach ($complaints as $index => $complaint)
-                                        <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                            <td> <strong>शिकायत क्र.: </strong>{{ $complaint->complaint_number ?? 'N/A' }}
-                                                <br>
-                                                <strong>नाम: </strong>{{ $complaint->name ?? 'N/A' }} <br>
-                                                <strong>मोबाइल: </strong>{{ $complaint->mobile_number ?? '' }} <br>
-                                                <strong>पुत्र श्री: </strong>{{ $complaint->father_name ?? '' }} <br><br>
-                                                <strong>स्थिति: </strong>{!! $complaint->statusTextPlain() !!}
-                                            </td>
-
-                                            <td>{{ $complaint->reference_name }}</td>
-                                            <td
-                                                title="
-                                                
-                                                
-विभाग:  {{ $complaint->division->division_name ?? 'N/A' }}
-जिला:  {{ $complaint->district->district_name ?? 'N/A' }}
-विधानसभा:  {{ $complaint->vidhansabha->vidhansabha ?? 'N/A' }}
-मंडल:  {{ $complaint->mandal->mandal_name ?? 'N/A' }}
-नगर/ग्राम:  {{ $complaint->gram->nagar_name ?? 'N/A' }}
-मतदान केंद्र:  {{ $complaint->polling->polling_name ?? 'N/A' }} ({{ $complaint->polling->polling_no ?? 'N/A' }})
-क्षेत्र:  {{ $complaint->area->area_name ?? 'N/A' }}
-">
-                                                {{ $complaint->division->division_name ?? 'N/A' }}<br>
-                                                {{ $complaint->district->district_name ?? 'N/A' }}<br>
-                                                {{ $complaint->vidhansabha->vidhansabha ?? 'N/A' }}<br>
-                                                {{ $complaint->mandal->mandal_name ?? 'N/A' }}<br>
-                                                {{ $complaint->gram->nagar_name ?? 'N/A' }}<br>
-                                                {{ $complaint->polling->polling_name ?? 'N/A' }}
-                                                ({{ $complaint->polling->polling_no ?? 'N/A' }})
-                                                <br>
-                                                {{ $complaint->area->area_name ?? 'N/A' }}
-                                            </td>
-
-
-                                            <td>
-                                                <strong>तिथि:
-                                                    {{ \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') }}</strong><br>
-
-                                                @if ($complaint->complaint_status == 13)
-                                                    सम्मिलित हुए
-                                                @elseif ($complaint->complaint_status == 14)
-                                                    सम्मिलित नहीं हुए
-                                                @elseif ($complaint->complaint_status == 15)
-                                                    फोन पर संपर्क किया
-                                                @elseif ($complaint->complaint_status == 16)
-                                                    ईमेल पर संपर्क किया
-                                                @elseif ($complaint->complaint_status == 17)
-                                                    व्हाट्सएप पर संपर्क किया
-                                                @elseif ($complaint->complaint_status == 18)
-                                                    रद्द
-                                                @else
-                                                    {{ $complaint->pending_days }} दिन
-                                                @endif
-                                            </td>
-
-                                            <td>{{ $complaint->registrationDetails->name ?? '' }}</td>
-                                            <td>
-                                                {{ $complaint->forwarded_to_name ?? '-' }} <br>
-                                                {{ $complaint->forwarded_reply_date }}
-                                            </td>
-
-                                            <td>{{ $complaint->issue_title }}</td>
-                                            <td>{{ $complaint->program_date }}</td>
-
-                                            <td>
-                                                <a href="{{ route('complaint.show', $complaint->complaint_id) }}"
-                                                    class="btn btn-sm btn-primary" style="white-space: nowrap;">
-                                                    क्लिक करें
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
+                                   
                                 </tbody>
                             </table>
                         </div>
@@ -376,76 +303,76 @@
                
 
                 // Apply Filters
-                $('#applyFilters').click(function(e) {
-                     e.preventDefault();
-                    let data = {
-                        complaint_status: $('#complaint_status').val(),
-                        complaint_type: $('#complaint_type').val(),
-                        mandal_id: $('#mandal_id').val(),
-                        gram_id: $('#gram_id').val(),
-                        polling_id: $('#polling_id').val(),
-                        area_id: $('#area_id').val(),
-                        from_date: $('#from_date').val(),
-                        to_date: $('#to_date').val(),
-                        issue_title: $('#issue_title').val(),
-                        admin_id: $('#admin_id').val(),
-                         programfrom_date: $('#programfrom_date').val(),
-                        programto_date: $('#programto_date').val(),
-                    };
+                // $('#applyFilters').click(function(e) {
+                //      e.preventDefault();
+                //     let data = {
+                //         complaint_status: $('#complaint_status').val(),
+                //         complaint_type: $('#complaint_type').val(),
+                //         mandal_id: $('#mandal_id').val(),
+                //         gram_id: $('#gram_id').val(),
+                //         polling_id: $('#polling_id').val(),
+                //         area_id: $('#area_id').val(),
+                //         from_date: $('#from_date').val(),
+                //         to_date: $('#to_date').val(),
+                //         issue_title: $('#issue_title').val(),
+                //         admin_id: $('#admin_id').val(),
+                //          programfrom_date: $('#programfrom_date').val(),
+                //         programto_date: $('#programto_date').val(),
+                //     };
 
-                    $.ajax({
-                        url: "{{ route('suchna.view') }}",
-                        type: 'GET',
-                        data: data,
-                         beforeSend: function() {
-                            $("#loader-wrapper").show();
-                        },
-                        success: function(response) {
+                //     $.ajax({
+                //         url: "{{ route('suchna.view') }}",
+                //         type: 'GET',
+                //         data: data,
+                //          beforeSend: function() {
+                //             $("#loader-wrapper").show();
+                //         },
+                //         success: function(response) {
                           
 
-                            if ($.fn.DataTable.isDataTable('#example')) {
-                                $('#example').DataTable().destroy();
-                            }
+                //             if ($.fn.DataTable.isDataTable('#example')) {
+                //                 $('#example').DataTable().destroy();
+                //             }
 
-                              $('#complaintsTableBody').html(response.html);
-                            $('#complaint-count').text(response.count);
+                //               $('#complaintsTableBody').html(response.html);
+                //             $('#complaint-count').text(response.count);
 
-                            $('#example').DataTable({
-                                dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
-                                    '<"row"<"col-sm-12"tr>>' +
-                                    '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
-                                buttons: [{
-                                        extend: "csv",
-                                        exportOptions: {
-                                            modifier: {
-                                                page: "all"
-                                            },
-                                        },
-                                    },
-                                    {
-                                        extend: "excel",
-                                        exportOptions: {
-                                            modifier: {
-                                                page: "all"
-                                            },
-                                        },
-                                    }
-                                ],
-                                lengthMenu: [
-                                    [10, 25, 50, 100, 500, -1],
-                                    [10, 25, 50, 100, 500, "All"],
-                                ],
-                            });
+                //             $('#example').DataTable({
+                //                 dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
+                //                     '<"row"<"col-sm-12"tr>>' +
+                //                     '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+                //                 buttons: [{
+                //                         extend: "csv",
+                //                         exportOptions: {
+                //                             modifier: {
+                //                                 page: "all"
+                //                             },
+                //                         },
+                //                     },
+                //                     {
+                //                         extend: "excel",
+                //                         exportOptions: {
+                //                             modifier: {
+                //                                 page: "all"
+                //                             },
+                //                         },
+                //                     }
+                //                 ],
+                //                 lengthMenu: [
+                //                     [10, 25, 50, 100, 500, -1],
+                //                     [10, 25, 50, 100, 500, "All"],
+                //                 ],
+                //             });
 
-                        },
-                         complete: function() {
-                            $("#loader-wrapper").hide();
-                        },
-                        error: function() {
-                            alert('कुछ गड़बड़ हो गई। कृपया पुनः प्रयास करें।');
-                        }
-                    });
-                });
+                //         },
+                //          complete: function() {
+                //             $("#loader-wrapper").hide();
+                //         },
+                //         error: function() {
+                //             alert('कुछ गड़बड़ हो गई। कृपया पुनः प्रयास करें।');
+                //         }
+                //     });
+                // });
 
 
 
@@ -477,6 +404,104 @@
                                 'title', 'फ़िल्टर दिखाएं');
                         }
                     });
+                });
+
+
+                
+                 let table = $('#example').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    destroy: true,
+                    dom:
+                            '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
+                            '<"row"<"col-sm-12"tr>>' +
+                            '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+                        buttons: [
+                            {
+                                extend: "csv",
+                                exportOptions: { modifier: { page: "all" } },
+                            },
+                            {
+                                extend: "excel",
+                                exportOptions: { modifier: { page: "all" } },
+                            }
+                        
+                        ],
+                        lengthMenu: [
+                            [10, 25, 50, 100, 500, 1000],
+                            [10, 25, 50, 100, 500, 1000],
+                        ],
+                    ajax: {
+                        url: "{{ route('suchna.view') }}",
+                        data: function(d) {
+                            d.complaint_status = $('#complaint_status').val();
+                            d.complaint_type = $('#complaint_type').val();
+                            d.mandal_id = $('#mandal_id').val();
+                            d.gram_id = $('#gram_id').val();
+                            d.polling_id = $('#polling_id').val();
+                            d.area_id = $('#area_id').val();
+                            d.from_date = $('#from_date').val();
+                            d.to_date = $('#to_date').val();
+                            d.admin_id = $('#admin_id').val();
+                            d.issue_title = $('#issue_title').val();
+                            d.programfrom_date = $('#programfrom_date').val();
+                            d.programto_date = $('#programto_date').val();
+                            d.complaintOtherFilter = $('#complaintOtherFilter').val();
+
+                            d.filter = $('#complaintFilterTabs a.active').data('filter') || '';
+                        }
+                    },
+                    columns: [{
+                            data: 'index'
+                        },
+                        {
+                            data: 'name'
+                        },
+                        {
+                            data: 'reference_name'
+                        },
+                        {
+                            data: 'area_details'
+                        },
+                        {
+                            data: 'posted_date'
+                        },
+                        {
+                            data: 'applicant_name'
+                        },
+                        {
+                            data: 'forwarded_to_name'
+                        },
+                        {
+                            data: 'issue_title'
+                        },
+                        {
+                            data: 'program_date'
+                        },
+                        {
+                            data: 'action',
+                            orderable: false,
+                            searchable: false
+                        },
+                    ]
+                });
+
+                table.on('preXhr.dt', function() {
+                    $('#loader-wrapper').show();
+                });
+
+                table.on('xhr.dt', function() {
+                    $('#loader-wrapper').hide();
+                });
+
+                table.on('draw', function() {
+                    let info = table.page.info();
+                    $('#complaint-count').text(info.recordsDisplay); 
+                });
+
+                $('#applyFilters').click(function(e) {
+                    e.preventDefault();
+                    table.ajax.reload();
                 });
             });
 

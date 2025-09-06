@@ -19,6 +19,7 @@ use App\Models\Mandal;
 use App\Models\Nagar;
 use App\Models\Area;
 use App\Models\Polling;
+use App\Models\Jati;
 use App\Models\Reply;
 use App\Models\Level;
 use App\Models\Position;
@@ -237,9 +238,9 @@ class OperatorController extends Controller
             ->get();
 
         $departments = Department::all();
+        $jatis = Jati::all();
 
-
-        return view('operator/complaints', compact('states', 'nagars',  'departments'));
+        return view('operator/complaints', compact('states', 'nagars',  'departments', 'jatis'));
     }
 
     public function suchnaIndex()
@@ -253,9 +254,10 @@ class OperatorController extends Controller
             ->get();
 
         $departments = Department::all();
+        $jatis = Jati::all();
 
 
-        return view('operator/suchna', compact('states', 'nagars',  'departments'));
+        return view('operator/suchna', compact('states', 'nagars',  'departments', 'jatis'));
     }
 
     public function getVoter(Request $request)
@@ -307,6 +309,7 @@ class OperatorController extends Controller
                 'NameText' => 'required|string|max:2000',
                 'type' => 'required|string',
                 'department' => 'nullable',
+                'jati' => 'nullable',
                 'post' => 'nullable',
                 'from_date' => 'nullable|date',
                 'program_date' => 'nullable|date',
@@ -390,6 +393,7 @@ class OperatorController extends Controller
             'issue_attachment' => $attachment,
             'complaint_number' => $complaint_number,
             'complaint_department' => $request->department ?? '',
+            'jati_id' => $request->jati ?? null,
             'complaint_designation' => $request->post ?? '',
             'news_date' => $request->from_date,
             'complaint_status' => 1,
@@ -557,6 +561,7 @@ class OperatorController extends Controller
                 'NameText' => 'required|string|max:2000',
                 'type' => 'required|string',
                 'department' => 'nullable',
+                'jati' => 'nullable',
                 'post' => 'nullable',
                 'from_date' => 'nullable|date',
                 'program_date' => 'nullable|date',
@@ -646,6 +651,7 @@ class OperatorController extends Controller
             'issue_attachment' => $attachment,
             'complaint_number' => $complaint_number,
             'complaint_department' => $request->department ?? '',
+            'jati_id' => $request->jati ?? null,
             'complaint_designation' => $request->post ?? '',
             'news_date' => $request->from_date,
             'complaint_status' => 11,
@@ -764,11 +770,11 @@ class OperatorController extends Controller
             }
         }
 
-        if ($request->filled('admin_id')) {
-            $query->whereHas('latestReply', function ($q) use ($request) {
-                $q->where('forwarded_to', $request->admin_id);
-            });
-        }
+        // if ($request->filled('admin_id')) {
+        //     $query->whereHas('latestReply', function ($q) use ($request) {
+        //         $q->where('forwarded_to', $request->admin_id);
+        //     });
+        // }
 
         if ($request->filled('reply_id')) {
             $query->whereHas('replies', function ($q) use ($request) {
@@ -807,7 +813,16 @@ class OperatorController extends Controller
             $query->whereDate('posted_date', '<=', $request->to_date);
         }
 
-        $complaints = $query->orderBy('posted_date', 'desc')->get();
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+
+        $recordsFiltered = $query->count(); 
+        $recordsTotal = $query->count();
+
+        $complaints = $query->orderBy('posted_date', 'desc')
+            ->offset($start)
+            ->limit($length)
+            ->get();
 
         foreach ($complaints as $complaint) {
             if (!in_array($complaint->complaint_status, [4, 5])) {
@@ -826,71 +841,58 @@ class OperatorController extends Controller
         }
 
         if ($request->ajax()) {
-            $html = '';
-
+            $data = [];
             foreach ($complaints as $index => $complaint) {
-                $html .= '<tr>';
-                $html .= '<td>' . ($index + 1) . '</td>';
-                // $html .= '<td>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->name ?? 'N/A') . '<br>' . ($complaint->mobile_number ?? '') . '</td>';
-                $html .= '<td>
-                <strong>शिकायत क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
-                <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
-                <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
-                <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
-              </td>';
 
-                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
-
-                $html .= '<td title="
-            विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
-            जिला: ' . ($complaint->district->district_name ?? 'N/A') . '
-            विधानसभा: ' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '
-            मंडल: ' . ($complaint->mandal->mandal_name ?? 'N/A') . '
-            नगर/ग्राम: ' . ($complaint->gram->nagar_name ?? 'N/A') . '
-            मतदान केंद्र: ' . ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')
-            क्षेत्र: ' . ($complaint->area->area_name ?? 'N/A') . '">
-            ' . ($complaint->division->division_name ?? 'N/A') . '<br>' .
-                    ($complaint->district->district_name ?? 'N/A') . '<br>' .
-                    ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '<br>' .
-                    ($complaint->mandal->mandal_name ?? 'N/A') . '<br>' .
-                    ($complaint->gram->nagar_name ?? 'N/A') . '<br>' .
-                    ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')<br>' .
-                    ($complaint->area->area_name ?? 'N/A') .
-                    '</td>';
-
-                $html .= '<td>' . ($complaint->issue_description ?? '') . '</td>';
+                $pendingText = $complaint->complaint_status == 4 ? 'पूर्ण' : ($complaint->complaint_status == 5 ? 'रद्द' : $complaint->pending_days . ' दिन');
 
 
-                $html .= '<td>' . ($complaint->complaint_department ?? 'N/A') . '</td>';
-                $html .= '<td>
-                 <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
-                if ($complaint->complaint_status == 4) {
-                    $html .= 'पूर्ण';
-                } elseif ($complaint->complaint_status == 5) {
-                    $html .= 'रद्द';
-                } else {
-                    $html .= $complaint->pending_days . ' दिन';
-                }
-                $html .= '</td>';
+                $data[] = [
+                    'index' => $start + $index + 1,
+                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>" .
+                        "<strong>नाम: </strong>{$complaint->name}<br>" .
+                        "<strong>मोबाइल: </strong>{$complaint->mobile_number}<br>" .
+                        "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
+                        "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
+                        "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+                    'reference_name' => $complaint->reference_name ?? '',
+                    'area_details' => '<span title="
+विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
+जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
+विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
+मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
+नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
+मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
+क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
+                        ' . ($complaint->division?->division_name ?? '') . '<br>' .
+                        ($complaint->district?->district_name ?? '') . '<br>' .
+                        ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
+                        ($complaint->mandal?->mandal_name ?? '') . '<br>' .
+                        ($complaint->gram?->nagar_name ?? '') . '<br>' .
+                        ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
+                        ($complaint->area?->area_name ?? '') .
+                        '</span>',
+                    'issue_description' => $complaint->issue_description,
+                    'complaint_department' => $complaint->complaint_department,
+                    'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
 
-                $html .= '<td>' . ($latestReply->review_date ?? 'N/A') . '</td>';
+                    'review_date' => optional($complaint->replies->sortByDesc('reply_date')->first())->review_date ?? 'N/A',
+                    'importance' => $complaint->latestReply?->importance ?? 'N/A',
+                    'applicant_name' => $complaint->admin->admin_name ?? '',
+                    'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
+                    'action' => '
+<div class="d-flex" style="gap: 5px;">
+    <a href="' . route('operatorcomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
+</div>'
 
-                // Importance
-                $html .= '<td>' . ($complaint->latestReply?->importance ?? 'N/A') . '</td>';
-
-                $html .= '<td>' . ($complaint->admin->admin_name ?? 'N/A') . '</td>';
-
-                $html .= '<td>' . $complaint->forwarded_to_name . '<br>' . $complaint->forwarded_reply_date . '</td>';
-
-                $html .= '<td><a href="' . route('operator_complaint.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
-
-                $html .= '</tr>';
+                ];
             }
 
             return response()->json([
-                'html' => $html,
-                'count' => $complaints->count(),
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $data
             ]);
         }
 
@@ -945,12 +947,6 @@ class OperatorController extends Controller
 
 
 
-        if ($request->filled('admin_id')) {
-            $query->whereHas('latestReply', function ($q) use ($request) {
-                $q->where('forwarded_to', $request->admin_id);
-            });
-        }
-
         if ($request->filled('issue_title')) {
             $query->where('issue_title', $request->issue_title);
         }
@@ -987,7 +983,16 @@ class OperatorController extends Controller
             $query->whereDate('program_date', '<=', $request->programto_date);
         }
 
-        $complaints = $query->orderBy('posted_date', 'desc')->get();
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+
+        $recordsFiltered = $query->count();
+        $recordsTotal = $query->count();
+
+        $complaints = $query->orderBy('posted_date', 'desc')
+            ->offset($start)
+            ->limit($length)
+            ->get();
 
         foreach ($complaints as $complaint) {
             if (!in_array($complaint->complaint_status, [13, 14, 15, 16, 17, 18])) {
@@ -1006,72 +1011,74 @@ class OperatorController extends Controller
         }
 
         if ($request->ajax()) {
-            $html = '';
+            $data = [];
 
             foreach ($complaints as $index => $complaint) {
-                $html .= '<tr>';
-                $html .= '<td>' . ($index + 1) . '</td>';
-                $html .= '<td>
-                <strong>सुचना क्र.: </strong>' . ($complaint->complaint_number ?? 'N/A') . '<br>
-                <strong>नाम: </strong>' . ($complaint->name ?? 'N/A') . '<br>
-                <strong>मोबाइल: </strong>' . ($complaint->mobile_number ?? '') . '<br>
-                <strong>पुत्र श्री: </strong>' . ($complaint->father_name ?? '') . '<br><br>
-                <strong>स्थिति: </strong>' . $complaint->statusTextPlain() . '
-              </td>';
-
-                $html .= '<td>' . ($complaint->reference_name ?? '') . '</td>';
-
-                $html .= '<td title="
-            विभाग: ' . ($complaint->division->division_name ?? 'N/A') . '
-            जिला: ' . ($complaint->district->district_name ?? 'N/A') . '
-            विधानसभा: ' . ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '
-            मंडल: ' . ($complaint->mandal->mandal_name ?? 'N/A') . '
-            नगर/ग्राम: ' . ($complaint->gram->nagar_name ?? 'N/A') . '
-            मतदान केंद्र: ' . ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')
-            क्षेत्र: ' . ($complaint->area->area_name ?? 'N/A') . '">
-            ' . ($complaint->division->division_name ?? 'N/A') . '<br>' .
-                    ($complaint->district->district_name ?? 'N/A') . '<br>' .
-                    ($complaint->vidhansabha->vidhansabha ?? 'N/A') . '<br>' .
-                    ($complaint->mandal->mandal_name ?? 'N/A') . '<br>' .
-                    ($complaint->gram->nagar_name ?? 'N/A') . '<br>' .
-                    ($complaint->polling->polling_name ?? 'N/A') . ' (' . ($complaint->polling->polling_no ?? 'N/A') . ')<br>' .
-                    ($complaint->area->area_name ?? 'N/A') .
-                    '</td>';
-
-                $html .= '<td>
-                 <strong>तिथि: ' . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . '</strong><br>';
                 if ($complaint->complaint_status == 13) {
-                    $html .= 'सम्मिलित हुए';
+                    $pendingText = 'सम्मिलित हुए';
                 } elseif ($complaint->complaint_status == 14) {
-                    $html .= 'सम्मिलित नहीं हुए';
+                    $pendingText = 'सम्मिलित नहीं हुए';
                 } elseif ($complaint->complaint_status == 15) {
-                    $html .= 'फोन पर संपर्क किया';
+                    $pendingText = 'फोन पर संपर्क किया';
                 } elseif ($complaint->complaint_status == 16) {
-                    $html .= 'ईमेल पर संपर्क किया';
+                    $pendingText = 'ईमेल पर संपर्क किया';
                 } elseif ($complaint->complaint_status == 17) {
-                    $html .= 'व्हाट्सएप पर संपर्क किया';
+                    $pendingText = 'व्हाट्सएप पर संपर्क किया';
                 } elseif ($complaint->complaint_status == 18) {
-                    $html .= 'रद्द';
+                    $pendingText = 'रद्द';
                 } else {
-                    $html .= $complaint->pending_days . ' दिन';
+                    $pendingText = $complaint->pending_days . ' दिन';
                 }
-                $html .= '</td>';
 
-                $html .= '<td>' . ($complaint->admin->admin_name ?? 'N/A') . '</td>';
+                $data[] = [
+                    'index' => $start + $index + 1,
+                    'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>" .
+                        "<strong>नाम: </strong>{$complaint->name}<br>" .
+                        "<strong>मोबाइल: </strong>{$complaint->mobile_number}<br>" .
+                        "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
+                        "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
+                        "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
 
-                $html .= '<td>' . $complaint->forwarded_to_name . '<br>' . $complaint->forwarded_reply_date . '</td>';
+                    'reference_name' => $complaint->reference_name ?? '',
 
-                $html .= '<td>' . ($complaint->issue_title ?? '') . '</td>';
-                $html .= '<td>' . ($complaint->program_date ?? '') . '</td>';
+                    'area_details' => '<span title="
+विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
+जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
+विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
+मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
+नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
+मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
+क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
+            ' . ($complaint->division?->division_name ?? '') . '<br>' .
+                        ($complaint->district?->district_name ?? '') . '<br>' .
+                        ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
+                        ($complaint->mandal?->mandal_name ?? '') . '<br>' .
+                        ($complaint->gram?->nagar_name ?? '') . '<br>' .
+                        ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
+                        ($complaint->area?->area_name ?? '') .
+                        '</span>',
 
-                $html .= '<td><a href="' . route('operator_complaint.show', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+                    'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
 
-                $html .= '</tr>';
+
+                    'applicant_name' => $complaint->admin->admin_name ?? '',
+
+                    'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
+
+                    'issue_title' => $complaint->issue_title,
+                    'program_date' => $complaint->program_date,
+                    'action' => '
+                        <div class="d-flex" style="gap: 5px;">
+                            <a href="' . route('operatorcomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
+                        </div>',
+                ];
             }
 
             return response()->json([
-                'html' => $html,
-                'count' => $complaints->count(),
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $data
             ]);
         }
 
@@ -1544,6 +1551,9 @@ class OperatorController extends Controller
             'area',
             'admin',
             'registrationDetails',
+            'latestReplyWithoutFollowup' => function ($query) {
+                $query->where('need_followup', 0);
+            },
             'latestReplyWithoutFollowup.predefinedReply',
             'latestReplyWithoutFollowup.forwardedToManager',
             'latestReplyWithoutFollowup.replyfrom',
@@ -1553,7 +1563,9 @@ class OperatorController extends Controller
         ])
             ->whereIn('complaint_type', ['समस्या', 'विकास'])
             ->where('complaint_status', '!=', 5)
-            ->whereHas('latestReplyWithoutFollowup')
+            ->whereHas('latestReplyWithoutFollowup', function ($q) {
+                $q->where('need_followup', 0);
+            })
             ->get()
             ->sortByDesc(fn($c) => optional($c->latestReplyWithoutFollowup)->reply_date)
             ->values();
@@ -1637,6 +1649,7 @@ class OperatorController extends Controller
                     ->from('complaint_reply as cr')
                     ->whereColumn('cr.complaint_id', 'complaint.complaint_id')
                     ->where('cr.complaint_reply', '!=', 'शिकायत दर्ज की गई है।')
+                    ->where('need_followup', 0)
                     ->whereRaw('cr.reply_date = (
                     SELECT MAX(cr2.reply_date) 
                     FROM complaint_reply cr2 
@@ -1846,5 +1859,28 @@ class OperatorController extends Controller
             'replyOptions' => $replyOptions,
             'managers' => $managers,
         ]);
+    }
+
+
+
+    public function summary($id)
+    {
+        $complaint = Complaint::with(['replies.followups'])->findOrFail($id);
+
+        // Sort replies by latest first
+        $complaint->replies = $complaint->replies->sortByDesc('reply_date');
+
+        // Sort followups for each reply by latest first
+        $complaint->replies->each(function ($reply) {
+            $reply->followups = $reply->followups->sortByDesc('followup_date');
+        });
+
+        $totalReplies = $complaint->replies->count();
+
+        $totalFollowups = $complaint->replies->reduce(function ($carry, $reply) {
+            return $carry + $reply->followups->count();
+        }, 0);
+
+        return view('operator/details_summary', compact('complaint', 'totalReplies', 'totalFollowups'));
     }
 }

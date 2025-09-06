@@ -80,6 +80,16 @@
                                 @endforeach
                             </select>
                         </div>
+
+                        <div class="col-md-2">
+                            <label>जाति</label>
+                            <select name="jati_id" id="jati_id" class="form-control">
+                                <option value="">-- सभी --</option>
+                                @foreach ($jatis as $j)
+                                    <option value="{{ $j->jati_id }}">{{ $j->jati_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     
                         <div class="col-md-2">
                             <label>सूचना का विषय</label>
@@ -373,6 +383,7 @@
                             d.area_id = $('#area_id').val();
                             d.from_date = $('#from_date').val();
                             d.to_date = $('#to_date').val();
+                            d.jati_id = $('#jati_id').val();
                             d.admin_id = $('#admin_id').val();
                             d.issue_title = $('#issue_title').val();
                             d.programfrom_date = $('#programfrom_date').val();

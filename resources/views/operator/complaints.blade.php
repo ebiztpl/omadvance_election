@@ -58,7 +58,7 @@
                     <div id="form_container" style="display: none; color: #000">
                         <fieldset class="scheduler-border mb-3">
                             <div class="form-group row">
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         <span class="data-text">नाम</span> <span class="error">*</span>
                                     </label>
@@ -67,7 +67,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         पिता का नाम <span class="error">*</span>
                                     </label>
@@ -77,7 +77,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         <span class="mobile-label">मोबाइल</span>
                                     </label>
@@ -88,7 +88,7 @@
 
 
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         संभाग का नाम <span class="error">*</span>
                                     </label>
@@ -99,7 +99,7 @@
                                 </div>
 
                                 {{-- जिले का नाम --}}
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         जिले का नाम <span class="error">*</span>
                                     </label>
@@ -110,7 +110,7 @@
                                 </div>
 
                                 {{-- विधानसभा --}}
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         विधानसभा <span class="error">*</span>
                                     </label>
@@ -121,7 +121,7 @@
                                 </div>
 
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">नगर/मंडल <span
                                             class="error">*</span></label>
                                     <select name="txtgram" class="form-control" id="txtgram" required>
@@ -134,7 +134,7 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">पोलिंग/क्षेत्र <span
                                             class="error">*</span></label>
                                     <select name="txtpolling" class="form-control" id="txtpolling" required>
@@ -143,15 +143,27 @@
                                     <input type="hidden" name="area_id" id="area_id" />
                                 </div>
 
+                                <div class="col-md-3 d-flex align-items-center">
+                                    <label for="jati-select" class="me-2 mr-2 mb-0" style="white-space: nowrap;">जाति
+                                    </label>
+                                    <select name="jati" id="jati-select" class="form-control">
+                                        <option value="">--चुने--</option>
+                                        @foreach ($jatis as $jati)
+                                            <option value="{{ $jati->jati_id }}">
+                                                {{ $jati->jati_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         रेफरेंस नाम
                                     </label>
                                     <input type="text" class="form-control" name="reference">
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         मतदाता पहचान <span class="error">*</span>
                                     </label>
@@ -163,7 +175,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         फाइल अपलोड करें</label>
                                     <div class="flex-grow-1">
@@ -176,7 +188,7 @@
                                 <legend class="scheduler-border dynamic-legend">विवरण -</legend>
 
                                 <div class="form-group row department_row">
-                                    <div class="col-md-4 d-flex align-items-center">
+                                    <div class="col-md-3 d-flex align-items-center">
                                         <label for="department-select" class="me-2 mr-2 mb-0"
                                             style="white-space: nowrap;">विभाग <span class="error">*</span></label>
                                         <select name="department" id="department-select" class="form-control" required>
@@ -189,7 +201,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-md-4 d-flex align-items-center">
+                                    <div class="col-md-3 d-flex align-items-center">
                                         <label for="post-select" class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                             पद <span class="error">*</span>
                                         </label>
@@ -198,7 +210,7 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-md-4 d-flex align-items-center">
+                                    <div class="col-md-3 d-flex align-items-center">
                                         <label for="subject-select" class="me-2 mr-2 mb-0"
                                             style="white-space: nowrap;">विषय
                                             <span class="error">*</span></label>

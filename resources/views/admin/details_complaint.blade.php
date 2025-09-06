@@ -159,40 +159,39 @@
 
 
                                     <td>
-                                    @php
-                                        $replyData = [
-                                            'complaint_reply' => $reply->complaint_reply,
-                                            'reply_date' => $reply->reply_date,
-                                            'replyfrom' => $reply->replyfrom,
-                                            'forwardedToManager' => $reply->forwardedToManager,
-                                            'status_html' => $reply->statusText(),
-                                        ];
-
-                                        $followupsData = $reply->followups->map(function ($f) {
-                                            return [
-                                                'followup_date' => $f->followup_date,
-                                                'followup_contact_status' => $f->followup_contact_status,
-                                                'followup_contact_description' => $f->followup_contact_description,
-                                                'created_by_admin' => $f->createdByAdmin,
-                                                'followup_status_text' => $f->followup_status_text(),
+                                        @php
+                                            $replyData = [
+                                                'complaint_reply' => $reply->complaint_reply,
+                                                'reply_date' => $reply->reply_date,
+                                                'replyfrom' => $reply->replyfrom,
+                                                'forwardedToManager' => $reply->forwardedToManager,
+                                                'status_html' => $reply->statusText(),
                                             ];
-                                        });
-                                    @endphp
 
-                                    <button class="btn btn-sm btn-warning openFollowupHistoryBtn"
-                                        data-reply='@json($replyData)'
-                                        data-followups='@json($followupsData)'>
-                                        फ़ॉलोअप विवरण
-                                    </button>
+                                            $followupsData = $reply->followups->map(function ($f) {
+                                                return [
+                                                    'followup_date' => $f->followup_date,
+                                                    'followup_contact_status' => $f->followup_contact_status,
+                                                    'followup_contact_description' => $f->followup_contact_description,
+                                                    'created_by_admin' => $f->createdByAdmin,
+                                                    'followup_status_text' => $f->followup_status_text(),
+                                                ];
+                                            });
+                                        @endphp
 
-                                </td>
+                                        <button class="btn btn-sm btn-warning openFollowupHistoryBtn"
+                                            data-reply='@json($replyData)'
+                                            data-followups='@json($followupsData)'>
+                                            फ़ॉलोअप विवरण
+                                        </button>
+
+                                    </td>
                                 @endif
                                 <td>
                                     <button type="button" class="btn btn-sm btn-info view-details-btn" data-toggle="modal"
                                         data-target="#detailsModal" data-reply="{{ $reply->complaint_reply }}"
                                         data-review="{{ $reply->review_date }}" data-importance="{{ $reply->importance }}"
-                                        {{-- data-critical="{{ $reply->criticality }}" --}}
-                                        data-reply_from="{{ $reply->replyfrom?->admin_name ?? '' }}"
+                                        {{-- data-critical="{{ $reply->criticality }}" --}} data-reply_from="{{ $reply->replyfrom?->admin_name ?? '' }}"
                                         data-reply-date="{{ \Carbon\Carbon::parse($reply->reply_date)->format('d-m-Y h:i A') }}"
                                         data-admin="{{ $reply->forwardedToManager?->admin_name ?? '' }}"
                                         data-status-html="{!! htmlspecialchars($reply->statusText(), ENT_QUOTES, 'UTF-8') !!}"
@@ -218,7 +217,7 @@
         </div>
 
 
-           {{-- followup history modal --}}
+        {{-- followup history modal --}}
         <div class="modal fade" id="followupHistoryModal" tabindex="-1" role="dialog"
             aria-labelledby="followupHistoryModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
@@ -386,22 +385,21 @@
             <div class="card-header" style="color: #000">Reply to {{ $complaint->complaint_number }}</div>
             <div class="card-body">
                 @if ($disableReply)
-                   @if (in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
-                    <div class="alert alert-warning">
-                        इस सुचना का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
-                    </div>
-
-                     @else
-
-                     <div class="alert alert-warning">
-                        इस शिकायत का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
-                    </div>
-                     @endif
+                    @if (in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']))
+                        <div class="alert alert-warning">
+                            इस सुचना का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
+                        </div>
+                    @else
+                        <div class="alert alert-warning">
+                            इस शिकायत का अंतिम उत्तर प्राप्त हो चुका है। आप अब कोई नया उत्तर नहीं दे सकते।
+                        </div>
+                    @endif
                 @endif
-                
+
                 <form id="replyForm" method="POST"
-                    action="{{ route('operator_complaint.reply', $complaint->complaint_id) }}"
-                    enctype="multipart/form-data" @if ($disableReply) style="pointer-events: none; opacity: 0.6;" @endif>
+                    action="{{ route('complaints.reply', $complaint->complaint_id) }}"
+                    enctype="multipart/form-data"
+                    @if ($disableReply) style="pointer-events: none; opacity: 0.6;" @endif>
                     @csrf
 
                     <div class="row mb-3">
@@ -414,14 +412,16 @@
                                 @endif
                                 <span class="tx-danger" style="color: red;">*</span>
                             </label>
-                            <select name="cmp_status" id="cmp_status" class="form-control" required @if ($disableReply) disabled @endif>
+                            <select name="cmp_status" id="cmp_status" class="form-control" required
+                                @if ($disableReply) disabled @endif>
                                 <option value="">--चुने--</option>
                             </select>
                         </div>
 
                         <div class="col-md-2 toggle-field">
                             <label class="form-label">पूर्व निर्धारित उत्तर चुनें:</label>
-                            <select name="selected_reply" id="selected_reply" class="form-control" @if ($disableReply) disabled @endif>
+                            <select name="selected_reply" id="selected_reply" class="form-control"
+                                @if ($disableReply) disabled @endif>
                                 <option value="">--चयन करें--</option>
                                 @foreach ($replyOptions as $option)
                                     <option value="{{ $option->reply_id }}">{{ $option->reply }}</option>
@@ -433,7 +433,8 @@
                         <div class="col-md-2" id="forwarded_to_field">
                             <label class="form-label">अधिकारी चुनें (आगे भेजे)<span class="tx-danger"
                                     style="color: red;">*</span></label>
-                            <select name="forwarded_to" id="forwarded_to" class="form-control" required @if ($disableReply) disabled @endif>
+                            <select name="forwarded_to" id="forwarded_to" class="form-control" required
+                                @if ($disableReply) disabled @endif>
                                 <option value="">--चयन करें--</option>
                                 @foreach ($managers as $manager)
                                     <option value="{{ $manager->admin_id }}">{{ $manager->admin_name }}</option>
@@ -444,22 +445,40 @@
 
                         <div class="col-md-2 toggle-field">
                             <label for="review_date">रीव्यू दिनांक</label>
-                            <input type="date" class="form-control" name="review_date" @if ($disableReply) disabled @endif>
+                            <input type="date" class="form-control" name="review_date"
+                                @if ($disableReply) disabled @endif>
                         </div>
 
-                        <div class="col-md-2">
+                        <div class="col-md-1">
                             <br>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input importance" type="checkbox" id="importanceHigh"
-                                    name="importance" value="उच्च"
-                                    @if ($disableReply) disabled @endif>
+                                    name="importance" value="उच्च" @if ($disableReply) disabled @endif>
                                 <label
-                                    class="form-check-label importance-label btn btn-outline-primary px-4 py-2 rounded shadow-sm fw-bold"
-                                    for="importanceHigh" style="font-size: 1.1rem; transition: all 0.2s;">
+                                    class="form-check-label importance-label btn btn-outline-primary px-2 py-2 rounded shadow-sm fw-bold"
+                                    for="importanceHigh" style="font-size: 14px; transition: all 0.2s;">
                                     उच्च
                                 </label>
                             </div>
                         </div>
+
+
+                        <div class="col-md-2">
+                            <br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input needfollowup" type="checkbox" id="needfollowup"
+                                    name="needfollowup" value="1" @if ($disableReply) disabled @endif>
+                                <label
+                                    class="form-check-label needfollowup-label btn btn-outline-warning px-1 py-2 rounded shadow-sm fw-bold"
+                                    for="needfollowup" style="font-size: 12px; transition: all 0.2s; color: black">
+                                    फ़ॉलोअप नहीं करना
+                                </label>
+                            </div>
+                        </div>
+
+
+
+
 
                         {{-- <div class="col-md-2 toggle-field">
                             <label for="criticality form-label">गंभीरता स्तर:</label>
@@ -485,22 +504,26 @@
                     <div class="row mt-3">
                         <div class="col-md-3 toggle-field">
                             <label class="form-label">पूर्व स्थिति की तस्वीर</label>
-                            <input type="file" name="cb_photo[]" class="form-control" multiple accept="image/*" @if ($disableReply) disabled @endif>
+                            <input type="file" name="cb_photo[]" class="form-control" multiple accept="image/*"
+                                @if ($disableReply) disabled @endif>
                         </div>
 
                         <div class="col-md-3 toggle-field">
                             <label class="form-label">बाद की तस्वीर</label>
-                            <input type="file" name="ca_photo[]" class="form-control" multiple accept="image/*" @if ($disableReply) disabled @endif>
+                            <input type="file" name="ca_photo[]" class="form-control" multiple accept="image/*"
+                                @if ($disableReply) disabled @endif>
                         </div>
 
                         <div class="col-md-3 toggle-field">
                             <label class="form-label">यूट्यूब लिंक</label>
-                            <input type="url" name="c_video" class="form-control" @if ($disableReply) disabled @endif>
+                            <input type="url" name="c_video" class="form-control"
+                                @if ($disableReply) disabled @endif>
                         </div>
                     </div>
 
                     <div class="col-12 mt-3">
-                        <button type="submit" class="btn btn-primary" @if ($disableReply) disabled @endif>फीडबैक दर्ज करें</button>
+                        <button type="submit" class="btn btn-primary"
+                            @if ($disableReply) disabled @endif>फीडबैक दर्ज करें</button>
                     </div>
 
                 </form>

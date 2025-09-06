@@ -91,23 +91,24 @@
 
     <script>
         let latestFile = null;
+        let pollInterval = null; // store interval so we can clear it
 
         function showToast(message, timeout = 5000) {
-            $('#download-toast-container').empty(); 
+            $('#download-toast-container').empty();
 
             const toastId = 'toast-' + Date.now();
             const toastHtml = `
-            <div id="${toastId}" class="toast custom-toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="${timeout}">
-                <div class="toast-header bg-success text-white">
-                    <strong class="mr-auto">सूचना</strong>
-                    <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="toast-body text-white">
-                    ${message}
-                </div>
-            </div>`;
+                <div id="${toastId}" class="toast custom-toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="${timeout}">
+                    <div class="toast-header bg-success text-white">
+                        <strong class="mr-auto">सूचना</strong>
+                        <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="toast-body text-white">
+                        ${message}
+                    </div>
+                </div>`;
 
             $('#download-toast-container').append(toastHtml);
             $('#' + toastId).toast('show');
@@ -120,6 +121,9 @@
         $('#download_full_data').on('click', function(e) {
             e.preventDefault();
 
+            // Disable button until download is ready
+            $(this).prop('disabled', true);
+
             const voterId = $('#main_voter_id').val();
 
             $.post("{{ route('voterlist.request') }}", {
@@ -128,20 +132,22 @@
             }, function(res) {
                 if (res.status === 'success') {
                     showToast(res.message, 5000);
-                    pollNewDownload();
+                    startPolling(); // only start one poll
                 } else {
                     showToast('कुछ गलत हुआ।', 5000);
+                    $('#download_full_data').prop('disabled', false);
                 }
             }, 'json');
         });
 
-        function pollNewDownload() {
-            const pollInterval = setInterval(function() {
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+
+            pollInterval = setInterval(function() {
                 $.getJSON("{{ route('voterlist.files.json') }}", function(files) {
                     if (files.length === 0) return;
 
                     const completedFiles = files.filter(f => f.status === 'completed');
-
                     if (completedFiles.length === 0) return;
 
                     const newestFile = completedFiles[0];
@@ -151,20 +157,22 @@
                     const fileLink = '/admin/voterlist/file/' + newestFile.id;
                     showToast(
                         `CSV तैयार है। <a href="${fileLink}" class="text-white font-weight-bold">Download करें</a>`,
-                        10000);
+                        10000
+                    );
 
                     clearInterval(pollInterval);
+                    $('#download_full_data').prop('disabled', false); // re-enable button
                 });
             }, 5000);
         }
 
-      
         $('#reopen-downloads').on('click', function() {
             if (latestFile) {
                 const fileLink = '/admin/voterlist/file/' + latestFile.id;
                 showToast(
                     `CSV तैयार है। <a href="${fileLink}" class="text-white font-weight-bold">Download करें</a>`,
-                    10000);
+                    10000
+                );
             } else {
                 alert('कोई भी डाउनलोड अभी तक उपलब्ध नहीं है।');
             }
@@ -174,7 +182,7 @@
     <div aria-live="polite" aria-atomic="true" style="position: fixed; top: 20px; right: 20px; z-index: 1080;">
         <div id="download-toast-container"></div>
     </div>
-    
+
 
     @stack('scripts')
 </body>

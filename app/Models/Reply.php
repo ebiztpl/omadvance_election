@@ -26,6 +26,7 @@ class Reply extends Model
         'review_date',
         'importance',
         'criticality',
+        'need_followup'
     ];
 
     protected $casts = [

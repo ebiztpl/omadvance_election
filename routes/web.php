@@ -160,6 +160,9 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/admin/get-areas/{polling_id}', [AdminController::class, 'getAreas']);
     Route::get('/admin/get-gram_pollings/{mandal_id}', [AdminController::class, 'getgramPollings']);
     Route::get('/admin/get-subjects/{department_id}', [AdminController::class, 'getSubjects']);
+
+
+    Route::get('/admin/complaints/{id}/summary', [AdminController::class, 'summary'])->name('admincomplaints.summary');
 });
 
 
@@ -418,6 +421,9 @@ Route::middleware('checklogin')->group(function () {
 
     // daily report routes 
     Route::get('/manager/daily_report', [ManagerController::class, 'daily_report'])->name('dailyreport.index');
+
+
+    Route::get('/manager/complaints/{id}/summary', [ManagerController::class, 'summary'])->name('complaints.summary');
 });
 
 
@@ -471,6 +477,10 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/operator/next_followups', [OperatorController::class, 'nextFollowupFilter'])->name('next_followup_filter.index');
     Route::post('/update-contact-status/{id}', [OperatorController::class, 'updateContactStatus'])->name('update.contact.status');
     Route::get('/operator/followup_details/{id}', [OperatorController::class, 'followup_show'])->name('follow_up.show');
+
+
+    Route::get('/operator/complaints/{id}/summary', [OperatorController::class, 'summary'])->name('operatorcomplaints.summary');
+    
 });
 
 
@@ -501,4 +511,8 @@ Route::middleware('checkmember')->group(function () {
 
     Route::get('/member/details_complaint/{id}', [MemberController::class, 'complaint_show'])->name('complaint.show');
     Route::post('/member/complaints/{id}/reply', [MemberController::class, 'postReply'])->name('complaint.reply');
+
+
+
+    Route::get('/member/complaints/{id}/summary', [MemberController::class, 'summary'])->name('membercomplaints.summary');
 });

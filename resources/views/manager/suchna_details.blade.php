@@ -55,7 +55,7 @@
                     <div id="form_container" style="color: #000;">
                         <fieldset class="scheduler-border mb-3">
                             <div class="form-group row">
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         <span class="data-text">नाम</span> <span class="error">*</span>
                                     </label>
@@ -65,7 +65,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         पिता का नाम <span class="error">*</span>
                                     </label>
@@ -75,7 +75,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         मोबाइल <span class="error">*</span>
                                     </label>
@@ -85,7 +85,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">संभाग का नाम <span
                                             class="error">*</span></label>
                                     <select class="form-control bg-light text-muted" name="division_id" id="division_id"
@@ -97,7 +97,7 @@
                                     <input type="hidden" name="division_id" value="2">
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">जिले का नाम <span
                                             class="error">*</span></label>
                                     <select class="form-control bg-light text-muted" name="txtdistrict_name"
@@ -109,7 +109,7 @@
                                     <input type="hidden" name="txtdistrict_name" value="11">
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">विधानसभा <span
                                             class="error">*</span></label>
                                     <select name="txtvidhansabha" class="form-control bg-light text-muted"
@@ -122,7 +122,7 @@
                                 </div>
 
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">नगर/मंडल <span
                                             class="error">*</span></label>
                                     <select name="txtgram" class="form-control" id="txtgram" required>
@@ -137,7 +137,7 @@
                                 </div>
 
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">मतदान
                                         केंद्र/ग्राम/वार्ड <span class="error">*</span></label>
                                     <select name="txtpolling" class="form-control" id="txtpolling" required>
@@ -151,18 +151,21 @@
                                         value="{{ $complaint->polling->area->area_id ?? '' }}">
                                 </div>
 
-
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                        रेफरेंस नाम
+                                <div class="col-md-3 d-flex align-items-center">
+                                    <label for="jati-select" class="me-2 mr-2 mb-0" style="white-space: nowrap;">जाति
                                     </label>
-                                    <div class="flex-grow-1">
-                                        <input type="text" class="form-control" name="reference"
-                                            value="{{ old('reference', $complaint->reference_name) }}">
-                                    </div>
+                                    <select name="jati" id="jati-select" class="form-control">
+                                        <option value="">--चुने--</option>
+                                        @foreach ($jatis as $jati)
+                                            <option value="{{ $jati->jati_id }}"
+                                                {{ old('jati', $complaint->jati->jati_id ?? '') == $jati->jati_id ? 'selected' : '' }}>
+                                                {{ $jati->jati_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         मतदाता पहचान <span class="error">*</span>
                                     </label>
@@ -174,7 +177,20 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4 mb-3 d-flex align-items-center">
+
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        रेफरेंस नाम
+                                    </label>
+                                    <div class="flex-grow-1">
+                                        <input type="text" class="form-control" name="reference"
+                                            value="{{ old('reference', $complaint->reference_name) }}">
+                                    </div>
+                                </div>
+
+
+
+                                <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         @if ($complaint->type == 1)
                                             कमांडर द्वारा भेजा गया वीडियो
