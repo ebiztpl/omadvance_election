@@ -314,7 +314,7 @@
 
 
                                             <td>
-                                                <a href="{{ route('follow_up.show', $complaint->complaint_id) }}"
+                                                <a href="{{ route('operatorcomplaints.summary', $complaint->complaint_id) }}"
                                                     class="btn btn-sm btn-primary" style="white-space: nowrap;">
                                                     क्लिक करें
                                                 </a>

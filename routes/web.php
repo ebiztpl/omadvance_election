@@ -480,7 +480,13 @@ Route::middleware('checklogin')->group(function () {
 
 
     Route::get('/operator/complaints/{id}/summary', [OperatorController::class, 'summary'])->name('operatorcomplaints.summary');
-    
+
+
+
+    // incoming call routes
+    Route::get('/operator/incoming_calls', [OperatorController::class, 'incoming'])->name('incoming_calls.index');
+    Route::post('/operator/incoming-calls/store-reason', [OperatorController::class, 'storeIncomingReason'])->name('incoming.storeReason');
+    Route::post('/operator/update-incoming-contact-status/{id}', [OperatorController::class, 'updateIncomingContactStatus'])->name('update.incoming.contact.status');
 });
 
 

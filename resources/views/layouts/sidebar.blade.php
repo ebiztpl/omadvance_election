@@ -243,12 +243,14 @@
                             class="nav-text">समस्या पंजीयन करे</span></a></li>
                 <li><a href="{{ route('operator_suchna.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">सूचना पंजीयन करे</span></a></li>
-                <li><a href="{{ route('operator_complaint.view') }}"><i class="icon icon-arrow-right"></i><span
+                {{-- <li><a href="{{ route('operator_complaint.view') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">समस्याएँ देखे</span></a></li>
                 <li><a href="{{ route('operator_suchna.view') }}"><i class="icon icon-arrow-right"></i><span
-                            class="nav-text">सूचनाएँ देखे</span></a></li>
+                            class="nav-text">सूचनाएँ देखे</span></a></li> --}}
                 <li><a href="{{ route('next_followup.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">फ़ॉलोअप</span></a>
+                <li><a href="{{ route('incoming_calls.index') }}"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">प्राप्त कॉल</span></a>
                 </li>
 
                 {{-- <li><a href="#"><i class="icon icon-arrow-right"></i><span class="nav-text">सुचना</span></a></li>
