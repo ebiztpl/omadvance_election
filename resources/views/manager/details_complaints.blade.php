@@ -19,6 +19,13 @@
             </button>
         </div>
 
+        <div id="error-alert" class="alert alert-danger alert-dismissible fade show d-none" role="alert">
+            <span id="error-message"></span>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between">
                 <h5>{{ $complaint->complaint_number }}</h5>
@@ -85,46 +92,43 @@
                                     </div>
                                 </div>
 
-
-
-
-
-
-
                                 <div class="col-md-3 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">संभाग का नाम <span
-                                            class="error">*</span></label>
-                                    <select class="form-control bg-light text-muted" name="division_id" id="division_id"
-                                        disabled required>
-                                        <option value="{{ $complaint->division_id }}">
-                                            {{ $complaint->division->division_name ?? 'Current' }}
-                                        </option>
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        संभाग का नाम <span class="error">*</span>
+                                    </label>
+                                    <select class="form-control" name="division_id" id="division_id" required>
+                                        @foreach ($divisions as $division)
+                                            <option value="{{ $division->division_id }}"
+                                                {{ $complaint->division_id == $division->division_id ? 'selected' : '' }}>
+                                                {{ $division->division_name }}
+                                            </option>
+                                        @endforeach
                                     </select>
-                                    <input type="hidden" name="division_id" value="2">
                                 </div>
 
                                 <div class="col-md-3 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">जिले का नाम <span
-                                            class="error">*</span></label>
-                                    <select class="form-control bg-light text-muted" name="txtdistrict_name"
-                                        id="district_name" disabled required>
-                                        <option value="{{ $complaint->district_id }}">
-                                            {{ $complaint->district->district_name ?? 'Current' }}
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        जिले का नाम <span class="error">*</span>
+                                    </label>
+                                    <select class="form-control" name="txtdistrict_name" id="district_id" required>
+                                        <option value="{{ $complaint->district_id }}"
+                                            {{ $complaint->district_id == $complaint->district_id ? 'selected' : '' }}>
+                                            {{ $complaint->district_name }}
                                         </option>
                                     </select>
-                                    <input type="hidden" name="txtdistrict_name" value="11">
                                 </div>
 
+                                {{-- Vidhansabha --}}
                                 <div class="col-md-3 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">विधानसभा <span
-                                            class="error">*</span></label>
-                                    <select name="txtvidhansabha" class="form-control bg-light text-muted"
-                                        id="txtvidhansabha" disabled required>
-                                        <option value="{{ $complaint->vidhansabha_id }}">
-                                            {{ $complaint->vidhansabha->vidhansabha ?? 'Current' }}
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
+                                        विधानसभा <span class="error">*</span>
+                                    </label>
+                                    <select class="form-control" name="txtvidhansabha" id="vidhansabha_id" required>
+                                        <option value="{{ $complaint->vidhansabha_id }}"
+                                            {{ $complaint->vidhansabha_id == $complaint->vidhansabha_id ? 'selected' : '' }}>
+                                            {{ $complaint->vidhansabha }}
                                         </option>
                                     </select>
-                                    <input type="hidden" name="txtvidhansabha" value="49">
                                 </div>
 
 
@@ -197,22 +201,117 @@
 
 
 
-                                <div class="col-md-3 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
-                                        @if ($complaint->type == 1)
-                                            कमांडर द्वारा भेजा गया वीडियो
-                                        @else
-                                            कार्यालय द्वारा भेजी गई फ़ाइल
-                                        @endif
-                                    </label>
+                                <div class="col-md-3 mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <label class="mr-2 mb-0 flex-shrink-0">
+                                            @if ($complaint->type == 1)
+                                                कमांडर द्वारा भेजा गया वीडियो
+                                            @else
+                                                कार्यालय द्वारा भेजी गई फ़ाइल
+                                            @endif
+                                        </label>
 
-                                    @if ($complaint->issue_attachment)
-                                        <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
-                                            class="btn btn-sm btn-info" target="_blank">अटैचमेंट खोलें</a>
-                                    @else
-                                        <button class="btn btn-sm btn-secondary" disabled>कोई अटैचमेंट नहीं है</button>
-                                    @endif
+                                        @if ($complaint->issue_attachment)
+                                            <a href="{{ asset('assets/upload/complaints/' . $complaint->issue_attachment) }}"
+                                                class="btn btn-sm btn-info flex-shrink-0" target="_blank">अटैचमेंट
+                                                खोलें</a>
+                                        @else
+                                            <button class="btn btn-sm btn-secondary flex-shrink-0" disabled>कोई अटैचमेंट
+                                                नहीं है</button>
+                                        @endif
+                                    </div>
+
+                                    <input type="file" class="form-control form-control-sm" name="file_attach"
+                                        id="file_attach">
+                                    <span class="text-danger small" id="file_attach_error"></span>
                                 </div>
+
+
+
+                                <div class="col-md-12 mb-3">
+                                    <label class="mb-2">अतिरिक्त अटैचमेंट्स</label>
+
+                                    <div class="row g-2">
+                                        <div class="col-md-2">
+                                            <input type="file" id="attachments" class="form-control form-control-sm"
+                                                multiple accept=".pdf,.jpg,.jpeg,.png,.mp4,.mov">
+                                            <span class="text-danger small" id="attachments_error"></span>
+                                            <ul id="preview-container" class="list-group mt-2"></ul>
+                                        </div>
+
+                                        @php $maxVisible = 7; @endphp
+                                        <div class="col-md-10 d-flex flex-wrap gap-2 align-items-center"
+                                            id="uploaded-files">
+                                            @foreach ($complaint->attachments as $index => $attachment)
+                                                @php
+                                                    $ext = strtolower(
+                                                        pathinfo($attachment->file_name, PATHINFO_EXTENSION),
+                                                    );
+                                                    $hiddenClass = $index >= $maxVisible ? 'd-none' : '';
+                                                @endphp
+                                                {{-- <div class="attachment-item {{ $hiddenClass }}"
+                                                    style="width: 80px; cursor: pointer; display: flex; flex-direction: column; align-items: center;  margin-right: 10px">
+                                                    <a href="{{ asset('assets/upload/complaints/' . $attachment->file_name) }}"
+                                                        target="_blank" style="text-align:center; text-decoration:none;">
+                                                        <div
+                                                            style="width: 80px; height: 80px; border:1px solid #dee2e6; border-radius:4px; display:flex; justify-content:center; align-items:center; background:#f8f9fa;">
+                                                            @if (in_array($ext, ['jpg', 'jpeg', 'png']))
+                                                                <img src="{{ asset('assets/upload/complaints/' . $attachment->file_name) }}"
+                                                                    alt="{{ $attachment->file_name }}"
+                                                                    style="width:100%; height:100%; object-fit:cover; border-radius:4px;">
+                                                            @elseif($ext === 'pdf')
+                                                                <span style="font-size:1.5rem;">📄</span>
+                                                            @elseif(in_array($ext, ['mp4', 'mov']))
+                                                                <span style="font-size:1.5rem;">🎬</span>
+                                                            @else
+                                                                <span style="font-size:1.5rem;">📁</span>
+                                                            @endif
+                                                        </div>
+                                                        <small
+                                                            style="max-width:80px; display:block; margin-top:2px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;"
+                                                            title="{{ $attachment->file_name }}">
+                                                            {{ $attachment->file_name }}
+                                                        </small>
+                                                    </a>
+                                                </div> --}}
+
+                                                <div class="attachment-item {{ $hiddenClass }}">
+                                                    <button type="button" class="delete-btn"
+                                                        data-url="{{ route('attachments.destroy', $attachment->id) }}"
+                                                        data-token="{{ csrf_token() }}">
+                                                        &times;
+                                                    </button>
+
+                                                    <a href="{{ asset('assets/upload/complaints/' . $attachment->file_name) }}"
+                                                        target="_blank" title="{{ $attachment->file_name }}">
+                                                        <div class="attachment-box">
+                                                            @if (in_array($ext, ['jpg', 'jpeg', 'png']))
+                                                                <img src="{{ asset('assets/upload/complaints/' . $attachment->file_name) }}"
+                                                                    alt="{{ $attachment->file_name }}">
+                                                            @elseif($ext === 'pdf')
+                                                                <span class="attachment-icon">📄</span>
+                                                            @elseif(in_array($ext, ['mp4', 'mov']))
+                                                                <span class="attachment-icon">🎬</span>
+                                                            @else
+                                                                <span class="attachment-icon">📁</span>
+                                                            @endif
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                            @endforeach
+
+                                            @if (count($complaint->attachments) > $maxVisible)
+                                                <button type="button" class="btn btn-sm btn-primary ml-4"
+                                                    id="toggle-attachments">
+                                                    +{{ count($complaint->attachments) - $maxVisible }} more
+                                                </button>
+                                            @endif
+
+                                        </div>
+
+                                    </div>
+                                </div>
+
                             </div>
 
                             {{-- Detail Section --}}
@@ -223,7 +322,8 @@
                                 <div class="form-group row department_row">
                                     <div class="col-md-3 d-flex align-items-center">
                                         <label for="department-select" class="me-2 mr-2 mb-0"
-                                            style="white-space: nowrap;">विभाग <span class="error">*</span></label>
+                                            style="white-space: nowrap;">विभाग
+                                            <span class="error">*</span></label>
                                         <select name="department" id="department-select" class="form-control" required>
                                             <option value="">--चुने--</option>
                                             @foreach ($departments as $department)
@@ -768,6 +868,9 @@
                                 behavior: 'smooth'
                             });
 
+                            setTimeout(function() {
+                                location.reload();
+                            }, 3000);
 
                             setTimeout(function() {
                                 $('#success-alert').addClass('d-none');
@@ -936,6 +1039,80 @@
                     }
                 });
 
+
+                let selectedDivision = $('#division_id').val();
+                let selectedDistrict = "{{ $complaint->district_id }}";
+                let selectedVidhansabha = "{{ $complaint->vidhansabha_id }}";
+
+                if (selectedDivision) {
+                    $.get('/manager/get-districts/' + selectedDivision, function(data) {
+                        $('#district_id').html(data);
+
+                        // Set current district
+                        $('#district_id').val(selectedDistrict);
+
+                        // Populate vidhansabha based on district
+                        if (selectedDistrict) {
+                            $.get('/manager/get-vidhansabha/' + selectedDistrict, function(data) {
+                                $('#vidhansabha_id').html(data);
+
+                                // Set current vidhansabha
+                                $('#vidhansabha_id').val(selectedVidhansabha);
+                            });
+                        }
+                    });
+                }
+
+                // On division change
+                $('#division_id').on('change', function() {
+                    let divisionId = $(this).val();
+                    if (!divisionId) return;
+
+                    $.get('/operator/get-districts/' + divisionId, function(data) {
+                        $('#district_id').html(data);
+
+                        let firstDistrict = $('#district_id option:first').val();
+                        if (firstDistrict) {
+                            $.get('/operator/get-vidhansabha/' + firstDistrict, function(data) {
+                                $('#vidhansabha_id').html(data);
+                            });
+                        }
+                    });
+                });
+
+                // On district change
+                $('#district_id').on('change', function() {
+                    let districtId = $(this).val();
+                    if (!districtId) return;
+
+                    $.get('/manager/get-districts/' + divisionId, function(data) {
+                        $('#district_id').html(data);
+
+                        let firstDistrict = $('#district_id option:first').val();
+                        if (firstDistrict) {
+                            $.get('/operator/get-vidhansabha/' + firstDistrict, function(data) {
+                                $('#vidhansabha_id').html(data);
+                            });
+                        }
+                    });
+                });
+
+                // On vidhansabha change
+                $('#vidhansabha_id').on('change', function() {
+                    let vidhansabhaId = $(this).val();
+                    if (!vidhansabhaId) return;
+
+                    $.get('/manager/get-nagars-by-vidhansabha/' + vidhansabhaId, function(data) {
+                        $('#txtgram').html('<option value="">--चुने--</option>');
+                        $('#txtpolling').html('<option value="">--चुने--</option>');
+                        $('#area_id').val('');
+
+                        $.each(data, function(i, option) {
+                            $('#txtgram').append(option);
+                        });
+                    });
+                });
+
                 $('#txtgram').change(function() {
                     const nagarId = $(this).val();
                     if (!nagarId) return;
@@ -978,30 +1155,38 @@
                         $('#district_name').html(data).val(complaint.district).trigger('change');
 
                         $.get(`/manager/get-vidhansabha/${complaint.district}`, function(data) {
-                            $('#txtvidhansabha').html(data).val(complaint.vidhansabha).trigger(
-                                'change');
-
-                            $.get(`/manager/get-mandal/${complaint.vidhansabha}`, function(data) {
-                                $('#txtmandal').html(data).val(complaint.mandal).trigger(
+                            $('#txtvidhansabha').html(data).val(complaint.vidhansabha)
+                                .trigger(
                                     'change');
 
-                                $.get(`/manager/get-nagar/${complaint.mandal}`, function(data) {
-                                    $('#txtgram').append(data).val(complaint.nagar);
+                            $.get(`/manager/get-mandal/${complaint.vidhansabha}`, function(
+                                data) {
+                                $('#txtmandal').html(data).val(complaint.mandal)
+                                    .trigger(
+                                        'change');
 
-                                    $.get(`/manager/get-polling/${complaint.mandal}`,
-                                        function(
-                                            data) {
-                                            $('#txtpolling').html(data).val(
-                                                complaint.polling);
+                                $.get(`/manager/get-nagar/${complaint.mandal}`,
+                                    function(data) {
+                                        $('#txtgram').append(data).val(complaint
+                                            .nagar);
 
-                                            $.get(`/manager/get-area/${complaint.polling}`,
-                                                function(data) {
-                                                    $('#txtarea').html(data)
-                                                        .val(complaint
-                                                            .area);
-                                                });
-                                        });
-                                });
+                                        $.get(`/manager/get-polling/${complaint.mandal}`,
+                                            function(
+                                                data) {
+                                                $('#txtpolling').html(data)
+                                                    .val(
+                                                        complaint.polling);
+
+                                                $.get(`/manager/get-area/${complaint.polling}`,
+                                                    function(data) {
+                                                        $('#txtarea')
+                                                            .html(data)
+                                                            .val(
+                                                                complaint
+                                                                .area);
+                                                    });
+                                            });
+                                    });
                             });
                         });
                     });
@@ -1039,14 +1224,18 @@
                             } else {
                                 $('#voter_id_input').val('');
                                 $('#voter-error')
-                                    .text('मतदाता पहचान नहीं मिली (Voter ID not found for given details)')
+                                    .text(
+                                        'मतदाता पहचान नहीं मिली (Voter ID not found for given details)'
+                                    )
                                     .show();
                             }
                         },
                         error: function(xhr) {
                             $('#voter_id_input').val('');
                             $('#voter-error')
-                                .text('मतदाता पहचान नहीं मिली (Voter ID not found for given details)')
+                                .text(
+                                    'मतदाता पहचान नहीं मिली (Voter ID not found for given details)'
+                                )
                                 .show();
                             console.error("Error fetching voter: " + xhr.responseText);
                         }
@@ -1054,6 +1243,44 @@
                 }
 
                 $('#name, #father_name').on('blur', fetchVoterId);
+
+
+                $('#file_attach').on('change', function() {
+                    const file = this.files[0];
+                    $('#file_attach_error').text('');
+
+                    if (!file) return;
+
+                    const extension = file.name.split('.').pop().toLowerCase();
+                    const imageMaxSize = 2 * 1024 * 1024; // 5 MB
+                    const videoMaxSize = 15 * 1024 * 1024; // 15 MB
+                    const imageTypes = ['jpg', 'jpeg', 'png'];
+                    const videoTypes = ['mp4', 'mov', 'avi', 'mkv'];
+                    const blocked = ['exe', 'php', 'js', 'sh', 'bat'];
+
+                    if (blocked.includes(extension)) {
+                        $('#file_attach_error').text('यह फ़ाइल प्रकार अनुमति नहीं है।');
+                        $(this).val('');
+                        return;
+                    }
+
+                    if (imageTypes.includes(extension)) {
+                        if (file.size > imageMaxSize) {
+                            $('#file_attach_error').text('छवि फ़ाइल अधिकतम 2MB हो सकती है।');
+                            $(this).val('');
+                        }
+                    } else if (videoTypes.includes(extension)) {
+                        if (file.size > videoMaxSize) {
+                            $('#file_attach_error').text('वीडियो फ़ाइल अधिकतम 15MB हो सकती है।');
+                            $(this).val('');
+                        }
+                    } else {
+                        $('#file_attach_error').text(
+                            'केवल छवि (JPG, PNG) या वीडियो (MP4, MOV, AVI, MKV) फ़ाइलें अपलोड की जा सकती हैं।'
+                        );
+                        $(this).val('');
+                    }
+                });
             });
 
             document.addEventListener('DOMContentLoaded', function() {
@@ -1064,8 +1291,10 @@
                 function toggleForwardedField() {
                     const selectedValue = parseInt(statusSelect.value);
 
-                    if (selectedValue === 4 || selectedValue === 5 || selectedValue === 13 || selectedValue === 14 ||
-                        selectedValue === 15 || selectedValue === 16 || selectedValue === 17 || selectedValue === 18) {
+                    if (selectedValue === 4 || selectedValue === 5 || selectedValue === 13 ||
+                        selectedValue === 14 ||
+                        selectedValue === 15 || selectedValue === 16 || selectedValue === 17 ||
+                        selectedValue === 18) {
                         forwardedSelect.disabled = true;
                         forwardedSelect.style.backgroundColor = '#e1e2e6';
                         forwardedSelect.removeAttribute('required');
@@ -1097,8 +1326,8 @@
 
                         try {
                             reply = this.dataset.reply ? JSON.parse(this.dataset.reply) : {};
-                            followups = this.dataset.followups ? JSON.parse(this.dataset.followups) :
-                        [];
+                            followups = this.dataset.followups ? JSON.parse(this.dataset
+                                .followups) : [];
                         } catch (e) {
                             console.error('Invalid JSON in dataset:', e);
                         }
@@ -1106,14 +1335,18 @@
 
                         document.getElementById("modal-reply-text").textContent = reply
                             .complaint_reply || '—';
-                        document.getElementById("modal-reply-status").innerHTML = reply.status_html ||
+                        document.getElementById("modal-reply-status").innerHTML = reply
+                            .status_html ||
                             '—';
 
-                        document.getElementById("modal-reply-date").textContent = reply.reply_date ?
+                        document.getElementById("modal-reply-date").textContent = reply
+                            .reply_date ?
                             new Date(reply.reply_date).toLocaleString('hi-IN') : '—';
-                        document.getElementById("modal-reply-from").textContent = reply.replyfrom
+                        document.getElementById("modal-reply-from").textContent = reply
+                            .replyfrom
                             ?.admin_name || '—';
-                        document.getElementById("modal-admin").textContent = reply.forwardedToManager
+                        document.getElementById("modal-admin").textContent = reply
+                            .forwardedToManager
                             ?.admin_name || '—';
 
                         console.log(reply.forwardedToManager);
@@ -1139,6 +1372,275 @@
                         }
 
                         $("#followupHistoryModal").modal("show");
+                    });
+                });
+            });
+
+
+            document.addEventListener("DOMContentLoaded", function() {
+                const input = document.getElementById("attachments");
+                const previewContainer = document.getElementById("preview-container");
+                const uploadedFiles = document.getElementById("uploaded-files");
+                const errorContainer = document.getElementById("attachments_error");
+
+                input.addEventListener("change", function() {
+                    const files = Array.from(this.files);
+                    const form = document.getElementById("updateComplaintForm");
+
+                    files.forEach(file => {
+                        const allowed = ['pdf', 'jpg', 'jpeg', 'png', 'mp4', 'mov'];
+                        const ext = file.name.split('.').pop().toLowerCase();
+
+                        if (!allowed.includes(ext)) {
+                            errorContainer.innerText = `गलत फ़ाइल प्रकार: ${file.name}`;
+                            return;
+                        }
+
+                        if (file.size > 10 * 1024 * 1024) {
+                            errorContainer.innerText = `फ़ाइल बहुत बड़ी है (max 10MB): ${file.name}`;
+                            return;
+                        }
+
+                        const existingFiles = Array.from(uploadedFiles.querySelectorAll("li span")).map(
+                            span => span.innerText);
+                        if (existingFiles.includes(file.name)) {
+                            errorContainer.innerText =
+                                `यह फ़ाइल पहले ही अपलोड हो चुकी है: ${file.name}`;
+                            return;
+                        }
+
+                        errorContainer.innerText = "";
+
+                        const li = document.createElement("li");
+                        li.classList.add("list-group-item");
+                        li.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>${file.name}</span>
+                                    <button class="btn btn-sm btn-danger remove-btn">&times;</button>
+                                </div>
+                                <div class="progress mt-1">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            `;
+                        previewContainer.appendChild(li);
+
+                        li.querySelector(".remove-btn").addEventListener("click", () => li.remove());
+
+                        const formData = new FormData(form);
+                        formData.append("attachments[]",
+                            file);
+
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("POST", form.getAttribute("action"), true);
+
+                        xhr.upload.addEventListener("progress", e => {
+                            if (e.lengthComputable) {
+                                const percent = (e.loaded / e.total) * 100;
+                                li.querySelector(".progress-bar").style.width = percent + "%";
+                            }
+                        });
+
+                        xhr.onload = () => {
+                            if (xhr.status === 200) {
+                                li.classList.add("list-group-item-success");
+                                li.querySelector(".progress").remove();
+                                // uploadedFiles.appendChild(li);
+                            } else {
+                                li.classList.add("list-group-item-danger");
+                            }
+                        };
+
+                        xhr.onerror = () => {
+                            li.classList.add("list-group-item-danger");
+                        };
+
+                        xhr.send(formData);
+                    });
+
+                    this.value = "";
+                });
+            });
+
+            document.addEventListener("DOMContentLoaded", function() {
+                const toggleBtn = document.getElementById("toggle-attachments");
+                if (!toggleBtn) return;
+
+                const maxVisible = 7;
+                const items = document.querySelectorAll("#uploaded-files .attachment-item");
+
+                toggleBtn.addEventListener("click", function() {
+                    const hiddenItems = Array.from(items).slice(maxVisible);
+
+                    const isHidden = hiddenItems[0].classList.contains("d-none");
+
+                    if (isHidden) {
+                        // Show all
+                        hiddenItems.forEach(el => el.classList.remove("d-none"));
+                        toggleBtn.textContent = "Show Less";
+                    } else {
+                        // Hide extra
+                        hiddenItems.forEach(el => el.classList.add("d-none"));
+                        toggleBtn.textContent = `+${hiddenItems.length} more`;
+                    }
+                });
+            });
+
+
+            document.addEventListener("DOMContentLoaded", function() {
+                const input = document.getElementById("attachments");
+                const previewContainer = document.getElementById("preview-container");
+                const uploadedFiles = document.getElementById("uploaded-files");
+                const errorContainer = document.getElementById("attachments_error");
+
+                input.addEventListener("change", function() {
+                    const files = Array.from(this.files);
+                    const form = document.getElementById("updateComplaintForm");
+
+                    files.forEach(file => {
+                        const allowed = ['pdf', 'jpg', 'jpeg', 'png', 'mp4', 'mov'];
+                        const ext = file.name.split('.').pop().toLowerCase();
+
+                        if (!allowed.includes(ext)) {
+                            errorContainer.innerText = `गलत फ़ाइल प्रकार: ${file.name}`;
+                            return;
+                        }
+
+                        if (file.size > 10 * 1024 * 1024) {
+                            errorContainer.innerText = `फ़ाइल बहुत बड़ी है (max 10MB): ${file.name}`;
+                            return;
+                        }
+
+                        const existingFiles = Array.from(uploadedFiles.querySelectorAll("li span")).map(
+                            span => span.innerText);
+                        if (existingFiles.includes(file.name)) {
+                            errorContainer.innerText =
+                                `यह फ़ाइल पहले ही अपलोड हो चुकी है: ${file.name}`;
+                            return;
+                        }
+
+                        errorContainer.innerText = "";
+
+                        const li = document.createElement("li");
+                        li.classList.add("list-group-item");
+                        li.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>${file.name}</span>
+                                    <button class="btn btn-sm btn-danger remove-btn">&times;</button>
+                                </div>
+                                <div class="progress mt-1">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            `;
+                        previewContainer.appendChild(li);
+
+                        li.querySelector(".remove-btn").addEventListener("click", () => li.remove());
+
+                        const formData = new FormData(form);
+                        formData.append("attachments[]",
+                            file);
+
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("POST", form.getAttribute("action"), true);
+
+                        xhr.upload.addEventListener("progress", e => {
+                            if (e.lengthComputable) {
+                                const percent = (e.loaded / e.total) * 100;
+                                li.querySelector(".progress-bar").style.width = percent + "%";
+                            }
+                        });
+
+                        xhr.onload = () => {
+                            if (xhr.status === 200) {
+                                li.classList.add("list-group-item-success");
+                                li.querySelector(".progress").remove();
+                                // uploadedFiles.appendChild(li);
+                            } else {
+                                li.classList.add("list-group-item-danger");
+                            }
+                        };
+
+                        xhr.onerror = () => {
+                            li.classList.add("list-group-item-danger");
+                        };
+
+                        xhr.send(formData);
+                    });
+
+                    this.value = "";
+                });
+            });
+
+            document.addEventListener("DOMContentLoaded", function() {
+                const toggleBtn = document.getElementById("toggle-attachments");
+                if (!toggleBtn) return;
+
+                const maxVisible = 7;
+                const items = document.querySelectorAll("#uploaded-files .attachment-item");
+
+                toggleBtn.addEventListener("click", function() {
+                    const hiddenItems = Array.from(items).slice(maxVisible);
+
+                    const isHidden = hiddenItems[0].classList.contains("d-none");
+
+                    if (isHidden) {
+                        // Show all
+                        hiddenItems.forEach(el => el.classList.remove("d-none"));
+                        toggleBtn.textContent = "Show Less";
+                    } else {
+                        // Hide extra
+                        hiddenItems.forEach(el => el.classList.add("d-none"));
+                        toggleBtn.textContent = `+${hiddenItems.length} more`;
+                    }
+                });
+            });
+
+
+            document.addEventListener("DOMContentLoaded", function() {
+                document.querySelectorAll(".delete-btn").forEach(btn => {
+                    btn.addEventListener("click", function() {
+                        if (!confirm("क्या आप वाकई इस फ़ाइल को हटाना चाहते हैं?")) return;
+
+                        let formData = new FormData();
+                        formData.append("_token", this.dataset.token);
+
+                        fetch(this.dataset.url, {
+                                method: "POST",
+                                body: formData,
+                                headers: {
+                                    "Accept": "application/json"
+                                }
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    this.closest(".attachment-item").remove();
+
+                                    const alertBox = document.getElementById("success-alert");
+                                    const msg = document.getElementById("success-message");
+                                    msg.textContent = data.message;
+                                    alertBox.classList.remove("d-none");
+
+                                    window.scrollTo({
+                                        top: 0,
+                                        behavior: 'smooth'
+                                    });
+
+                                    setTimeout(function() {
+                                        $('#success-alert').addClass('d-none');
+                                    }, 5000);
+                                } else {
+                                    const errorBox = document.getElementById("error-alert");
+                                    const msg = document.getElementById("error-message");
+                                    msg.textContent = "हटाने में त्रुटि हुई।";
+                                    errorBox.classList.remove("d-none");
+                                }
+                            })
+                            .catch(() => {
+                                const errorBox = document.getElementById("error-alert");
+                                const msg = document.getElementById("error-message");
+                                msg.textContent = "सर्वर से कनेक्शन में समस्या हुई।";
+                                errorBox.classList.remove("d-none");
+                            });
                     });
                 });
             });

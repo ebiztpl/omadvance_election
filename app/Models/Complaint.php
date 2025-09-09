@@ -208,4 +208,9 @@ class Complaint extends Model
     {
         return $this->belongsTo(Jati::class, 'jati_id', 'jati_id');
     }
+
+    public function attachments()
+    {
+        return $this->hasMany(ComplaintAttachment::class, 'complaint_id', 'complaint_id');
+    }
 }

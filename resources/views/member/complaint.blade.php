@@ -170,13 +170,13 @@
 
                 $('#video').on('change', function() {
                     const file = this.files[0];
-                    const maxSize = 2.5 * 1024 * 1024 * 1024;
+                    const maxSize = 15 * 1024 * 1024;  //15 MB
                     $('#video-error').text('');
 
                     if (!file) return;
 
                     if (file.size > maxSize) {
-                        $('#video-error').text('वीडियो फ़ाइल अधिकतम 2.5GB हो सकती है।');
+                        $('#video-error').text('वीडियो फ़ाइल अधिकतम 15MB हो सकती है (लगभग 1:00 मिनट)|');
                         $(this).val('');
                     }
                 });

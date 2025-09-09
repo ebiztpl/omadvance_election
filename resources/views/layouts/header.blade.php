@@ -60,7 +60,7 @@
 
 
 
-                    @php
+                    {{-- @php
                         $role = session('admin_role');
                         $registrationId = session('registration_id');
                         $nagarName = null;
@@ -88,7 +88,67 @@
                                 कमाण्ड ऐरिया:
                                 {{ $nagarName }}</h5>
                         @endif
-                    </div>
+                    </div> --}}
+
+
+                    @php
+                        $role = session('admin_role');
+                        $registrationId = session('registration_id');
+                        $workAreaLabel = null;
+                        $refName = null;
+
+                        if ($registrationId) {
+                            $position = \DB::table('assign_position')
+                                ->where('member_id', $registrationId)
+                                ->latest('post_date')
+                                ->first();
+
+                            if ($position) {
+                                $workAreaLabel = $position->level_name;
+                                switch ($workAreaLabel) {
+                                    case 'प्रदेश':
+                                        $refName = \DB::table('pradesh_master')
+                                            ->where('pradesh_id', $position->refrence_id)
+                                            ->value('pradesh_name');
+                                        break;
+                                    case 'जिला':
+                                        $refName = \DB::table('district_master')
+                                            ->where('district_id', $position->refrence_id)
+                                            ->value('district_name');
+                                        break;
+                                    case 'विधानसभा':
+                                        $refName = \DB::table('vidhansabha_master')
+                                            ->where('vidhansabha_id', $position->refrence_id)
+                                            ->value('vidhansabha');
+                                        break;
+                                    case 'मंडल':
+                                        $refName = \DB::table('mandal_master')
+                                            ->where('mandal_id', $position->refrence_id)
+                                            ->value('mandal_name');
+                                        break;
+                                    case 'कमाण्ड ऐरिया':
+                                        $refName = \DB::table('nagar_master')
+                                            ->where('nagar_id', $position->refrence_id)
+                                            ->value('nagar_name');
+                                        break;
+                                    case 'ग्राम/वार्ड चौपाल':
+                                        $refName = \DB::table('area_master')
+                                            ->where('area_id', $position->refrence_id)
+                                            ->value('area_name');
+                                        break;
+                                }
+                            }
+                        }
+                    @endphp
+
+                    @if ($workAreaLabel && $refName)
+                        <div class="d-flex justify-content-center align-items-center w-100 commhh"
+                            style="position: absolute; left: 0; right: 0;">
+                            <h5 class="text-center mb-0" style="font-weight: bold; color: red; font-size: 24px;">
+                                {{ $workAreaLabel }}: {{ $refName }}
+                            </h5>
+                        </div>
+                    @endif
 
 
                     @php

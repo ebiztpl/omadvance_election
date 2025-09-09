@@ -377,8 +377,10 @@ Route::middleware('checklogin')->group(function () {
 
     Route::get('/manager/commander_suchna', [ManagerController::class, 'viewCommanderSuchnas'])->name('commander.suchna.view');
     Route::get('/manager/operator_suchna', [ManagerController::class, 'viewOperatorSuchnas'])->name('operator.suchna.view');
-
+    Route::post('/manager/attachments/{attachment}/delete', [ManagerController::class, 'attachmentdestroy'])
+        ->name('attachments.destroy');
     Route::post('/manager/update-complaint/{id}', [ManagerController::class, 'updateComplaint'])->name('complaints.update');
+   
     Route::post('/manager/update-suchna/{id}', [ManagerController::class, 'updateSuchna'])->name('suchna.update');
 
     Route::get('/manager/details_complaints/{id}', [ManagerController::class, 'allcomplaints_show'])->name('complaints_show.details');
@@ -396,6 +398,7 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/manager/get-areas/{polling_id}', [ManagerController::class, 'getAreas']);
     Route::get('/manager/get-subjects/{department_id}', [ManagerController::class, 'getSubjects']);
     Route::get('/manager/get-gram_pollings/{mandal_id}', [ManagerController::class, 'getgramPollings']);
+    Route::get('/manager/get-nagars-by-vidhansabha/{vidhansabha_id}', [ManagerController::class, 'getNagarsByVidhansabha']);
     Route::get('/manager/get-pollings-gram/{mandal_id}', [ManagerController::class, 'getPollingsByNagar']);
     Route::get('/get-designations/{department_name}', [ManagerController::class, 'getDesignations']);
     Route::get('/manager/get-subjects-department/{departmentName}', [ManagerController::class, 'getSubjectsByDepartment']);
@@ -463,6 +466,7 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/operator/get-parent-division/{district_id}', [OperatorController::class, 'getDivisionFromDistrict']);
 
     Route::get('/get-polling-area/{nagarId}', [OperatorController::class, 'getPollingAndArea']);
+    Route::get('/operator/get-nagars-by-vidhansabha/{vidhansabha_id}', [OperatorController::class, 'getNagarsByVidhansabha']);
     Route::get('/get-designations/{department_name}', [OperatorController::class, 'getDesignations'])->name('get.designations');
     Route::post('operator/ajax/designation', [OperatorController::class, 'getDesignation'])->name('ajax.designation');
     Route::get('/operator/get-subjects-department/{departmentName}', [OperatorController::class, 'getSubjectsByDepartment']);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use App\Models\District;
 use App\Models\Department;
 use App\Models\ComplaintReply;
@@ -30,6 +31,8 @@ use Carbon\Carbon;
 use Intervention\Image\Facades\Image;
 use App\Models\Division;
 use Mpdf\Mpdf;
+use FFMpeg\FFMpeg;
+use FFMpeg\Format\Video\X264;
 use App\Models\VidhansabhaLokSabha;
 use Illuminate\Support\Facades\Response;
 
@@ -328,10 +331,10 @@ class MemberController extends Controller
     {
         $request->validate([
             'area_id' => 'required|integer',
-            'video' => 'required|file|mimetypes:video/*|max:2560000',
+            'video' => 'required|file|mimetypes:video/*|max:15360',
             'complaint_type' => 'nullable|string'
         ], [
-            'video.max' => 'वीडियो फ़ाइल अधिकतम 2.5GB हो सकती है।',
+            'video.max' => 'वीडियो फ़ाइल अधिकतम 15MB हो सकती है (लगभग 1:00 मिनट)।',
             'video.mimetypes' => 'केवल वीडियो फ़ॉर्मेट स्वीकार्य है।',
         ]);
 
@@ -390,8 +393,25 @@ class MemberController extends Controller
                 return back()->with('error', 'This file type is not allowed.');
             }
 
-            $videoFilename = time() . '_' . Str::random(6) . '.' . $extension;
-            $file->move(public_path('assets/upload/complaints'), $videoFilename);
+            $videoFilename = time() . '_' . Str::random(6) . '.mp4';
+            $outputPath = public_path('assets/upload/complaints/' . $videoFilename);
+
+            $tempPath = $file->store('temp_videos');
+
+            $ffmpeg = FFMpeg::create([
+                'ffmpeg.binaries'  => base_path(env('FFMPEG_PATH')),
+                'ffprobe.binaries' => base_path(env('FFPROBE_PATH')),
+                'timeout'          => 3600,
+                'ffmpeg.threads'   => 2,
+            ]);
+
+            $video = $ffmpeg->open(storage_path('app/' . $tempPath));
+            $format = new X264('aac', 'libx264');
+            $format->setKiloBitrate(300);       
+            $format->setAdditionalParameters(['-preset', 'ultrafast']);
+            $video->save($format, $outputPath);
+
+            Storage::delete($tempPath);
         }
 
         $role = session('admin_role');

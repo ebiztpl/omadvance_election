@@ -93,10 +93,14 @@
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         संभाग का नाम <span class="error">*</span>
                                     </label>
-                                    <select class="form-control bg-light text-muted" disabled required>
-                                        <option value="2">ग्वालियर</option>
+                                   <select class="form-control" name="division_id" id="division_id" required>
+                                        @foreach ($divisions as $division)
+                                            <option value="{{ $division->division_id }}"
+                                                {{ $division->division_id == 2 ? 'selected' : '' }}>
+                                                {{ $division->division_name }}
+                                            </option>
+                                        @endforeach
                                     </select>
-                                    <input type="hidden" name="division_id" value="2">
                                 </div>
 
                                 {{-- जिले का नाम --}}
@@ -104,10 +108,9 @@
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         जिले का नाम <span class="error">*</span>
                                     </label>
-                                    <select class="form-control bg-light text-muted" disabled required>
-                                        <option value="11">ग्वालियर</option>
+                                     <select class="form-control" name="txtdistrict_name" id="district_id" required>
+                                        <option value="11" selected>ग्वालियर</option>
                                     </select>
-                                    <input type="hidden" name="txtdistrict_name" value="11">
                                 </div>
 
                                 {{-- विधानसभा --}}
@@ -115,10 +118,9 @@
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         विधानसभा <span class="error">*</span>
                                     </label>
-                                    <select class="form-control bg-light text-muted" disabled required>
-                                        <option value="49">भितरवार(18)</option>
+                                     <select class="form-control" name="txtvidhansabha" id="vidhansabha_id" required>
+                                        <option value="49" selected>भितरवार(18)</option>
                                     </select>
-                                    <input type="hidden" name="txtvidhansabha" value="49">
                                 </div>
 
 
@@ -179,7 +181,8 @@
                                 <div class="col-md-3 mb-3 d-flex align-items-center">
                                     <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">
                                         फाइल अपलोड करें</label>
-                                    <input type="file" class="form-control" name="file_attach">
+                                    <input type="file" class="form-control" name="file_attach" id="file_attach">
+                                    <span class="text-danger small" id="file_attach_error"></span>
                                 </div>
                             </div>
 
@@ -303,6 +306,66 @@
                                 console.log(xhr.responseText);
                             }
                         }
+                    });
+                });
+
+                let defaultDivision = $('#division_id').val();
+                let defaultDistrict = $('#district_id').val();
+                let defaultVidhansabha = $('#vidhansabha_id').val();
+
+                if (defaultDivision) {
+                    $.get('/operator/get-districts/' + defaultDivision, function(data) {
+                        $('#district_id').html(data);
+
+                        $('#district_id').val(defaultDistrict);
+
+                        if (defaultDistrict) {
+                            $.get('/operator/get-vidhansabha/' + defaultDistrict, function(data) {
+                                $('#vidhansabha_id').html(data);
+
+                                $('#vidhansabha_id').val(defaultVidhansabha);
+                            });
+                        }
+                    });
+                }
+
+                $('#division_id').on('change', function() {
+                    let divisionId = $(this).val();
+                    if (!divisionId) return;
+
+                    $.get('/operator/get-districts/' + divisionId, function(data) {
+                        $('#district_id').html(data);
+
+                        let firstDistrict = $('#district_id option:first').val();
+                        if (firstDistrict) {
+                            $.get('/operator/get-vidhansabha/' + firstDistrict, function(data) {
+                                $('#vidhansabha_id').html(data);
+                            });
+                        }
+                    });
+                });
+
+                $('#district_id').on('change', function() {
+                    let districtId = $(this).val();
+                    if (!districtId) return;
+
+                    $.get('/operator/get-vidhansabha/' + districtId, function(data) {
+                        $('#vidhansabha_id').html(data);
+                    });
+                });
+
+                $('#vidhansabha_id').on('change', function() {
+                    let vidhansabhaId = $(this).val();
+                    if (!vidhansabhaId) return;
+
+                    $.get('/operator/get-nagars-by-vidhansabha/' + vidhansabhaId, function(data) {
+                        $('#txtgram').html('<option value="">--चुने--</option>');
+                        $('#txtpolling').html('<option value="">--चुने--</option>');
+                        $('#area_id').val('');
+
+                        $.each(data, function(i, option) {
+                            $('#txtgram').append(option);
+                        });
                     });
                 });
 
@@ -491,6 +554,51 @@
                 if (checkedRadio) {
                     checkedRadio.dispatchEvent(new Event('change'));
                 }
+
+
+
+
+                
+                $('#file_attach').on('change', function() {
+                    const file = this.files[0];
+                    $('#file_attach_error').text('');
+
+                    if (!file) return;
+
+                    const extension = file.name.split('.').pop().toLowerCase();
+                    const imageMaxSize = 2 * 1024 * 1024; // 2 MB
+                    const videoMaxSize = 15 * 1024 * 1024; // 15 MB
+                    const imageTypes = ['jpg', 'jpeg', 'png'];
+                    const videoTypes = ['mp4', 'mov', 'avi', 'mkv'];
+                    const blocked = ['exe', 'php', 'js', 'sh', 'bat'];
+
+                    if (blocked.includes(extension)) {
+                        $('#file_attach_error').text('यह फ़ाइल प्रकार अनुमति नहीं है।');
+                        $(this).val('');
+                        return;
+                    }
+
+                    if (imageTypes.includes(extension)) {
+                        if (file.size > imageMaxSize) {
+                            $('#file_attach_error').text('छवि फ़ाइल अधिकतम 2MB हो सकती है।');
+                            $(this).val('');
+                        }
+                    }
+
+                    else if (videoTypes.includes(extension)) {
+                        if (file.size > videoMaxSize) {
+                            $('#file_attach_error').text('वीडियो फ़ाइल अधिकतम 15MB हो सकती है।');
+                            $(this).val('');
+                        }
+                    }
+
+                    else {
+                        $('#file_attach_error').text(
+                            'केवल छवि (JPG, PNG) या वीडियो (MP4, MOV, AVI, MKV) फ़ाइलें अपलोड की जा सकती हैं।'
+                            );
+                        $(this).val('');
+                    }
+                });
             });
         </script>
     @endpush

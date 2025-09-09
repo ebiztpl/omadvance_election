@@ -10,6 +10,8 @@ use App\Models\Business;
 use App\Models\FollowupStatus;
 use App\Models\Education;
 use App\Models\Politics;
+use setasign\Fpdi\Fpdi;
+use setasign\Fpdi\PdfReader\PdfReader;
 use App\Models\Religion;
 use App\Models\Department;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +34,13 @@ use App\Models\Complaint;
 use App\Models\Reply;
 use App\Models\JatiwiseVoter;
 use Illuminate\Support\Facades\DB;
+use Intervention\Image\Laravel\Facades\Image;
+use App\Models\ComplaintAttachment;
+use Intervention\Image\Encoders\JpegEncoder;
+use Intervention\Image\Encoders\PngEncoder;
+use Intervention\Image\ImageManager;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class ManagerController extends Controller
@@ -2471,6 +2480,20 @@ class ManagerController extends Controller
         return response($html);
     }
 
+    public function getNagarsByVidhansabha($vidhansabha_id)
+    {
+        $mandalIds = Mandal::where('vidhansabha_id', $vidhansabha_id)->pluck('mandal_id');
+
+        $nagars = Nagar::with('mandal')
+            ->whereIn('mandal_id', $mandalIds)
+            ->orderBy('nagar_name')
+            ->get();
+
+        return response()->json($nagars->map(function ($n) {
+            return "<option value='{$n->nagar_id}'>{$n->nagar_name} - {$n->mandal->mandal_name}</option>";
+        }));
+    }
+
     public function getDistricts($division_id)
     {
         $districts = District::where('division_id', $division_id)->get();
@@ -3966,7 +3989,7 @@ class ManagerController extends Controller
             'area',
             'registrationDetails'
         )->findOrFail($id);
-
+        $divisions = Division::all();
         $mandals = Mandal::where('vidhansabha_id', $complaint->vidhansabha_id)->pluck('mandal_id');
 
         // 2. Fetch nagars that belong to those mandals, and eager load the related mandal
@@ -3998,7 +4021,8 @@ class ManagerController extends Controller
             'managers' => $managers,
             'loggedInManagerId' => $loggedInManagerId,
             'disableReply' => $disableReply,
-            'jatis' => $jatis
+            'jatis' => $jatis,
+            'divisions' => $divisions
         ]);
     }
 
@@ -4016,7 +4040,7 @@ class ManagerController extends Controller
             'area',
             'registrationDetails'
         )->findOrFail($id);
-
+        $divisions = Division::all();
         $mandals = Mandal::where('vidhansabha_id', $complaint->vidhansabha_id)->pluck('mandal_id');
 
         // 2. Fetch nagars that belong to those mandals, and eager load the related mandal
@@ -4048,7 +4072,8 @@ class ManagerController extends Controller
             'managers' => $managers,
             'loggedInManagerId' => $loggedInManagerId,
             'disableReply' => $disableReply,
-            'jatis' => $jatis
+            'jatis' => $jatis,
+            'divisions' => $divisions
         ]);
     }
 
@@ -4281,7 +4306,11 @@ class ManagerController extends Controller
                 'from_date' => 'nullable|date',
                 'program_date' => 'nullable|date',
                 'to_date' => 'nullable',
-                'file_attach' => 'nullable|file|max:20480'
+                'file_attach' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,avi',
+                'attachments.*' => 'mimes:pdf,jpg,jpeg,png,mp4,mov|max:10240'
+            ], [
+                'file_attach.max' => 'फ़ाइल का आकार 15MB से अधिक नहीं होना चाहिए।',
+                'file_attach.mimes' => 'केवल JPG, PNG या वीडियो फाइलें ही अपलोड करें।'
             ]);
         } catch (ValidationException $e) {
             if ($request->ajax()) {
@@ -4327,12 +4356,132 @@ class ManagerController extends Controller
 
         if ($request->hasFile('file_attach')) {
             $file = $request->file('file_attach');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('assets/upload/complaints'), $filename);
+            $extension = strtolower($file->getClientOriginalExtension());
+
+            $blocked = ['exe', 'php', 'js', 'sh', 'bat'];
+            if (in_array($extension, $blocked)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['file_attach' => ['यह फ़ाइल प्रकार अनुमति नहीं है।']]
+                ], 422);
+            }
+
+            $filename = time() . '_' . Str::random(6) . '.' . $extension;
+            $outputPath = public_path('assets/upload/complaints/' . $filename);
+
+            // Images
+            if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                if ($file->getSize() > 2 * 1024 * 1024) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['file_attach' => ['छवि फ़ाइल अधिकतम 2MB हो सकती है।']]
+                    ], 422);
+                }
+
+                $image = Image::read($file->getRealPath());
+
+
+                if ($extension === 'png') {
+                    $encoder = new PngEncoder(6);
+                } else {
+                    $encoder = new JpegEncoder(40);
+                }
+
+                $image->encode($encoder)->save($outputPath);
+            }
+
+            // Videos
+            elseif (in_array($extension, ['mp4', 'mov', 'avi', 'mkv'])) {
+                if ($file->getSize() > 15 * 1024 * 1024) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['file_attach' => ['वीडियो फ़ाइल अधिकतम 15MB हो सकती है।']]
+                    ], 422);
+                }
+
+                $tempPath = $file->store('temp_videos');
+
+                $ffmpeg = \FFMpeg\FFMpeg::create([
+                    'ffmpeg.binaries'  => base_path(env('FFMPEG_PATH')),
+                    'ffprobe.binaries' => base_path(env('FFPROBE_PATH')),
+                    'timeout'          => 3600,
+                    'ffmpeg.threads'   => 2,
+                ]);
+
+                $video = $ffmpeg->open(storage_path('app/' . $tempPath));
+                $format = new \FFMpeg\Format\Video\X264('aac', 'libx264');
+                $format->setKiloBitrate(300);
+                $format->setAdditionalParameters(['-preset', 'ultrafast']);
+
+                $video->save($format, $outputPath);
+
+                Storage::delete($tempPath);
+            }
+
+            // Unsupported
+            else {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['file_attach' => ['केवल छवि (JPG, PNG) या वीडियो (MP4, MOV, AVI, MKV) फ़ाइलें अपलोड की जा सकती हैं।']]
+                ], 422);
+            }
+
             $complaint->issue_attachment = $filename;
         }
 
+
         $complaint->save();
+
+
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $extension = strtolower($file->getClientOriginalExtension());
+                $filename = time() . '_' . Str::random(6) . '.' . $extension;
+                $outputPath = public_path('assets/upload/complaints/' . $filename);
+
+                if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                    $image = Image::read($file->getRealPath());
+                    $encoder = $extension === 'png'
+                        ? new PngEncoder(6)
+                        : new JpegEncoder(40);
+                    $image->encode($encoder)->save($outputPath);
+                } elseif (in_array($extension, ['mp4', 'mov'])) {
+                    $tempPath = $file->store('temp_videos');
+                    $ffmpeg = \FFMpeg\FFMpeg::create([
+                        'ffmpeg.binaries'  => base_path(env('FFMPEG_PATH')),
+                        'ffprobe.binaries' => base_path(env('FFPROBE_PATH')),
+                    ]);
+                    $video = $ffmpeg->open(storage_path('app/' . $tempPath));
+                    $format = new \FFMpeg\Format\Video\X264('aac', 'libx264');
+                    $format->setKiloBitrate(300);
+                    $format->setAdditionalParameters(['-preset', 'ultrafast']);
+                    $video->save($format, $outputPath);
+                    Storage::delete($tempPath);
+                } elseif ($extension === 'pdf') {
+
+                    $pdf = new Fpdi();
+                    $pageCount = $pdf->setSourceFile($file->getRealPath()); // returns total pages
+
+                    for ($i = 1; $i <= $pageCount; $i++) {
+                        $tpl = $pdf->importPage($i);
+                        $size = $pdf->getTemplateSize($tpl);
+                        $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                        $pdf->useTemplate($tpl, 0, 0, $size['width'], $size['height'], true);
+                    }
+
+                    $pdf->Output('F', $outputPath);
+                } else {
+                    $file->move(public_path('assets/upload/complaints'), $filename);
+                }
+
+                ComplaintAttachment::create([
+                    'complaint_id' => $complaint->complaint_id,
+                    'file_name'    => $filename,
+                    'file_type'    => $extension,
+                    'created_at'   => now(),
+                ]);
+            }
+        }
 
         $message = "आपकी शिकायत क्रमांक $complaint_number सफलतापूर्वक अपडेट कर दी गई है।";
         if ($complaint->type == 1) {
@@ -4378,7 +4527,11 @@ class ManagerController extends Controller
                 'from_date' => 'nullable|date',
                 'program_date' => 'nullable|date',
                 'to_date' => 'nullable',
-                'file_attach' => 'nullable|file|max:20480'
+                'file_attach' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,avi',
+                'attachments.*' => 'mimes:pdf,jpg,jpeg,png,mp4,mov|max:10240'
+            ], [
+                'file_attach.max' => 'फ़ाइल का आकार 15MB से अधिक नहीं होना चाहिए।',
+                'file_attach.mimes' => 'केवल JPG, PNG या वीडियो फाइलें ही अपलोड करें।'
             ]);
         } catch (ValidationException $e) {
             if ($request->ajax()) {
@@ -4422,14 +4575,141 @@ class ManagerController extends Controller
         $complaint->program_date = $request->program_date;
         $complaint->news_time = $request->to_date;
 
+        // if ($request->hasFile('file_attach')) {
+        //     $file = $request->file('file_attach');
+        //     $filename = time() . '_' . $file->getClientOriginalName();
+        //     $file->move(public_path('assets/upload/complaints'), $filename);
+        //     $complaint->issue_attachment = $filename;
+        // }
+
         if ($request->hasFile('file_attach')) {
             $file = $request->file('file_attach');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('assets/upload/complaints'), $filename);
+            $extension = strtolower($file->getClientOriginalExtension());
+
+            $blocked = ['exe', 'php', 'js', 'sh', 'bat'];
+            if (in_array($extension, $blocked)) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['file_attach' => ['यह फ़ाइल प्रकार अनुमति नहीं है।']]
+                ], 422);
+            }
+
+            $filename = time() . '_' . Str::random(6) . '.' . $extension;
+            $outputPath = public_path('assets/upload/complaints/' . $filename);
+
+            // Images
+            if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                if ($file->getSize() > 2 * 1024 * 1024) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['file_attach' => ['छवि फ़ाइल अधिकतम 2MB हो सकती है।']]
+                    ], 422);
+                }
+
+                $image = Image::read($file->getRealPath());
+
+
+                if ($extension === 'png') {
+                    $encoder = new PngEncoder(6);
+                } else {
+                    $encoder = new JpegEncoder(40);
+                }
+
+                $image->encode($encoder)->save($outputPath);
+            }
+
+            // Videos
+            elseif (in_array($extension, ['mp4', 'mov', 'avi', 'mkv'])) {
+                if ($file->getSize() > 15 * 1024 * 1024) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['file_attach' => ['वीडियो फ़ाइल अधिकतम 15MB हो सकती है।']]
+                    ], 422);
+                }
+
+                $tempPath = $file->store('temp_videos');
+
+                $ffmpeg = \FFMpeg\FFMpeg::create([
+                    'ffmpeg.binaries'  => base_path(env('FFMPEG_PATH')),
+                    'ffprobe.binaries' => base_path(env('FFPROBE_PATH')),
+                    'timeout'          => 3600,
+                    'ffmpeg.threads'   => 2,
+                ]);
+
+                $video = $ffmpeg->open(storage_path('app/' . $tempPath));
+                $format = new \FFMpeg\Format\Video\X264('aac', 'libx264');
+                $format->setKiloBitrate(300);
+                $format->setAdditionalParameters(['-preset', 'ultrafast']);
+
+                $video->save($format, $outputPath);
+
+                Storage::delete($tempPath);
+            }
+
+            // Unsupported
+            else {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['file_attach' => ['केवल छवि (JPG, PNG) या वीडियो (MP4, MOV, AVI, MKV) फ़ाइलें अपलोड की जा सकती हैं।']]
+                ], 422);
+            }
+
             $complaint->issue_attachment = $filename;
         }
 
         $complaint->save();
+
+
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $extension = strtolower($file->getClientOriginalExtension());
+                $filename = time() . '_' . Str::random(6) . '.' . $extension;
+                $outputPath = public_path('assets/upload/complaints/' . $filename);
+
+                if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                    $image = Image::read($file->getRealPath());
+                    $encoder = $extension === 'png'
+                        ? new PngEncoder(6)
+                        : new JpegEncoder(40);
+                    $image->encode($encoder)->save($outputPath);
+                } elseif (in_array($extension, ['mp4', 'mov'])) {
+                    $tempPath = $file->store('temp_videos');
+                    $ffmpeg = \FFMpeg\FFMpeg::create([
+                        'ffmpeg.binaries'  => base_path(env('FFMPEG_PATH')),
+                        'ffprobe.binaries' => base_path(env('FFPROBE_PATH')),
+                    ]);
+                    $video = $ffmpeg->open(storage_path('app/' . $tempPath));
+                    $format = new \FFMpeg\Format\Video\X264('aac', 'libx264');
+                    $format->setKiloBitrate(300);
+                    $format->setAdditionalParameters(['-preset', 'ultrafast']);
+                    $video->save($format, $outputPath);
+                    Storage::delete($tempPath);
+                } elseif ($extension === 'pdf') {
+
+                    $pdf = new Fpdi();
+                    $pageCount = $pdf->setSourceFile($file->getRealPath()); // returns total pages
+
+                    for ($i = 1; $i <= $pageCount; $i++) {
+                        $tpl = $pdf->importPage($i);
+                        $size = $pdf->getTemplateSize($tpl);
+                        $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                        $pdf->useTemplate($tpl, 0, 0, $size['width'], $size['height'], true);
+                    }
+
+                    $pdf->Output('F', $outputPath);
+                } else {
+                    $file->move(public_path('assets/upload/complaints'), $filename);
+                }
+
+                ComplaintAttachment::create([
+                    'complaint_id' => $complaint->complaint_id,
+                    'file_name'    => $filename,
+                    'file_type'    => $extension,
+                    'created_at'   => now(),
+                ]);
+            }
+        }
+        
 
         $message = "आपकी सूचना क्रमांक $complaint_number सफलतापूर्वक अपडेट कर दी गई है।";
         if ($complaint->type == 1) {
@@ -4448,6 +4728,22 @@ class ManagerController extends Controller
             return redirect()->route('operator.complaints.view')
                 ->with('success', 'कार्यालय सूचना सफलतापूर्वक अपडेट हुई');
         }
+    }
+
+    public function attachmentdestroy($id)
+    {
+        $attachment = ComplaintAttachment::findOrFail($id);
+
+        $filePath = public_path('assets/upload/complaints/' . $attachment->file_name);
+        if (file_exists($filePath)) {
+            unlink($filePath);
+        }
+        $attachment->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'अटैचमेंट सफलतापूर्वक हटा दिया गया।'
+        ]);
     }
 
     // department master functions
