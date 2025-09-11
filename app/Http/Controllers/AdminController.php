@@ -5729,4 +5729,68 @@ class AdminController extends Controller
             'gramId'
         ));
     }
+
+
+
+    // activity log functions 
+    public function activity_log(Request $request)
+    {
+        $fromDate = $request->get('from_date', date('Y-m-d'));
+        $toDate = $request->get('to_date', date('Y-m-d'));
+
+        $admins = DB::table('admin_master')->where('role', 1)->get();
+        $managers = DB::table('admin_master')->where('role', 2)->get();
+        $offices = DB::table('admin_master')->where('role', 3)->get();
+        $fields = DB::table('registration_form')->where('position_id', 8)->where('type', 3)->get();
+
+        if ($request->ajax()) {
+            $query = DB::table('login_history')
+                ->leftJoin('admin_master', 'login_history.admin_id', '=', 'admin_master.admin_id')
+                ->leftJoin('registration_form', 'login_history.registration_id', '=', 'registration_form.registration_id')
+                ->select(
+                'login_history.login_history_id',
+                'login_history.login_date_time',
+                'login_history.logout_date_time',
+                'login_history.ip',
+                'admin_master.admin_name',
+                'admin_master.role',
+                'registration_form.name as member_name',
+                'registration_form.position_id'
+                )
+                ->whereDate('login_history.login_date_time', '>=', $fromDate)
+                ->whereDate('login_history.login_date_time', '<=', $toDate);
+
+            if ($request->admin_id) {
+                $query->where('admin_master.role', 1)->where('admin_master.admin_id', $request->admin_id);
+            }
+            if ($request->manager_id) {
+                $query->where('admin_master.role', 2)->where('admin_master.admin_id', $request->manager_id);
+            }
+            if ($request->office_id) {
+                $query->where('admin_master.role', 3)->where('admin_master.admin_id', $request->office_id);
+            }
+            if ($request->field_id) {
+                $query->where('registration_form.position_id', 8)->where('registration_form.type', 3)->where('registration_form.registration_id', $request->field_id);
+            }
+
+
+            $start = $request->input('start', 0);
+            $length = $request->input('length', 10);
+            $total = $query->count();
+
+            $data = $query->orderBy('login_date_time', 'desc')
+                ->offset($start)
+                ->limit($length)
+                ->get();
+
+            return response()->json([
+                "draw" => intval($request->input('draw')),
+                "recordsTotal" => $total,
+                "recordsFiltered" => $total,
+                "data" => $data,
+            ]);
+        }
+
+        return view('admin.login_history', compact('fromDate', 'toDate', 'admins', 'managers', 'offices', 'fields'));
+    }
 }

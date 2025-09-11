@@ -131,7 +131,8 @@ class LoginController extends Controller
 
         $request->session()->flush();
 
-        return redirect('/login')->with('success', 'Logged out successfully.');
+        // return redirect('/login')->with('success', 'Logged out successfully.');
+        return redirect('/login');
     }
 
     public function showChangePasswordForm()

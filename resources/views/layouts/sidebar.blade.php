@@ -66,6 +66,9 @@
                 <li><a href="{{ route('detailed_report.index') }}"><i class=" icon icon-arrow-right"></i><span
                             class="nav-text">रिपोर्ट</span></a></li>
 
+                <li><a href="{{ route('activity_log.index') }}"><i class=" icon icon-arrow-right"></i><span
+                            class="nav-text">गतिविधि लॉग</span></a></li>
+
                 <li>
                     <a href="{{ route('user.create') }}">
                         <i class="icon icon-arrow-right"></i>

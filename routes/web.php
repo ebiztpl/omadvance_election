@@ -170,6 +170,11 @@ Route::middleware('checklogin')->group(function () {
 
     // detailed report routes
     Route::get('/admin/detailed_report', [AdminController::class, 'detailed_report_index'])->name('detailed_report.index');
+
+
+
+    // activity log routes 
+    Route::get('/admin/login_history', [AdminController::class, 'activity_log'])->name('activity_log.index');
 });
 
 
