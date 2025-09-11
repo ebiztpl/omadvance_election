@@ -1068,12 +1068,12 @@
                     let divisionId = $(this).val();
                     if (!divisionId) return;
 
-                    $.get('/operator/get-districts/' + divisionId, function(data) {
+                    $.get('/manager/get-districts/' + divisionId, function(data) {
                         $('#district_id').html(data);
 
                         let firstDistrict = $('#district_id option:first').val();
                         if (firstDistrict) {
-                            $.get('/operator/get-vidhansabha/' + firstDistrict, function(data) {
+                            $.get('/manager/get-vidhansabha/' + firstDistrict, function(data) {
                                 $('#vidhansabha_id').html(data);
                             });
                         }
@@ -1090,7 +1090,7 @@
 
                         let firstDistrict = $('#district_id option:first').val();
                         if (firstDistrict) {
-                            $.get('/operator/get-vidhansabha/' + firstDistrict, function(data) {
+                            $.get('/manager/get-vidhansabha/' + firstDistrict, function(data) {
                                 $('#vidhansabha_id').html(data);
                             });
                         }

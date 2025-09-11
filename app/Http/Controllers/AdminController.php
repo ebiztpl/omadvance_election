@@ -5333,6 +5333,20 @@ class AdminController extends Controller
         }));
     }
 
+    public function getNagarsByVidhansabha($vidhansabha_id)
+    {
+        $mandalIds = Mandal::where('vidhansabha_id', $vidhansabha_id)->pluck('mandal_id');
+
+        $nagars = Nagar::with('mandal')
+            ->whereIn('mandal_id', $mandalIds)
+            ->orderBy('nagar_name')
+            ->get();
+
+        return response()->json($nagars->map(function ($n) {
+            return "<option value='{$n->nagar_id}'>{$n->nagar_name} - {$n->mandal->mandal_name}</option>";
+        }));
+    }
+
     public function getMandals($vidhansabha_id)
     {
         $mandals = Mandal::where('vidhansabha_id', $vidhansabha_id)->get();
@@ -5382,7 +5396,7 @@ class AdminController extends Controller
     }
 
 
-     public function summary($id)
+    public function summary($id)
     {
         $complaint = Complaint::with(['replies.followups'])->findOrFail($id);
 
@@ -5399,5 +5413,320 @@ class AdminController extends Controller
         }, 0);
 
         return view('admin/details_summary', compact('complaint', 'totalReplies', 'totalFollowups'));
+    }
+
+
+
+
+    // detailed report routes
+    // public function detailed_report_index(Request $request)
+    // {
+    //     $managers = User::where('role', 2)->get();
+    //     $departments = Department::all();
+    //     $areas = Area::all();
+    //     $jatis = Jati::all();
+    //     $divisions = Division::all();
+
+    //     // Defaults (used only when no request input)
+    //     $divisionId = $request->get('division_id', 2);
+    //     $districtId = $request->get('district_id', 11);
+    //     $vidhansabhaId = $request->get('vidhansabha_id', 49);
+    //     $gramId = $request->get('gram_id');
+
+    //     // Dropdown data
+    //     $districts = District::where('division_id', $divisionId)->get();
+    //     $vidhansabhas = VidhansabhaLokSabha::where('district_id', $districtId)->get();
+    //     $mandalIds = Mandal::whereIn('vidhansabha_id', $vidhansabhas->pluck('vidhansabha_id'))->pluck('mandal_id');
+    //     $nagars = Nagar::with('mandal')
+    //         ->whereIn('mandal_id', $mandalIds)
+    //         ->orderBy('nagar_name')
+    //         ->get();
+
+    //     $query = Complaint::query();
+    //     $query->whereIn('complaint_type', ['समस्या', 'विकास']);
+
+    //     // Date filters
+    //     if ($request->filled('from_date')) {
+    //         $query->whereDate('posted_date', '>=', $request->from_date);
+    //     }
+    //     if ($request->filled('to_date')) {
+    //         $query->whereDate('posted_date', '<=', $request->to_date);
+    //     }
+
+    //     if ($request->filled('office_type')) {
+    //         $query->where('type', $request->office_type);
+    //     }
+
+    //     $filteredComplaints = $query->get();
+
+    //     $summaryType = $request->get('summary', 'jati');
+
+    //     if ($summaryType === 'all' && !$request->has('all_filter')) {
+    //         $summaryType = 'all_area';
+    //     } elseif ($summaryType === 'all' && $request->has('all_filter')) {
+    //         $summaryType = $request->all_filter; 
+    //     }
+
+    //     $departmentCounts = collect();
+    //     $areaCounts = collect();
+    //     $jatiCounts = collect();
+
+    //     if ($summaryType == 'all_department') {
+    //         $departmentCounts = $departments->map(function ($department) use ($filteredComplaints) {
+    //             return [
+    //                 'department' => $department->department_name,
+    //                 'count' => $filteredComplaints->where('complaint_department', $department->department_name)->count(),
+    //             ];
+    //         });
+
+    //         $anyaCount = $filteredComplaints->where('complaint_department', 'अन्य')->count();
+    //         if ($anyaCount > 0 && !$departments->contains('department_name', 'अन्य')) {
+    //             $departmentCounts->push([
+    //                 'department' => 'अन्य',
+    //                 'count' => $anyaCount,
+    //             ]);
+    //         }
+
+    //         $departmentCounts = $departmentCounts
+    //             ->sortByDesc('count')
+    //             ->values();
+    //     } elseif ($summaryType == 'all_jati') {
+    //         $jatiCounts = $jatis->map(function ($jati) use ($filteredComplaints) {
+    //             return [
+    //                 'jati' => $jati->jati_name,
+    //                 'count' => $filteredComplaints->where('jati_id', $jati->jati_id)->count()
+    //             ];
+    //         })->sortByDesc('count')->values();
+    //     } elseif ($summaryType == 'all_area') {
+    //         $areaCounts = $areas->map(function ($area) use ($filteredComplaints) {
+    //             return [
+    //                 'area' => $area->area_name,
+    //                 'count' => $filteredComplaints->where('area_id', $area->area_id)->count()
+    //             ];
+    //         })->sortByDesc('count')->values();
+    //     } elseif ($summaryType == 'department') {
+    //         $departmentCounts = $departments->map(function ($department) use ($filteredComplaints) {
+    //             $count = $filteredComplaints->where('complaint_department', $department->department_name)->count();
+    //             return ['department' => $department->department_name, 'count' => $count];
+    //         });
+
+    //         $anyaCount = $filteredComplaints->where('complaint_department', 'अन्य')->count();
+    //         if ($anyaCount > 0 && !$departments->contains('department_name', 'अन्य')) {
+    //             $departmentCounts->push([
+    //                 'department' => 'अन्य',
+    //                 'count' => $anyaCount
+    //             ]);
+    //         }
+
+    //         // अब filter करके sort करो
+    //         $departmentCounts = $departmentCounts
+    //             ->filter(fn($d) => $d['count'] > 0)
+    //             ->sortByDesc('count')
+    //             ->values();
+    //     } elseif ($summaryType == 'area') {
+    //         // Area filters ONLY here
+    //         $areaQuery = Complaint::query();
+
+    //         // Apply global filters again
+    //         if ($request->filled('from_date')) {
+    //             $areaQuery->whereDate('posted_date', '>=', $request->from_date);
+    //         }
+    //         if ($request->filled('to_date')) {
+    //             $areaQuery->whereDate('posted_date', '<=', $request->to_date);
+    //         }
+    //         if ($request->filled('office_type')) {
+    //             $areaQuery->where('type', $request->office_type);
+    //         }
+
+    //         // Apply area filters
+    //         if ($divisionId) $areaQuery->where('division_id', $divisionId);
+    //         if ($districtId) $areaQuery->where('district_id', $districtId);
+    //         if ($vidhansabhaId) $areaQuery->where('vidhansabha_id', $vidhansabhaId);
+    //         if ($gramId) $areaQuery->where('gram_id', $gramId);
+
+    //         $areaCounts = $areaQuery
+    //             ->select('area_id')
+    //             ->selectRaw('count(*) as count')
+    //             ->groupBy('area_id')
+    //             ->get()
+    //             ->map(function ($row) use ($areas) {
+    //                 $areaName = $areas->firstWhere('area_id', $row->area_id)?->area_name ?? 'Unknown';
+    //                 return ['area' => $areaName, 'count' => $row->count];
+    //             })->sortByDesc('count')
+    //             ->values();
+    //     } elseif ($summaryType == 'jati') {
+    //         $jatiCounts = $jatis->map(function ($jati) use ($filteredComplaints) {
+    //             $count = $filteredComplaints->where('jati_id', $jati->jati_id)->count();
+    //             return ['jati' => $jati->jati_name, 'count' => $count];
+    //         })->filter(fn($j) => $j['count'] > 0)->sortByDesc('count')
+    //             ->values();
+    //     }
+
+    //     $hasFilter = $request->filled('from_date')
+    //         || $request->filled('to_date')
+    //         || $request->filled('admin_id')
+    //         || $request->filled('office_type')
+    //         || $request->filled('division_id')
+    //         || $request->filled('district_id')
+    //         || $request->filled('vidhansabha_id')
+    //         || $request->filled('gram_id');
+
+    //     return view('admin.detailed_report', compact(
+    //         'managers',
+    //         'filteredComplaints',
+    //         'departmentCounts',
+    //         'areaCounts',
+    //         'jatiCounts',
+    //         'hasFilter',
+    //         'departments',
+    //         'areas',
+    //         'jatis',
+    //         'summaryType',
+    //         'divisions',
+    //         'districts',
+    //         'vidhansabhas',
+    //         'nagars',
+    //         'divisionId',
+    //         'districtId',
+    //         'vidhansabhaId',
+    //         'gramId'
+    //     ));
+    // }
+
+
+    public function detailed_report_index(Request $request)
+    {
+        $managers = User::where('role', 2)->get();
+        $departments = Department::all();
+        $jatis = Jati::all();
+        $divisions = Division::all();
+
+        // Request से filter values
+        $divisionId = $request->get('division_id');
+        $districtId = $request->get('district_id');
+        $vidhansabhaId = $request->get('vidhansabha_id');
+        $gramId = $request->get('gram_id');
+
+        // Dropdown data
+        $districts = $divisionId ? District::where('division_id', $divisionId)->get() : collect();
+        $vidhansabhas = $districtId ? VidhansabhaLokSabha::where('district_id', $districtId)->get() : collect();
+        $mandalIds = $vidhansabhas->pluck('vidhansabha_id')->isNotEmpty()
+            ? Mandal::whereIn('vidhansabha_id', $vidhansabhas->pluck('vidhansabha_id'))->pluck('mandal_id')
+            : collect();
+        $nagars = $mandalIds->isNotEmpty()
+            ? Nagar::with('mandal')->whereIn('mandal_id', $mandalIds)->orderBy('nagar_name')->get()
+            : collect();
+
+        // Complaint query
+        $query = Complaint::query();
+        $query->whereIn('complaint_type', ['समस्या', 'विकास']);
+
+        if ($request->filled('from_date')) $query->whereDate('posted_date', '>=', $request->from_date);
+        if ($request->filled('to_date')) $query->whereDate('posted_date', '<=', $request->to_date);
+        if ($request->filled('office_type')) $query->where('type', $request->office_type);
+
+        $filteredComplaints = $query->get();
+
+        $summaryType = $request->get('summary', 'jati');
+        if ($summaryType === 'all' && !$request->has('all_filter')) $summaryType = 'all_area';
+        elseif ($summaryType === 'all' && $request->has('all_filter')) $summaryType = $request->all_filter;
+
+        $departmentCounts = collect();
+        $areaCounts = collect();
+        $jatiCounts = collect();
+
+        // Department summary
+        if (in_array($summaryType, ['all_department', 'department'])) {
+            $departmentCounts = $departments->map(function ($department) use ($filteredComplaints) {
+                $count = $filteredComplaints->where('complaint_department', $department->department_name)->count();
+                return ['department' => $department->department_name, 'count' => $count];
+            });
+
+            $anyaCount = $filteredComplaints->where('complaint_department', 'अन्य')->count();
+            if ($anyaCount > 0 && !$departments->contains('department_name', 'अन्य')) {
+                $departmentCounts->push(['department' => 'अन्य', 'count' => $anyaCount]);
+            }
+
+            // For all_department, keep zeros
+            if ($summaryType === 'department') {
+                $departmentCounts = $departmentCounts->filter(fn($d) => $d['count'] > 0);
+            }
+
+            $departmentCounts = $departmentCounts->sortByDesc('count')->values();
+        }
+
+        // Jati summary
+        if (in_array($summaryType, ['all_jati', 'jati'])) {
+            $jatiCounts = $jatis->map(function ($jati) use ($filteredComplaints) {
+                $count = $filteredComplaints->where('jati_id', $jati->jati_id)->count();
+                return ['jati' => $jati->jati_name, 'count' => $count];
+            });
+
+            // For all_jati, do NOT filter zeros
+            if ($summaryType === 'jati') {
+                $jatiCounts = $jatiCounts->filter(fn($j) => $j['count'] > 0);
+            }
+
+            $jatiCounts = $jatiCounts->sortByDesc('count')->values();
+        }
+
+        // Area summary
+        if (in_array($summaryType, ['all_area', 'area'])) {
+            $areaQuery = Complaint::query();
+            $areaQuery->whereIn('complaint_type', ['समस्या', 'विकास']);
+            if ($request->filled('from_date')) $areaQuery->whereDate('posted_date', '>=', $request->from_date);
+            if ($request->filled('to_date')) $areaQuery->whereDate('posted_date', '<=', $request->to_date);
+            if ($request->filled('office_type')) $areaQuery->where('type', $request->office_type);
+
+            // Apply filters
+            if ($divisionId) $areaQuery->where('division_id', $divisionId);
+            if ($districtId) $areaQuery->where('district_id', $districtId);
+            if ($vidhansabhaId) $areaQuery->where('vidhansabha_id', $vidhansabhaId);
+            if ($gramId) $areaQuery->where('gram_id', $gramId);
+
+            // Get all areas as collection
+            $allAreas = Area::all();
+
+            if ($summaryType === 'all_area') {
+                $areaCounts = $allAreas->map(function ($area) use ($areaQuery) {
+                    $count = (clone $areaQuery)->where('area_id', $area->area_id)->count();
+                    return ['area' => $area->area_name, 'count' => $count];
+                })->sortByDesc('count')->values();
+            } else {
+                $areaCounts = $allAreas->map(function ($area) use ($areaQuery) {
+                    $count = (clone $areaQuery)->where('area_id', $area->area_id)->count();
+                    return ['area' => $area->area_name, 'count' => $count];
+                })->filter(fn($a) => $a['count'] > 0)->sortByDesc('count')->values();
+            }
+        }
+
+        $hasFilter = $request->filled('from_date')
+            || $request->filled('to_date')
+            || $request->filled('admin_id')
+            || $request->filled('office_type')
+            || $request->filled('division_id')
+            || $request->filled('district_id')
+            || $request->filled('vidhansabha_id')
+            || $request->filled('gram_id');
+
+        return view('admin.detailed_report', compact(
+            'managers',
+            'filteredComplaints',
+            'departmentCounts',
+            'areaCounts',
+            'jatiCounts',
+            'hasFilter',
+            'departments',
+            'jatis',
+            'summaryType',
+            'divisions',
+            'districts',
+            'vidhansabhas',
+            'nagars',
+            'divisionId',
+            'districtId',
+            'vidhansabhaId',
+            'gramId'
+        ));
     }
 }

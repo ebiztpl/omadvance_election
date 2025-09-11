@@ -63,6 +63,9 @@
                 <li><a href="{{ route('view_responsibility.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">दायित्व कार्यकर्ता देखे</span></a></li>
 
+                <li><a href="{{ route('detailed_report.index') }}"><i class=" icon icon-arrow-right"></i><span
+                            class="nav-text">रिपोर्ट</span></a></li>
+
                 <li>
                     <a href="{{ route('user.create') }}">
                         <i class="icon icon-arrow-right"></i>

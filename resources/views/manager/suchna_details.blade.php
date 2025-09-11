@@ -842,7 +842,7 @@
 
                         let firstDistrict = $('#district_id option:first').val();
                         if (firstDistrict) {
-                            $.get('/operator/get-vidhansabha/' + firstDistrict, function(data) {
+                            $.get('/manager/get-vidhansabha/' + firstDistrict, function(data) {
                                 $('#vidhansabha_id').html(data);
                             });
                         }

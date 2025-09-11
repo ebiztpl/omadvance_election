@@ -70,10 +70,18 @@ class LoginController extends Controller
 
         if ($user && Hash::check($request->password, $user->admin_pass)) {
 
+            $logId = DB::table('login_history')->insertGetId([
+                'admin_id' => $user->admin_id,
+                'login_date_time' => now(),
+                'logout_date_time' => null,
+                'ip' => $request->ip(),
+            ], 'login_history_id');
+
             session([
                 'logged_in_user' => $user->admin_name,
                 'logged_in_role' => $user->role,
                 'user_id' => $user->admin_id,
+                'log_id' => $logId,
             ]);
 
             switch ($request->user_role) {
@@ -95,16 +103,34 @@ class LoginController extends Controller
     //     return redirect('/login');
     // }
 
+    // public function logout(Request $request)
+    // {
+    //     $logId = Session::get('log_id');
+    //     dd($logId);
+    //     if ($logId) {
+    //         DB::table('login_history')->where('login_history_id', $logId)->update([
+    //             'logout_date_time' => now()
+    //         ]);
+    //     }
+
+    //     Session::flush();
+    //     return redirect('/login')->with('success', 'Logged out successfully.');
+    // }
+
+
     public function logout(Request $request)
     {
-        $logId = Session::get('log_id');
+        $logId = session('log_id');
+        // dd($logId);
+
         if ($logId) {
-            DB::table('login_history')->where('login_history_id', $logId)->update([
-                'logout_date_time' => now()
-            ]);
+            DB::table('login_history')
+                ->where('login_history_id', $logId)
+                ->update(['logout_date_time' => now()]);
         }
 
-        Session::flush();
+        $request->session()->flush();
+
         return redirect('/login')->with('success', 'Logged out successfully.');
     }
 
@@ -262,7 +288,7 @@ class LoginController extends Controller
             'login_date_time' => now(),
             'logout_date_time' => null,
             'ip' => $request->ip()
-        ]);
+        ], 'login_history_id');
 
         Session::put([
             'registration_id' => $member->registration_id,

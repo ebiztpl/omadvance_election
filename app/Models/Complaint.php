@@ -213,4 +213,9 @@ class Complaint extends Model
     {
         return $this->hasMany(ComplaintAttachment::class, 'complaint_id', 'complaint_id');
     }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'complaint_department', 'department_name');
+    }
 }

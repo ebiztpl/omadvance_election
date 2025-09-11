@@ -36,13 +36,13 @@ Route::post('/verify_otp', [LoginController::class, 'verifyOtp']);
 // Route::get('/dashboard', [LoginController::class, 'index'])->name('dashboard');
 
 
-Route::post('/logout', function () {
-    Auth::logout();
-    request()->session()->invalidate();
-    request()->session()->regenerateToken();
-    return redirect()->route('login');
-})->name('logout');
-
+// Route::post('/logout', function () {
+//     Auth::logout();
+//     request()->session()->invalidate();
+//     request()->session()->regenerateToken();
+//     return redirect()->route('login');
+// })->name('logout');
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 
 // admin routes
@@ -153,7 +153,7 @@ Route::middleware('checklogin')->group(function () {
     Route::post('/get-vidhansabhas', [AdminController::class, 'getVidhansabhasByDistrict'])->name('get.vidhansabhaD');
 
     Route::get('/admin/get-districts/{division_id}', [AdminController::class, 'districtsfetch']);
-    Route::get('/admin/get-vidhansabha/{district_id}', [AdminController::class, 'vidhansabhafetch']);
+    Route::get('/admin/get-vidhansabha/{district_id}', [AdminController::class, 'vidhansabhafetch'])->name('get.vidhansabha_filter');
     Route::get('/admin/get-mandal/{vidhansabha_id}', [AdminController::class, 'getMandals']);
     Route::get('/admin/get-nagar/{mandal_id}', [AdminController::class, 'getNagars']);
     Route::get('/admin/get-pollings/{mandal_id}', [AdminController::class, 'getPollings']);
@@ -161,8 +161,15 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/admin/get-gram_pollings/{mandal_id}', [AdminController::class, 'getgramPollings']);
     Route::get('/admin/get-subjects/{department_id}', [AdminController::class, 'getSubjects']);
 
+    Route::get('/admin/get-nagars-by-vidhansabha/{vidhansabha_id}', [AdminController::class, 'getNagarsByVidhansabha']);
+
 
     Route::get('/admin/complaints/{id}/summary', [AdminController::class, 'summary'])->name('admincomplaints.summary');
+
+
+
+    // detailed report routes
+    Route::get('/admin/detailed_report', [AdminController::class, 'detailed_report_index'])->name('detailed_report.index');
 });
 
 
@@ -380,7 +387,7 @@ Route::middleware('checklogin')->group(function () {
     Route::post('/manager/attachments/{attachment}/delete', [ManagerController::class, 'attachmentdestroy'])
         ->name('attachments.destroy');
     Route::post('/manager/update-complaint/{id}', [ManagerController::class, 'updateComplaint'])->name('complaints.update');
-   
+
     Route::post('/manager/update-suchna/{id}', [ManagerController::class, 'updateSuchna'])->name('suchna.update');
 
     Route::get('/manager/details_complaints/{id}', [ManagerController::class, 'allcomplaints_show'])->name('complaints_show.details');

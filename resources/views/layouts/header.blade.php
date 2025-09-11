@@ -117,7 +117,7 @@
                                             ->value('district_name');
                                         break;
                                     case 'विधानसभा':
-                                        $refName = \DB::table('vidhansabha_master')
+                                        $refName = \DB::table('vidhansabha_loksabha')
                                             ->where('vidhansabha_id', $position->refrence_id)
                                             ->value('vidhansabha');
                                         break;
