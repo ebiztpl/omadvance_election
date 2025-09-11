@@ -91,7 +91,7 @@
                             <table id="example" style="min-width: 845px " class="display table-bordered">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
+                                        <th>क्र.</th>
                                         <th id="col-name">यूज़र नाम</th>
                                         <th>लॉगिन समय</th>
                                         <th>लॉगआउट समय</th>
@@ -150,18 +150,21 @@
                         }
                     },
                     columns: [{
-                            data: 'login_history_id',
-                            name: 'login_history_id'
+                            data: null,
+                            name: 'serial_no',
+                            render: function(data, type, row, meta) {
+                                return meta.row + meta.settings._iDisplayStart + 1;
+                            }
                         },
                         {
                             data: null,
                             name: 'name',
                             render: function(data, type, row) {
                                 if (row.admin_name) {
-                                    return row.admin_name; 
+                                    return row.admin_name;
                                 }
                                 if (row.member_name) {
-                                    return row.member_name; 
+                                    return row.member_name;
                                 }
                                 return '-';
                             }
