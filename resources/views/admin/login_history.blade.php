@@ -93,6 +93,7 @@
                                     <tr>
                                         <th>क्र.</th>
                                         <th id="col-name">यूज़र नाम</th>
+                                        <th>भूमिका</th>
                                         <th>लॉगिन समय</th>
                                         <th>लॉगआउट समय</th>
                                         <th>IP</th>
@@ -167,6 +168,17 @@
                                     return row.member_name;
                                 }
                                 return '-';
+                            }
+                        },
+                        {   
+                            data: null,
+                            name: 'role_display',
+                            render: function(data, type, row) {
+                                if (row.role == 1) return "एडमिन";
+                                if (row.role == 2) return "मैनेजर";
+                                if (row.role == 3) return "कार्यालय";
+                                if (row.position_id == 8 && row.type == 3) return "फ़ील्ड(सदस्य)";
+                                return "-";
                             }
                         },
 

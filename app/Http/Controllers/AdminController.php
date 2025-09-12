@@ -5755,7 +5755,8 @@ class AdminController extends Controller
                 'admin_master.admin_name',
                 'admin_master.role',
                 'registration_form.name as member_name',
-                'registration_form.position_id'
+                'registration_form.position_id',
+                'registration_form.type'
                 )
                 ->whereDate('login_history.login_date_time', '>=', $fromDate)
                 ->whereDate('login_history.login_date_time', '<=', $toDate);
