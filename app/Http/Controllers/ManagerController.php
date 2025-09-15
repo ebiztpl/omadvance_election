@@ -542,6 +542,7 @@ class ManagerController extends Controller
         }
 
         $userId = $user->admin_id;
+        $today = now()->toDateString();
 
         $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
             ->groupBy('complaint_id');
@@ -554,6 +555,10 @@ class ManagerController extends Controller
             ->whereHas('complaint', function ($query) {
                 $query->whereNotIn('complaint_status', [4, 5])
                     ->where('complaint_type', 'समस्या');
+            })
+            ->where(function ($query) use ($today) {
+                $query->whereNull('review_date')
+                    ->orWhereDate('review_date', '<=', $today);
             })
             ->select('complaint_reply.*');
 
@@ -590,6 +595,7 @@ class ManagerController extends Controller
         }
 
         $userId = $user->admin_id;
+        $today = now()->toDateString();
 
         $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
             ->groupBy('complaint_id');
@@ -602,6 +608,10 @@ class ManagerController extends Controller
             ->whereHas('complaint', function ($query) {
                 $query->whereNotIn('complaint_status', [4, 5])
                     ->where('complaint_type', 'विकास');
+            })
+            ->where(function ($query) use ($today) {
+                $query->whereNull('review_date')
+                    ->orWhereDate('review_date', '<=', $today);
             })
             ->select('complaint_reply.*');
 
@@ -1323,6 +1333,7 @@ class ManagerController extends Controller
                 }
 
                 $userId = $user->admin_id;
+                $today = now()->toDateString();
                 $direction = $request->query('direction');
 
                 $latestReplies = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
@@ -1336,6 +1347,10 @@ class ManagerController extends Controller
                     ->whereHas('complaint', function ($query) {
                         $query->whereNotIn('complaint_status', [4, 5])
                             ->where('complaint_type', 'समस्या');
+                    })
+                    ->where(function ($query) use ($today) {
+                        $query->whereNull('review_date')
+                            ->orWhereDate('review_date', '<=', $today);
                     })
                     ->with('complaint.replies');
 
@@ -1369,6 +1384,7 @@ class ManagerController extends Controller
 
                 $userId = $user->admin_id;
                 $direction = $request->query('direction');
+                $today = now()->toDateString();
 
                 $latestReplies = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
                     ->groupBy('complaint_id');
@@ -1381,6 +1397,10 @@ class ManagerController extends Controller
                     ->whereHas('complaint', function ($query) {
                         $query->whereNotIn('complaint_status', [4, 5])
                             ->where('complaint_type', 'विकास');
+                    })
+                    ->where(function ($query) use ($today) {
+                        $query->whereNull('review_date')
+                            ->orWhereDate('review_date', '<=', $today);
                     })
                     ->with('complaint.replies');
 

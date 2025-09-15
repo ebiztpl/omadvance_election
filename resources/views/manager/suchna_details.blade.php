@@ -1160,7 +1160,7 @@
 
 
 
-             document.addEventListener("DOMContentLoaded", function() {
+            document.addEventListener("DOMContentLoaded", function() {
                 const input = document.getElementById("attachments");
                 const previewContainer = document.getElementById("preview-container");
                 const uploadedFiles = document.getElementById("uploaded-files");
@@ -1197,7 +1197,7 @@
                         const li = document.createElement("li");
                         li.classList.add("list-group-item");
                         li.innerHTML = `
-                                <div class="d-flex justify-content-between align-items-center">
+                                <div class="uploaded-file">
                                     <span>${file.name}</span>
                                     <button class="btn btn-sm btn-danger remove-btn">&times;</button>
                                 </div>
@@ -1269,112 +1269,112 @@
             });
 
 
-            document.addEventListener("DOMContentLoaded", function() {
-                const input = document.getElementById("attachments");
-                const previewContainer = document.getElementById("preview-container");
-                const uploadedFiles = document.getElementById("uploaded-files");
-                const errorContainer = document.getElementById("attachments_error");
+            // document.addEventListener("DOMContentLoaded", function() {
+            //     const input = document.getElementById("attachments");
+            //     const previewContainer = document.getElementById("preview-container");
+            //     const uploadedFiles = document.getElementById("uploaded-files");
+            //     const errorContainer = document.getElementById("attachments_error");
 
-                input.addEventListener("change", function() {
-                    const files = Array.from(this.files);
-                    const form = document.getElementById("updateComplaintForm");
+            //     input.addEventListener("change", function() {
+            //         const files = Array.from(this.files);
+            //         const form = document.getElementById("updateComplaintForm");
 
-                    files.forEach(file => {
-                        const allowed = ['pdf', 'jpg', 'jpeg', 'png', 'mp4', 'mov'];
-                        const ext = file.name.split('.').pop().toLowerCase();
+            //         files.forEach(file => {
+            //             const allowed = ['pdf', 'jpg', 'jpeg', 'png', 'mp4', 'mov'];
+            //             const ext = file.name.split('.').pop().toLowerCase();
 
-                        if (!allowed.includes(ext)) {
-                            errorContainer.innerText = `गलत फ़ाइल प्रकार: ${file.name}`;
-                            return;
-                        }
+            //             if (!allowed.includes(ext)) {
+            //                 errorContainer.innerText = `गलत फ़ाइल प्रकार: ${file.name}`;
+            //                 return;
+            //             }
 
-                        if (file.size > 10 * 1024 * 1024) {
-                            errorContainer.innerText = `फ़ाइल बहुत बड़ी है (max 10MB): ${file.name}`;
-                            return;
-                        }
+            //             if (file.size > 10 * 1024 * 1024) {
+            //                 errorContainer.innerText = `फ़ाइल बहुत बड़ी है (max 10MB): ${file.name}`;
+            //                 return;
+            //             }
 
-                        const existingFiles = Array.from(uploadedFiles.querySelectorAll("li span")).map(
-                            span => span.innerText);
-                        if (existingFiles.includes(file.name)) {
-                            errorContainer.innerText =
-                                `यह फ़ाइल पहले ही अपलोड हो चुकी है: ${file.name}`;
-                            return;
-                        }
+            //             const existingFiles = Array.from(uploadedFiles.querySelectorAll("li span")).map(
+            //                 span => span.innerText);
+            //             if (existingFiles.includes(file.name)) {
+            //                 errorContainer.innerText =
+            //                     `यह फ़ाइल पहले ही अपलोड हो चुकी है: ${file.name}`;
+            //                 return;
+            //             }
 
-                        errorContainer.innerText = "";
+            //             errorContainer.innerText = "";
 
-                        const li = document.createElement("li");
-                        li.classList.add("list-group-item");
-                        li.innerHTML = `
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span>${file.name}</span>
-                                    <button class="btn btn-sm btn-danger remove-btn">&times;</button>
-                                </div>
-                                <div class="progress mt-1">
-                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-                                </div>
-                            `;
-                        previewContainer.appendChild(li);
+            //             const li = document.createElement("li");
+            //             li.classList.add("list-group-item");
+            //             li.innerHTML = `
+            //                     <div class="d-flex justify-content-between align-items-center">
+            //                         <span>${file.name}</span>
+            //                         <button class="btn btn-sm btn-danger remove-btn">&times;</button>
+            //                     </div>
+            //                     <div class="progress mt-1">
+            //                         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+            //                     </div>
+            //                 `;
+            //             previewContainer.appendChild(li);
 
-                        li.querySelector(".remove-btn").addEventListener("click", () => li.remove());
+            //             li.querySelector(".remove-btn").addEventListener("click", () => li.remove());
 
-                        const formData = new FormData(form);
-                        formData.append("attachments[]",
-                            file);
+            //             const formData = new FormData(form);
+            //             formData.append("attachments[]",
+            //                 file);
 
-                        const xhr = new XMLHttpRequest();
-                        xhr.open("POST", form.getAttribute("action"), true);
+            //             const xhr = new XMLHttpRequest();
+            //             xhr.open("POST", form.getAttribute("action"), true);
 
-                        xhr.upload.addEventListener("progress", e => {
-                            if (e.lengthComputable) {
-                                const percent = (e.loaded / e.total) * 100;
-                                li.querySelector(".progress-bar").style.width = percent + "%";
-                            }
-                        });
+            //             xhr.upload.addEventListener("progress", e => {
+            //                 if (e.lengthComputable) {
+            //                     const percent = (e.loaded / e.total) * 100;
+            //                     li.querySelector(".progress-bar").style.width = percent + "%";
+            //                 }
+            //             });
 
-                        xhr.onload = () => {
-                            if (xhr.status === 200) {
-                                li.classList.add("list-group-item-success");
-                                li.querySelector(".progress").remove();
-                            } else {
-                                li.classList.add("list-group-item-danger");
-                            }
-                        };
+            //             xhr.onload = () => {
+            //                 if (xhr.status === 200) {
+            //                     li.classList.add("list-group-item-success");
+            //                     li.querySelector(".progress").remove();
+            //                 } else {
+            //                     li.classList.add("list-group-item-danger");
+            //                 }
+            //             };
 
-                        xhr.onerror = () => {
-                            li.classList.add("list-group-item-danger");
-                        };
+            //             xhr.onerror = () => {
+            //                 li.classList.add("list-group-item-danger");
+            //             };
 
-                        xhr.send(formData);
-                    });
+            //             xhr.send(formData);
+            //         });
 
-                    this.value = "";
-                });
-            });
+            //         this.value = "";
+            //     });
+            // });
 
-            document.addEventListener("DOMContentLoaded", function() {
-                const toggleBtn = document.getElementById("toggle-attachments");
-                if (!toggleBtn) return;
+            // document.addEventListener("DOMContentLoaded", function() {
+            //     const toggleBtn = document.getElementById("toggle-attachments");
+            //     if (!toggleBtn) return;
 
-                const maxVisible = 7;
-                const items = document.querySelectorAll("#uploaded-files .attachment-item");
+            //     const maxVisible = 7;
+            //     const items = document.querySelectorAll("#uploaded-files .attachment-item");
 
-                toggleBtn.addEventListener("click", function() {
-                    const hiddenItems = Array.from(items).slice(maxVisible);
+            //     toggleBtn.addEventListener("click", function() {
+            //         const hiddenItems = Array.from(items).slice(maxVisible);
 
-                    const isHidden = hiddenItems[0].classList.contains("d-none");
+            //         const isHidden = hiddenItems[0].classList.contains("d-none");
 
-                    if (isHidden) {
-                        // Show all
-                        hiddenItems.forEach(el => el.classList.remove("d-none"));
-                        toggleBtn.textContent = "Show Less";
-                    } else {
-                        // Hide extra
-                        hiddenItems.forEach(el => el.classList.add("d-none"));
-                        toggleBtn.textContent = `+${hiddenItems.length} more`;
-                    }
-                });
-            });
+            //         if (isHidden) {
+            //             // Show all
+            //             hiddenItems.forEach(el => el.classList.remove("d-none"));
+            //             toggleBtn.textContent = "Show Less";
+            //         } else {
+            //             // Hide extra
+            //             hiddenItems.forEach(el => el.classList.add("d-none"));
+            //             toggleBtn.textContent = `+${hiddenItems.length} more`;
+            //         }
+            //     });
+            // });
 
 
             document.addEventListener("DOMContentLoaded", function() {
