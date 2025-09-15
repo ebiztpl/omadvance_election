@@ -97,6 +97,8 @@
                                         <th>लॉगिन समय</th>
                                         <th>लॉगआउट समय</th>
                                         <th>IP</th>
+                                        <th>स्थान</th>
+                                        <th>डिवाइस/ब्राउज़र</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -170,7 +172,7 @@
                                 return '-';
                             }
                         },
-                        {   
+                        {
                             data: null,
                             name: 'role_display',
                             render: function(data, type, row) {
@@ -193,6 +195,23 @@
                         {
                             data: 'ip',
                             name: 'ip'
+                        },
+                        {
+                            data: 'location',
+                            name: 'location',
+                            defaultContent: '-'
+                        },
+                        {
+                            data: null,
+                            name: 'device_browser',
+                            render: function(data, type, row) {
+                                let browser = row.browser ? row.browser : '-';
+                                let device = row.device ? row.device : '-';
+                                let os = row.os ? row.os : '';
+
+                                let deviceInfo = device + (os ? " (" + os + ")" : "");
+                                return browser + " | " + deviceInfo;
+                            }
                         }
                     ]
                 });

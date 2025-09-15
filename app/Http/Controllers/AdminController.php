@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Department;
@@ -14,6 +15,7 @@ use App\Models\ComplaintReply;
 use App\Models\RegistrationForm;
 use App\Models\Step2;
 use App\Models\Step3;
+use Illuminate\Support\Facades\Http;
 use App\Models\Step4;
 use App\Models\Mandal;
 use App\Models\Nagar;
@@ -5752,6 +5754,7 @@ class AdminController extends Controller
                 'login_history.login_date_time',
                 'login_history.logout_date_time',
                 'login_history.ip',
+                'login_history.user_agent',
                 'admin_master.admin_name',
                 'admin_master.role',
                 'registration_form.name as member_name',
@@ -5779,10 +5782,41 @@ class AdminController extends Controller
             $length = $request->input('length', 10);
             $total = $query->count();
 
-            $data = $query->orderBy('login_date_time', 'desc')
+            $rows = $query->orderBy('login_date_time', 'desc')
                 ->offset($start)
                 ->limit($length)
                 ->get();
+
+            $data = $rows->map(function ($row) {
+                $agent = new Agent();
+                $agent->setUserAgent($row->user_agent);
+
+                $row->browser = $agent->browser();
+                $row->os = $agent->platform();
+                $row->device = $agent->device();
+
+                $ip = $row->ip;
+                if (in_array($ip, ['127.0.0.1', '::1'])) {
+                    $row->location = "Localhost";
+                } else {
+                    $location = @file_get_contents("http://ip-api.com/json/{$ip}?fields=status,message,city,regionName,country");
+                    if ($location) {
+                        $locData = json_decode($location);
+                        if (isset($locData->status) && $locData->status === "success") {
+                            $city    = $locData->city ?? '';
+                            $region  = $locData->regionName ?? '';
+                            $country = $locData->country ?? '';
+                            $row->location = trim("{$city}, {$region}, {$country}", ", ");
+                        } else {
+                            $row->location = "Unknown";
+                        }
+                    } else {
+                        $row->location = "Unknown";
+                    }
+                }
+
+                return $row;
+            });
 
             return response()->json([
                 "draw" => intval($request->input('draw')),

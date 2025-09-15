@@ -75,6 +75,7 @@ class LoginController extends Controller
                 'login_date_time' => now(),
                 'logout_date_time' => null,
                 'ip' => $request->ip(),
+                'user_agent'      => $request->header('User-Agent'),
             ], 'login_history_id');
 
             session([
@@ -288,7 +289,8 @@ class LoginController extends Controller
             'registration_id' => $member->registration_id,
             'login_date_time' => now(),
             'logout_date_time' => null,
-            'ip' => $request->ip()
+            'ip' => $request->ip(),
+            'user_agent'      => $request->header('User-Agent'),
         ], 'login_history_id');
 
         Session::put([
