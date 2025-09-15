@@ -77,7 +77,7 @@
                                 @endforeach
                             </select>
                         </div>
-                    
+
                         <div class="col-md-2">
                             <label>मतदान केंद्र</label>
                             <select name="polling_id" id="polling_id" class="form-control">
@@ -143,7 +143,8 @@
 
                         <div class="col-md-2 mt-2">
                             <br>
-                            <button type="submit" class="btn btn-primary" style="font-size: 12px" id="applyFilters">फ़िल्टर</button>
+                            <button type="submit" class="btn btn-primary" style="font-size: 12px"
+                                id="applyFilters">फ़िल्टर</button>
                         </div>
                     </div>
                 </form>
@@ -178,7 +179,7 @@
                             <table id="example" style="min-width: 845px " class="display table-bordered">
                                 <thead>
                                     <tr>
-                                       <th>क्र.</th>
+                                        <th>क्र.</th>
                                         <th style="min-width: 100px;">शिकायतकर्ता</th>
                                         <th>रेफरेंस</th>
                                         <th style="min-width: 100px;">क्षेत्र</th>
@@ -191,11 +192,13 @@
                                         <th>महत्त्व स्तर</th>
                                         <th>आवेदक</th>
                                         <th>फॉरवर्ड अधिकारी</th>
-                                       <th>विस्तार से</th>
+                                        <th>विस्तार से</th>
+
+                                        <th style="display: none;">मतदाता पहचान</th>
                                     </tr>
                                 </thead>
                                 <tbody id="complaintsTableBody">
-                                    
+
                                 </tbody>
                             </table>
                         </div>
@@ -284,7 +287,7 @@
                     }
                 });
 
-              
+
 
 
 
@@ -332,7 +335,8 @@
                             exportOptions: {
                                 modifier: {
                                     page: "all"
-                                }
+                                },
+                               columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
                             },
                         },
                         {
@@ -340,7 +344,8 @@
                             exportOptions: {
                                 modifier: {
                                     page: "all"
-                                }
+                                },
+                                columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
                             },
                         }
 
@@ -360,7 +365,7 @@
                             d.gram_id = $('#gram_id').val();
                             d.polling_id = $('#polling_id').val();
                             d.area_id = $('#area_id').val();
-                             d.jati_id = $('#jati_id').val();
+                            d.jati_id = $('#jati_id').val();
                             d.from_date = $('#from_date').val();
                             d.to_date = $('#to_date').val();
                             d.reply_id = $('#reply_id').val();
@@ -405,8 +410,14 @@
                         {
                             data: 'action',
                             orderable: false,
-                            searchable: false
+                            searchable: false,
+                             className: 'not-export-col'
                         },
+                        {
+                            data: 'voter_id',
+                            visible: false,
+                            searchable: false
+                        }
                     ]
                 });
 

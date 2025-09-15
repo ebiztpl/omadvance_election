@@ -892,6 +892,8 @@ class MemberController extends Controller
                         <div class="d-flex" style="gap: 5px;">
                             <a href="' . route('membercomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                         </div>',
+
+                    'voter_id' => $complaint->voter_id ?? ''
                 ];
             }
 
@@ -1077,9 +1079,11 @@ class MemberController extends Controller
                     'applicant_name' => $complaint->admin->admin_name ?? '',
                     'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
                     'action' => '
-<div class="d-flex" style="gap: 5px;">
-    <a href="' . route('membercomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
-</div>'
+                    <div class="d-flex" style="gap: 5px;">
+                        <a href="' . route('membercomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
+                    </div>',
+
+                    'voter_id' => $complaint->voter_id ?? ''
 
                 ];
             }

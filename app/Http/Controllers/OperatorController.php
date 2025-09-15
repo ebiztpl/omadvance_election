@@ -1042,7 +1042,9 @@ class OperatorController extends Controller
                     'action' => '
 <div class="d-flex" style="gap: 5px;">
     <a href="' . route('operatorcomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
-</div>'
+</div>',
+
+                    'voter_id' => $complaint->voter_id ?? ''
 
                 ];
             }
@@ -1230,6 +1232,8 @@ class OperatorController extends Controller
                         <div class="d-flex" style="gap: 5px;">
                             <a href="' . route('operatorcomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                         </div>',
+
+                    'voter_id' => $complaint->voter_id ?? ''
                 ];
             }
 

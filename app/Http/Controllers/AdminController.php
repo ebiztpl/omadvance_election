@@ -1611,7 +1611,9 @@ class AdminController extends Controller
                     'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
                      <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
-                    </div>'
+                    </div>',
+
+                    'voter_id' => $complaint->voter_id ?? ''
                 ];
             }
 
@@ -1828,7 +1830,9 @@ class AdminController extends Controller
                     'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
                     <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
-                    </div>'
+                    </div>',
+
+                    'voter_id' => $complaint->voter_id ?? ''
                 ];
             }
 
@@ -2017,7 +2021,9 @@ class AdminController extends Controller
                     'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
                     <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
-                    </div>'
+                    </div>',
+
+                    'voter_id' => $complaint->voter_id ?? ''
                 ];
             }
 
@@ -2202,7 +2208,9 @@ class AdminController extends Controller
                     'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
                     <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
-                    </div>'
+                    </div>',
+
+                    'voter_id' => $complaint->voter_id ?? ''
                 ];
             }
 

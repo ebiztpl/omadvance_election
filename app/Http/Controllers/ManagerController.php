@@ -2952,7 +2952,9 @@ class ManagerController extends Controller
                         <div class="d-flex" style="gap: 5px;">
                             <a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">जवाब दर्ज</a>
                             <a href="' . route('complaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
-                        </div>'
+                        </div>',
+
+                    'voter_id' => $complaint->voter_id ?? ''
                 ];
             }
 
@@ -3319,10 +3321,12 @@ class ManagerController extends Controller
                     'applicant_name' => $complaint->admin->admin_name ?? '',
                     'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
                     'action' => '
-<div class="d-flex" style="gap: 5px;">
-    <a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">जवाब दर्ज</a>
-    <a href="' . route('complaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
-</div>'
+                    <div class="d-flex" style="gap: 5px;">
+                        <a href="' . route('complaints_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">जवाब दर्ज</a>
+                        <a href="' . route('complaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
+                    </div>',
+
+                    'voter_id' => $complaint->voter_id ?? ''
 
                 ];
             }
@@ -3608,6 +3612,8 @@ class ManagerController extends Controller
                             <a href="' . route('complaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                         </div>',
 
+                    'voter_id' => $complaint->voter_id ?? ''
+
                 ];
             }
 
@@ -3882,6 +3888,8 @@ class ManagerController extends Controller
                             <a href="' . route('suchna_show.details', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">जवाब दर्ज</a>
                             <a href="' . route('complaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                         </div>',
+
+                    'voter_id' => $complaint->voter_id ?? ''
                 ];
             }
 

@@ -155,6 +155,7 @@
                                         <th>सूचना का विषय</th>
                                         <th>कार्यक्रम दिनांक</th>
                                         <th>विस्तार से</th>
+                                        <th style="display: none;">मतदाता पहचान</th>
                                     </tr>
                                 </thead>
                                 <tbody id="complaintsTableBody">
@@ -337,11 +338,11 @@
                         buttons: [
                             {
                                 extend: "csv",
-                                exportOptions: { modifier: { page: "all" } },
+                                exportOptions: { modifier: { page: "all" },   columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)' },
                             },
                             {
                                 extend: "excel",
-                                exportOptions: { modifier: { page: "all" } },
+                                exportOptions: { modifier: { page: "all" },   columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)' },
                             }
                         
                         ],
@@ -399,8 +400,14 @@
                         {
                             data: 'action',
                             orderable: false,
-                            searchable: false
+                            searchable: false,
+                             className: 'not-export-col'
                         },
+                        {
+                            data: 'voter_id',
+                            visible: false,
+                            searchable: false
+                        }
                     ]
                 });
 
