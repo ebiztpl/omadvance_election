@@ -172,6 +172,9 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/admin/detailed_report', [AdminController::class, 'detailed_report_index'])->name('detailed_report.index');
 
 
+    // jati wise, department wise and area wise report
+    Route::get('/admin/jatiwise_report', [AdminController::class, 'jatiwise_report'])->name('jatiwise_report.index');
+    Route::get('/admin/departmentwise_report', [AdminController::class, 'departmentReport'])->name('departmentwise_report.index');
 
     // activity log routes 
     Route::get('/admin/login_history', [AdminController::class, 'activity_log'])->name('activity_log.index');

@@ -5742,6 +5742,185 @@ class AdminController extends Controller
 
 
 
+    // jati wise area wise and department wise reports 
+    public function jatiwise_report(Request $request)
+    {
+        $fromDate = $request->from_date;
+        $toDate = $request->to_date;
+        $officeType = $request->office_type;
+        $showAll = $request->input('show_all', '0');
+
+        $jatis = Jati::all();
+
+        $complaints = Complaint::with('jati')
+            ->whereIn('complaint_type', ['समस्या', 'विकास']);
+
+        if ($fromDate) {
+            $complaints->whereDate('posted_date', '>=', $fromDate);
+        }
+        if ($toDate) {
+            $complaints->whereDate('posted_date', '<=', $toDate);
+        }
+        if ($officeType) {
+            $complaints->where('type', $officeType);
+        }
+
+        $complaintData = $complaints->get()
+            ->groupBy('jati_id')
+            ->map(function ($items, $jatiId) {
+                $totalRegistered = $items->count();
+                $totalCancel = $items->where('complaint_status', 5)->count();
+                $totalSolved = $items->where('complaint_status', 4)->count();
+                $jatiName = $items->first()->jati?->jati_name ?? 'उपलब्ध नहीं है';
+
+                return (object)[
+                    'jati_id' => $jatiId,
+                    'jati_name' => $jatiName,
+                    'total_registered' => $totalRegistered,
+                    'total_cancel' => $totalCancel,
+                    'total_solved' => $totalSolved,
+                ];
+            });
+
+        if ($showAll == '1') {
+            $allData = $jatis->map(function ($j) use ($complaintData) {
+                return $complaintData[$j->jati_id] ?? (object)[
+                    'jati_id' => $j->jati_id,
+                    'jati_name' => $j->jati_name,
+                    'total_registered' => 0,
+                    'total_cancel' => 0,
+                    'total_solved' => 0,
+                ];
+            });
+
+            $finalData = $allData->filter(function ($item) {
+                return $item->total_registered == 0
+                    && $item->total_cancel == 0
+                    && $item->total_solved == 0;
+            })->chunk(8); 
+
+            $registeredData = $complaintData->values()->filter(function ($item) {
+                return $item->jati_name !== 'उपलब्ध नहीं है';
+            });
+
+            // Totals
+            $totalsAll = [
+                'total_jati' => $jatis->count(),
+            ];
+
+            $totalsRegistered = [
+                'total_jati' => $registeredData->count(),
+                'total_registered' => $registeredData->sum('total_registered'),
+                'total_cancel' => $registeredData->sum('total_cancel'),
+                'total_solved' => $registeredData->sum('total_solved'),
+            ];
+        } else {
+            $finalData = $complaintData->values();
+            $totalsAll = $totalsRegistered = [
+                'total_jati' => $finalData->count(),
+                'total_registered' => $finalData->sum('total_registered'),
+                'total_cancel' => $finalData->sum('total_cancel'),
+                'total_solved' => $finalData->sum('total_solved'),
+            ];
+        }
+
+        return view('admin.jatiwise_report', [
+            'finalData' => $finalData,
+            'totalsAll' => $totalsAll,
+            'totalsRegistered' => $totalsRegistered,
+            'hasFilter' => $request->hasAny(['from_date', 'to_date', 'office_type', 'show_all']),
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'officeType' => $officeType,
+            'showAll' => $showAll,
+        ]);
+    }
+
+
+
+    public function departmentReport(Request $request)
+    {
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $officeType = $request->input('office_type');
+
+        $departments = Department::pluck('department_name', 'department_id');
+
+        $complaintData = Complaint::query()
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->when($fromDate, fn($q) => $q->whereDate('posted_date', '>=', $fromDate))
+            ->when($toDate, fn($q) => $q->whereDate('posted_date', '<=', $toDate))
+            ->when($officeType, fn($q) => $q->where('type', $officeType))
+            ->selectRaw('
+            complaint_department as dept_name,
+            COUNT(*) as total_registered,
+            SUM(CASE WHEN complaint_status = 5 THEN 1 ELSE 0 END) as total_cancel,
+            SUM(CASE WHEN complaint_status = 4 THEN 1 ELSE 0 END) as total_solved
+        ')
+            ->groupBy('complaint_department')
+            ->get()
+            ->keyBy('dept_name');
+
+        $allData = $departments->map(function ($name, $id) use ($complaintData) {
+            $data = $complaintData[$name] ?? null;
+
+            return (object)[
+                'department_id'    => $id,
+                'department_name'  => $name,
+                'total_registered' => $data->total_registered ?? 0,
+                'total_cancel'     => $data->total_cancel ?? 0,
+                'total_solved'     => $data->total_solved ?? 0,
+            ];
+        });
+
+        $extraDepts = $complaintData->filter(function ($_, $name) use ($departments) {
+            return !$departments->contains($name);
+        })->map(function ($data, $name) {
+            return (object)[
+                'department_id'    => null,
+                'department_name'  => 'उपलब्ध नहीं है',
+                'total_registered' => $data->total_registered,
+                'total_cancel'     => $data->total_cancel,
+                'total_solved'     => $data->total_solved,
+            ];
+        });
+
+        $allData = $allData->concat($extraDepts);
+
+        $withComplaints = $allData->filter(fn($d) => $d->total_registered > 0);
+        $noComplaints   = $allData->filter(fn($d) => $d->total_registered == 0);
+
+        $totalsAll = [
+            'total_department'       => $allData->count(),
+            'total_registered' => $withComplaints->sum('total_registered'),
+            'total_cancel'     => $withComplaints->sum('total_cancel'),
+            'total_solved'     => $withComplaints->sum('total_solved'),
+        ];
+
+        $totalsRegistered = [
+            'total_department'       => $withComplaints->count(), 
+            'total_registered' => $withComplaints->sum('total_registered'),
+            'total_cancel'     => $withComplaints->sum('total_cancel'),
+            'total_solved'     => $withComplaints->sum('total_solved'),
+        ];
+
+        $hasFilter = $request->hasAny(['from_date', 'to_date', 'office_type']);
+        return view('admin.departmentwise_report', compact(
+            'withComplaints',
+            'noComplaints',
+            'totalsRegistered',
+            'totalsAll',  
+            'hasFilter',
+            'fromDate',
+            'toDate',
+            'officeType'
+        ));
+    }
+
+
+
+
+
     // activity log functions 
     public function activity_log(Request $request)
     {
@@ -5758,16 +5937,16 @@ class AdminController extends Controller
                 ->leftJoin('admin_master', 'login_history.admin_id', '=', 'admin_master.admin_id')
                 ->leftJoin('registration_form', 'login_history.registration_id', '=', 'registration_form.registration_id')
                 ->select(
-                'login_history.login_history_id',
-                'login_history.login_date_time',
-                'login_history.logout_date_time',
-                'login_history.ip',
-                'login_history.user_agent',
-                'admin_master.admin_name',
-                'admin_master.role',
-                'registration_form.name as member_name',
-                'registration_form.position_id',
-                'registration_form.type'
+                    'login_history.login_history_id',
+                    'login_history.login_date_time',
+                    'login_history.logout_date_time',
+                    'login_history.ip',
+                    'login_history.user_agent',
+                    'admin_master.admin_name',
+                    'admin_master.role',
+                    'registration_form.name as member_name',
+                    'registration_form.position_id',
+                    'registration_form.type'
                 )
                 ->whereDate('login_history.login_date_time', '>=', $fromDate)
                 ->whereDate('login_history.login_date_time', '<=', $toDate);

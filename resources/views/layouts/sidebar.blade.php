@@ -63,8 +63,21 @@
                 <li><a href="{{ route('view_responsibility.index') }}"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">दायित्व कार्यकर्ता देखे</span></a></li>
 
-                <li><a href="{{ route('detailed_report.index') }}"><i class=" icon icon-arrow-right"></i><span
+                {{-- <li><a href="{{ route('detailed_report.index') }}"><i class=" icon icon-arrow-right"></i><span
                             class="nav-text">रिपोर्ट</span></a></li>
+
+                <li><a href="{{ route('jatiwise_report.index') }}"><i class=" icon icon-arrow-right"></i><span
+                            class="nav-text">जाति रिपोर्ट</span></a></li> --}}
+
+
+                <li><a class="has-arrow" href="#" aria-expanded="false"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">सभी रिपोर्ट</span></a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('detailed_report.index') }}">रिपोर्ट</a></li>
+                        <li><a href="{{ route('jatiwise_report.index') }}">जाति रिपोर्ट</a></li>
+                        <li><a href="{{ route('departmentwise_report.index') }}">विभाग रिपोर्ट</a></li>
+                    </ul>
+                </li>
 
                 <li><a href="{{ route('activity_log.index') }}"><i class=" icon icon-arrow-right"></i><span
                             class="nav-text">गतिविधि लॉग</span></a></li>

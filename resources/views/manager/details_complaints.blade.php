@@ -1,13 +1,13 @@
 @php
-    $pageTitle = 'समस्याएँ देखें';
+    $pageTitle = 'समस्याएँ अपडेट करें';
     $breadcrumbs = [
         'मैनेजर' => '#',
-        'समस्याएँ देखें' => '#',
+        'समस्याएँ अपडेट करें' => '#',
     ];
 @endphp
 
 @extends('layouts.app')
-@section('title', 'View Complaints')
+@section('title', 'Update Complaints')
 
 @section('content')
     <div class="container">
