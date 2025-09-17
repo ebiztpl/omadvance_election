@@ -3602,7 +3602,7 @@ class ManagerController extends Controller
                     'applicant_name' => $complaint->registrationDetails->name ?? '',
 
                     'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
-
+                    'issue_description' => $complaint->issue_description,
                     'issue_title' => $complaint->issue_title,
                     'program_date' => $complaint->program_date,
 
@@ -3880,7 +3880,7 @@ class ManagerController extends Controller
                     'applicant_name' => $complaint->admin->admin_name ?? '',
 
                     'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
-
+                    'issue_description' => $complaint->issue_description,
                     'issue_title' => $complaint->issue_title,
                     'program_date' => $complaint->program_date,
                     'action' => '

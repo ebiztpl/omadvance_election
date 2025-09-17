@@ -194,7 +194,7 @@
                 printWindow.document.write(`
                         <html>
                         <head>
-                            <title>Report</title>
+                            <title>Jati Report</title>
                             <style>
                                 body {
                                     font-family: Arial, sans-serif;

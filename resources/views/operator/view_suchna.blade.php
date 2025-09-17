@@ -79,7 +79,7 @@
                                 @endforeach
                             </select>
                         </div>
-                    
+
                         <div class="col-md-2">
                             <label>सूचना का विषय</label>
                             <select name="issue_title" id="issue_title" class="form-control">
@@ -111,7 +111,8 @@
 
 
                         <div class="col-md-2 mt-4">
-                            <button type="submit" class="btn btn-primary" id="applyFilters" style="font-size: 12px">फ़िल्टर लागू करें</button>
+                            <button type="submit" class="btn btn-primary" id="applyFilters" style="font-size: 12px">फ़िल्टर
+                                लागू करें</button>
                         </div>
                     </div>
                 </form>
@@ -152,6 +153,7 @@
                                         <th>सूचना की स्थिति</th>
                                         <th>आवेदक</th>
                                         <th>फॉरवर्ड अधिकारी</th>
+                                        <th style="display: none;">सूचना विवरण</th>
                                         <th>सूचना का विषय</th>
                                         <th>कार्यक्रम दिनांक</th>
                                         <th>विस्तार से</th>
@@ -159,7 +161,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="complaintsTableBody">
-                                  
+
                                 </tbody>
                             </table>
                         </div>
@@ -219,7 +221,7 @@
                     }
                 });
 
-               
+
 
                 // Apply Filters
                 // $('#applyFilters').click(function(e) {
@@ -247,7 +249,7 @@
                 //             $("#loader-wrapper").show();
                 //         },
                 //         success: function(response) {
-                          
+
 
                 //             if ($.fn.DataTable.isDataTable('#example')) {
                 //                 $('#example').DataTable().destroy();
@@ -327,29 +329,37 @@
 
 
 
-                 let table = $('#example').DataTable({
+                let table = $('#example').DataTable({
                     processing: true,
                     serverSide: true,
                     destroy: true,
-                    dom:
-                            '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
-                            '<"row"<"col-sm-12"tr>>' +
-                            '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
-                        buttons: [
-                            {
-                                extend: "csv",
-                                exportOptions: { modifier: { page: "all" },   columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)' },
+                    dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
+                        '<"row"<"col-sm-12"tr>>' +
+                        '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+                    buttons: [{
+                            extend: "csv",
+                            exportOptions: {
+                                modifier: {
+                                    page: "all"
+                                },
+                                columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
                             },
-                            {
-                                extend: "excel",
-                                exportOptions: { modifier: { page: "all" },   columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)' },
-                            }
-                        
-                        ],
-                        lengthMenu: [
-                            [10, 25, 50, 100, 500, 1000],
-                            [10, 25, 50, 100, 500, 1000],
-                        ],
+                        },
+                        {
+                            extend: "excel",
+                            exportOptions: {
+                                modifier: {
+                                    page: "all"
+                                },
+                                columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
+                            },
+                        }
+
+                    ],
+                    lengthMenu: [
+                        [10, 25, 50, 100, 500, 1000],
+                        [10, 25, 50, 100, 500, 1000],
+                    ],
                     ajax: {
                         url: "{{ route('operator_suchna.view') }}",
                         data: function(d) {
@@ -392,6 +402,11 @@
                             data: 'forwarded_to_name'
                         },
                         {
+                            data: 'issue_description',
+                            visible: false,
+                            searchable: false
+                        },
+                        {
                             data: 'issue_title'
                         },
                         {
@@ -401,7 +416,7 @@
                             data: 'action',
                             orderable: false,
                             searchable: false,
-                             className: 'not-export-col'
+                            className: 'not-export-col'
                         },
                         {
                             data: 'voter_id',
@@ -421,7 +436,7 @@
 
                 table.on('draw', function() {
                     let info = table.page.info();
-                    $('#complaint-count').text(info.recordsDisplay); 
+                    $('#complaint-count').text(info.recordsDisplay);
                 });
 
                 $('#applyFilters').click(function(e) {
@@ -440,7 +455,7 @@
 
 
 
-             const subjects = {
+            const subjects = {
                 "शुभ सुचना": [{
                         title: "जन्मदिन"
                     },
@@ -496,7 +511,7 @@
             document.getElementById('complaint_type').addEventListener('change', function() {
                 const type = this.value;
                 const replySelect = document.getElementById('issue_title');
-                replySelect.innerHTML = '<option value="">-- सभी --</option>'; 
+                replySelect.innerHTML = '<option value="">-- सभी --</option>';
 
                 if (subjects[type]) {
                     subjects[type].forEach(sub => {

@@ -160,6 +160,7 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/admin/get-areas/{polling_id}', [AdminController::class, 'getAreas']);
     Route::get('/admin/get-gram_pollings/{mandal_id}', [AdminController::class, 'getgramPollings']);
     Route::get('/admin/get-subjects/{department_id}', [AdminController::class, 'getSubjects']);
+    Route::get('/admin/get-polling-area/{nagarId}', [AdminController::class, 'getPollingAndArea']);
 
     Route::get('/admin/get-nagars-by-vidhansabha/{vidhansabha_id}', [AdminController::class, 'getNagarsByVidhansabha']);
 
@@ -175,6 +176,7 @@ Route::middleware('checklogin')->group(function () {
     // jati wise, department wise and area wise report
     Route::get('/admin/jatiwise_report', [AdminController::class, 'jatiwise_report'])->name('jatiwise_report.index');
     Route::get('/admin/departmentwise_report', [AdminController::class, 'departmentReport'])->name('departmentwise_report.index');
+    Route::get('/admin/areawise_report', [AdminController::class, 'areareport'])->name('areawise_report.index');
 
     // activity log routes 
     Route::get('/admin/login_history', [AdminController::class, 'activity_log'])->name('activity_log.index');

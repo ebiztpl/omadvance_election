@@ -90,7 +90,7 @@
                                 @endforeach
                             </select>
                         </div>
-                    
+
                         <div class="col-md-2">
                             <label>सूचना का विषय</label>
                             <select name="issue_title" id="issue_title" class="form-control">
@@ -146,14 +146,15 @@
 
                         <div class="col-md-2 mt-2">
                             <br>
-                            <button type="submit" class="btn btn-primary" style="font-size: 12px" id="applyFilters">फ़िल्टर</button>
+                            <button type="submit" class="btn btn-primary" style="font-size: 12px"
+                                id="applyFilters">फ़िल्टर</button>
                         </div>
                     </div>
                 </form>
 
                 <div class="text-center">
-                    <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
-                        title="फ़िल्टर छुपाएं"></i>
+                    <i id="toggleFilterIcon" class="fa fa-angle-up"
+                        style="float: right; cursor: pointer; font-size: 24px;" title="फ़िल्टर छुपाएं"></i>
                 </div>
             </div>
         </div>
@@ -172,7 +173,7 @@
                             </div>
                         @endif
 
-                       <ul class="nav nav-tabs nav-filters mb-1" id="complaintFilterTabs">
+                        <ul class="nav nav-tabs nav-filters mb-1" id="complaintFilterTabs">
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'forwarded_manager' ? 'active' : '' }}"
                                     style="color: black" data-filter="forwarded_manager" href="#">निर्देशित</a>
@@ -199,11 +200,13 @@
                                 </a>
                             </li>
 
-                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'reference_null' ? 'active' : '' }}" style="color: black" data-filter="reference_null" href="#">रेफरेंस नहीं है</a>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference_null' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reference_null" href="#">रेफरेंस नहीं है</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'reference' ? 'active' : '' }}" style="color: black" data-filter="reference" href="#">रेफरेंस है</a>
+                                <a class="nav-link filter-link {{ request('filter') === 'reference' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reference" href="#">रेफरेंस है</a>
                             </li>
                         </ul>
 
@@ -222,6 +225,7 @@
                                         <th>सूचना की स्थिति</th>
                                         <th>आवेदक</th>
                                         <th>फॉरवर्ड अधिकारी</th>
+                                        <th style="display: none;">सूचना विवरण</th>
                                         <th>सूचना का विषय</th>
                                         <th>कार्यक्रम दिनांक</th>
                                         <th>विस्तार से</th>
@@ -229,7 +233,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="complaintsTableBody">
-                                    
+
                                 </tbody>
                             </table>
                         </div>
@@ -300,7 +304,7 @@
                     }
                 });
 
-               
+
 
 
                 const filterForm = $('#complaintFilterForm');
@@ -335,18 +339,18 @@
 
 
 
-               $('#complaintFilterTabs a').on('click', function(e) {
+                $('#complaintFilterTabs a').on('click', function(e) {
                     e.preventDefault();
                     $('#complaintFilterTabs a').removeClass('active');
                     $(this).addClass('active');
 
                     const filter = $(this).data('filter');
 
-                   $('#loader-wrapper').show();
+                    $('#loader-wrapper').show();
 
                     table.ajax.reload(function() {
                         $('#loader-wrapper').hide();
-                    }, false); 
+                    }, false);
                 });
 
 
@@ -354,25 +358,33 @@
                     processing: true,
                     serverSide: true,
                     destroy: true,
-                    dom:
-                            '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
-                            '<"row"<"col-sm-12"tr>>' +
-                            '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
-                        buttons: [
-                            {
-                                extend: "csv",
-                                exportOptions: { modifier: { page: "all" },   columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)' },
+                    dom: '<"row mb-2"<"col-sm-3"l><"col-sm-6"B><"col-sm-3"f>>' +
+                        '<"row"<"col-sm-12"tr>>' +
+                        '<"row mt-2"<"col-sm-5"i><"col-sm-7"p>>',
+                    buttons: [{
+                            extend: "csv",
+                            exportOptions: {
+                                modifier: {
+                                    page: "all"
+                                },
+                                columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
                             },
-                            {
-                                extend: "excel",
-                                exportOptions: { modifier: { page: "all" },   columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)' },
-                            }
-                        
-                        ],
-                        lengthMenu: [
-                            [10, 25, 50, 100, 500, 1000],
-                            [10, 25, 50, 100, 500, 1000],
-                        ],
+                        },
+                        {
+                            extend: "excel",
+                            exportOptions: {
+                                modifier: {
+                                    page: "all"
+                                },
+                                columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
+                            },
+                        }
+
+                    ],
+                    lengthMenu: [
+                        [10, 25, 50, 100, 500, 1000],
+                        [10, 25, 50, 100, 500, 1000],
+                    ],
                     ajax: {
                         url: "{{ route('operator.suchna.view') }}",
                         data: function(d) {
@@ -416,6 +428,11 @@
                             data: 'forwarded_to_name'
                         },
                         {
+                            data: 'issue_description',
+                            visible: false,
+                            searchable: false
+                        },
+                        {
                             data: 'issue_title'
                         },
                         {
@@ -425,7 +442,7 @@
                             data: 'action',
                             orderable: false,
                             searchable: false,
-                             className: 'not-export-col'
+                            className: 'not-export-col'
                         },
                         {
                             data: 'voter_id',
@@ -445,7 +462,7 @@
 
                 table.on('draw', function() {
                     let info = table.page.info();
-                    $('#complaint-count').text(info.recordsDisplay); 
+                    $('#complaint-count').text(info.recordsDisplay);
                 });
 
                 $('#applyFilters').click(function(e) {

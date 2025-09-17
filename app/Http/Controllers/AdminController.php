@@ -2016,6 +2016,7 @@ class AdminController extends Controller
 
                     'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
 
+                    'issue_description' => $complaint->issue_description,
                     'issue_title' => $complaint->issue_title,
                     'program_date' => $complaint->program_date,
                     'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
@@ -2202,7 +2203,7 @@ class AdminController extends Controller
                     'applicant_name' => $complaint->admin->admin_name ?? '',
 
                     'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
-
+                    'issue_description' => $complaint->issue_description,
                     'issue_title' => $complaint->issue_title,
                     'program_date' => $complaint->program_date,
                     'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
@@ -5406,6 +5407,15 @@ class AdminController extends Controller
     }
 
 
+    public function getPollingAndArea($nagarId)
+    {
+        $pollings = Polling::with('area')
+            ->where('nagar_id', $nagarId)
+            ->get(['gram_polling_id', 'polling_name', 'polling_no']);
+
+        return response()->json($pollings);
+    }
+
     public function summary($id)
     {
         $complaint = Complaint::with(['replies.followups'])->findOrFail($id);
@@ -5798,7 +5808,7 @@ class AdminController extends Controller
                 return $item->total_registered == 0
                     && $item->total_cancel == 0
                     && $item->total_solved == 0;
-            })->chunk(8); 
+            })->chunk(8);
 
             $registeredData = $complaintData->values()->filter(function ($item) {
                 return $item->jati_name !== 'उपलब्ध नहीं है';
@@ -5901,7 +5911,7 @@ class AdminController extends Controller
         ];
 
         $totalsRegistered = [
-            'total_department'       => $withComplaints->count(), 
+            'total_department'       => $withComplaints->count(),
             'total_registered' => $withComplaints->sum('total_registered'),
             'total_cancel'     => $withComplaints->sum('total_cancel'),
             'total_solved'     => $withComplaints->sum('total_solved'),
@@ -5912,13 +5922,404 @@ class AdminController extends Controller
             'withComplaints',
             'noComplaints',
             'totalsRegistered',
-            'totalsAll',  
+            'totalsAll',
             'hasFilter',
             'fromDate',
             'toDate',
             'officeType'
         ));
     }
+
+    public function areareport(Request $request)
+    {
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $officeType = $request->input('office_type');
+        $summary = $request->input('summary');
+        $complaintType = $request->input('complaint_type', 'received'); // default शिकायत प्राप्त
+
+        $divisions = Division::all();
+        $nagars = Nagar::with('mandal')->orderBy('nagar_name')->get();
+
+        $complaints = Complaint::query()
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->when($fromDate, fn($q) => $q->whereDate('posted_date', '>=', $fromDate))
+            ->when($toDate, fn($q) => $q->whereDate('posted_date', '<=', $toDate))
+            ->when($officeType, fn($q) => $q->where('type', $officeType));
+
+        $areaData = collect();
+        $withComplaints = collect();
+        $noComplaints = collect();
+
+        switch ($summary) {
+            case 'sambhag':
+                $areaData = $complaints
+                    ->selectRaw('division_id, COUNT(*) as total_registered,
+                    SUM(CASE WHEN complaint_status = 5 THEN 1 ELSE 0 END) as total_cancel,
+                    SUM(CASE WHEN complaint_status = 4 THEN 1 ELSE 0 END) as total_solved')
+                    ->groupBy('division_id')
+                    ->get()
+                    ->map(function ($item) {
+                        $item->division = Division::find($item->division_id);
+                        return $item;
+                    });
+
+                $allDivisions = Division::all();
+                $withComplaints = $areaData->map(function ($row) {
+                    return (object)[
+                        'area_name' => $row->division->division_name ?? 'उपलब्ध नहीं',
+                        'total_registered' => $row->total_registered,
+                        'total_cancel' => $row->total_cancel,
+                        'total_solved' => $row->total_solved,
+                    ];
+                })->sortByDesc('total_registered')->values();
+                $registeredIds = $areaData->pluck('division_id')->toArray();
+                $noComplaints = $allDivisions->whereNotIn('division_id', $registeredIds)
+                    ->map(fn($d) => (object)['area_name' => $d->division_name]);
+                break;
+
+            case 'jila':
+                $areaData = $complaints
+                    ->selectRaw('district_id, COUNT(*) as total_registered,
+                    SUM(CASE WHEN complaint_status = 5 THEN 1 ELSE 0 END) as total_cancel,
+                    SUM(CASE WHEN complaint_status = 4 THEN 1 ELSE 0 END) as total_solved')
+                    ->groupBy('district_id')
+                    ->get()
+                    ->map(function ($item) {
+                        $item->district = District::find($item->district_id);
+                        return $item;
+                    });
+
+                $allDistricts = District::all();
+                $withComplaints = $areaData->map(function ($row) {
+                    return (object)[
+                        'area_name' => $row->district->district_name ?? 'उपलब्ध नहीं',
+                        'total_registered' => $row->total_registered,
+                        'total_cancel' => $row->total_cancel,
+                        'total_solved' => $row->total_solved,
+                    ];
+                })->sortByDesc('total_registered')->values();
+                $registeredIds = $areaData->pluck('district_id')->toArray();
+                $noComplaints = $allDistricts->whereNotIn('district_id', $registeredIds)
+                    ->map(fn($d) => (object)['area_name' => $d->district_name]);
+                break;
+
+            case 'vidhansabha':
+                $areaData = $complaints
+                    ->selectRaw('vidhansabha_id, COUNT(*) as total_registered,
+                    SUM(CASE WHEN complaint_status = 5 THEN 1 ELSE 0 END) as total_cancel,
+                    SUM(CASE WHEN complaint_status = 4 THEN 1 ELSE 0 END) as total_solved')
+                    ->groupBy('vidhansabha_id')
+                    ->get()
+                    ->map(function ($item) {
+                        $item->vidhansabha = VidhansabhaLokSabha::find($item->vidhansabha_id);
+                        return $item;
+                    });
+
+                $allVidhansabhas = VidhansabhaLokSabha::all();
+                $withComplaints = $areaData->map(function ($row) {
+                    return (object)[
+                        'area_name' => $row->vidhansabha->vidhansabha ?? 'उपलब्ध नहीं',
+                        'total_registered' => $row->total_registered,
+                        'total_cancel' => $row->total_cancel,
+                        'total_solved' => $row->total_solved,
+                    ];
+                })->sortByDesc('total_registered')->values();
+                $registeredIds = $areaData->pluck('vidhansabha_id')->toArray();
+                $noComplaints = $allVidhansabhas->whereNotIn('vidhansabha_id', $registeredIds)
+                    ->map(fn($v) => (object)['area_name' => $v->vidhansabha]);
+                break;
+
+            case 'nagar':
+                $areaData = $complaints
+                    ->selectRaw('gram_id, COUNT(*) as total_registered,
+                    SUM(CASE WHEN complaint_status = 5 THEN 1 ELSE 0 END) as total_cancel,
+                    SUM(CASE WHEN complaint_status = 4 THEN 1 ELSE 0 END) as total_solved')
+                    ->groupBy('gram_id')
+                    ->get()
+                    ->map(function ($item) {
+                        $item->gram = Nagar::with('mandal')->find($item->gram_id);
+                        return $item;
+                    });
+
+                $allNagars = Nagar::with('mandal')->get();
+                $withComplaints = $areaData->map(function ($row) {
+                    $name = $row->gram->nagar_name ?? 'उपलब्ध नहीं';
+                    if ($row->gram?->mandal) {
+                        $name .= ' - ' . $row->gram->mandal->mandal_name;
+                    }
+                    return (object)[
+                        'area_name' => $name,
+                        'total_registered' => $row->total_registered,
+                        'total_cancel' => $row->total_cancel,
+                        'total_solved' => $row->total_solved,
+                    ];
+                })->sortByDesc('total_registered')->values();
+                $registeredIds = $areaData->pluck('gram_id')->toArray();
+                $noComplaints = $allNagars->whereNotIn('nagar_id', $registeredIds)
+                    ->map(fn($n) => (object)[
+                        'area_name' => $n->nagar_name . ($n->mandal ? ' - ' . $n->mandal->mandal_name : '')
+                    ]);
+                break;
+
+            case 'polling':
+                $areaData = $complaints
+                    ->selectRaw('polling_id, COUNT(*) as total_registered,
+                    SUM(CASE WHEN complaint_status = 5 THEN 1 ELSE 0 END) as total_cancel,
+                    SUM(CASE WHEN complaint_status = 4 THEN 1 ELSE 0 END) as total_solved')
+                    ->groupBy('polling_id')
+                    ->get()
+                    ->map(function ($item) {
+                        $item->polling = Polling::with('area')->find($item->polling_id);
+                        return $item;
+                    });
+
+                $allPollings = Polling::with('area')->get();
+                $withComplaints = $areaData->map(function ($row) {
+                    $name = $row->polling?->polling_name . ' (' . $row->polling?->polling_no . ')';
+                    if ($row->polling?->area) {
+                        $name .= ' - ' . $row->polling->area->area_name;
+                    }
+                    return (object)[
+                        'area_name' => $name ?? 'उपलब्ध नहीं',
+                        'total_registered' => $row->total_registered,
+                        'total_cancel' => $row->total_cancel,
+                        'total_solved' => $row->total_solved,
+                    ];
+                })->sortByDesc('total_registered')->values();
+                $registeredIds = $areaData->pluck('polling_id')->toArray();
+                $noComplaints = $allPollings->whereNotIn('gram_polling_id', $registeredIds)
+                    ->map(fn($p) => (object)[
+                        'area_name' => $p->polling_name . ' (' . $p->polling_no . ')' .
+                            ($p->area ? ' - ' . $p->area->area_name : '')
+                    ]);
+                break;
+        }
+
+        // Totals
+        $totalsAll = [
+            'total_registered' => $areaData->sum('total_registered'),
+            'total_cancel' => $areaData->sum('total_cancel'),
+            'total_solved' => $areaData->sum('total_solved'),
+            'total_areas' => ($withComplaints->count() + $noComplaints->count()),
+        ];
+        $totalsRegistered = [
+            'total_areas' => $withComplaints->count(),
+        ];
+
+        return view('admin.areawise_report', compact(
+            'divisions',
+            'nagars',
+            'areaData',
+            'summary',
+            'fromDate',
+            'toDate',
+            'officeType',
+            'complaintType',
+            'withComplaints',
+            'noComplaints',
+            'totalsAll',
+            'totalsRegistered'
+        ));
+    }
+
+    // public function areareport(Request $request)
+    // {
+    //     $fromDate = $request->input('from_date');
+    //     $toDate = $request->input('to_date');
+    //     $officeType = $request->input('office_type');
+    //     $summary = $request->input('summary');
+    //     $complaintType = $request->input('complaint_type', 'received'); // default शिकायत प्राप्त
+
+    //     $divisions = Division::all();
+    //     $nagars = Nagar::with('mandal')->orderBy('nagar_name')->get();
+
+    //     $complaints = Complaint::query()
+    //         ->whereIn('complaint_type', ['समस्या', 'विकास'])
+    //         ->when($fromDate, fn($q) => $q->whereDate('posted_date', '>=', $fromDate))
+    //         ->when($toDate, fn($q) => $q->whereDate('posted_date', '<=', $toDate))
+    //         ->when($officeType, fn($q) => $q->where('type', $officeType));
+
+    //     $areaData = collect();
+    //     $withComplaints = collect();
+    //     $noComplaints = collect();
+
+    //     switch ($summary) {
+    //         case 'sambhag':
+    //             $areaData = $complaints
+    //                 ->selectRaw('division_id, COUNT(*) as total_registered,
+    //             SUM(CASE WHEN complaint_status = 5 THEN 1 ELSE 0 END) as total_cancel,
+    //             SUM(CASE WHEN complaint_status = 4 THEN 1 ELSE 0 END) as total_solved')
+    //                 ->groupBy('division_id')
+    //                 ->get()
+    //                 ->map(function ($item) {
+    //                     $item->division = Division::find($item->division_id);
+    //                     return $item;
+    //                 });
+
+    //             $allDivisions = Division::all();
+    //             $withComplaints = $areaData->map(function ($row) {
+    //                 return (object)[
+    //                     'area_name' => $row->division->division_name ?? 'उपलब्ध नहीं',
+    //                     'total_registered' => $row->total_registered,
+    //                     'total_cancel' => $row->total_cancel,
+    //                     'total_solved' => $row->total_solved,
+    //                 ];
+    //             })->sortByDesc('total_registered')->values();
+
+    //             $registeredIds = $areaData->pluck('division_id')->toArray();
+    //             $noComplaints = $allDivisions->whereNotIn('division_id', $registeredIds)
+    //                 ->map(fn($d) => (object)['area_name' => $d->division_name]);
+    //             break;
+
+    //         case 'jila':
+    //             $areaData = $complaints
+    //                 ->selectRaw('district_id, COUNT(*) as total_registered,
+    //             SUM(CASE WHEN complaint_status = 5 THEN 1 ELSE 0 END) as total_cancel,
+    //             SUM(CASE WHEN complaint_status = 4 THEN 1 ELSE 0 END) as total_solved')
+    //                 ->groupBy('district_id')
+    //                 ->get()
+    //                 ->map(function ($item) {
+    //                     $item->district = District::find($item->district_id);
+    //                     return $item;
+    //                 });
+
+    //             $allDistricts = District::all();
+    //             $withComplaints = $areaData->map(function ($row) {
+    //                 return (object)[
+    //                     'area_name' => $row->district->district_name ?? 'उपलब्ध नहीं',
+    //                     'total_registered' => $row->total_registered,
+    //                     'total_cancel' => $row->total_cancel,
+    //                     'total_solved' => $row->total_solved,
+    //                 ];
+    //             })->sortByDesc('total_registered')->values();
+
+    //             $registeredIds = $areaData->pluck('district_id')->toArray();
+    //             $noComplaints = $allDistricts->whereNotIn('district_id', $registeredIds)
+    //                 ->map(fn($d) => (object)['area_name' => $d->district_name]);
+    //             break;
+
+    //         case 'vidhansabha':
+    //             $areaData = $complaints
+    //                 ->selectRaw('vidhansabha_id, COUNT(*) as total_registered,
+    //             SUM(CASE WHEN complaint_status = 5 THEN 1 ELSE 0 END) as total_cancel,
+    //             SUM(CASE WHEN complaint_status = 4 THEN 1 ELSE 0 END) as total_solved')
+    //                 ->groupBy('vidhansabha_id')
+    //                 ->get()
+    //                 ->map(function ($item) {
+    //                     $item->vidhansabha = VidhansabhaLokSabha::find($item->vidhansabha_id);
+    //                     return $item;
+    //                 });
+
+    //             $allVidhansabhas = VidhansabhaLokSabha::all();
+    //             $withComplaints = $areaData->map(function ($row) {
+    //                 return (object)[
+    //                     'area_name' => $row->vidhansabha->vidhansabha ?? 'उपलब्ध नहीं',
+    //                     'total_registered' => $row->total_registered,
+    //                     'total_cancel' => $row->total_cancel,
+    //                     'total_solved' => $row->total_solved,
+    //                 ];
+    //             })->sortByDesc('total_registered')->values();
+
+    //             $registeredIds = $areaData->pluck('vidhansabha_id')->toArray();
+    //             $noComplaints = $allVidhansabhas->whereNotIn('vidhansabha_id', $registeredIds)
+    //                 ->map(fn($v) => (object)['area_name' => $v->vidhansabha]);
+    //             break;
+
+    //         case 'nagar':
+    //             $areaData = $complaints
+    //                 ->selectRaw('gram_id, COUNT(*) as total_registered,
+    //             SUM(CASE WHEN complaint_status = 5 THEN 1 ELSE 0 END) as total_cancel,
+    //             SUM(CASE WHEN complaint_status = 4 THEN 1 ELSE 0 END) as total_solved')
+    //                 ->groupBy('gram_id')
+    //                 ->get()
+    //                 ->map(function ($item) {
+    //                     $item->gram = Nagar::with('mandal')->find($item->gram_id);
+    //                     return $item;
+    //                 });
+
+    //             $allNagars = Nagar::with('mandal')->get();
+    //             $withComplaints = $areaData->map(function ($row) {
+    //                 $name = $row->gram->nagar_name ?? 'उपलब्ध नहीं';
+    //                 if ($row->gram?->mandal) {
+    //                     $name .= ' - ' . $row->gram->mandal->mandal_name;
+    //                 }
+    //                 return (object)[
+    //                     'area_name' => $name,
+    //                     'total_registered' => $row->total_registered,
+    //                     'total_cancel' => $row->total_cancel,
+    //                     'total_solved' => $row->total_solved,
+    //                 ];
+    //             })->sortByDesc('total_registered')->values();
+
+    //             $registeredIds = $areaData->pluck('gram_id')->toArray();
+    //             $noComplaints = $allNagars->whereNotIn('nagar_id', $registeredIds)
+    //                 ->map(fn($n) => (object)[
+    //                     'area_name' => $n->nagar_name . ($n->mandal ? ' - ' . $n->mandal->mandal_name : '')
+    //                 ]);
+    //             break;
+
+    //         case 'polling':
+    //             $areaData = $complaints
+    //                 ->selectRaw('polling_id, COUNT(*) as total_registered,
+    //             SUM(CASE WHEN complaint_status = 5 THEN 1 ELSE 0 END) as total_cancel,
+    //             SUM(CASE WHEN complaint_status = 4 THEN 1 ELSE 0 END) as total_solved')
+    //                 ->groupBy('polling_id')
+    //                 ->get()
+    //                 ->map(function ($item) {
+    //                     $item->polling = Polling::with('area')->find($item->polling_id);
+    //                     return $item;
+    //                 });
+
+    //             $allPollings = Polling::with('area')->get();
+    //             $withComplaints = $areaData->map(function ($row) {
+    //                 $name = $row->polling?->polling_name . ' (' . $row->polling?->polling_no . ')';
+    //                 if ($row->polling?->area) {
+    //                     $name .= ' - ' . $row->polling->area->area_name;
+    //                 }
+    //                 return (object)[
+    //                     'area_name' => $name ?? 'उपलब्ध नहीं',
+    //                     'total_registered' => $row->total_registered,
+    //                     'total_cancel' => $row->total_cancel,
+    //                     'total_solved' => $row->total_solved,
+    //                 ];
+    //             })->sortByDesc('total_registered')->values();
+
+    //             $registeredIds = $areaData->pluck('polling_id')->toArray();
+    //             $noComplaints = $allPollings->whereNotIn('gram_polling_id', $registeredIds)
+    //                 ->map(fn($p) => (object)[
+    //                     'area_name' => $p->polling_name . ' (' . $p->polling_no . ')' .
+    //                         ($p->area ? ' - ' . $p->area->area_name : '')
+    //                 ]);
+    //             break;
+    //     }
+
+    //     // Totals
+    //     $totalsAll = [
+    //         'total_registered' => $areaData->sum('total_registered'),
+    //         'total_cancel' => $areaData->sum('total_cancel'),
+    //         'total_solved' => $areaData->sum('total_solved'),
+    //         'total_areas' => ($withComplaints->count() + $noComplaints->count()),
+    //     ];
+    //     $totalsRegistered = [
+    //         'total_areas' => $withComplaints->count(),
+    //     ];
+
+    //     return view('admin.areawise_report', compact(
+    //         'divisions',
+    //         'nagars',
+    //         'areaData',
+    //         'summary',
+    //         'fromDate',
+    //         'toDate',
+    //         'officeType',
+    //         'complaintType',
+    //         'withComplaints',
+    //         'noComplaints',
+    //         'totalsAll',
+    //         'totalsRegistered'
+    //     ));
+    // }
 
 
 

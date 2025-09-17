@@ -173,6 +173,7 @@
                                         <th>सूचना की स्थिति</th>
                                         <th>आवेदक</th>
                                         <th>फॉरवर्ड अधिकारी</th>
+                                        <th style="display: none;">सूचना विवरण</th>
                                         <th>सूचना का विषय</th>
                                         <th>कार्यक्रम दिनांक</th>
                                         <th>विस्तार से</th>
@@ -347,6 +348,11 @@
                         },
                         {
                             data: 'forwarded_to_name'
+                        },
+                        {
+                            data: 'issue_description',
+                            visible: false,
+                            searchable: false
                         },
                         {
                             data: 'issue_title'
