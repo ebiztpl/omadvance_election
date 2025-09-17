@@ -14,6 +14,9 @@ use App\Models\RegistrationForm;
 use App\Models\Step2;
 use App\Models\Step3;
 use App\Models\Step4;
+use App\Models\ComplaintAttachment;
+use setasign\Fpdi\Fpdi;
+use setasign\Fpdi\PdfReader\PdfReader;
 use App\Models\Department;
 use App\Models\ComplaintReply;
 use App\Models\FollowupStatus;
@@ -1328,6 +1331,22 @@ class OperatorController extends Controller
         return response()->json($pollings);
     }
 
+
+    public function getPollingsByNagar($nagarId)
+    {
+        $pollings = Polling::where('nagar_id', $nagarId)->with('area')->get();
+
+        $result = $pollings->map(function ($p) {
+            return [
+                'id' => $p->gram_polling_id,
+                'label' => "{$p->polling_name} ({$p->polling_no}) - " . ($p->area->area_name ?? ''),
+                'area_id' => $p->area->area_id,
+            ];
+        });
+
+        return response()->json($result);
+    }
+
     public function getAreas($polling_id)
     {
         $areas = Area::where('polling_id', $polling_id)->get([
@@ -2026,14 +2045,21 @@ class OperatorController extends Controller
 
 
 
-    public function summary($id)
+    public function summary($id, Request $request)
     {
         $complaint = Complaint::with(['replies.followups'])->findOrFail($id);
 
-        // Sort replies by latest first
+        if ($request->query('reason') === 'status_check') {
+            \DB::table('incoming_calls')->insert([
+                'complaint_id'        => $complaint->complaint_id,
+                'complaint_reply_id'  => null,
+                'reason'              => 2, 
+                'created_at'          => now(),
+            ]);
+        }
+
         $complaint->replies = $complaint->replies->sortByDesc('reply_date');
 
-        // Sort followups for each reply by latest first
         $complaint->replies->each(function ($reply) {
             $reply->followups = $reply->followups->sortByDesc('followup_date');
         });
@@ -2163,7 +2189,7 @@ class OperatorController extends Controller
                 }
                 $html .= '</td>';
 
-                $html .= '<td><a href="' . route('operatorcomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
+                // $html .= '<td><a href="' . route('operatorcomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-primary" style="white-space: nowrap;">क्लिक करें</a></td>';
 
                 $latestReplyId = optional($complaint->latestNonDefaultReply)->complaint_reply_id ?? 'null';
                 $latestFollowup = optional($complaint->latestNonDefaultReply)->latestFollowup;
@@ -2172,19 +2198,19 @@ class OperatorController extends Controller
 
                 $html .= '<td>
                     <div class="form-check">
-                        <input class="form-check-input followup-radio" type="radio" name="reason_' . $complaint->complaint_id . '" value="followup_response"
+                        <input class="form-check-input followup-radio" type="radio" name="reason" value="followup_response" id="followup_status_' . $complaint->complaint_id . '"
                             ' . ($followupAvailable ? '' : 'disabled') . '>
-                        <label class="form-check-label">फ़ॉलोअप प्रतिक्रिया</label>
+                        <label for="followup_status_' . $complaint->complaint_id . '" class="form-check-label">फ़ॉलोअप प्रतिक्रिया</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="reason_' . $complaint->complaint_id . '" value="status_check"
-                            onchange="storeIncomingReason(' . $complaint->complaint_id . ', null, \'status_check\')">
-                        <label class="form-check-label">समस्या स्थिति जानने</label>
+                        <input class="form-check-input" type="radio" name="reason" value="status_check" id="view_status_' . $complaint->complaint_id . '"
+                            onchange="handleViewReason(' . $complaint->complaint_id . ')">
+                        <label for="view_status_' . $complaint->complaint_id . '" class="form-check-label">समस्या स्थिति जानने</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="reason_' . $complaint->complaint_id . '" value="status_update"
-                            onchange="storeIncomingReason(' . $complaint->complaint_id . ', null, \'status_update\')">
-                        <label class="form-check-label">समस्या स्थिति अपडेट करने</label>
+                        <input class="form-check-input" type="radio" name="reason" value="status_update" id="update_status_' . $complaint->complaint_id . '"
+                            onchange="handleReasonAndRedirect(' . $complaint->complaint_id . ')">
+                        <label for="update_status_' . $complaint->complaint_id . '" class="form-check-label">समस्या स्थिति अपडेट करने</label>
                     </div>
                 </td>';
 
@@ -2202,34 +2228,34 @@ class OperatorController extends Controller
     }
 
 
-    public function storeIncomingReason(Request $request)
-    {
-        $request->validate([
-            'complaint_id' => 'required|exists:complaint,complaint_id',
-            'reason' => 'required|string',
-        ]);
+    // public function storeIncomingReason(Request $request)
+    // {
+    //     $request->validate([
+    //         'complaint_id' => 'required|exists:complaint,complaint_id',
+    //         'reason' => 'required|string',
+    //     ]);
 
-        $reasonMap = [
-            'followup_response' => 1,
-            'status_check' => 2,
-            'status_update' => 3,
-        ];
+    //     $reasonMap = [
+    //         'followup_response' => 1,
+    //         'status_check' => 2,
+    //         'status_update' => 3,
+    //     ];
 
-        $reason = $reasonMap[$request->reason] ?? null;
+    //     $reason = $reasonMap[$request->reason] ?? null;
 
-        if (!$reason) {
-            return response()->json(['success' => false, 'message' => 'Invalid reason'], 400);
-        }
+    //     if (!$reason) {
+    //         return response()->json(['success' => false, 'message' => 'Invalid reason'], 400);
+    //     }
 
-        \DB::table('incoming_calls')->insert([
-            'complaint_id' => $request->complaint_id,
-            'complaint_reply_id' => $request->complaint_reply_id ?? null,
-            'reason' => $reason,
-            'created_at' => now(),
-        ]);
+    //     \DB::table('incoming_calls')->insert([
+    //         'complaint_id' => $request->complaint_id,
+    //         'complaint_reply_id' => $request->complaint_reply_id ?? null,
+    //         'reason' => $reason,
+    //         'created_at' => now(),
+    //     ]);
 
-        return response()->json(['success' => true]);
-    }
+    //     return response()->json(['success' => true]);
+    // }
 
 
     public function updateIncomingContactStatus(Request $request, $id)
@@ -2272,6 +2298,272 @@ class OperatorController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'प्राप्त कॉल का फॉलो-अप सफलतापूर्वक दर्ज किया गया। ');
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'प्राप्त कॉल का फॉलो-अप सफलतापूर्वक दर्ज किया गया।'
+            ]);
+        }
+    }
+
+
+    public function allcomplaints_show($id)
+    {
+        $complaint = Complaint::with(
+            'replies.predefinedReply',
+            'registration',
+            'division',
+            'district',
+            'vidhansabha',
+            'mandal',
+            'gram',
+            'polling',
+            'area',
+            'registrationDetails'
+        )->findOrFail($id);
+        $divisions = Division::all();
+        $mandals = Mandal::where('vidhansabha_id', $complaint->vidhansabha_id)->pluck('mandal_id');
+
+        $nagars = Nagar::with('mandal')
+            ->whereIn('mandal_id', $mandals)
+            ->orderBy('nagar_name')
+            ->get();
+        $departments = Department::all();
+        $jatis = Jati::all();
+
+        return view('operator/update_complaint', [
+            'complaint' => $complaint,
+            'nagars' => $nagars,
+            'departments' => $departments,
+            'jatis' => $jatis,
+            'divisions' => $divisions
+        ]);
+    }
+
+
+    public function updateComplaint(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'txtname' => 'required|string|max:255',
+                'mobile'  => 'required|string|regex:/^[0-9]{10,15}$/',
+                'father_name' => 'required|string|max:255',
+                'reference' => 'nullable|string|max:255',
+                'voter' => 'required|string|max:255',
+                'division_id' => 'required|integer',
+                'txtdistrict_name' => 'required|integer',
+                'txtvidhansabha' => 'required|integer',
+                // 'txtmandal' => 'required',
+                'txtgram' => 'required|integer',
+                'txtpolling' => 'required|integer',
+                // 'txtarea' => 'required',
+                'type' => 'required|string',
+                'CharCounter' => 'nullable|string|max:100',
+                'NameText' => 'required|string|max:2000',
+                'department' => 'nullable',
+                'jati' => 'nullable',
+                'post' => 'nullable',
+                'from_date' => 'nullable|date',
+                'program_date' => 'nullable|date',
+                'to_date' => 'nullable',
+                'file_attach' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,avi',
+                'attachments.*' => 'mimes:pdf,jpg,jpeg,png,mp4,mov|max:10240'
+            ], [
+                'file_attach.max' => 'फ़ाइल का आकार 15MB से अधिक नहीं होना चाहिए।',
+                'file_attach.mimes' => 'केवल JPG, PNG या वीडियो फाइलें ही अपलोड करें।'
+            ]);
+        } catch (ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        }
+
+
+        DB::beginTransaction();
+
+
+        try {
+            $complaint = Complaint::findOrFail($id);
+            $complaint_number = $complaint->complaint_number;
+
+            $nagar = Nagar::with('mandal')->find($request->txtgram);
+            $mandal_id = $nagar?->mandal?->mandal_id;
+
+            $polling = Polling::with('area')->where('gram_polling_id', $request->txtpolling)->first();
+            $area_id = $polling?->area?->area_id;
+
+
+
+            DB::table('update_complaints')->insert([
+                'complaint_id' => $complaint->complaint_id,
+                'complaint_type' => $complaint->complaint_type,
+                'name' => $complaint->name,
+                'mobile_number' => $complaint->mobile_number,
+                'father_name' => $complaint->father_name,
+                'reference_name' => $complaint->reference_name,
+                'email' => $complaint->email,
+                'voter_id' => $complaint->voter_id,
+                'division_id' => $complaint->division_id,
+                'district_id' => $complaint->district_id,
+                'vidhansabha_id' => $complaint->vidhansabha_id,
+                'mandal_id' => $complaint->mandal_id,
+                'gram_id' => $complaint->gram_id,
+                'polling_id' => $complaint->polling_id,
+                'area_id' => $complaint->area_id,
+                'complaint_department' => $complaint->complaint_department,
+                'jati_id' => $complaint->jati_id,
+                'complaint_designation' => $complaint->complaint_designation,
+                'issue_title' => $complaint->issue_title,
+                'address' => $complaint->address ?? null,
+                'issue_description' => $complaint->issue_description,
+                'news_date' => $complaint->news_date,
+                'program_date' => $complaint->program_date,
+                'news_time' => $complaint->news_time,
+                'issue_attachment' => $complaint->issue_attachment,
+                'updated_by' => session('user_id'),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $complaint->complaint_type = $request->type;
+            $complaint->name = $request->txtname;
+            $complaint->mobile_number = $request->mobile;
+            $complaint->father_name = $request->father_name;
+            $complaint->reference_name = $request->reference;
+            $complaint->email = $request->mobile;
+            $complaint->voter_id = $request->voter;
+            $complaint->division_id = $request->division_id;
+            $complaint->district_id = $request->txtdistrict_name;
+            $complaint->vidhansabha_id = $request->txtvidhansabha;
+            $complaint->mandal_id = $mandal_id;
+            $complaint->gram_id = $request->txtgram;
+            $complaint->polling_id = $request->txtpolling;
+            $complaint->area_id = $area_id;
+            $complaint->complaint_department = $request->department ?? '';
+            $complaint->jati_id = $request->jati ?? null;
+            $complaint->complaint_designation = $request->post ?? '';
+            $complaint->issue_title = $request->CharCounter ?? '';
+            $complaint->issue_description = $request->NameText;
+            $complaint->news_date = $request->from_date;
+            $complaint->program_date = $request->program_date;
+            $complaint->news_time = $request->to_date;
+
+
+            if ($request->hasFile('file_attach')) {
+                $filename = $this->processFile($request->file('file_attach'));
+                $complaint->issue_attachment = $filename;
+            }
+
+
+            $complaint->save();
+
+
+
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $filename = $this->processFile($file);
+                    ComplaintAttachment::create([
+                        'complaint_id' => $complaint->complaint_id,
+                        'file_name'    => $filename,
+                        'file_type'    => strtolower($file->getClientOriginalExtension()),
+                        'created_at'   => now(),
+                    ]);
+                }
+            }
+
+
+            DB::table('incoming_calls')->insert([
+                'complaint_id' => $complaint->complaint_id,
+                'complaint_reply_id' => $request->complaint_reply_id ?? null,
+                'reason' => 3,
+                'created_at' => now(),
+            ]);
+
+
+            DB::commit();
+
+            $message = "आपकी शिकायत क्रमांक $complaint_number सफलतापूर्वक अपडेट कर दी गई है।";
+            if ($complaint->type == 1) {
+                $mobile = RegistrationForm::where('registration_id', $complaint->complaint_created_by)->value('mobile1');
+                $this->messageSent($message, $mobile);
+            }
+
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'message' => $message]);
+            }
+
+            if ($complaint->type == 1) {
+                return redirect()->route('incoming_calls.index')
+                    ->with('success', 'कमांडर शिकायत सफलतापूर्वक अपडेट हुई और संदेश भेजा गया।');
+            } else {
+                return redirect()->route('incoming_calls.index')
+                    ->with('success', 'कार्यालय शिकायत सफलतापूर्वक अपडेट हुई');
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', "Update failed: " . $e->getMessage());
+        }
+    }
+
+
+    private function processFile($file)
+    {
+        $extension = strtolower($file->getClientOriginalExtension());
+        $filename = time() . '_' . Str::random(6) . '.' . $extension;
+        $outputPath = public_path('assets/upload/complaints/' . $filename);
+
+
+        $blocked = ['exe', 'php', 'js', 'sh', 'bat'];
+        if (in_array($extension, $blocked)) {
+            throw new \Exception("यह फ़ाइल प्रकार अनुमति नहीं है।");
+        }
+      
+        if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+            if ($file->getSize() > 2 * 1024 * 1024) {
+                throw new \Exception("छवि फ़ाइल अधिकतम 2MB हो सकती है।");
+            }
+            $image = Image::read($file->getRealPath());
+            $encoder = $extension === 'png' ? new PngEncoder(6) : new JpegEncoder(40);
+            $image->encode($encoder)->save($outputPath);
+        }
+      
+        elseif (in_array($extension, ['mp4', 'mov', 'avi', 'mkv'])) {
+            if ($file->getSize() > 15 * 1024 * 1024) {
+                throw new \Exception("वीडियो फ़ाइल अधिकतम 15MB हो सकती है।");
+            }
+            $tempPath = $file->store('temp_videos');
+            $ffmpeg = \FFMpeg\FFMpeg::create([
+                'ffmpeg.binaries'  => base_path(env('FFMPEG_PATH')),
+                'ffprobe.binaries' => base_path(env('FFPROBE_PATH')),
+            ]);
+            $video = $ffmpeg->open(storage_path('app/' . $tempPath));
+            $format = new \FFMpeg\Format\Video\X264('aac', 'libx264');
+            $format->setKiloBitrate(300);
+            $format->setAdditionalParameters(['-preset', 'ultrafast']);
+            $video->save($format, $outputPath);
+            Storage::delete($tempPath);
+        }
+   
+        elseif ($extension === 'pdf') {
+            $pdf = new Fpdi();
+            $pageCount = $pdf->setSourceFile($file->getRealPath());
+            for ($i = 1; $i <= $pageCount; $i++) {
+                $tpl = $pdf->importPage($i);
+                $size = $pdf->getTemplateSize($tpl);
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $pdf->useTemplate($tpl, 0, 0, $size['width'], $size['height'], true);
+            }
+            $pdf->Output('F', $outputPath);
+        }
+       
+        else {
+            throw new \Exception("Unsupported file type: $extension");
+        }
+
+        return $filename;
     }
 }

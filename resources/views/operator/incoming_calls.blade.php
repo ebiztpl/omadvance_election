@@ -119,12 +119,12 @@
                                         <th style="width: 20%;">नवीनतम जवाब विवरण</th>
                                         <th style="width: 12%;">फ़ॉलोअप विवरण</th>
                                         <th style="width: 10%;">फ़ॉलोअप</th>
-                                        <th style="width: 10%; text-align:center;">विस्तार से</th>
+                                        {{-- <th style="width: 10%; text-align:center;">विस्तार से</th> --}}
                                         <th style="width: 15%;">कारण</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                  
+
                                 </tbody>
                             </table>
                         </div>
@@ -234,7 +234,7 @@
                         success: function(res) {
                             $('#example tbody').html(res.html);
                             $('#complaint-count').text(res.count);
-                               $('#complaints-container').fadeIn();
+                            $('#complaints-container').fadeIn();
                         },
                         complete: function() {
                             $('#loader-wrapper').hide();
@@ -255,17 +255,17 @@
                 }
             }
 
-            $(document).on('click', '.openModalBtn', function() {
-                let complaintId = $(this).data('complaint-id');
-                let complaintReplyId = $(this).data('complaint-reply-id');
+            // $(document).on('click', '.openModalBtn', function() {
+            //     let complaintId = $(this).data('complaint-id');
+            //     let complaintReplyId = $(this).data('complaint-reply-id');
 
-                $('#modal_complaint_id').val(complaintId);
-                $('#modal_complaint_reply_id').val(complaintReplyId);
+            //     $('#modal_complaint_id').val(complaintId);
+            //     $('#modal_complaint_reply_id').val(complaintReplyId);
 
-                $('#contactStatusForm').attr('action', '/operator/update-incoming-contact-status/' + complaintReplyId);
+            //     $('#contactStatusForm').attr('action', '/operator/update-incoming-contact-status/' + complaintReplyId);
 
-                $('#contactStatusModal').modal('show');
-            });
+            //     $('#contactStatusModal').modal('show');
+            // });
 
 
 
@@ -279,6 +279,50 @@
                     $('#contactStatusForm').attr('action', '/operator/update-incoming-contact-status/' +
                         complaintReplyId);
                     $('#contactStatusModal').modal('show');
+
+                    // Unbind previous submit to avoid duplicate handlers
+                    $('#contactStatusForm').off('submit').on('submit', function(e) {
+                        e.preventDefault();
+                        let url = $(this).attr('action');
+                        let data = $(this).serialize();
+
+                        $.post(url, data, function(res) {
+                            if (res.success) {
+                                // Hide modal
+                                $('#contactStatusModal').modal('hide');
+
+                                // Show success message
+                                $('#message-container').html(`
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            ${res.message}
+                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        </div>
+                    `);
+
+                                window.scrollTo({
+                                    top: 0,
+                                    behavior: 'smooth'
+                                });
+
+                                setTimeout(() => {
+                                    $('#message-container .alert').fadeOut('slow', function() {
+                                        $(this).remove();
+                                    });
+                                }, 3000);
+
+                                let row = $('tr[data-followup-status]').filter(function() {
+                                    return $(this).find('.openModalBtn').data('complaint-id') ==
+                                        complaintId;
+                                });
+                                row.attr('data-followup-status', 'done_not_completed');
+                                row.find('.openModalBtn').prop('disabled', true).text('फ़ॉलोअप पूर्ण');
+                            }
+                        }).fail(function(err) {
+                            console.error(err);
+                            alert('संपर्क स्थिति अपडेट करने में समस्या हुई। कृपया पुनः प्रयास करें।');
+                        });
+                    });
+
                 } else {
                     alert('कृपया पहले फ़ॉलोअप दें');
                     $(this).prop('checked', false);
@@ -286,39 +330,53 @@
             });
 
 
-            function storeIncomingReason(complaintId, complaintReplyId, reason) {
-                $.ajax({
-                    url: "{{ route('incoming.storeReason') }}",
-                    type: "POST",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        complaint_id: complaintId,
-                        complaint_reply_id: complaintReplyId,
-                        reason: reason
-                    },
-                    success: function(response) {
-                        let messageHtml = `
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                 प्राप्त कॉल का कारण सफलतापूर्वक दर्ज किया गया।
-                            <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            </div>
-                        `;
-                        $('#message-container').html(messageHtml);
 
-                        window.scrollTo({
-                            top: 0,
-                            behavior: 'smooth'
-                        });
-                        setTimeout(() => {
-                            $('#message-container .alert').fadeOut('slow', function() {
-                                $(this).remove();
-                            });
-                        }, 3000);
-                    },
-                    error: function(err) {
-                        console.error(err);
-                    }
-                });
+            // function storeIncomingReason(complaintId, complaintReplyId, reason) {
+            //     $.ajax({
+            //         url: "{{ route('incoming.storeReason') }}",
+            //         type: "POST",
+            //         data: {
+            //             _token: "{{ csrf_token() }}",
+            //             complaint_id: complaintId,
+            //             complaint_reply_id: complaintReplyId,
+            //             reason: reason
+            //         },
+            //         success: function(response) {
+            //             let messageHtml = `
+            //                 <div class="alert alert-success alert-dismissible fade show" role="alert">
+            //                      प्राप्त कॉल का कारण सफलतापूर्वक दर्ज किया गया।
+            //                 <button type="button" class="close" data-dismiss="alert">&times;</button>
+            //                 </div>
+            //             `;
+            //             $('#message-container').html(messageHtml);
+
+            //             window.scrollTo({
+            //                 top: 0,
+            //                 behavior: 'smooth'
+            //             });
+            //             setTimeout(() => {
+            //                 $('#message-container .alert').fadeOut('slow', function() {
+            //                     $(this).remove();
+            //                 });
+            //             }, 3000);
+            //         },
+            //         error: function(err) {
+            //             console.error(err);
+            //         }
+            //     });
+            // }
+
+
+            function handleReasonAndRedirect(complaintId) {
+                let url = "{{ route('complaintstatus_show.details', ':id') }}";
+                url = url.replace(':id', complaintId);
+                window.location.href = url;
+            }
+
+            function handleViewReason(complaintId) {
+                let url = "{{ route('operatorcomplaints.summary', ':id') }}?reason=status_check";
+                url = url.replace(':id', complaintId);
+                window.location.href = url;
             }
         </script>
     @endpush

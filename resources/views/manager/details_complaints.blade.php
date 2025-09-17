@@ -1064,7 +1064,7 @@
                 }
 
                 // On division change
-                $('#division_id').on('change', function() {
+              $('#division_id').on('change', function() {
                     let divisionId = $(this).val();
                     if (!divisionId) return;
 
@@ -1085,15 +1085,8 @@
                     let districtId = $(this).val();
                     if (!districtId) return;
 
-                    $.get('/manager/get-districts/' + divisionId, function(data) {
-                        $('#district_id').html(data);
-
-                        let firstDistrict = $('#district_id option:first').val();
-                        if (firstDistrict) {
-                            $.get('/manager/get-vidhansabha/' + firstDistrict, function(data) {
-                                $('#vidhansabha_id').html(data);
-                            });
-                        }
+                    $.get('/manager/get-vidhansabha/' + districtId, function(data) {
+                        $('#vidhansabha_id').html(data);
                     });
                 });
 
@@ -1523,14 +1516,14 @@
             //             const li = document.createElement("li");
             //             li.classList.add("list-group-item");
             //             li.innerHTML = `
-            //                     <div class="uploaded-file">
-            //                         <span>${file.name}</span>
-            //                         <button class="btn btn-sm btn-danger remove-btn">&times;</button>
-            //                     </div>
-            //                     <div class="progress mt-1">
-            //                         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-            //                     </div>
-            //                 `;
+    //                     <div class="uploaded-file">
+    //                         <span>${file.name}</span>
+    //                         <button class="btn btn-sm btn-danger remove-btn">&times;</button>
+    //                     </div>
+    //                     <div class="progress mt-1">
+    //                         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+    //                     </div>
+    //                 `;
             //             previewContainer.appendChild(li);
 
             //             li.querySelector(".remove-btn").addEventListener("click", () => li.remove());

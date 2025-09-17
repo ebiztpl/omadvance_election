@@ -402,7 +402,7 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/manager/details_suchnas/{id}', [ManagerController::class, 'allsuchnas_show'])->name('suchna_show.details');
     Route::post('/manager/complaints/{id}/reply', [ManagerController::class, 'complaintsReply'])->name('complaint_reply.reply');
 
-    Route::get('manager/get-voter', [ManagerController::class, 'getVoter'])->name('get.voter');
+    Route::get('/manager/get-voter', [ManagerController::class, 'getVoter'])->name('get.voter');
 
 
     Route::get('/manager/get-districts/{division_id}', [ManagerController::class, 'getDistricts']);
@@ -489,7 +489,7 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/operator/get-vidhansabha-from-id/{vidhansabha_id}', [OperatorController::class, 'getVidhansabhaOptionsFromId']);
     Route::get('/operator/get-district-from-id/{district_id}', [OperatorController::class, 'getDistrictOptionsFromId']);
     Route::get('/operator/get-division-from-id/{division_id}', [OperatorController::class, 'getDivisionOptionsFromId']);
-
+    Route::get('/operator/get-pollings-gram/{mandal_id}', [OperatorController::class, 'getPollingsByNagar']);
 
 
     Route::get('/operator/next_followup', [OperatorController::class, 'nextFollowup'])->name('next_followup.index');
@@ -506,6 +506,8 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/operator/incoming_calls', [OperatorController::class, 'incoming'])->name('incoming_calls.index');
     Route::post('/operator/incoming-calls/store-reason', [OperatorController::class, 'storeIncomingReason'])->name('incoming.storeReason');
     Route::post('/operator/update-incoming-contact-status/{id}', [OperatorController::class, 'updateIncomingContactStatus'])->name('update.incoming.contact.status');
+    Route::get('/operator/details_complaints/{id}', [OperatorController::class, 'allcomplaints_show'])->name('complaintstatus_show.details');
+    Route::post('/operator/update-complaint/{id}', [OperatorController::class, 'updateComplaint'])->name('operatorcomplaints.update');
 });
 
 

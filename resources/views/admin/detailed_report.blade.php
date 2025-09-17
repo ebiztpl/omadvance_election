@@ -121,8 +121,7 @@
                         @foreach ($allOptions as $val => $label)
                             <div class="pill-radio-alt">
                                 <input type="radio" id="{{ $val }}" name="all_filter"
-                                    value="{{ $val }}"
-                                    {{ $summaryType == $val || ($summaryType == 'all' && $val == 'all_area') ? 'checked' : '' }}>
+                                    value="{{ $val }}" {{ $summaryType == $val ? 'checked' : '' }}>
                                 <label for="{{ $val }}">{{ $label }}</label>
                             </div>
                         @endforeach
@@ -435,236 +434,184 @@
         </div>
     </div>
 
-    @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const radios = document.querySelectorAll('input[name="summary"]');
-                const form = document.getElementById('complaintFilterForm');
-                const areaFilters = document.getElementById('areaFilters');
-                const reportResults = document.getElementById('report-results');
-                const areaFilterBtn = document.getElementById('areafilters_filters');
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('complaintFilterForm');
+    const reportResults = document.getElementById('report-results');
+    const areaFilters = document.getElementById('areaFilters');
+    const areaFilterBtn = document.getElementById('areafilters_filters');
 
-                function toggleAreaFilters() {
-                    if (!areaFilters) return;
-                    const selected = document.querySelector('input[name="summary"]:checked');
-                    areaFilters.style.display = (selected && selected.value === 'area') ? 'flex' : 'none';
-                }
+    const summaryRadios = document.querySelectorAll('input[name="summary"]');
+    const allFilterRadios = document.querySelectorAll('input[name="all_filter"]');
 
+    // Toggle Area Filters
+    function toggleAreaFilters() {
+        if (!areaFilters) return;
+        const selected = document.querySelector('input[name="summary"]:checked');
+        areaFilters.style.display = (selected && selected.value === 'area') ? 'flex' : 'none';
+    }
 
-                function toggleAllOptions() {
-                    const selected = document.querySelector('input[name="summary"]:checked');
-                    const allOptions = document.getElementById('allOptionsContainer');
-                    if (!allOptions) return;
-                    allOptions.style.display = (selected && selected.value === 'all') ? 'flex' : 'none';
-                }
+    // Toggle All Options
+    function toggleAllOptions() {
+        const selected = document.querySelector('input[name="summary"]:checked');
+        const allOptions = document.getElementById('allOptionsContainer');
+        if (!allOptions) return;
+        allOptions.style.display = (selected && selected.value === 'all') ? 'flex' : 'none';
+    }
 
-                function submitFormAJAX(summaryValue, extraData = null) {
-                    if (!reportResults || !form) return;
-                    $("#loader-wrapper").show();
+    // AJAX Form Submit
+    function submitFormAJAX(summaryValue = null, extraData = null) {
+        if (!form || !reportResults) return;
+        $("#loader-wrapper").show();
 
-                    let formData = extraData ? extraData : $(form).serialize();
-                    if (summaryValue && !formData.includes('summary=')) {
-                        formData += '&summary=' + summaryValue;
-                    }
+        let formData = extraData ? extraData : $(form).serialize();
+        if (summaryValue && !formData.includes('summary=')) {
+            formData += '&summary=' + summaryValue;
+        }
 
-
-                    $.ajax({
-                        url: form.action || window.location.href,
-                        method: 'GET',
-                        data: formData,
-                        success: function(response) {
-                            const newContent = $(response).find('#report-results').html();
-                            reportResults.innerHTML = newContent ||
-                                '<p class="text-muted text-center">फिल्टर चुनें या डाटा उपलब्ध नहीं है।</p>';
-                            toggleAreaFilters();
-                            toggleAllOptions();
-                            $("#loader-wrapper").hide();
-                        },
-                        error: function() {
-                            alert('Something went wrong');
-                            $("#loader-wrapper").hide();
-                        }
-                    });
-                }
-
-                // Radio change
-                radios.forEach(radio => {
-                    radio.addEventListener('change', function() {
-                        toggleAreaFilters();
-                        toggleAllOptions();
-                        submitFormAJAX(this.value);
-                    });
-                });
-
-                const allFilterRadios = document.querySelectorAll('input[name="all_filter"]');
-                allFilterRadios.forEach(radio => {
-                    radio.addEventListener('change', function() {
-                        // Append the correct summaryType for server
-                        let summaryMap = {
-                            'all_area': 'all_area',
-                            'all_department': 'all_department',
-                            'all_jati': 'all_jati'
-                        };
-                        const summaryValue = summaryMap[this.value];
-                        submitFormAJAX(summaryValue);
-                    });
-                });
-
-                // Area filter button click
-                if (areaFilterBtn) {
-                    areaFilterBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const summaryValue = 'area';
-                        const divisionId = document.getElementById('division_id')?.value;
-                        const districtId = document.getElementById('district_id')?.value;
-                        const vidhansabhaId = document.getElementById('vidhansabha_id')?.value;
-                        const gramId = document.getElementById('txtgram')?.value;
-                        const fromDate = document.getElementById('from_date')?.value;
-                        const toDate = document.getElementById('to_date')?.value;
-                        const officeType = document.querySelector('select[name="office_type"]')?.value;
-
-                        let formData = `summary=${summaryValue}`;
-                        if (divisionId) formData += `&division_id=${divisionId}`;
-                        if (districtId) formData += `&district_id=${districtId}`;
-                        if (vidhansabhaId) formData += `&vidhansabha_id=${vidhansabhaId}`;
-                        if (gramId) formData += `&gram_id=${gramId}`;
-                        if (fromDate) formData += `&from_date=${fromDate}`;
-                        if (toDate) formData += `&to_date=${toDate}`;
-                        if (officeType) formData += `&office_type=${officeType}`;
-
-                        submitFormAJAX(summaryValue, formData);
-                    });
-                }
-
+        $.ajax({
+            url: form.action || window.location.href,
+            method: 'GET',
+            data: formData,
+            success: function(response) {
+                const newContent = $(response).find('#report-results').html();
+                reportResults.innerHTML = newContent || '<p class="text-muted text-center">फिल्टर चुनें या डाटा उपलब्ध नहीं है।</p>';
                 toggleAreaFilters();
-
-                // Default load if summary=area
-                const selectedSummary = document.querySelector('input[name="summary"]:checked')?.value;
-                if (selectedSummary === 'area') {
-                    submitFormAJAX('area');
-                }
-
-                // Dependent dropdowns
-                $('#division_id').on('change', function() {
-                    let divisionId = $(this).val();
-                    if (!divisionId) return;
-
-                    $.get('/admin/get-districts/' + divisionId, function(data) {
-                        $('#district_id').html('<option value="">--चुने--</option>' + data);
-
-                        let firstDistrict = $('#district_id option:first').val();
-                        if (firstDistrict) {
-                            $.get('/admin/get-vidhansabha/' + firstDistrict, function(data) {
-                                $('#vidhansabha_id').html(data);
-                            });
-                        }
-                    });
-                });
-
-                $('#district_id').on('change', function() {
-                    let districtId = $(this).val();
-                    if (!districtId) return;
-
-                    $.get("{{ route('get.vidhansabha_filter', ':id') }}".replace(':id', districtId), function(
-                        data) {
-                        $('#vidhansabha_id').html('<option value="">--चुने--</option>' + data);
-                    });
-                });
-
-                $('#vidhansabha_id').on('change', function() {
-                    let vidhansabhaId = $(this).val();
-                    if (!vidhansabhaId) return;
-
-                    $.get('/admin/get-nagars-by-vidhansabha/' + vidhansabhaId, function(data) {
-                        $('#txtgram').html('<option value="">--चुने--</option>');
-                        $.each(data, function(i, option) {
-                            $('#txtgram').append(option);
-                        });
-                    });
-                });
-
-
-
-                window.addEventListener('load', function() {
-                    if (window.location.search) {
-                        const cleanUrl = window.location.origin + window.location.pathname;
-                        window.history.replaceState({}, document.title, cleanUrl);
-                    }
-                });
-            });
-
-            function printReport() {
-                const content = document.getElementById('report-results').innerHTML;
-                const printWindow = window.open('', '', 'height=800,width=1200');
-                printWindow.document.write(`
-                        <html>
-                        <head>
-                            <title>Report</title>
-                            <style>
-                                body {
-                                    font-family: Arial, sans-serif;
-                                    -webkit-print-color-adjust: exact !important;
-                                    print-color-adjust: exact !important;
-                                }
-                                .step-header {
-                                    background-color: #343a40 !important;
-                                    color: white !important;
-                                    padding: 6px !important; 
-                                    border-radius: 6px;          
-                                    margin-bottom: 10px;        
-                                    display: flex;
-                                    justify-content: space-between;
-                                    align-items: center;
-                                }
-                                .badge {
-                                    background-color: #f8f9fa !important;
-                                    color: #000 !important;
-                                    border: 1px solid #000;
-                                    padding: 5px 10px;
-                                    border-radius: 6px;
-                                }
-                                .complaint-type-title {
-                                    background-color: #4a54e9 !important;
-                                    color: white !important;
-                                    font-size: 1.2rem;
-                                    font-weight: bold;
-                                    text-align: center;
-                                    padding: 8px;
-                                    border-radius: 6px;
-                                    margin-bottom: 12px;
-                                }
-                                table {
-                                    width: 100%;
-                                    border-collapse: collapse;
-                                }
-                                table th, table td {
-                                    border: 1px solid #000;
-                                    padding: 6px;
-                                    text-align: left;
-                                }
-                                table thead tr {
-                                    background-color: blanchedalmond !important;
-                                    font-weight: bold;
-                                }
-
-                                /* Last row of tbody (total row) */
-                                table tbody tr:last-child {
-                                    background-color: #aff5af !important;
-                                    font-weight: bold;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            ${content}
-                        </body>
-                        </html>
-                    `);
-
-                printWindow.document.close();
-                printWindow.focus();
-                printWindow.print();
-                printWindow.close();
+                toggleAllOptions();
+                $("#loader-wrapper").hide();
+            },
+            error: function() {
+                alert('Something went wrong');
+                $("#loader-wrapper").hide();
             }
-        </script>
-    @endpush
+        });
+    }
+
+    // Radio change handlers
+    summaryRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            toggleAreaFilters();
+            toggleAllOptions();
+            submitFormAJAX(this.value);
+        });
+    });
+
+    allFilterRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const allFilterValue = this.value; // all_area / all_department / all_jati
+            const formData = $(form).serialize(); // existing filters
+            submitFormAJAX(null, formData + `&summary=all&all_filter=${allFilterValue}`);
+        });
+    });
+
+    // Area filter button click
+    if (areaFilterBtn) {
+        areaFilterBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const summaryValue = 'area';
+            const divisionId = document.getElementById('division_id')?.value;
+            const districtId = document.getElementById('district_id')?.value;
+            const vidhansabhaId = document.getElementById('vidhansabha_id')?.value;
+            const gramId = document.getElementById('txtgram')?.value;
+            const fromDate = document.getElementById('from_date')?.value;
+            const toDate = document.getElementById('to_date')?.value;
+            const officeType = document.querySelector('select[name="office_type"]')?.value;
+
+            let formData = `summary=${summaryValue}`;
+            if (divisionId) formData += `&division_id=${divisionId}`;
+            if (districtId) formData += `&district_id=${districtId}`;
+            if (vidhansabhaId) formData += `&vidhansabha_id=${vidhansabhaId}`;
+            if (gramId) formData += `&gram_id=${gramId}`;
+            if (fromDate) formData += `&from_date=${fromDate}`;
+            if (toDate) formData += `&to_date=${toDate}`;
+            if (officeType) formData += `&office_type=${officeType}`;
+
+            submitFormAJAX(summaryValue, formData);
+        });
+    }
+
+    // Initial toggles on page load
+    toggleAreaFilters();
+    toggleAllOptions();
+
+    // Load summary=area by default if selected
+    const selectedSummary = document.querySelector('input[name="summary"]:checked')?.value;
+    if (selectedSummary === 'area') {
+        submitFormAJAX('area');
+    }
+
+    // Dependent dropdowns
+    $('#division_id').on('change', function() {
+        const divisionId = $(this).val();
+        if (!divisionId) return;
+        $.get('/admin/get-districts/' + divisionId, function(data) {
+            $('#district_id').html('<option value="">--चुने--</option>' + data);
+            const firstDistrict = $('#district_id option:first').val();
+            if (firstDistrict) {
+                $.get('/admin/get-vidhansabha/' + firstDistrict, function(data) {
+                    $('#vidhansabha_id').html(data);
+                });
+            }
+        });
+    });
+
+    $('#district_id').on('change', function() {
+        const districtId = $(this).val();
+        if (!districtId) return;
+        $.get("{{ route('get.vidhansabha_filter', ':id') }}".replace(':id', districtId), function(data) {
+            $('#vidhansabha_id').html('<option value="">--चुने--</option>' + data);
+        });
+    });
+
+    $('#vidhansabha_id').on('change', function() {
+        const vidhansabhaId = $(this).val();
+        if (!vidhansabhaId) return;
+        $.get('/admin/get-nagars-by-vidhansabha/' + vidhansabhaId, function(data) {
+            $('#txtgram').html('<option value="">--चुने--</option>');
+            $.each(data, function(i, option) {
+                $('#txtgram').append(option);
+            });
+        });
+    });
+
+    // Clean URL after load
+    window.addEventListener('load', function() {
+        if (window.location.search) {
+            const cleanUrl = window.location.origin + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+    });
+});
+
+// Print report
+function printReport() {
+    const content = document.getElementById('report-results').innerHTML;
+    const printWindow = window.open('', '', 'height=800,width=1200');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                .step-header { background-color: #343a40 !important; color: white !important; padding: 6px !important; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+                .badge { background-color: #f8f9fa !important; color: #000 !important; border: 1px solid #000; padding: 5px 10px; border-radius: 6px; }
+                .complaint-type-title { background-color: #4a54e9 !important; color: white !important; font-size: 1.2rem; font-weight: bold; text-align: center; padding: 8px; border-radius: 6px; margin-bottom: 12px; }
+                table { width: 100%; border-collapse: collapse; }
+                table th, table td { border: 1px solid #000; padding: 6px; text-align: left; }
+                table thead tr { background-color: blanchedalmond !important; font-weight: bold; }
+                table tbody tr:last-child { background-color: #aff5af !important; font-weight: bold; }
+            </style>
+        </head>
+        <body>${content}</body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+}
+</script>
+@endpush
+
 @endsection

@@ -5780,7 +5780,8 @@ class AdminController extends Controller
                     'total_cancel' => $totalCancel,
                     'total_solved' => $totalSolved,
                 ];
-            });
+            })
+            ->sortByDesc(fn($item) => $item->total_registered);
 
         if ($showAll == '1') {
             $allData = $jatis->map(function ($j) use ($complaintData) {
@@ -5885,7 +5886,9 @@ class AdminController extends Controller
             ];
         });
 
-        $allData = $allData->concat($extraDepts);
+        $allData = $allData->concat($extraDepts)
+            ->sortByDesc(fn($d) => $d->total_registered)
+            ->values();
 
         $withComplaints = $allData->filter(fn($d) => $d->total_registered > 0);
         $noComplaints   = $allData->filter(fn($d) => $d->total_registered == 0);
