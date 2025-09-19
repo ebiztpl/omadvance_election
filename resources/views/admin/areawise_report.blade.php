@@ -14,7 +14,7 @@
         <div class="row page-titles mx-0">
             <div class="col-md-12">
                 <form method="GET" id="complaintFilterForm">
-                    <div class="row mt-2 align-items-end">
+                    <div class="row mt-1 align-items-end">
                         <div class="col-md-2">
                             <label>तिथि से</label>
                             <input type="date" name="from_date" id="from_date" class="form-control"
@@ -35,14 +35,16 @@
                             </select>
                         </div>
 
-                        <div class="col-md-5 d-flex flex-wrap align-items-center mt-2">
+                        <div class="col-md-7 d-flex flex-wrap align-items-center mt-2">
                             @php
                                 $filterOptions = [
                                     'sambhag' => 'संभाग',
                                     'jila' => 'जिला',
                                     'vidhansabha' => 'विधानसभा',
-                                    'nagar' => 'नगर/मंडल',
-                                    'polling' => 'पोलिंग/क्षेत्र',
+                                    'mandal' => 'मंडल',
+                                    'nagar' => 'कमांड एरिया',
+                                    'polling' => 'पोलिंग',
+                                    'area' => 'ग्राम/वार्ड चौपाल',
                                 ];
                             @endphp
                             @foreach ($filterOptions as $val => $label)
@@ -54,16 +56,16 @@
                                         for="summary_{{ $val }}">{{ $label }}</label>
                                 </div>
                             @endforeach
-                        </div>
 
-                        <div class="col-md-2 mt-4">
-                            <button type="button" class="btn btn-success" onclick="printReport()"
-                                style="font-size: 12px; float:inline-end">प्रिंट रिपोर्ट</button>
-                        </div>
+                            <button type="button" class="btn btn-sm btn-success" onclick="printReport()"
+                                style="font-size: 12px; margin-left: 14px">प्रिंट रिपोर्ट</button>
 
+                            <button type="button" class="btn btn-sm btn-info" style="margin-left: 14px" onclick="exportExcel()">Excel</button>
+
+                        </div>
                     </div>
 
-                    <div class="row mt-3">
+                    <div class="row mt-1">
                         <div class="col-md-2">
                             <label>संभाग</label>
                             <select name="division_id" id="division_id" class="form-control">
@@ -102,7 +104,53 @@
                         </div>
 
                         <div class="col-md-2">
-                            <label>नगर/मंडल</label>
+                            <label>मंडल</label>
+                            <select name="mandal_id" id="mandal_id" class="form-control">
+                                <option value="">-- सभी --</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>कमांड एरिया</label>
+                            <select name="gram_id" id="gram_id" class="form-control">
+                                <option value="">-- सभी --</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>मतदान केंद्र/क्रमांक</label>
+                            <select name="polling_id" id="polling_id" class="form-control">
+                                <option value="">-- सभी --</option>
+                                @foreach ($pollings as $p)
+                                    <option value="{{ $p->gram_polling_id }}">{{ $p->polling_name }}
+                                        ({{ $p->polling_no }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2" style="display: none">
+                            <label>ग्राम/वार्ड चौपाल</label>
+                            <select name="area_id" id="area_id" class="form-control">
+                                <option value="">-- सभी --</option>
+                                @foreach ($areas as $a)
+                                    <option value="{{ $a->area_id }}">{{ $a->area_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- <div class="col-md-2">
+                            <label>मंडल</label>
+                            <select name="mandal_id" id="mandal_id" class="form-control">
+                                <option value="">-- सभी --</option>
+                                @foreach ($mandals as $mandal)
+                                    <option value="{{ $mandal->mandal_id }}">{{ $mandal->mandal_name }}</option>
+                                @endforeach
+                            </select>
+                        </div> --}}
+
+                        {{-- <div class="col-md-2">
+                            <label>कमांड एरिया/मंडल</label>
                             <select name="nagar_id" id="txtgram" class="form-control">
                                 <option value="">--चुने--</option>
                                 @foreach ($nagars as $nagar)
@@ -112,10 +160,10 @@
                                     </option>
                                 @endforeach
                             </select>
-                        </div>
+                        </div> --}}
 
-                        <div class="col-md-2" style="display: none">
-                            <label>पोलिंग/क्षेत्र</label>
+                        {{-- <div class="col-md-2" style="display: none">
+                            <label>पोलिंग/ग्राम/वार्ड चौपाल</label>
                             <select name="polling_id" id="txtpolling" class="form-control"
                                 {{ isset($pollings) ? '' : 'disabled' }}>
                                 <option value="">--चुने--</option>
@@ -129,60 +177,47 @@
                                     </option>
                                 @endforeach
                             </select>
-                        </div>
+                        </div> --}}
 
                         <div class="col-md-1 mt-1">
                             <br>
                             <button type="submit" class="btn btn-primary" id="filterBtn"
                                 style="font-size: 12px">फ़िल्टर</button>
                         </div>
+                    </div>
 
-                        <div class="col-md-1 form-check form-check-inline pill-radio-alt mt-3 mr-2"
-                            style="white-space: nowrap;">
-                            <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
-                                id="complaint_received" value="received"
-                                {{ request('complaint_type', 'received') === 'received' ? 'checked' : '' }} disabled>
-                            <label class="form-check-label" for="complaint_received">शिकायत प्राप्त</label>
-                        </div>
-                        <div class="col-md-1 form-check type-radio form-check-inline pill-radio-alt mt-3 mr-2"
-                            style="white-space: nowrap;">
-                            <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
-                                id="complaint_not_received" value="not_received"
-                                {{ request('complaint_type') === 'not_received' ? 'checked' : '' }} disabled>
-                            <label class="form-check-label" for="complaint_not_received">शिकायत अप्राप्त</label>
-                        </div>
-                        <div class="col-md-1 form-check type-radio form-check-inline pill-radio-alt mt-3"
-                            style="white-space: nowrap;">
-                            <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
-                                id="complaint_all" value="all"
-                                {{ request('complaint_type') === 'all' ? 'checked' : '' }} disabled>
-                            <label class="form-check-label" for="complaint_all">सभी</label>
+                    <div class="row mt-2 mb-2">
+                        <div class="col-md-12 d-flex justify-content-start align-items-center" style="gap: 6px;">
+                            <div class="col-md-1 form-check form-check-inline big-radio-box" style="white-space: nowrap;">
+                                <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
+                                    id="complaint_received" value="received"
+                                    {{ request('complaint_type', 'received') === 'received' ? 'checked' : '' }} disabled>
+                                <label class="form-check-label" for="complaint_received">शिकायत प्राप्त</label>
+                            </div>
+                            <div class="col-md-1 form-check type-radio form-check-inline big-radio-box"
+                                style="white-space: nowrap;">
+                                <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
+                                    id="complaint_not_received" value="not_received"
+                                    {{ request('complaint_type') === 'not_received' ? 'checked' : '' }} disabled>
+                                <label class="form-check-label" for="complaint_not_received">शिकायत अप्राप्त</label>
+                            </div>
+                            <div class="col-md-1 form-check type-radio form-check-inline big-radio-box"
+                                style="white-space: nowrap;">
+                                <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
+                                    id="complaint_all" value="all"
+                                    {{ request('complaint_type') === 'all' ? 'checked' : '' }} disabled>
+                                <label class="form-check-label" for="complaint_all">सभी</label>
+                            </div>
+
+
+
+                             
+                            
                         </div>
                     </div>
                 </form>
 
-                {{-- <div class="row mt-3 mb-2">
-                    <div class="col-md-12 d-flex justify-content-start align-items-center">
-                        <div class="form-check form-check-inline pill-radio-alt">
-                            <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
-                                id="complaint_received" value="received"
-                                {{ request('complaint_type', 'received') === 'received' ? 'checked' : '' }}>
-                            <label class="form-check-label" for="complaint_received">शिकायत प्राप्त</label>
-                        </div>
-                        <div class="form-check form-check-inline pill-radio-alt">
-                            <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
-                                id="complaint_not_received" value="not_received"
-                                {{ request('complaint_type') === 'not_received' ? 'checked' : '' }}>
-                            <label class="form-check-label" for="complaint_not_received">शिकायत अप्राप्त</label>
-                        </div>
-                        <div class="form-check form-check-inline pill-radio-alt">
-                            <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
-                                id="complaint_all" value="all"
-                                {{ request('complaint_type') === 'all' ? 'checked' : '' }}>
-                            <label class="form-check-label" for="complaint_all">सभी</label>
-                        </div>
-                    </div>
-                </div> --}}
+
             </div>
         </div>
 
@@ -213,7 +248,7 @@
                                 @endphp
 
                                 <h5 class="mb-0 text-white">
-                                    क्षेत्र रिपोर्ट:
+                                    ग्राम/वार्ड चौपाल रिपोर्ट:
                                     @if ($fromDate && $toDate)
                                         {{ $fromDate }} से {{ $toDate }}
                                     @elseif($fromDate)
@@ -236,12 +271,12 @@
                                 @if (request('complaint_type', 'received') === 'received')
                                     @if (isset($areaData) && $areaData->count())
 
-                                   <div class="text-center text-white py-1 rounded mb-2 complaint-type-title"
-                                        style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; background-color: #4a54e9">
-                                        कुल शिकायतें: ({{ $totalsAll['total_registered'] }}),
-                                        कुल निरस्त: ({{ $totalsAll['total_cancel'] }}),
-                                        कुल समाधान: ({{ $totalsAll['total_solved'] }})
-                                    </div>
+                                        <div class="text-center text-white py-1 rounded mb-2 complaint-type-title"
+                                            style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; background-color: #4a54e9">
+                                            कुल शिकायतें: ({{ $totalsAll['total_registered'] }}),
+                                            कुल निरस्त: ({{ $totalsAll['total_cancel'] }}),
+                                            कुल समाधान: ({{ $totalsAll['total_solved'] }})
+                                        </div>
 
 
                                         <div class="table-responsive">
@@ -263,12 +298,20 @@
                                                                     विधानसभा
                                                                 @break
 
+                                                                @case('mandal')
+                                                                    मंडल
+                                                                @break
+
                                                                 @case('nagar')
-                                                                    नगर/मंडल
+                                                                    कमांड एरिया
                                                                 @break
 
                                                                 @case('polling')
-                                                                    पोलिंग/क्षेत्र
+                                                                    पोलिंग
+                                                                @break
+
+                                                                @case('area')
+                                                                    ग्राम/वार्ड चौपाल
                                                                 @break
                                                             @endswitch
                                                         </th>
@@ -302,8 +345,10 @@
                                             'sambhag' => 'संभाग',
                                             'jila' => 'जिला',
                                             'vidhansabha' => 'विधानसभा',
-                                            'nagar' => 'नगर/मंडल',
-                                            'polling' => 'पोलिंग/क्षेत्र',
+                                            'mandal' => 'मंडल',
+                                            'nagar' => 'कमांड एरिया',
+                                            'polling' => 'पोलिंग',
+                                            'area' => 'ग्राम/वार्ड चौपाल',
                                         ];
                                         $label = $labels[$summary] ?? 'विभाग';
                                     @endphp
@@ -311,9 +356,9 @@
                                     <div class="mt-4 mb-2 complaint-type-title text-center text-white py-1 rounded"
                                         style="font-size: 1.2rem; font-weight: 600; background-color:#4a54e9">
                                         अप्राप्त शिकायत: कुल {{ $label }}:
-                                        ({{ $totalsAll['total_department'] ?? 0 }}),
+                                        ({{ $totalsAll['total_areas'] ?? 0 }}),
                                         पंजीकृत {{ $label }}:
-                                        ({{ $totalsRegistered['total_department'] ?? 0 }})
+                                        ({{ $totalsRegistered['total_areas'] ?? 0 }})
                                     </div>
 
                                     <table class="table table-bordered table-sm text-center" style="color: black">
@@ -357,12 +402,20 @@
                                                                 विधानसभा
                                                             @break
 
+                                                            @case('mandal')
+                                                                मंडल
+                                                            @break
+
                                                             @case('nagar')
-                                                                नगर/मंडल
+                                                                कमांड एरिया
                                                             @break
 
                                                             @case('polling')
-                                                                पोलिंग/क्षेत्र
+                                                                पोलिंग
+                                                            @break
+
+                                                            @case('area')
+                                                                ग्राम/वार्ड चौपाल
                                                             @break
                                                         @endswitch
                                                     </th>
@@ -397,18 +450,20 @@
                                                     'sambhag' => 'संभाग',
                                                     'jila' => 'जिला',
                                                     'vidhansabha' => 'विधानसभा',
-                                                    'nagar' => 'नगर/मंडल',
-                                                    'polling' => 'पोलिंग/क्षेत्र',
+                                                    'mandal' => 'मंडल',
+                                                    'nagar' => 'कमांड एरिया',
+                                                    'polling' => 'पोलिंग',
+                                                    'area' => 'ग्राम/वार्ड चौपाल',
                                                 ];
-                                                $label = $labels[$summary] ?? 'विभाग';
+                                                $label = $labels[$summary] ?? 'क्षेत्र';
                                             @endphp
 
                                             <div class="mt-4 mb-2 complaint-type-title text-center text-white py-1 rounded"
                                                 style="font-size: 1.2rem; font-weight: 600; background-color:#4a54e9">
                                                 अप्राप्त शिकायत: कुल {{ $label }}:
-                                                ({{ $totalsAll['total_department'] ?? 0 }}),
+                                                ({{ $totalsAll['total_areas'] ?? 0 }}),
                                                 पंजीकृत {{ $label }}:
-                                                ({{ $totalsRegistered['total_department'] ?? 0 }})
+                                                ({{ $totalsRegistered['total_areas'] ?? 0 }})
                                             </div>
 
                                             <table class="table table-bordered table-sm text-center" style="color: black">
@@ -435,27 +490,33 @@
 
     @push('scripts')
         <script>
+            function exportExcel() {
+                let form = document.getElementById('complaintFilterForm');
+                let url = new URL(form.action, window.location.origin);
+                let params = new URLSearchParams(new FormData(form));
+                params.append('export', 'excel');
+                window.location.href = url.pathname + '?' + params.toString();
+            }
             document.addEventListener('DOMContentLoaded', function() {
                 const summaryRadios = document.querySelectorAll('.summaryRadio');
                 const filterBtn = document.getElementById('filterBtn');
                 const divisionSelect = document.getElementById('division_id');
                 const districtSelect = document.getElementById('district_id');
                 const vidhansabhaSelect = document.getElementById('vidhansabha_id');
-                const nagarSelect = document.getElementById('txtgram');
-                const pollingSelect = document.getElementById('txtpolling');
+                const mandalSelect = document.getElementById('mandal_id');
+                const nagarSelect = document.getElementById('gram_id');
+                const pollingSelect = document.getElementById('polling_id');
+                const areaSelect = document.getElementById('area_id');
 
                 function resetDropdowns() {
-                    divisionSelect.disabled = true;
-                    districtSelect.disabled = true;
-                    vidhansabhaSelect.disabled = true;
-                    nagarSelect.disabled = true;
-                    pollingSelect.disabled = true;
-
-                    divisionSelect.value = '';
-                    districtSelect.value = '';
-                    vidhansabhaSelect.value = '';
-                    nagarSelect.value = '';
-                    pollingSelect.value = '';
+                    [divisionSelect, districtSelect, vidhansabhaSelect, mandalSelect, nagarSelect, pollingSelect,
+                        areaSelect
+                    ].forEach(el => {
+                        if (el) {
+                            el.disabled = true;
+                            el.value = '';
+                        }
+                    });
                 }
 
                 function checkFilterState() {
@@ -478,24 +539,41 @@
                                 divisionSelect.disabled = false;
                                 districtSelect.disabled = false;
                                 break;
+                            case 'mandal':
+                                divisionSelect.disabled = false;
+                                districtSelect.disabled = false;
+                                vidhansabhaSelect.disabled = false;
+                                break;
                             case 'nagar':
                                 divisionSelect.disabled = false;
                                 districtSelect.disabled = false;
                                 vidhansabhaSelect.disabled = false;
+                                mandalSelect.disabled = false;
                                 break;
                             case 'polling':
                                 divisionSelect.disabled = false;
                                 districtSelect.disabled = false;
                                 vidhansabhaSelect.disabled = false;
+                                mandalSelect.disabled = false;
                                 nagarSelect.disabled = false;
+                                break;
+                            case 'area':
+                                divisionSelect.disabled = false;
+                                districtSelect.disabled = false;
+                                vidhansabhaSelect.disabled = false;
+                                mandalSelect.disabled = false;
+                                nagarSelect.disabled = false;
+                                pollingSelect.disabled = false;
                                 break;
                         }
                     });
                 });
 
-                $('#division_id, #district_id, #vidhansabha_id, #txtgram, #txtpolling').on('change', function() {
-                    checkFilterState();
-                });
+                $('#division_id, #district_id, #vidhansabha_id, #mandal_id, #gram_id, #polling_id, #area_id').on(
+                    'change',
+                    function() {
+                        checkFilterState();
+                    });
 
                 resetDropdowns();
                 checkFilterState();
@@ -523,10 +601,67 @@
 
                 $('#vidhansabha_id').on('change', function() {
                     const vidhansabhaId = $(this).val();
-                    $('#txtgram').html('<option value="">--चुने--</option>');
+
+                    $('#mandal_id').html('<option value="">-- सभी --</option>');
+                    $('#gram_id').html('<option value="">-- सभी --</option>');
+                    $('#polling_id').html('<option value="">-- सभी --</option>');
+                    $('#area_id').html('<option value="">-- सभी --</option>');
+
                     if (!vidhansabhaId) return;
-                    $.get('/admin/get-nagars-by-vidhansabha/' + vidhansabhaId, function(data) {
-                        $('#txtgram').append(data);
+
+                    $.get('/admin/get-mandal/' + vidhansabhaId, function(data) {
+                        data.forEach(function(optionHtml) {
+                            $('#mandal_id').append(optionHtml);
+                        });
+                    });
+                });
+
+                $('#mandal_id').on('change', function() {
+                    const mandalId = $(this).val();
+
+                    $('#gram_id').html('<option value="">-- सभी --</option>');
+                    $('#polling_id').html('<option value="">-- सभी --</option>');
+                    $('#area_id').html('<option value="">-- सभी --</option>');
+
+                    if (!mandalId) return;
+
+                    $.get('/admin/get-nagar/' + mandalId, function(data) {
+                        data.forEach(function(nagar) {
+                            $('#gram_id').append(nagar);
+                        });
+                    });
+                });
+
+                $('#gram_id').on('change', function() {
+                    const gramId = $(this).val();
+
+                    $('#polling_id').html('<option value="">-- सभी --</option>');
+                    $('#area_id').html('<option value="">-- सभी --</option>');
+
+                    if (!gramId) return;
+
+                    $.get('/admin/get-polling/' + gramId, function(data) {
+                        data.forEach(function(polling) {
+                            $('#polling_id').append('<option value="' + polling
+                                .gram_polling_id + '">' + polling.polling_name + ' (' +
+                                polling.polling_no + ')</option>');
+                        });
+                    });
+                });
+
+                // Polling → Area
+                $('#polling_id').on('change', function() {
+                    const pollingId = $(this).val();
+
+                    $('#area_id').html('<option value="">-- सभी --</option>');
+
+                    if (!pollingId) return;
+
+                    $.get('/admin/get-area/' + pollingId, function(data) {
+                        data.forEach(function(area) {
+                            $('#area_id').append('<option value="' + area.area_id + '">' + area
+                                .area_name + '</option>');
+                        });
                     });
                 });
 

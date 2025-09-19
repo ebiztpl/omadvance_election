@@ -125,9 +125,8 @@
 
 
                                 <div class="col-md-3 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">नगर/मंडल <span
-                                            class="error">*</span></label>
-                                    <select name="txtgram" class="form-control" id="txtgram" required>
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">नगर/मंडल </label>
+                                    <select name="txtgram" class="form-control" id="txtgram" >
                                         <option value="">--चुने--</option>
                                         @foreach ($nagars as $nagar)
                                             <option value="{{ $nagar->nagar_id }}">
@@ -138,9 +137,8 @@
                                 </div>
 
                                 <div class="col-md-3 mb-3 d-flex align-items-center">
-                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">पोलिंग/क्षेत्र <span
-                                            class="error">*</span></label>
-                                    <select name="txtpolling" class="form-control" id="txtpolling" required>
+                                    <label class="me-2 mr-2 mb-0" style="white-space: nowrap;">पोलिंग/क्षेत्र </label>
+                                    <select name="txtpolling" class="form-control" id="txtpolling" >
                                         <option value="">--चुने--</option>
                                     </select>
                                     <input type="hidden" name="area_id" id="area_id" />

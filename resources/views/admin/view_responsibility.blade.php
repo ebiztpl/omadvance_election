@@ -11,6 +11,73 @@
 
 @section('content')
     <div class="container">
+        <div class="row page-titles mx-0">
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <form method="GET" action="{{ route('view_responsibility.index') }}" id="complaintFilterForm"
+                    onsubmit="$('#loader-wrapper').show();">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <label>सदस्य का नाम</label>
+                            <input type="text" name="name" id="name" class="form-control"
+                                placeholder="सदस्य का नाम" value="{{ request('name') }}">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>जाति</label>
+                            <select name="jati" id="txtjati" class="form-control select2">
+                                <option value="">--जाति चुनें--</option>
+                                @foreach ($jaties as $jati)
+                                    <option value="{{ $jati->jati_name }}"
+                                        {{ request('jati') == $jati->jati_name ? 'selected' : '' }}>
+                                        {{ $jati->jati_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>कार्य क्षेत्र</label>
+                            <select id="workarea" name="workarea" class="form-control">
+                                <option value="">--चुनें--</option>
+                                @foreach (DB::table('level_master')->get() as $level)
+                                    <option value="{{ $level->level_name }}" {{ request('workarea') == $level->level_name ? 'selected' : '' }}>{{ $level->level_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>दायित्व</label>
+                            <select name="position_id" class="form-control">
+                                <option value="">--चुनें--</option>
+                                @foreach (DB::table('position_master')->get() as $pos)
+                                    <option value="{{ $pos->position_id }}" {{ request('position_id') == $pos->position_name ? 'selected' : '' }}>{{ $pos->position_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>तिथि से</label>
+                            <input type="date" name="from_date" id="from_date" class="form-control"
+                                value="{{ request('from_date') }}">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>तिथि तक</label>
+                            <input type="date" name="to_date" id="to_date" class="form-control"
+                                value="{{ request('to_date') }}">
+                        </div>
+
+                        <div class="col-md-3 mt-2" style="color:rgb(55, 64, 75)">
+                            <br>
+                            <button type="submit" class="btn btn-success mr-4" style="font-size: 12px">फ़िल्टर</button><strong style="font-size: 18px">
+                            कुल सदस्य: <span id="total">{{ $assignments->count() }}</span></strong>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-12">
                 <div class="card">
@@ -32,6 +99,7 @@
                                     <tr>
                                         <th>क्रमांक</th>
                                         <th>नाम</th>
+                                        <th>जाति</th>
                                         <th>पता</th>
                                         <th>फ़ोटो</th>
                                         <th>कार्य क्षेत्र</th>
@@ -99,6 +167,7 @@
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
                                             <td>{{ $assign->member->name ?? '' }}</td>
+                                            <td>{{ $assign->member->jati ?? '' }}</td>
                                             <td>{{ $assign->addressInfo->permanent_address ?? '' }}</td>
                                             <td>
                                                 <img src="{{ asset('assets/upload/' . ($assign->member->photo ?? 'default.png')) }}"
@@ -679,6 +748,13 @@
 
 
 
+                });
+
+                window.addEventListener('load', function() {
+                    if (window.location.search) {
+                        const cleanUrl = window.location.origin + window.location.pathname;
+                        window.history.replaceState({}, document.title, cleanUrl);
+                    }
                 });
             });
         </script>

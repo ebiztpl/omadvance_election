@@ -224,7 +224,7 @@
                                 <option value="">--चुनें--</option>
                                 @foreach ($politics as $politic)
                                     <option value="{{ $politic->name }}"
-                                        {{ old('party_name', $registration->step4->party_name) == $politic->name ? 'selected' : '' }}>
+                                        {{ old('party_name',  optional($registration->step4)->party_name) == $politic->name ? 'selected' : '' }}>
                                         {{ $politic->name }}
                                     </option>
                                 @endforeach
@@ -234,7 +234,7 @@
                         <div class="col-md-2 mb-3">
                             <label class="form-label label-heading">पद वर्तमान/भूतपूर्व </label>
                             <input type="text" name="present_post" class="form-control" id="present_post"
-                                value="{{ old('present_post', $registration->step4->present_post) }}" placeholder="" disabled>
+                                value="{{ old('present_post',  optional($registration->step4)->present_post) }}" placeholder="" disabled>
                         </div>
 
                         {{-- <div class="row mt-3">
@@ -300,7 +300,7 @@
                                         class="error">*</span>
                                 </label>
                                 <input type="text" name="total_member" id="total_member" class="form-control" disabled
-                                    placeholder="" value="{{ old('total_member', $registration->step3->total_member) }}"
+                                    placeholder="" value="{{ old('total_member',  optional($registration->step3)->total_member) }}"
                                     required>
                             </div>
                             <div class="col-md-2 mb-2">
@@ -308,7 +308,7 @@
                                         class="error">*</span>
                                 </label>
                                 <input type="text" name="total_voter" id="total_voter"
-                                    value="{{ old('total_voter', $registration->step3->total_voter) }}" disabled
+                                    value="{{ old('total_voter',  optional($registration->step3)->total_voter) }}" disabled
                                     class="form-control" placeholder="" required>
                             </div>
 
@@ -324,7 +324,7 @@
                                         class="error">*</span></label>
 
                                 <input type="text" name="member_name_1" class="form-control" id="member_name_1" disabled
-                                    required value="{{ old('member_name_1', $registration->step3->member_name_1) }}">
+                                    required value="{{ old('member_name_1',  optional($registration->step3)->member_name_1) }}">
                             </div>
 
                             <div class="col-md-2 mb-2">
@@ -332,7 +332,7 @@
                                         class="error">*</span></label>
                                 <input type="number" name="member_mobile_1" class="form-control" id="member_mobile_1" disabled
                                     pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10" required
-                                    value="{{ old('member_mobile_1', $registration->step3->member_mobile_1) }}">
+                                    value="{{ old('member_mobile_1',  optional($registration->step3)->member_mobile_1) }}">
                             </div>
 
                             {{-- <div class="col-md-2 mb-2">
@@ -362,19 +362,19 @@
                             <div class="col-md-2 mb-2">
                                 <label class="form-label label-heading">मोटरसाइकिल</label>
                                 <input type="text" name="vehicle3" class="form-control" id="vehicle3" disabled
-                                    value="{{ old('vehicle3', $registration->step3->vehicle3) }}">
+                                    value="{{ old('vehicle3',  optional($registration->step3)->vehicle3) }}">
                             </div>
 
                             <div class="col-md-2 mb-2">
                                 <label class="form-label label-heading">कार</label>
                                 <input type="text" class="form-control" name="vehicle1" id="vehicle1" disabled
-                                    value="{{ old('vehicle1', $registration->step3->vehicle1) }}">
+                                    value="{{ old('vehicle1',  optional($registration->step3)->vehicle1) }}">
                             </div>
 
                             <div class="col-md-2 mb-2">
                                 <label class="form-label label-heading">ट्रेक्टर</label>
                                 <input type="text" class="form-control" name="vehicle2" id="vehicle2" disabled
-                                    value="{{ old('vehicle2', $registration->step3->vehicle2) }}">
+                                    value="{{ old('vehicle2',  optional($registration->step3)->vehicle2) }}">
                             </div>
                         </div>
                     </fieldset>
@@ -522,7 +522,7 @@
                             <label for="permanent_address" class="form-label label-heading required">स्थाई पता <span
                                     class="error">*</span></label>
                             <textarea type="textarea" class="form-control" name="permanent_address" id="permanent_address" rows="2"
-                                required="" disabled>{{ old('permanent_address', $registration->step3->permanent_address) }}</textarea>
+                                required="" disabled>{{ old('permanent_address',  optional($registration->step3)->permanent_address) }}</textarea>
                         </div>
 
 
@@ -532,10 +532,10 @@
                                 <span class="d-flex align-items-center">
                                     स्थाई पता के समान&nbsp;
                                     <input type="checkbox" name="permanent_address_check" id="permanent_address_check" disabled
-                                        {{ old('permanent_address_check', $registration->step3->temp_address == $registration->step3->permanent_address ? 'checked' : '') }}>
+                                        {{ old('permanent_address_check',  optional($registration->step3)->temp_address ==  optional($registration->step3)->permanent_address ? 'checked' : '') }}>
                                 </span>
                             </label>
-                            <textarea class="form-control" disabled name="temp_address" id="temp_address" rows="2">{{ old('temp_address', $registration->step3->temp_address) }}</textarea>
+                            <textarea class="form-control" disabled name="temp_address" id="temp_address" rows="2">{{ old('temp_address',  optional($registration->step3)->temp_address) }}</textarea>
                         </div>
 
                         <div class="col-md-2 mb-2" style="display: none;">

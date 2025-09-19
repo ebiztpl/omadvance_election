@@ -152,8 +152,10 @@
                                 <label for="mobile_1" class="form-label label-heading">मोबाइल 1 <span
                                         class="error">*</span></label>
                                 <span id="msg"></span>
-                                <input type="number" name="mobile_1" class="form-control" id="mobile_1"
-                                    pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10" required autocomplete="">
+                                <input type="number" name="mobile_1" class="form-control" id="mobile_1" required
+                                    autocomplete="">
+                                <div class="invalid-feedback text-danger" id="mobile_1-error" style="display:none;">
+                                </div>
                             </div>
 
                             <div class="col-md-2 mb-2">
@@ -275,10 +277,10 @@
                                 </div>
 
                                 <div class="col-md-2 mb-2">
-                                    <label for="voter_id" class="form-label label-heading">मतदान आई.डी. 
+                                    <label for="voter_id" class="form-label label-heading">मतदान आई.डी.
                                     </label>
                                     <input type="text" name="voter_id" id="voter_id" class="form-control"
-                                        placeholder="" >
+                                        placeholder="">
                                 </div>
 
                                 <div class="col-md-2 mb-2">
@@ -312,8 +314,8 @@
                                 </div>
 
                                 <div class="col-md-2 mb-2">
-                                    <label for="member_mobile_1" class="form-label label-heading">परिवार सदस्य मोबाइल <span
-                                            class="error">*</span></label>
+                                    <label for="member_mobile_1" class="form-label label-heading">परिवार सदस्य मोबाइल
+                                        <span class="error">*</span></label>
                                     <input type="number" name="member_mobile_1" class="form-control"
                                         id="member_mobile_1" pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10"
                                         required>
@@ -329,7 +331,7 @@
                                     <input type="number" name="friend_mobile_1" class="form-control"
                                         id="friend_mobile_1" pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10">
                                 </div> --}}
-                                
+
                             </div>
                         </fieldset>
 
@@ -472,7 +474,7 @@
                                 </label>
                                 <select name="matdan_kendra_name" class="form-control" id="matdan_kendra_name" disabled>
                                 </select>
-                                 <input type="hidden" name="matdan_kendra_no" id="matdan_kendra_no" value="">
+                                <input type="hidden" name="matdan_kendra_no" id="matdan_kendra_no" value="">
                             </div>
 
 
@@ -531,8 +533,10 @@
                             <div class="col-md-4 mb-2">
                                 <label for="voter_front" class="form-label label-heading">वोटर आई.डी. आगे का फोटो <span
                                         class="error">*</span></label>
-                                <input type="file" name="voter_front" id="voter_front" class="form-control file"
-                                    required>
+                                <input type="file" accept="image/*" name="voter_front" id="voter_front"
+                                    class="form-control file" required>
+                                <div class="invalid-feedback text-danger" id="voter_front-error" style="display:none;">
+                                </div>
                                 <img id="voter_front_photo" src="#" alt="" width="210"
                                     style="padding-top:10px;" />
                             </div>
@@ -540,8 +544,11 @@
                             <div class="col-md-4 mb-2">
                                 <label for="voter_back" class="form-label label-heading">वोटर आई.डी. पीछे का फोटो <span
                                         class="error">*</span></label>
-                                <input type="file" name="voter_back" id="voter_back" class="form-control file"
-                                    required>
+                                <input type="file" accept="image/*" name="voter_back" id="voter_back"
+                                    class="form-control file" required>
+                                <div class="invalid-feedback text-danger" id="voter_back-error" style="display:none;">
+                                </div>
+
                                 <img id="voter_back_photo" src="#" alt="" width="210"
                                     style="padding-top:10px;" />
                             </div>
@@ -550,8 +557,9 @@
                                 <label for="photo" class="form-label label-heading required">संकल्प कर्ता का फोटो <span
                                         class="error">*</span>
                                 </label>
-                                <input type="file" accept="" class="form-control file" id="photo"
+                                <input type="file" accept="image/*" class="form-control file" id="photo"
                                     name="file" required />
+                                <div class="invalid-feedback text-danger" id="photo-error" style="display:none;"></div>
                             </div>
 
                             {{-- <div class="col-lg-3 col-md-3 col-12">
@@ -603,6 +611,56 @@
                     placeholder: "रुचि चुनें",
                     allowClear: true,
                     width: '100%'
+                });
+
+
+                function validateImage(inputId, errorId) {
+                    const fileInput = $(inputId);
+                    const errorDiv = $(errorId);
+                    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                    const maxSize = 2 * 1024 * 1024; // 2MB
+
+                    fileInput.on('change', function() {
+                        const file = this.files[0];
+
+                        if (file) {
+                            if (!allowedTypes.includes(file.type)) {
+                                errorDiv.text('इमेज केवल (JPG, PNG) अपलोड करें।').show();
+                                fileInput.addClass('is-invalid');
+                                this.value = '';
+                            } else if (file.size > maxSize) {
+                                errorDiv.text('फाइल का आकार 2MB से अधिक नहीं होना चाहिए।').show();
+                                fileInput.addClass('is-invalid');
+                                this.value = '';
+                            } else {
+                                errorDiv.hide();
+                                fileInput.removeClass('is-invalid');
+                            }
+                        } else {
+                            errorDiv.hide();
+                            fileInput.removeClass('is-invalid');
+                        }
+                    });
+                }
+
+                validateImage('#photo', '#photo-error');
+                validateImage('#voter_front', '#voter_front-error');
+                validateImage('#voter_back', '#voter_back-error');
+
+
+                $('#mobile_1').on('input', function() {
+                    const value = $(this).val();
+                    const errorDiv = $('#mobile_1-error');
+                    const mobilePattern = /^[1-9][0-9]{9}$/;
+
+                    if (!mobilePattern.test(value)) {
+                        errorDiv.text('मोबाइल नंबर 10 अंकों का होना चाहिए।')
+                            .show();
+                        $(this).addClass('is-invalid');
+                    } else {
+                        errorDiv.hide();
+                        $(this).removeClass('is-invalid');
+                    }
                 });
             });
 
@@ -828,7 +886,7 @@
 
 
 
-               $('#permanent_address_check').on('change', function() {
+                $('#permanent_address_check').on('change', function() {
                     if ($(this).is(':checked')) {
                         let permAddress = $('#permanent_address').val();
                         $('#temp_address').val(permAddress).prop('readonly', true);

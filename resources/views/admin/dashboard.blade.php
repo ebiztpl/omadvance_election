@@ -193,10 +193,23 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4 mt-2" style="color:rgb(55, 64, 75)">
+                    <div class="col-md-2">
+                        <label>तिथि से</label>
+                        <input type="date" name="from_date" id="from_date" class="form-control">
+
+                    </div>
+
+                    <div class="col-md-2">
+                        <label>तिथि तक</label>
+                        <input type="date" name="to_date" id="to_date" class="form-control">
+                    </div>
+
+
+                    <div class="col-md-3 mt-2" style="color:rgb(55, 64, 75)">
                         <br>
                         <button class="btn btn-success mr-4" style="font-size: 12px" id="data-filter">फ़िल्टर</button>
-                        Filter Data Count: <span id="total">0</span>
+                        <strong style="font-size: 18px">
+                            कुल सदस्य: <span id="total">0</span></strong>
                     </div>
                 </div>
             </div>
@@ -285,7 +298,9 @@
                     interest_area: $("#interest_area").val(),
                     family_member: $("#family_member").val(),
                     vehicle: $("#vehicle").val(),
-                    whatsapp: $("#whatsapp").val()
+                    whatsapp: $("#whatsapp").val(),
+                    from_date: $('#from_date').val(),
+                    to_date: $('#to_date').val()
                 };
             };
 
@@ -339,6 +354,8 @@
                             d.family_member = $("#family_member").val();
                             d.vehicle = $("#vehicle").val();
                             d.whatsapp = $("#whatsapp").val();
+                            d.from_date = $('#from_date').val();
+                            d.to_date = $('#to_date').val();
                         },
                         dataSrc: function(json) {
                             $('#loader-wrapper').hide();
@@ -424,7 +441,7 @@
                                 $('#txtvidhansabha').html('<option value="">--चुनें--</option>' +
                                     data.join(''));
                                 $('#mandal').html(
-                                '<option value="">--चुनें--</option>');
+                                    '<option value="">--चुनें--</option>');
                             }
                         });
                     } else {
@@ -449,6 +466,27 @@
                     }
                 });
 
+            });
+
+            $(document).on('click', '.deleteBtn', function() {
+                if (!confirm("क्या आप वाकई इस रिकॉर्ड को हटाना चाहते हैं?")) return;
+
+                let id = $(this).data('id');
+
+                $.ajax({
+                    url: '/register/' + id,
+                    type: 'DELETE',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        alert(response.message);
+                        $('#example').DataTable().ajax.reload();
+                    },
+                    error: function(xhr) {
+                        alert("हटाने में समस्या हुई!");
+                    }
+                });
             });
         </script>
     @endpush

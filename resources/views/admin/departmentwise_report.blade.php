@@ -44,11 +44,13 @@
                             <button type="submit" class="btn btn-primary" style="font-size: 12px">फ़िल्टर</button>
                         </div>
 
-                        <div class="col-md-2 mt-2">
-                            <br>
+                        <div class="col-md-3 printExcelbuttons">
                             <button type="button" class="btn btn btn-success" onclick="printReport()"
                                 style="font-size: 12px;">प्रिंट
                                 रिपोर्ट</button>
+                  
+                            <button type="button" class="btn btn-info" style="font-size: 12px;"
+                                onclick="exportExcel()">Excel</button>
                         </div>
                     </div>
                 </form>
@@ -168,6 +170,14 @@
 
     @push('scripts')
         <script>
+            function exportExcel() {
+                let form = document.getElementById('complaintFilterForm');
+                let url = new URL(form.action, window.location.origin);
+                let params = new URLSearchParams(new FormData(form));
+                params.append('export', 'excel'); 
+                window.location.href = url.pathname + '?' + params.toString();
+            }
+
             window.addEventListener('load', function() {
                 if (window.location.search) {
                     const cleanUrl = window.location.origin + window.location.pathname;

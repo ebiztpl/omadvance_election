@@ -593,7 +593,7 @@
                             </div>
 
 
-                            <div class="col-md-3 mb-2">
+                            {{-- <div class="col-md-3 mb-2">
                                 <label class="form-label label-heading d-flex justify-content-between align-items-center">
                                     अस्थाई पता
                                     <span class="d-flex align-items-center">
@@ -604,6 +604,19 @@
                                     </span>
                                 </label>
                                 <textarea class="form-control" name="temp_address" id="temp_address" rows="2">{{ old('temp_address', $registration->step3->temp_address ?? '') }}</textarea>
+                            </div> --}}
+
+                              <div class="col-md-3 mb-2">
+                                <label class="form-label label-heading d-flex justify-content-between align-items-center">
+                                    अस्थाई पता
+                                    <span class="d-flex align-items-center">
+                                        स्थाई पता के समान&nbsp;
+                                        <input type="checkbox" name="permanent_address_check"
+                                            id="permanent_address_check"
+                                            {{ old('permanent_address_check', optional($registration->step3)->temp_address == optional($registration->step3)->permanent_address ? 'checked' : '') }}>
+                                    </span>
+                                </label>
+                                <textarea class="form-control" name="temp_address" id="temp_address" rows="2">{{ old('temp_address', optional($registration->step3)->temp_address ?? '') }}</textarea>
                             </div>
 
                             <div class="col-md-2 mb-2" style="display: none;">
