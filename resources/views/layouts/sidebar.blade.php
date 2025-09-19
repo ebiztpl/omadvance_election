@@ -77,7 +77,7 @@
                         <li><a href="{{ route('areawise_report.index') }}">क्षेत्र रिपोर्ट</a></li>
                         <li><a href="{{ route('jatiwise_report.index') }}">जाति रिपोर्ट</a></li>
                         <li><a href="{{ route('departmentwise_report.index') }}">विभाग रिपोर्ट</a></li>
-                        
+                        <li><a href="{{ route('reference_report.index') }}">रेफरेंस रिपोर्ट</a></li>
                     </ul>
                 </li>
 
