@@ -125,7 +125,7 @@
                             <table class="table table-bordered table-sm" style="color: black">
                                 <thead style="background-color: blanchedalmond">
                                     <tr>
-                                        <th style="font-weight: bold">प्रकार</th>
+                                        <th>प्रकार</th>
                                         <th>कुल</th>
                                         <th>कुल फॉरवर्ड</th>
                                         <th>कुल आगे भेजी</th>
@@ -139,7 +139,7 @@
                                     @if (isset($reportManager))
                                         @foreach ($reportManager as $prakar => $data)
                                             <tr>
-                                                <td>{{ $prakar }}</td>
+                                                <td style="font-weight: bold">{{ $prakar }}</td>
                                                 <td>{{ $data['total'] }}</td>
                                                 <td>{{ $data['total_replies'] ?? 0 }}</td>
                                                 <td>{{ $data['reply_from'] ?? 0 }}</td>
@@ -163,7 +163,7 @@
                             <table class="table table-bordered table-sm" style="color: black">
                                 <thead style="background-color: blanchedalmond">
                                     <tr>
-                                        <th style="font-weight: bold">प्रकार</th>
+                                        <th>प्रकार</th>
                                         <th>कुल</th>
                                         <th>कुल फ़ॉलोअप</th>
                                         <th>पूर्ण फ़ॉलोअप</th>
@@ -177,7 +177,7 @@
                                     @if (isset($reportOperator))
                                         @foreach ($reportOperator as $prakar => $data)
                                             <tr>
-                                                <td>{{ $prakar }}</td>
+                                                <td style="font-weight: bold">{{ $prakar }}</td>
                                                 <td>{{ $data['total'] }}</td>
                                                 <td>{{ $data['followups'] ?? '-' }}</td>
                                                 <td>{{ $data['completed_followups'] ?? '-' }}</td>
@@ -201,7 +201,7 @@
                             <table class="table table-bordered table-sm" style="color: black">
                                 <thead style="background-color: blanchedalmond">
                                     <tr>
-                                        <th style="font-weight: bold">प्रकार</th>
+                                        <th>प्रकार</th>
                                         <th>कुल</th>
                                     </tr>
                                 </thead>
@@ -209,7 +209,7 @@
                                     @if (isset($reportMember))
                                         @foreach ($reportMember as $prakar => $data)
                                             <tr>
-                                                <td>{{ $prakar }}</td>
+                                                <td style="font-weight: bold">{{ $prakar }}</td>
                                                 <td>{{ $data['total'] }}</td>
                                             </tr>
                                         @endforeach
