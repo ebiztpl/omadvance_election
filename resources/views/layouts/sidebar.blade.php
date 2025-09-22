@@ -78,6 +78,7 @@
                         <li><a href="{{ route('jatiwise_report.index') }}">जाति रिपोर्ट</a></li>
                         <li><a href="{{ route('departmentwise_report.index') }}">विभाग रिपोर्ट</a></li>
                         <li><a href="{{ route('reference_report.index') }}">रेफरेंस रिपोर्ट</a></li>
+                        <li><a href="{{ route('team_report.index') }}">टीम रिपोर्ट</a></li>
                     </ul>
                 </li>
 

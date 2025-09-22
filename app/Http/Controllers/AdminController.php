@@ -6537,16 +6537,16 @@ class AdminController extends Controller
                   </tr>";
                     $counter++;
                 }
-                 echo "<tr></tr>";
+                echo "<tr></tr>";
 
-                 echo "<tr>
+                echo "<tr>
                     <td colspan='5' style='text-align:center;'>
                     अप्राप्त शिकायत: कुल {$summaryLabel}: ({$totalsAll['total_areas']}), 
                         पंजीकृत {$summaryLabel}: ({$totalsRegistered['total_areas']}), 
                     </td>
                 </tr>";
                 foreach ($noComplaints->chunk(5) as $chunk) {
-                   
+
                     echo "<tr>";
                     foreach ($chunk as $row) {
                         echo "<td>{$row->area_name}</td>";
@@ -6669,6 +6669,402 @@ class AdminController extends Controller
             'officeType'    => $officeType,
         ]);
     }
+
+
+    public function teamReport(Request $request)
+    {
+        $managers = DB::table('admin_master')->where('role', 2)->get();
+        $offices = DB::table('admin_master')->where('role', 3)->get();
+        $fields = DB::table('registration_form')->where('position_id', 8)->where('type', 3)->get();
+
+        $selectedRole = $request->summary ?? null;
+        $selectedManagerId = $request->manager_id ?? null;
+        $selectedOperatorId = $request->operator_id ?? null;
+        $selectedMemberId = $request->commander_id ?? null;
+
+        $fromDate = $request->from_date;
+        $toDate = $request->to_date;
+
+        // Load all complaints (filter total by posted_date)
+        $complaints = Complaint::query()
+            ->when($fromDate, fn($q) => $q->whereDate('posted_date', '>=', $fromDate))
+            ->when($toDate, fn($q) => $q->whereDate('posted_date', '<=', $toDate))
+            ->get();
+
+        $reportManager = [];
+        $reportOperator = [];
+        $reportMember = [];
+
+        if ($selectedRole === 'manager') {
+            $reportManager = $this->getManagerReport($selectedRole, $selectedManagerId, $request);
+        } elseif ($selectedRole === 'operator') {
+            $reportOperator = $this->generateOperatorReport($selectedRole, $selectedOperatorId, $request);
+        } elseif ($selectedRole === 'member') {
+            $complaintsFiltered = $complaints->filter(fn($c) => $c->type == 1);
+            if ($selectedMemberId) {
+                $complaintsFiltered = $complaintsFiltered->filter(fn($c) => $c->complaint_created_by_member == $selectedMemberId);
+            }
+            foreach ($complaintsFiltered->groupBy('complaint_type') as $type => $items) {
+                $reportMember[$type] = ['total' => $items->count()];
+            }
+        } else {
+            // On page load, show all roles
+            $reportManager = $this->getManagerReport('manager', null, $request);
+            $reportOperator = $this->generateOperatorReport('operator', null,  $request);
+
+            $complaintsFiltered = $complaints->filter(fn($c) => $c->type == 1);
+            foreach ($complaintsFiltered->groupBy('complaint_type') as $type => $items) {
+                $reportMember[$type] = ['total' => $items->count()];
+            }
+        }
+
+        if ($request->get('export') === 'excel') {
+            $filename = "team_report_" . date('Y-m-d_H-i-s') . ".xls";
+
+            header("Content-Type: application/vnd.ms-excel; charset=utf-8");
+            header("Content-Disposition: attachment; filename=\"$filename\"");
+            header("Pragma: no-cache");
+            header("Expires: 0");
+
+            $dateRangeText = '';
+            if ($request->from_date || $request->to_date) {
+                $fromDateText = $request->from_date ? \Carbon\Carbon::parse($request->from_date)->format('d-m-Y') : '';
+                $toDateText = $request->to_date ? \Carbon\Carbon::parse($request->to_date)->format('d-m-Y') : '';
+                $dateRangeText = trim("{$fromDateText} से {$toDateText}");
+            } else {
+                $dateRangeText = \Carbon\Carbon::now()->format('d-m-Y');
+            }
+
+            echo "<table border='1'>";
+
+            if (isset($reportManager)) {
+                echo "<tr><th colspan='8' style='text-align:center;'>मैनेजर रिपोर्ट" . ($dateRangeText ? " ({$dateRangeText})" : "") . "</th></tr>";
+                echo "<tr>
+            <th>प्रकार</th>
+            <th>कुल</th>
+            <th>कुल फॉरवर्ड</th>
+            <th>कुल आगे भेजी</th>
+            <th>कुल समाधान</th>
+            <th>कुल निरस्त</th>
+            <th>कुल रीव्यू पर</th>
+            <th>कुल अपडेट</th>
+        </tr>";
+
+                foreach ($reportManager as $prakar => $data) {
+                    echo "<tr style='text-align:center;'>
+                <td style='mso-number-format:\@; font-weight: bold;'>{$prakar}</td>
+                <td style='mso-number-format:\@;'>{$data['total']}</td>
+                <td style='mso-number-format:\@;'>" . ($data['total_replies'] ?? 0) . "</td>
+                <td style='mso-number-format:\@;'>" . ($data['reply_from'] ?? 0) . "</td>
+                <td style='mso-number-format:\@;'>" . ($data['total_solved'] ?? 0) . "</td>
+                <td style='mso-number-format:\@;'>" . ($data['total_cancelled'] ?? 0) . "</td>
+                <td style='mso-number-format:\@;'>" . ($data['total_reviewed'] ?? 0) . "</td>
+                <td style='mso-number-format:\@;'>" . ($data['total_updates'] ?? 0) . "</td>
+            </tr>";
+                }
+
+                echo "<tr><td colspan='8'>&nbsp;</td></tr>"; // blank row
+            }
+
+            // Operator Report
+            if (isset($reportOperator)) {
+                echo "<tr><th colspan='8' style='text-align:center;'>ऑपरेटर रिपोर्ट" . ($dateRangeText ? " ({$dateRangeText})" : "") . "</th></tr>";
+                echo "<tr>
+            <th>प्रकार</th>
+            <th>कुल</th>
+            <th>कुल फ़ॉलोअप</th>
+            <th>पूर्ण फ़ॉलोअप</th>
+            <th>कुल प्राप्त कॉल</th>
+            <th>प्राप्त फ़ॉलोअप प्रतिक्रिया</th>
+            <th>समस्या स्थिति</th>
+            <th>समस्या स्थिति अपडेट</th>
+        </tr>";
+
+                foreach ($reportOperator as $prakar => $data) {
+                    echo "<tr style='text-align:center;'>
+                <td style='mso-number-format:\@;  font-weight: bold;'>{$prakar}</td>
+                <td style='mso-number-format:\@;'>{$data['total']}</td>
+                <td style='mso-number-format:\@;'>" . ($data['followups'] ?? '-') . "</td>
+                <td style='mso-number-format:\@;'>" . ($data['completed_followups'] ?? '-') . "</td>
+                <td style='mso-number-format:\@;'>" . ($data['overall_incoming'] ?? '-') . "</td>
+                <td style='mso-number-format:\@;'>" . ($data['incoming_reason1'] ?? '-') . "</td>
+                <td style='mso-number-format:\@;'>" . ($data['incoming_reason2'] ?? '-') . "</td>
+                <td style='mso-number-format:\@;'>" . ($data['incoming_reason3'] ?? '-') . "</td>
+            </tr>";
+                }
+
+                echo "<tr><td colspan='8'>&nbsp;</td></tr>";
+            }
+
+            // Member Report
+            if (isset($reportMember)) {
+                echo "<tr><th colspan='8' style='text-align:center;'>कमांडर रिपोर्ट" . ($dateRangeText ? " ({$dateRangeText})" : "") . "</th></tr>";
+                echo "<tr>
+            <th colspan='4'>प्रकार</th>
+            <th colspan='4'>कुल</th>
+        </tr>";
+
+                foreach ($reportMember as $prakar => $data) {
+                    echo "<tr style='text-align:center;'>
+                <td colspan='4' style='mso-number-format:\@;  font-weight: bold;'>{$prakar}</td>
+                <td colspan='4' style='mso-number-format:\@;'>{$data['total']}</td>
+            </tr>";
+                }
+            }
+
+            echo "</table>";
+            exit;
+        }
+
+
+
+
+        return view('admin.team_report', compact(
+            'managers',
+            'offices',
+            'fields',
+            'reportManager',
+            'reportOperator',
+            'reportMember'
+        ));
+    }
+
+    private function getManagerReport($selectedRole, $selectedManagerId, $request)
+    {
+        $reportManager = [];
+        if ($selectedRole !== 'manager') return $reportManager;
+
+        $complaints = \App\Models\Complaint::with(['replies'])
+            ->get(); // Load all, filtering for replies handled later
+
+        $complaintTypes = $complaints->pluck('complaint_type')->unique();
+
+        foreach ($complaintTypes as $type) {
+            $complaintsOfType = $complaints->where('complaint_type', $type);
+
+            // Total complaints filtered by posted_date
+            $totalComplaints = $complaintsOfType->filter(function ($c) use ($request) {
+                if ($request->from_date && $c->posted_date < $request->from_date) return false;
+                if ($request->to_date && $c->posted_date > $request->to_date) return false;
+                return true;
+            })->count();
+
+            $totalReplies = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $request) {
+                return $c->replies
+                    ->filter(function ($r) use ($selectedManagerId, $request) {
+                        if ($r->forwarded_to === null) return false;
+                        if ($selectedManagerId) {
+                            if ($r->forwarded_to != $selectedManagerId) return false;
+                        }
+                        if ($request->from_date && $r->reply_date < $request->from_date) return false;
+                        if ($request->to_date && $r->reply_date > $request->to_date) return false;
+                        return true;
+                    })
+                    ->count();
+            });
+
+            $complaintsWithReplies = $complaintsOfType->filter(function ($c) use ($selectedManagerId, $request) {
+                return $c->replies
+                    ->filter(function ($r) use ($selectedManagerId, $request) {
+                        if ($r->forwarded_to === null) return false;
+                        if ($selectedManagerId) {
+                            if ($r->forwarded_to != $selectedManagerId) return false;
+                        }
+                        if ($request->from_date && $r->reply_date < $request->from_date) return false;
+                        if ($request->to_date && $r->reply_date > $request->to_date) return false;
+                        return true;
+                    })
+                    ->isNotEmpty();
+            })->count();
+
+            // Replies from manager (if selected)
+            $totalRepliesFrom = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $request) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $request) {
+                    if ($r->reply_from === null) return false;
+
+                    // Only check forwarded_to != reply_from if a manager is selected
+                    if ($r->forwarded_to === null) return false;
+                    if ($selectedManagerId && $r->forwarded_to == $r->reply_from) return false;
+
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    if ($request->from_date && $r->reply_date < $request->from_date) return false;
+                    if ($request->to_date && $r->reply_date > $request->to_date) return false;
+
+                    return true;
+                })->count();
+            });
+
+            $complaintsWithRepliesFrom = $complaintsOfType->filter(function ($c) use ($selectedManagerId, $request) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $request) {
+                    if ($r->reply_from === null) return false;
+                    if ($r->forwarded_to === null) return false;
+                    if ($selectedManagerId && $r->forwarded_to == $r->reply_from) return false;
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    if ($request->from_date && $r->reply_date < $request->from_date) return false;
+                    if ($request->to_date && $r->reply_date > $request->to_date) return false;
+
+                    return true;
+                })->isNotEmpty();
+            })->count();
+
+
+            // Solved & Cancelled
+            $totalSolved = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $type, $request) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $request) {
+                    // If manager selected, only count replies from that manager
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    // Apply reply_date filter
+                    if ($request->from_date && $r->reply_date < $request->from_date) return false;
+                    if ($request->to_date && $r->reply_date > $request->to_date) return false;
+
+                    // Check complaint status based on type
+                    if (in_array($type, ['समस्या', 'विकास'])) return $r->complaint_status == 4;
+                    if (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) return in_array($r->complaint_status, [13, 14, 15, 16]);
+
+                    return false;
+                })->count();
+            });
+
+            $totalCancelled = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $type, $request) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $request) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    // Apply reply_date filter
+                    if ($request->from_date && $r->reply_date < $request->from_date) return false;
+                    if ($request->to_date && $r->reply_date > $request->to_date) return false;
+
+                    if (in_array($type, ['समस्या', 'विकास'])) return $r->complaint_status == 5;
+                    if (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) return $r->complaint_status == 18;
+
+                    return false;
+                })->count();
+            });
+
+            // Reviewed filtered by review_date
+            $complaintsWithReview = $complaintsOfType->filter(
+                fn($c) => $c->replies
+                    ->filter(fn($r) => (!$selectedManagerId || $r->reply_from == $selectedManagerId) &&
+                        $r->review_date &&
+                        (!$request->from_date || $r->review_date >= $request->from_date) &&
+                        (!$request->to_date || $r->review_date <= $request->to_date))
+                    ->isNotEmpty()
+            )->count();
+
+            $totalRepliesWithReview = $complaintsOfType->sum(
+                fn($c) => $c->replies
+                    ->filter(fn($r) => (!$selectedManagerId || $r->reply_from == $selectedManagerId) &&
+                        $r->review_date &&
+                        (!$request->from_date || $r->reply_date >= $request->from_date) &&
+                        (!$request->to_date || $r->reply_date <= $request->to_date))
+                    ->count()
+            );
+
+            // Updates filtered by created_at
+            $totalUpdates = \DB::table('update_complaints')
+                ->when($selectedManagerId, fn($q) => $q->where('updated_by', $selectedManagerId))
+                ->where('complaint_type', $type)
+                ->when($request->from_date, fn($q) => $q->whereDate('created_at', '>=', $request->from_date))
+                ->when($request->to_date, fn($q) => $q->whereDate('created_at', '<=', $request->to_date))
+                ->count();
+
+            $reportManager[$type] = [
+                'total' => $totalComplaints,
+                'total_replies' => $complaintsWithReplies . ' / ' . $totalReplies,
+                'reply_from' => $complaintsWithRepliesFrom . ' / ' . $totalRepliesFrom,
+                'total_solved' => $totalSolved,
+                'total_cancelled' => $totalCancelled,
+                'total_reviewed' => $complaintsWithReview . ' / ' . $totalRepliesWithReview,
+                'total_updates' => $totalUpdates,
+            ];
+        }
+
+        return $reportManager;
+    }
+
+    private function generateOperatorReport($selectedRole, $selectedOperatorId, $request)
+    {
+        $report = [];
+        if ($selectedRole !== 'operator') return $report;
+
+        // Load all complaints
+        $complaints = Complaint::all();
+        $complaintTypes = $complaints->pluck('complaint_type')->unique();
+        $complaintsById = $complaints->keyBy('complaint_id');
+
+        // Complaint IDs for the selected operator
+        $operatorComplaintIds = $selectedOperatorId
+            ? $complaints->where('complaint_created_by', $selectedOperatorId)->pluck('complaint_id')->all()
+            : $complaints->pluck('complaint_id')->all();
+
+        foreach ($complaintTypes as $type) {
+            $complaintsOfType = $complaints->where('complaint_type', $type);
+
+            $totalComplaints = $complaintsOfType->filter(function ($c) use ($request, $selectedOperatorId) {
+                if ($c->type != 2) return false;
+
+                if ($selectedOperatorId && $c->complaint_created_by != $selectedOperatorId) return false;
+
+                if ($request->from_date && $c->posted_date < $request->from_date) return false;
+                if ($request->to_date && $c->posted_date > $request->to_date) return false;
+
+                return true;
+            })->count();
+
+
+            $followupsAll = \App\Models\FollowupStatus::query()
+                ->whereIn('complaint_id', $operatorComplaintIds)
+                ->when($selectedOperatorId, fn($q) => $q->where('followup_created_by', $selectedOperatorId))
+                ->when($request->from_date, fn($q) => $q->whereDate('followup_date', '>=', $request->from_date))
+                ->when($request->to_date, fn($q) => $q->whereDate('followup_date', '<=', $request->to_date))
+                ->get();
+
+            $followupsGrouped = $followupsAll->groupBy(fn($f) => $complaintsById->get($f->complaint_id)?->complaint_type ?? 'unknown');
+            $followupGroup = ($followupsGrouped[$type] ?? collect())->filter(function ($f) use ($request) {
+                if ($request->from_date && $f->followup_date < $request->from_date) return false;
+                if ($request->to_date && $f->followup_date > $request->to_date) return false;
+                return true;
+            });
+
+            $followupRepliesByType = $followupGroup->count();
+            $followupComplaintsByType = $followupGroup->pluck('complaint_id')->unique()->count();
+            $completedFollowupsByType = $followupGroup->where('followup_status', 2)->count();
+
+            // Incoming calls
+            $incomingAll = \DB::table('incoming_calls')
+                ->whereIn('complaint_id', $operatorComplaintIds)
+                ->when($selectedOperatorId, fn($q) => $q->where('incoming_created_by', $selectedOperatorId))
+                ->when($request->from_date, fn($q) => $q->whereDate('created_at', '>=', $request->from_date))
+                ->when($request->to_date, fn($q) => $q->whereDate('created_at', '<=', $request->to_date))
+                ->get();
+
+            // Group first by complaint type
+            $incomingGroupedByType = $incomingAll->groupBy(fn($call) => $complaintsById->get($call->complaint_id)?->complaint_type ?? 'unknown');
+
+            // Then for each type, group by reason
+            $incomingReason1 = collect($incomingGroupedByType[$type] ?? [])->where('reason', 1);
+            $incomingReason2 = collect($incomingGroupedByType[$type] ?? [])->where('reason', 2);
+            $incomingReason3 = collect($incomingGroupedByType[$type] ?? [])->where('reason', 3);
+
+
+            $overallIncoming = collect($incomingGroupedByType[$type] ?? []);
+            $report[$type] = [
+                'total' => $totalComplaints,
+                'followups' => $followupComplaintsByType . ' / ' . $followupRepliesByType,
+                'completed_followups' => $completedFollowupsByType,
+                'incoming_reason1' => count($incomingReason1) . ' / ' . count($incomingReason1),
+                'incoming_reason2' => count($incomingReason2),
+                'incoming_reason3' => count($incomingReason3),
+                'overall_incoming' => $overallIncoming->count(),
+            ];
+        }
+
+        return $report;
+    }
+
+
 
 
     // activity log functions 

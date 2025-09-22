@@ -172,8 +172,9 @@
 
                             <div class="col-md-2 mb-2">
                                 <label for="mobile_2" class="form-label label-heading">मोबाइल 2</label>
-                                <input type="number" name="mobile_2" class="form-control" id="mobile_2"
-                                    pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10">
+                                <input type="number" name="mobile_2" class="form-control" id="mobile_2">
+                                <div class="invalid-feedback text-danger" id="mobile_2-error" style="display:none;">
+                                </div>
                             </div>
 
 
@@ -651,6 +652,21 @@
                 $('#mobile_1').on('input', function() {
                     const value = $(this).val();
                     const errorDiv = $('#mobile_1-error');
+                    const mobilePattern = /^[1-9][0-9]{9}$/;
+
+                    if (!mobilePattern.test(value)) {
+                        errorDiv.text('मोबाइल नंबर 10 अंकों का होना चाहिए।')
+                            .show();
+                        $(this).addClass('is-invalid');
+                    } else {
+                        errorDiv.hide();
+                        $(this).removeClass('is-invalid');
+                    }
+                });
+
+                 $('#mobile_2').on('input', function() {
+                    const value = $(this).val();
+                    const errorDiv = $('#mobile_2-error');
                     const mobilePattern = /^[1-9][0-9]{9}$/;
 
                     if (!mobilePattern.test(value)) {

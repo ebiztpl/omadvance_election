@@ -2051,7 +2051,8 @@ class OperatorController extends Controller
             \DB::table('incoming_calls')->insert([
                 'complaint_id'        => $complaint->complaint_id,
                 'complaint_reply_id'  => null,
-                'reason'              => 2, 
+                'reason'              => 2,
+                'incoming_created_by' => session('user_id'), 
                 'created_at'          => now(),
             ]);
         }
@@ -2249,6 +2250,7 @@ class OperatorController extends Controller
     //         'complaint_id' => $request->complaint_id,
     //         'complaint_reply_id' => $request->complaint_reply_id ?? null,
     //         'reason' => $reason,
+    //         'incoming_created_by' => session('user_id'),
     //         'created_at' => now(),
     //     ]);
 
@@ -2292,6 +2294,7 @@ class OperatorController extends Controller
                 'complaint_id' => $request->complaint_id,
                 'complaint_reply_id' => $reply->complaint_reply_id,
                 'reason' => 1,
+                'incoming_created_by' => session('user_id'),
                 'created_at' => now(),
             ]);
         }
@@ -2476,6 +2479,7 @@ class OperatorController extends Controller
                 'complaint_id' => $complaint->complaint_id,
                 'complaint_reply_id' => $request->complaint_reply_id ?? null,
                 'reason' => 3,
+                'incoming_created_by' => session('user_id'),
                 'created_at' => now(),
             ]);
 

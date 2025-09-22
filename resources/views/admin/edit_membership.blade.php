@@ -159,7 +159,8 @@
                                         {{ old('gender', $registration->gender ?? '') == 'पुरुष' ? 'selected' : '' }}>पुरुष
                                     </option>
                                     <option value="स्त्री"
-                                        {{ old('gender', $registration->gender ?? '') == 'स्त्री' ? 'selected' : '' }}>स्त्री
+                                        {{ old('gender', $registration->gender ?? '') == 'स्त्री' ? 'selected' : '' }}>
+                                        स्त्री
                                     </option>
                                     <option value="अन्य"
                                         {{ old('gender', $registration->gender ?? '') == 'अन्य' ? 'selected' : '' }}>अन्य
@@ -172,8 +173,9 @@
                                         class="error">*</span></label>
                                 <span id="msg"></span>
                                 <input type="number" name="mobile_1" class="form-control" id="mobile_1"
-                                    pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10"
                                     value="{{ old('mobile_1', $registration->mobile1 ?? '') }}" required autocomplete="">
+                                <div class="invalid-feedback text-danger" id="mobile_1-error" style="display:none;">
+                                </div>
                             </div>
 
                             <div class="col-md-2 mb-2">
@@ -189,8 +191,9 @@
                             <div class="col-md-2 mb-2">
                                 <label for="mobile_2" class="form-label label-heading">मोबाइल 2</label>
                                 <input type="number" name="mobile_2" class="form-control" id="mobile_2"
-                                    pattern="[1-9]{1}[0-9]{9}" minlength="10" maxlength="10"
                                     value="{{ old('mobile_2', $registration->mobile2 ?? '') }}">
+                                <div class="invalid-feedback text-danger" id="mobile_2-error" style="display:none;">
+                                </div>
                             </div>
 
 
@@ -213,8 +216,8 @@
                             <div class="col-md-2 mb-2">
                                 <label for="email" class="form-label label-heading">ईमेल आईडी <span
                                         class="error">*</span></label>
-                                <input type="email" value="{{ old('email', $registration->email ?? '') }}" name="email"
-                                    class="form-control" id="email" required>
+                                <input type="email" value="{{ old('email', $registration->email ?? '') }}"
+                                    name="email" class="form-control" id="email" required>
                             </div>
 
                             <div class="col-md-2 mb-2">
@@ -286,7 +289,8 @@
                             <div class="col-md-2 mb-2">
                                 <label class="form-label label-heading">पद वर्तमान/भूतपूर्व </label>
                                 <input type="text" name="present_post" class="form-control" id="present_post"
-                                    value="{{ old('present_post', $registration->step4->present_post ?? '') }}" placeholder="">
+                                    value="{{ old('present_post', $registration->step4->present_post ?? '') }}"
+                                    placeholder="">
                             </div>
                         </div>
 
@@ -329,7 +333,8 @@
                                     </label>
                                     <input type="text" name="total_member" id="total_member" class="form-control"
                                         placeholder=""
-                                        value="{{ old('total_member', $registration->step3->total_member ?? '') }}" required>
+                                        value="{{ old('total_member', $registration->step3->total_member ?? '') }}"
+                                        required>
                                 </div>
                                 <div class="col-md-2 mb-2">
                                     <label for="total_voter" class="form-label label-heading ">परिवार में कुल मतदाता <span
@@ -347,12 +352,13 @@
                                         placeholder="">
                                 </div>
 
-                                 <div class="col-md-2 mb-2">
+                                <div class="col-md-2 mb-2">
                                     <label for="member_name_1" class="form-label label-heading">परिवार सदस्य नाम <span
                                             class="error">*</span></label>
 
                                     <input type="text" name="member_name_1" class="form-control" id="member_name_1"
-                                        required value="{{ old('member_name_1', $registration->step3->member_name_1 ?? '') }}">
+                                        required
+                                        value="{{ old('member_name_1', $registration->step3->member_name_1 ?? '') }}">
                                 </div>
 
                                 <div class="col-md-2 mb-2">
@@ -561,8 +567,8 @@
                                     @if ($registration->step2 && $registration->step2->polling)
                                         <option value="{{ $registration->step2->polling->gram_polling_id }}"
                                             data-polling-no="{{ $registration->step2->matdan_kendra_no }}" selected>
-                                            {{ $registration->step2->matdan_kendra_no  ?? ''}} -
-                                            {{ $registration->step2->polling->polling_name  ?? ''}}
+                                            {{ $registration->step2->matdan_kendra_no ?? '' }} -
+                                            {{ $registration->step2->polling->polling_name ?? '' }}
                                         </option>
                                     @endif
                                 </select>
@@ -606,7 +612,7 @@
                                 <textarea class="form-control" name="temp_address" id="temp_address" rows="2">{{ old('temp_address', $registration->step3->temp_address ?? '') }}</textarea>
                             </div> --}}
 
-                              <div class="col-md-3 mb-2">
+                            <div class="col-md-3 mb-2">
                                 <label class="form-label label-heading d-flex justify-content-between align-items-center">
                                     अस्थाई पता
                                     <span class="d-flex align-items-center">
@@ -653,11 +659,13 @@
                                         src="{{ asset('assets/upload/step2/' . $registration->step2->voter_front) }}"
                                         alt="Voter Front" width="200" height="180" class="img-thumbnail2">
                                 @else
-                                    <img id="voter_front_photo"  src="{{ asset('assets/no-image.png') }}"  alt="No Voter Front Image" width="200" height="180"
-                                         class="img-thumbnail2">
+                                    <img id="voter_front_photo" src="{{ asset('assets/no-image.png') }}"
+                                        alt="No Voter Front Image" width="200" height="180" class="img-thumbnail2">
                                 @endif
-                                <input type="file" name="voter_front" id="voter_front"
+                                <input type="file" accept="image/*" name="voter_front" id="voter_front"
                                     class="form-control file mt-2">
+                                <div class="invalid-feedback text-danger" id="voter_front-error" style="display:none;">
+                                </div>
                             </div>
 
                             <div class="col-md-4 mb-2">
@@ -669,9 +677,12 @@
                                         src="{{ asset('assets/upload/step2/' . $registration->step2->voter_back) }}"
                                         alt="Voter Back" width="200" height="180" class="img-thumbnail2">
                                 @else
-                                    <img id="voter_back_photo" src="{{ asset('assets/no-image.png') }}"  alt="No Voter Back Image" width="200" height="180" class="img-thumbnail2">
+                                    <img id="voter_back_photo" src="{{ asset('assets/no-image.png') }}"
+                                        alt="No Voter Back Image" width="200" height="180" class="img-thumbnail2">
                                 @endif
-                                <input type="file" name="voter_back" id="voter_back" class="form-control file mt-2">
+                                <input type="file" accept="image/*" name="voter_back" id="voter_back" class="form-control file mt-2">
+                                <div class="invalid-feedback text-danger" id="voter_back-error" style="display:none;">
+                                </div>
                             </div>
 
                             <div class="col-md-4 mb-2">
@@ -683,10 +694,12 @@
                                     <img id="photo_preview" src="{{ asset('assets/upload/' . $registration->photo) }}"
                                         alt="Member Photo" width="200" height="180" class="img-thumbnail2">
                                 @else
-                                    <img id="photo_preview" src="{{ asset('assets/no-image.png') }}"  alt="No Member Image" width="200" height="180" class="img-thumbnail2">
+                                    <img id="photo_preview" src="{{ asset('assets/no-image.png') }}"
+                                        alt="No Member Image" width="200" height="180" class="img-thumbnail2">
                                 @endif
-                                <input type="file" accept="" class="form-control file mt-2" id="photo"
+                                <input type="file" accept="image/*" class="form-control file mt-2" id="photo"
                                     name="file" />
+                                <div class="invalid-feedback text-danger" id="photo-error" style="display:none;"></div>
                             </div>
 
                             {{-- <div class="col-lg-3 col-md-3 col-12">
@@ -739,6 +752,70 @@
                     placeholder: "रुचि चुनें",
                     allowClear: true,
                     width: '100%'
+                });
+
+                function validateImage(inputId, errorId) {
+                    const fileInput = $(inputId);
+                    const errorDiv = $(errorId);
+                    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                    const maxSize = 2 * 1024 * 1024; // 2MB
+
+                    fileInput.on('change', function() {
+                        const file = this.files[0];
+
+                        if (file) {
+                            if (!allowedTypes.includes(file.type)) {
+                                errorDiv.text('इमेज केवल (JPG, PNG) अपलोड करें।').show();
+                                fileInput.addClass('is-invalid');
+                                this.value = '';
+                            } else if (file.size > maxSize) {
+                                errorDiv.text('फाइल का आकार 2MB से अधिक नहीं होना चाहिए।').show();
+                                fileInput.addClass('is-invalid');
+                                this.value = '';
+                            } else {
+                                errorDiv.hide();
+                                fileInput.removeClass('is-invalid');
+                            }
+                        } else {
+                            errorDiv.hide();
+                            fileInput.removeClass('is-invalid');
+                        }
+                    });
+                }
+
+                validateImage('#photo', '#photo-error');
+                validateImage('#voter_front', '#voter_front-error');
+                validateImage('#voter_back', '#voter_back-error');
+
+
+                $('#mobile_1').on('input', function() {
+                    const value = $(this).val();
+                    const errorDiv = $('#mobile_1-error');
+                    const mobilePattern = /^[1-9][0-9]{9}$/;
+
+                    if (!mobilePattern.test(value)) {
+                        errorDiv.text('मोबाइल नंबर 10 अंकों का होना चाहिए।')
+                            .show();
+                        $(this).addClass('is-invalid');
+                    } else {
+                        errorDiv.hide();
+                        $(this).removeClass('is-invalid');
+                    }
+                });
+
+                $('#mobile_2').on('input', function() {
+                    const value = $(this).val();
+                    const errorDiv = $('#mobile_2-error');
+                    const mobilePattern = /^[1-9][0-9]{9}$/;
+
+                    if (!mobilePattern.test(value)) {
+                        errorDiv.text('मोबाइल नंबर 10 अंकों का होना चाहिए।')
+                            .show();
+                        $(this).addClass('is-invalid');
+                    } else {
+                        errorDiv.hide();
+                        $(this).removeClass('is-invalid');
+                    }
                 });
             });
 
