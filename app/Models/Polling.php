@@ -11,7 +11,7 @@ class Polling extends Model
 
     protected $primaryKey = 'gram_polling_id'; 
 
-    protected $fillable = ['polling_name', 'polling_no', 'mandal_id', 'nagar_id'];
+    protected $fillable = ['polling_name', 'polling_no', 'mandal_id', 'nagar_id', 'post_date'];
     public $timestamps = false;
 
     public function mandal()
