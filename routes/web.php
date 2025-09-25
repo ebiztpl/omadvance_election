@@ -1,5 +1,8 @@
 <?php
 
+require base_path('Modules/Sampark/Routes/web.php');
+
+
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;

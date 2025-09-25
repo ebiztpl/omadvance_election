@@ -1,0 +1,13 @@
+{
+    "name": "Sampark",
+    "alias": "sampark",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Sampark\\Providers\\SamparkServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}

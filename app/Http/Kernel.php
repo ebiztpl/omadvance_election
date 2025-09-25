@@ -65,5 +65,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'checklogin' => \App\Http\Middleware\CheckLogin::class,
         'checkmember' => \App\Http\Middleware\CheckMember::class,
+        'sampark.auth' => \App\Http\Middleware\SamparkAuth::class,
     ];
 }
