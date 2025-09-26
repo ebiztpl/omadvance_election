@@ -21,7 +21,7 @@ Homestead.yaml
 Homestead.json
 /.vagrant
 .phpunit.result.cache
-
+/public/assets/exports/**
 /public/build
 /storage/pail
 .env.backup
@@ -47,4 +47,4 @@ yarn-error.log
 /.idea
 /.vscode
 
-/public
+# /public
