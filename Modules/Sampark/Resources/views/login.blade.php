@@ -1,4 +1,5 @@
 @extends('sampark::layouts.login_layout')
+@section('title', 'Login')
 @section('content')
     <div class="container h-100 d-flex justify-content-center align-items-center" style="min-height: 100vh;">
         <div class="col-md-6">

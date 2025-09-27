@@ -1,6 +1,6 @@
-@extends('layouts.login_layout')
+@extends('sampark::layouts.login_layout')
 
-
+@section('title', 'Register')
 @section('content')
     <div class="container h-100 d-flex justify-content-center align-items-center" style="min-height: 100vh;">
         <div class="col-md-6">
@@ -18,13 +18,15 @@
                                     <label for="name"><strong>Name</strong></label>
                                     <input type="text" name="name" id="name" class="form-control"
                                         placeholder="Enter your name" required>
+                                    <span id="name-feedback" class="small d-block mt-1"></span>
                                 </div>
 
                                 {{-- Email --}}
                                 <div class="form-group">
                                     <label for="email"><strong>Email</strong></label>
                                     <input type="email" name="email" id="email" class="form-control"
-                                        placeholder="Enter your email" autocomplete="off" required>
+                                        placeholder="Enter your email" autocomplete="off">
+                                    <span id="email-feedback" class="small d-block mt-1"></span>
                                 </div>
 
                                 {{-- Password --}}
@@ -32,6 +34,7 @@
                                     <label for="password"><strong>Password</strong></label>
                                     <input type="password" name="password" id="password" class="form-control"
                                         placeholder="Enter a password" autocomplete="new-password" required>
+                                    <span id="password-feedback" class="small d-block mt-1"></span>
                                 </div>
 
                                 {{-- Submit Button --}}
@@ -60,7 +63,93 @@
     @push('scripts')
         <script>
             $(document).ready(function() {
-                $('#registerForm').on('submit', function(e) {
+                let usernameValid = false;
+                let passwordValid = false;
+                let emailValid = true;
+                let lastRequest = null;
+
+                $('#name').on('input', function() {
+                    let name = $(this).val().trim();
+
+                    if (!name) {
+                        $('#name-feedback').text('');
+                        usernameValid = false;
+
+                        if (lastRequest) lastRequest.abort();
+                        return;
+                    }
+
+                    if (lastRequest) lastRequest.abort();
+
+                    lastRequest = $.ajax({
+                        url: "{{ route('sampark.checkUsername') }}",
+                        type: "POST",
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                            name: name
+                        },
+                        success: function(res) {
+                            if ($('#name').val().trim() !== name) return;
+
+                            if (res.exists) {
+                                $('#name-feedback').text('यह यूज़रनेम पहले से लिया जा चुका है।')
+                                    .css('color', 'red');
+                                usernameValid = false;
+                            } else {
+                                $('#name-feedback').text('यह यूज़रनेम उपलब्ध है।').css('color',
+                                    'green');
+                                usernameValid = true;
+                            }
+                        },
+                        error: function() {
+                            if ($('#name').val().trim() !== name) return;
+                            $('#name-feedback').text('सर्वर से कनेक्ट नहीं हो पाया।').css('color',
+                                'red');
+                            usernameValid = false;
+                        }
+                    });
+                });
+
+                $('#password').on('input', function() {
+                    let pwd = $(this).val().trim();
+                    if (!pwd) {
+                        $('#password-feedback').text('');
+                        passwordValid = false;
+                        return;
+                    }
+
+                    if (pwd.length < 6) {
+                        $('#password-feedback').text('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।').css('color',
+                            'red');
+                        passwordValid = false;
+                    } else {
+                        $('#password-feedback').text('');
+                        passwordValid = true;
+                    }
+                });
+
+                $('#email').on('input', function() {
+                    let email = $(this).val().trim();
+                    if (!email) {
+                        $('#email-feedback').remove();
+                        emailValid = true;
+                        return;
+                    }
+
+                    let emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailPattern.test(email)) {
+                        if (!$('#email-feedback').length) {
+                            $('#email').after('<span id="email-feedback" class="small d-block mt-1"></span>');
+                        }
+                        $('#email-feedback').text('कृपया मान्य ईमेल दर्ज करें।').css('color', 'red');
+                        emailValid = false;
+                    } else {
+                        $('#email-feedback').text('');
+                        emailValid = true;
+                    }
+                });
+
+                 $('#registerForm').on('submit', function(e) {
                     e.preventDefault();
 
                     $("#loader-wrapper").show();

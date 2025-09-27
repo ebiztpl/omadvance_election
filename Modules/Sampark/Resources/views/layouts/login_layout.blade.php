@@ -28,6 +28,8 @@
     <script src="{{ asset('focus/assets/js/custom.min.js') }}"></script>
     <script src="{{ asset('focus/assets/js/quixnav-init.js') }}"></script>
 
+
+      @stack('scripts')
 </body>
 
 </html>

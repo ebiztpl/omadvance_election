@@ -99,21 +99,37 @@ class AuthController extends Controller
         return view('sampark::register');
     }
 
+    public function checkUsername(Request $request)
+    {
+        $exists = DB::connection('sampark')
+            ->table('sampark_users')
+            ->where('name', $request->name)
+            ->exists();
+
+        return response()->json(['exists' => $exists]);
+    }
+
+
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required',
-            'email' => [
+            'name' => [
                 'required',
-                'email',
                 function ($attribute, $value, $fail) {
-                    $exists = DB::connection('sampark')->table('sampark_users')->where('email', $value)->exists();
+                    $exists = DB::connection('sampark')
+                        ->table('sampark_users')
+                        ->where('name', $value)
+                        ->exists();
                     if ($exists) {
-                        $fail('The email has already been taken.');
+                        $fail('यह यूज़रनेम पहले से लिया जा चुका है।');
                     }
-                },
+                }
             ],
-            'password' => 'required|min:4',
+            'email' => [
+                'nullable',
+                'email'
+            ],
+            'password' => 'required|min:6',
         ]);
 
         $user = User::create([
