@@ -13,6 +13,11 @@
     <link href="{{ asset('focus/assets/vendor/jqvmap/css/jqvmap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('focus/assets/css/style.css') }}" rel="stylesheet">
 
+    <style>
+        .alert {
+            color: black !important;
+        }
+    </style>
 </head>
 
 <body>

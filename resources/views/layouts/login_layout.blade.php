@@ -13,14 +13,19 @@
     <link href="{{ asset('focus/assets/vendor/jqvmap/css/jqvmap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('focus/assets/css/style.css') }}" rel="stylesheet">
 
+    <style>
+        .alert {
+            color: black !important;
+        }
+    </style>
 </head>
 
 <body>
 
-            @yield('content')
-        <script src="{{ asset('focus/assets/vendor/global/global.min.js') }}"></script>
-        <script src="{{ asset('focus/assets/js/custom.min.js') }}"></script>
-        <script src="{{ asset('focus/assets/js/quixnav-init.js') }}"></script>
+    @yield('content')
+    <script src="{{ asset('focus/assets/vendor/global/global.min.js') }}"></script>
+    <script src="{{ asset('focus/assets/js/custom.min.js') }}"></script>
+    <script src="{{ asset('focus/assets/js/quixnav-init.js') }}"></script>
 
 </body>
 
