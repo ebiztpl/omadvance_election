@@ -221,7 +221,7 @@
                                         <th>क्र.</th>
                                         <th style="min-width: 100px;">सूचनाकर्ता</th>
                                         <th>रेफरेंस</th>
-                                        <th style="min-width: 100px;">क्षेत्र</th>
+                                        <th style="min-width: 130px;">क्षेत्र</th>
                                         <th>सूचना की स्थिति</th>
                                         <th>आवेदक</th>
                                         <th>फॉरवर्ड अधिकारी</th>

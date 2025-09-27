@@ -1600,23 +1600,18 @@ class AdminController extends Controller
                         "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
                         "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
                         "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+
                     'reference_name' => $complaint->reference_name ?? '',
-                    'area_details' => '<span title="
-विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
-जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
-विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
-मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
-नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
-मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
-क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
-            ' . ($complaint->division?->division_name ?? '') . '<br>' .
-                        ($complaint->district?->district_name ?? '') . '<br>' .
-                        ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
-                        ($complaint->mandal?->mandal_name ?? '') . '<br>' .
-                        ($complaint->gram?->nagar_name ?? '') . '<br>' .
-                        ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
-                        ($complaint->area?->area_name ?? '') .
-                        '</span>',
+
+                    'area_details' => "<strong>संभाग: </strong>" . ($complaint->division?->division_name ?? '') . ",<br>" .
+                        "<strong>जिला: </strong>" . ($complaint->district?->district_name ?? '') . ",<br>" .
+                        "<strong>विधानसभा: </strong>" . ($complaint->vidhansabha?->vidhansabha ?? '') . ",<br>" .
+                        "<strong>मंडल: </strong>" . ($complaint->mandal?->mandal_name ?? '') . ",<br>" .
+                        "<strong>नगर/ग्राम: </strong>" . ($complaint->gram?->nagar_name ?? '') . ",<br>" .
+                        "<strong>मतदान केंद्र: </strong>" . ($complaint->polling?->polling_name ?? '') .
+                        " (" . ($complaint->polling?->polling_no ?? '') . ") ,<br>" .
+                        "<strong>ग्राम/वार्ड: </strong>" . ($complaint->area?->area_name ?? '') . ",<br>",
+
                     'issue_description' => $complaint->issue_description,
                     'complaint_department' => $complaint->complaint_department,
                     'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
@@ -1819,23 +1814,35 @@ class AdminController extends Controller
                         "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
                         "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
                         "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+
                     'reference_name' => $complaint->reference_name ?? '',
-                    'area_details' => '<span title="
-विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
-जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
-विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
-मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
-नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
-मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
-क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
-                        ' . ($complaint->division?->division_name ?? '') . '<br>' .
-                        ($complaint->district?->district_name ?? '') . '<br>' .
-                        ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
-                        ($complaint->mandal?->mandal_name ?? '') . '<br>' .
-                        ($complaint->gram?->nagar_name ?? '') . '<br>' .
-                        ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
-                        ($complaint->area?->area_name ?? '') .
-                        '</span>',
+
+                    'area_details' => "<strong>संभाग: </strong>" . ($complaint->division?->division_name ?? '') . ",<br>" .
+                        "<strong>जिला: </strong>" . ($complaint->district?->district_name ?? '') . ",<br>" .
+                        "<strong>विधानसभा: </strong>" . ($complaint->vidhansabha?->vidhansabha ?? '') . ",<br>" .
+                        "<strong>मंडल: </strong>" . ($complaint->mandal?->mandal_name ?? '') . ",<br>" .
+                        "<strong>नगर/ग्राम: </strong>" . ($complaint->gram?->nagar_name ?? '') . ",<br>" .
+                        "<strong>मतदान केंद्र: </strong>" . ($complaint->polling?->polling_name ?? '') .
+                        " (" . ($complaint->polling?->polling_no ?? '') . ") ,<br>" .
+                        "<strong>ग्राम/वार्ड: </strong>" . ($complaint->area?->area_name ?? '') . ",<br>",
+                        
+                    // 'area_details' => '<span title="
+                    //         विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
+                    //         जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
+                    //         विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
+                    //         मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
+                    //         नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
+                    //         मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
+                    //         क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
+                    //     ' . ($complaint->division?->division_name ?? '') . '<br>' .
+                    //     ($complaint->district?->district_name ?? '') . '<br>' .
+                    //     ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
+                    //     ($complaint->mandal?->mandal_name ?? '') . '<br>' .
+                    //     ($complaint->gram?->nagar_name ?? '') . '<br>' .
+                    //     ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
+                    //     ($complaint->area?->area_name ?? '') .
+                    //     '</span>',
+
                     'issue_description' => $complaint->issue_description,
                     'complaint_department' => $complaint->complaint_department,
                     'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
@@ -2009,22 +2016,31 @@ class AdminController extends Controller
 
                     'reference_name' => $complaint->reference_name ?? '',
 
-                    'area_details' => '<span title="
-विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
-जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
-विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
-मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
-नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
-मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
-क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
-            ' . ($complaint->division?->division_name ?? '') . '<br>' .
-                        ($complaint->district?->district_name ?? '') . '<br>' .
-                        ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
-                        ($complaint->mandal?->mandal_name ?? '') . '<br>' .
-                        ($complaint->gram?->nagar_name ?? '') . '<br>' .
-                        ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
-                        ($complaint->area?->area_name ?? '') .
-                        '</span>',
+                    'area_details' => "<strong>संभाग: </strong>" . ($complaint->division?->division_name ?? '') . ",<br>" .
+                        "<strong>जिला: </strong>" . ($complaint->district?->district_name ?? '') . ",<br>" .
+                        "<strong>विधानसभा: </strong>" . ($complaint->vidhansabha?->vidhansabha ?? '') . ",<br>" .
+                        "<strong>मंडल: </strong>" . ($complaint->mandal?->mandal_name ?? '') . ",<br>" .
+                        "<strong>नगर/ग्राम: </strong>" . ($complaint->gram?->nagar_name ?? '') . ",<br>" .
+                        "<strong>मतदान केंद्र: </strong>" . ($complaint->polling?->polling_name ?? '') .
+                        " (" . ($complaint->polling?->polling_no ?? '') . ") ,<br>" .
+                        "<strong>ग्राम/वार्ड: </strong>" . ($complaint->area?->area_name ?? '') . ",<br>",
+
+//                     'area_details' => '<span title="
+// विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
+// जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
+// विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
+// मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
+// नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
+// मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
+// क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
+//             ' . ($complaint->division?->division_name ?? '') . '<br>' .
+//                         ($complaint->district?->district_name ?? '') . '<br>' .
+//                         ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
+//                         ($complaint->mandal?->mandal_name ?? '') . '<br>' .
+//                         ($complaint->gram?->nagar_name ?? '') . '<br>' .
+//                         ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
+//                         ($complaint->area?->area_name ?? '') .
+//                         '</span>',
 
                     'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
 
@@ -2196,23 +2212,16 @@ class AdminController extends Controller
                         "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
 
                     'reference_name' => $complaint->reference_name ?? '',
+                    
+                    'area_details' => "<strong>संभाग: </strong>" . ($complaint->division?->division_name ?? '') . ",<br>" .
+                        "<strong>जिला: </strong>" . ($complaint->district?->district_name ?? '') . ",<br>" .
+                        "<strong>विधानसभा: </strong>" . ($complaint->vidhansabha?->vidhansabha ?? '') . ",<br>" .
+                        "<strong>मंडल: </strong>" . ($complaint->mandal?->mandal_name ?? '') . ",<br>" .
+                        "<strong>नगर/ग्राम: </strong>" . ($complaint->gram?->nagar_name ?? '') . ",<br>" .
+                        "<strong>मतदान केंद्र: </strong>" . ($complaint->polling?->polling_name ?? '') .
+                        " (" . ($complaint->polling?->polling_no ?? '') . ") ,<br>" .
+                        "<strong>ग्राम/वार्ड: </strong>" . ($complaint->area?->area_name ?? '') . ",<br>",
 
-                    'area_details' => '<span title="
-विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
-जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
-विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
-मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
-नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
-मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
-क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
-            ' . ($complaint->division?->division_name ?? '') . '<br>' .
-                        ($complaint->district?->district_name ?? '') . '<br>' .
-                        ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
-                        ($complaint->mandal?->mandal_name ?? '') . '<br>' .
-                        ($complaint->gram?->nagar_name ?? '') . '<br>' .
-                        ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
-                        ($complaint->area?->area_name ?? '') .
-                        '</span>',
 
                     'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
 
