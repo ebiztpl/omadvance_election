@@ -1,18 +1,23 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use Modules\Sampark\Http\Controllers\AuthController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
+// Public API endpoints
+Route::post('/login', [AuthController::class, 'login'])->name('sampark.login');
+Route::post('/register', [AuthController::class, 'register'])->name('sampark.register');
+Route::post('/check-username', [AuthController::class, 'checkUsername'])->name('sampark.checkUsername');
 
-Route::middleware('auth:api')->get('/sampark', function (Request $request) {
-    return $request->user();
+// Protected API endpoints
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/dashboard', function (Request $request) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Welcome to dashboard',
+            'user'    => $request->user()
+        ]);
+    });
 });

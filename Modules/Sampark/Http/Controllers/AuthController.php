@@ -5,93 +5,16 @@ namespace Modules\Sampark\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
 use Modules\Sampark\Entities\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
+    // ===== Web (Blade) =====
     public function showLogin()
     {
-        return view('sampark::login'); // your Blade file
-    }
-
-    public function login(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string',
-            'password' => 'required|string',
-            'g-recaptcha-response' => 'required'
-        ]);
-
-        $recaptcha = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-            'secret' => env('RECAPTCHA_SECRET_KEY'),
-            'response' => $request->input('g-recaptcha-response'),
-            'remoteip' => $request->ip(),
-        ]);
-
-        if (!($recaptcha->json()['success'] ?? false)) {
-            return back()->withErrors(['g-recaptcha-response' => 'Please confirm you are not a robot.'])->withInput();
-        }
-
-        $user = User::where('name', $request->name)->first();
-
-        if ($user && Hash::check($request->password, $user->password)) {
-            $request->session()->regenerate();
-            session(['user' => $user->id]);
-
-            $logId = DB::connection('sampark')->table('login_history')->insertGetId([
-                'admin_id'        => $user->id,
-                'login_date_time' => now(),
-                'logout_date_time' => null,
-                'ip'              => $request->ip(),
-                'user_agent'      => $request->header('User-Agent')
-            ], 'login_history_id');
-
-
-            session([
-                'logged_in_user' => $user->name,
-                'logged_in_role' => $user->role,
-                'user_id' => $user->id,
-                'log_id' => $logId,
-            ]);
-
-            session(['login_history_id' => $logId]);
-
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'redirect' => route('sampark.dashboard'),
-                    'message' => 'आप सफलतापूर्वक लॉगिन हो गए हैं।'
-                ]);
-            }
-
-            return redirect()->route('sampark.dashboard')->with('success', 'आप सफलतापूर्वक लॉगिन हो गए हैं।');
-        }
-
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'यूज़रनेम या पासवर्ड गलत है।'
-            ], 401);
-        }
-
-        return back()->with('error', 'यूज़रनेम या पासवर्ड गलत है।');
-    }
-
-    public function logout(Request $request)
-    {
-        $logId = session('log_id');
-
-        if ($logId) {
-            DB::connection('sampark')->table('login_history')
-                ->where('login_history_id', session('login_history_id'))
-                ->update(['logout_date_time' => now()]);
-        }
-
-        session()->forget(['user', 'login_history_id']);
-
-        return redirect()->route('sampark.login')->with('success', 'आप लॉग आउट हो गए हैं।');
+        return view('sampark::login');
     }
 
     public function showRegister()
@@ -99,14 +22,46 @@ class AuthController extends Controller
         return view('sampark::register');
     }
 
-    public function checkUsername(Request $request)
+    public function login(Request $request)
     {
-        $exists = DB::connection('sampark')
-            ->table('sampark_users')
-            ->where('name', $request->name)
-            ->exists();
+        $request->validate([
+            'name' => 'required|string',
+            'password' => 'required|string',
+        ]);
 
-        return response()->json(['exists' => $exists]);
+        // Find user on sampark connection
+        $user = User::on('sampark')
+            ->where('name', $request->name)
+            ->first();
+
+        // Validate credentials
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'यूज़रनेम या पासवर्ड गलत है।'
+            ], 401);
+        }
+
+        // Set connection for this user instance
+        $user->setConnection('sampark');
+
+        // Generate Sanctum token (this is all you need for API auth)
+        $token = $user->createToken('sampark_api')->plainTextToken;
+
+        $logId = DB::connection('sampark')->table('login_history')->insertGetId([
+            'admin_id'        => $user->id,
+            'login_date_time' => now(),
+            'ip'              => $request->ip(),
+            'user_agent'      => $request->header('User-Agent'),
+        ], 'login_history_id');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'आप सफलतापूर्वक लॉगिन हो गए हैं।',
+            'user'    => $user,
+            'token'   => $token,
+            'log_id'  => $logId
+        ]);
     }
 
 
@@ -125,31 +80,54 @@ class AuthController extends Controller
                     }
                 }
             ],
-            'email' => [
-                'nullable',
-                'email'
-            ],
+            'email' => ['nullable', 'email'],
             'password' => 'required|min:6',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+        $user = new User();
+        $user->setConnection('sampark');
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        // Create Sanctum token
+        $token = $user->createToken('sampark_api')->plainTextToken;
+
+
+        // Always return JSON for AJAX
+        return response()->json([
+            'success' => true,
+            'message' => 'आपका अकाउंट सफलतापूर्वक बना लिया गया है।',
+            'user' => $user,
+            'token' => $token,
+            'redirect' => '/sampark/login'
         ]);
+    }
 
-        $request->session()->regenerate();
-        session(['user' => $user->id]);
 
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'redirect' => route('sampark.login'),
-                'message' => 'आपका अकाउंट सफलतापूर्वक बना लिया गया है।'
-            ]);
+    public function logout(Request $request)
+    {
+        $logId = session('log_id');
+
+        if ($logId) {
+            DB::connection('sampark')->table('login_history')
+                ->where('login_history_id', session('login_history_id'))
+                ->update(['logout_date_time' => now()]);
         }
 
-        return redirect()->route('sampark.login')
-            ->with('success', 'आपका अकाउंट सफलतापूर्वक बना लिया गया है।');
+        session()->forget(['user', 'login_history_id']);
+
+        return redirect()->route('sampark.login')->with('success', 'आप लॉग आउट हो गए हैं।');
+    }
+
+    public function checkUsername(Request $request)
+    {
+        $exists = DB::connection('sampark')
+            ->table('sampark_users')
+            ->where('name', $request->name)
+            ->exists();
+
+        return response()->json(['exists' => $exists]);
     }
 }

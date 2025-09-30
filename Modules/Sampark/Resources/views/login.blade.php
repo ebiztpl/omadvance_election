@@ -30,7 +30,7 @@
 
 
                             <div id="ajax-message"></div>
-                            <form id="loginForm" method="POST" action="{{ route('sampark.login') }}">
+                            <form id="loginForm" method="POST" action="{{ url('api/sampark/login') }}">
                                 @csrf
                                 <div class="form-group">
                                     <label><strong>यूज़रनेम</strong></label>
@@ -62,7 +62,6 @@
     </div>
 
     @push('scripts')
-        
         <script>
             $('#loginForm').on('submit', function(e) {
                 e.preventDefault();
@@ -74,17 +73,20 @@
                     data: $(this).serialize(),
                     success: function(response) {
                         $("#loader-wrapper").hide();
-                        $('#ajax-message').html('<div class="alert alert-success">' + response.message +
-                            '</div>');
-                        setTimeout(function() {
-                            window.location.href = response.redirect;
-                        }, 1000);
+
+                        if (response.success) {
+                            sessionStorage.setItem('sampark_token', response.token);
+                            window.location.href = '/sampark/dashboard';
+                        } else {
+                            $('#ajax-message').html('<div class="alert alert-danger">' + response.message +
+                                '</div>');
+                        }
                     },
                     error: function(xhr) {
                         $("#loader-wrapper").hide();
                         let res = xhr.responseJSON;
                         $('#ajax-message').html('<div class="alert alert-danger">' + (res?.message ??
-                            'कुछ गड़बड़ हो गई') + '</div>');
+                            'Login failed') + '</div>');
                     }
                 });
             });

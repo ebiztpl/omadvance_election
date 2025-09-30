@@ -63,22 +63,14 @@
     @push('scripts')
         <script>
             $(document).ready(function() {
-                let usernameValid = false;
-                let passwordValid = false;
-                let emailValid = true;
                 let lastRequest = null;
 
                 $('#name').on('input', function() {
                     let name = $(this).val().trim();
-
                     if (!name) {
                         $('#name-feedback').text('');
-                        usernameValid = false;
-
-                        if (lastRequest) lastRequest.abort();
                         return;
                     }
-
                     if (lastRequest) lastRequest.abort();
 
                     lastRequest = $.ajax({
@@ -90,22 +82,15 @@
                         },
                         success: function(res) {
                             if ($('#name').val().trim() !== name) return;
-
-                            if (res.exists) {
-                                $('#name-feedback').text('यह यूज़रनेम पहले से लिया जा चुका है।')
-                                    .css('color', 'red');
-                                usernameValid = false;
-                            } else {
-                                $('#name-feedback').text('यह यूज़रनेम उपलब्ध है।').css('color',
-                                    'green');
-                                usernameValid = true;
-                            }
+                            $('#name-feedback').text(res.exists ?
+                                    'यह यूज़रनेम पहले से लिया जा चुका है।' :
+                                    'यह यूज़रनेम उपलब्ध है।')
+                                .css('color', res.exists ? 'red' : 'green');
                         },
                         error: function() {
                             if ($('#name').val().trim() !== name) return;
                             $('#name-feedback').text('सर्वर से कनेक्ट नहीं हो पाया।').css('color',
                                 'red');
-                            usernameValid = false;
                         }
                     });
                 });
@@ -114,44 +99,26 @@
                     let pwd = $(this).val().trim();
                     if (!pwd) {
                         $('#password-feedback').text('');
-                        passwordValid = false;
                         return;
                     }
-
-                    if (pwd.length < 6) {
-                        $('#password-feedback').text('पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।').css('color',
-                            'red');
-                        passwordValid = false;
-                    } else {
-                        $('#password-feedback').text('');
-                        passwordValid = true;
-                    }
+                    $('#password-feedback').text(pwd.length < 6 ? 'पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।' :
+                            '')
+                        .css('color', 'red');
                 });
 
                 $('#email').on('input', function() {
                     let email = $(this).val().trim();
                     if (!email) {
-                        $('#email-feedback').remove();
-                        emailValid = true;
+                        $('#email-feedback').text('');
                         return;
                     }
-
-                    let emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailPattern.test(email)) {
-                        if (!$('#email-feedback').length) {
-                            $('#email').after('<span id="email-feedback" class="small d-block mt-1"></span>');
-                        }
-                        $('#email-feedback').text('कृपया मान्य ईमेल दर्ज करें।').css('color', 'red');
-                        emailValid = false;
-                    } else {
-                        $('#email-feedback').text('');
-                        emailValid = true;
-                    }
+                    let pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    $('#email-feedback').text(!pattern.test(email) ? 'कृपया मान्य ईमेल दर्ज करें।' : '').css(
+                        'color', 'red');
                 });
 
-                 $('#registerForm').on('submit', function(e) {
+                $('#registerForm').on('submit', function(e) {
                     e.preventDefault();
-
                     $("#loader-wrapper").show();
 
                     $.ajax({
@@ -162,6 +129,11 @@
                             $("#loader-wrapper").hide();
                             $('#ajax-message').html('<div class="alert alert-success">' + response
                                 .message + '</div>');
+
+                            localStorage.setItem('sampark_token', response.token);
+                            localStorage.setItem('sampark_user', JSON.stringify(response.user));
+                            localStorage.setItem('login_history_id', response.login_history_id);
+
                             setTimeout(function() {
                                 window.location.href = response.redirect;
                             }, 1000);

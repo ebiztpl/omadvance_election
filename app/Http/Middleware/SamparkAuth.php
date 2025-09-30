@@ -9,7 +9,7 @@ class SamparkAuth
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!session()->has('user')) {
+        if (!session()->has('sampark_user')) {
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,

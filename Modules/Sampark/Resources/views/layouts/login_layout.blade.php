@@ -21,7 +21,11 @@
 </head>
 
 <body>
-
+    <div id="loader-wrapper">
+        <div id="loader"></div>
+        <div class="loader-section section-left"></div>
+        <div class="loader-section section-right"></div>
+    </div>
     @yield('content')
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script src="{{ asset('focus/assets/vendor/global/global.min.js') }}"></script>
@@ -29,7 +33,7 @@
     <script src="{{ asset('focus/assets/js/quixnav-init.js') }}"></script>
 
 
-      @stack('scripts')
+    @stack('scripts')
 </body>
 
 </html>

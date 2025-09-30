@@ -84,7 +84,7 @@
                                 @endphp
 
                                 <h5 class="mb-0 text-white">
-                                    जाति रिपोर्ट:
+                                    विभाग रिपोर्ट:
                                     @if ($fromDate && $toDate)
                                         {{ $fromDate }} से {{ $toDate }}
                                     @elseif($fromDate)

@@ -3,6 +3,7 @@
 namespace Modules\Sampark\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Route;
 
 class SamparkServiceProvider extends ServiceProvider
 {
@@ -15,7 +16,8 @@ class SamparkServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerViews();
-        $this->registerRoutes();
+        $this->registerWebRoutes();
+        $this->registerApiRoutes();
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
     }
 
@@ -39,11 +41,24 @@ class SamparkServiceProvider extends ServiceProvider
     /**
      * Register module routes.
      */
-    protected function registerRoutes()
+    protected function registerWebRoutes()
     {
-        $routesPath = __DIR__ . '/../Routes/web.php';
-        if (file_exists($routesPath)) {
-            $this->loadRoutesFrom($routesPath);
+        $webRoutes = __DIR__ . '/../Routes/web.php';
+
+        if (file_exists($webRoutes)) {
+            Route::middleware('web')
+                ->group($webRoutes);
+        }
+    }
+
+    protected function registerApiRoutes()
+    {
+        $apiRoutes = __DIR__ . '/../Routes/api.php';
+
+        if (file_exists($apiRoutes)) {
+            Route::prefix('api/sampark')
+                ->middleware('api')
+                ->group($apiRoutes);
         }
     }
 }

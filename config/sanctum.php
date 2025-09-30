@@ -31,7 +31,7 @@ return [
     |
     */
 
-    'guard' => ['web'],
+    'guard' => ['web', 'api'],
 
     /*
     |--------------------------------------------------------------------------
@@ -43,6 +43,9 @@ return [
     | not expire. This won't tweak the lifetime of first-party sessions.
     |
     */
+
+
+  
 
     'expiration' => null,
 
@@ -60,6 +63,11 @@ return [
     'middleware' => [
         'verify_csrf_token' => App\Http\Middleware\VerifyCsrfToken::class,
         'encrypt_cookies' => App\Http\Middleware\EncryptCookies::class,
+    ],
+
+    'personal_access_tokens' => [
+        'table' => 'personal_access_tokens',
+        'model' => Modules\Sampark\Entities\PersonalAccessToken::class,
     ],
 
 ];
