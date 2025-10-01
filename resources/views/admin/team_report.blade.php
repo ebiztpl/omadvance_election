@@ -1,13 +1,13 @@
 @php
-    $pageTitle = 'विभाग रिपोर्ट';
+    $pageTitle = 'टीम रिपोर्ट';
     $breadcrumbs = [
         'एडमिन' => '#',
-        'विभाग रिपोर्ट' => '#',
+        'टीम रिपोर्ट' => '#',
     ];
 @endphp
 
 @extends('layouts.app')
-@section('title', 'Area Wise Report')
+@section('title', 'Team Report')
 
 @section('content')
     <div class="container">
@@ -117,112 +117,268 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-body" id="report-results" style="color: black">
-                        @if ((isset($reportManager) && request('summary') == 'manager') || !request('summary'))
-                            <div
-                                class="step-header border-header bg-dark text-white p-2 rounded d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="mb-0 text-white">मैनेजर रिपोर्ट: {{ $dateRangeText }}</h5>
-                            </div>
-                            <table class="table table-bordered table-sm" style="color: black">
-                                <thead style="background-color: blanchedalmond">
-                                    <tr>
-                                        <th>प्रकार</th>
-                                        <th>कुल</th>
-                                        <th>कुल फॉरवर्ड</th>
-                                        <th>कुल आगे भेजी</th>
-                                        <th>कुल समाधान</th>
-                                        <th>कुल निरस्त</th>
-                                        <th>कुल रीव्यू पर</th>
-                                        <th>कुल अपडेट</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if (isset($reportManager))
-                                        @foreach ($reportManager as $prakar => $data)
+                        @php
+                            function sumFraction($current, $addition)
+                            {
+                                if (strpos($current, '/') === false) {
+                                    $current = $current . '/0';
+                                }
+                                if (strpos($addition, '/') === false) {
+                                    $addition = $addition . '/0';
+                                }
+
+                                [$curA, $curB] = explode('/', $current);
+                                [$addA, $addB] = explode('/', $addition);
+
+                                return $curA + $addA . '/' . ($curB + $addB);
+                            }
+                        @endphp
+                        @if (!empty($managerReport))
+                            @foreach ($managerReport as $managerId => $reports)
+                                @if (!empty($reports))
+                                    <div class="step-header bg-dark text-white p-2 rounded mt-4">
+                                        मैनेजर {{ $managers->firstWhere('admin_id', $managerId)->admin_name ?? '' }}
+                                        रिपोर्ट : {{ $dateRangeText }}
+                                    </div>
+
+                                    @php
+                                        // Initialize totals before the loop
+                                        $totals = [
+                                            'total' => 0,
+                                            'total_replies' => '0/0',
+                                            'replies' => 0,
+                                            'reply_from' => 0,
+                                            'not_forward' => 0,
+                                            'total_solved' => 0,
+                                            'total_cancelled' => 0,
+                                            'total_reviewed' => '0/0',
+                                            'total_updates' => 0,
+                                        ];
+                                    @endphp
+
+
+                                    <table class="table table-bordered table-sm mt-2" style="color: black">
+                                        <thead style="background-color: blanchedalmond">
                                             <tr>
-                                                <td style="font-weight: bold">{{ $prakar }}</td>
-                                                <td>{{ $data['total'] }}</td>
-                                                <td>{{ $data['total_replies'] ?? 0 }}</td>
-                                                <td>{{ $data['reply_from'] ?? 0 }}</td>
-                                                <td>{{ $data['total_solved'] ?? 0 }}</td>
-                                                <td>{{ $data['total_cancelled'] ?? 0 }}</td>
-                                                <td>{{ $data['total_reviewed'] ?? 0 }}</td>
-                                                <td>{{ $data['total_updates'] ?? 0 }}</td>
+                                                <th>प्रकार</th>
+                                                <th>कुल प्राप्त</th>
+                                                <th>कुल फॉरवर्ड</th>
+                                                <th>कुल जवाब दर्ज</th>
+                                                <th>कुल जवाब आगे भेजे</th>
+                                                <th>कुल जवाब आगे नहीं भेजे</th>
+                                                <th>कुल समाधान</th>
+                                                <th>कुल निरस्त</th>
+                                                <th>कुल रीव्यू पर</th>
+                                                <th>कुल अपडेट</th>
                                             </tr>
-                                        @endforeach
-                                    @endif
-                                </tbody>
-                            </table>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($reports as $prakar => $data)
+                                                @php
+                                                    // Sum numeric values
+                                                    foreach (
+                                                        [
+                                                            'total',
+                                                            'replies',
+                                                            'reply_from',
+                                                            'total_solved',
+                                                            'not_forward',
+                                                            'total_cancelled',
+                                                            'total_updates',
+                                                        ]
+                                                        as $key
+                                                    ) {
+                                                        $totals[$key] +=
+                                                            isset($data[$key]) && is_numeric($data[$key])
+                                                                ? $data[$key]
+                                                                : 0;
+                                                    }
+                                                    // Sum fraction values
+                                                    foreach (['total_replies', 'total_reviewed'] as $key) {
+                                                        if (isset($data[$key])) {
+                                                            $totals[$key] = sumFraction($totals[$key], $data[$key]);
+                                                        }
+                                                    }
+                                                @endphp
+                                                <tr>
+                                                    <td style="font-weight:bold">{{ $prakar }}</td>
+                                                    <td>{{ $data['total'] ?? 0 }}</td>
+                                                    <td>{{ $data['total_replies'] ?? 0 }}</td>
+                                                    <td>{{ $data['replies'] ?? 0 }}</td>
+                                                    <td>{{ $data['reply_from'] ?? 0 }}</td>
+                                                    <td>{{ $data['not_forward'] ?? 0 }}</td>
+                                                    <td>{{ $data['total_solved'] ?? 0 }}</td>
+                                                    <td>{{ $data['total_cancelled'] ?? 0 }}</td>
+                                                    <td>{{ $data['total_reviewed'] ?? 0 }}</td>
+                                                    <td>{{ $data['total_updates'] ?? 0 }}</td>
+                                                </tr>
+                                            @endforeach
+                                            <tr style="font-weight:bold; background-color: #e2e3e5;">
+                                                <td>कुल</td>
+                                                <td>{{ $totals['total'] }}</td>
+                                                <td>{{ $totals['total_replies'] }}</td>
+                                                <td>{{ $totals['replies'] }}</td>
+                                                <td>{{ $totals['reply_from'] }}</td>
+                                                <td>{{ $totals['not_forward'] }}</td>
+                                                <td>{{ $totals['total_solved'] }}</td>
+                                                <td>{{ $totals['total_cancelled'] }}</td>
+                                                <td>{{ $totals['total_reviewed'] }}</td>
+                                                <td>{{ $totals['total_updates'] }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                @endif
+                            @endforeach
                         @endif
 
                         {{-- Operator Report --}}
-                        @if ((isset($reportOperator) && request('summary') == 'operator') || !request('summary'))
-                            <div
-                                class="step-header border-header bg-dark text-white p-2 rounded d-flex justify-content-between align-items-center mb-3 mt-4">
-                                <h5 class="mb-0 text-white">ऑपरेटर रिपोर्ट: {{ $dateRangeText }}</h5>
-                            </div>
-                            <table class="table table-bordered table-sm" style="color: black">
-                                <thead style="background-color: blanchedalmond">
-                                    <tr>
-                                        <th>प्रकार</th>
-                                        <th>कुल</th>
-                                        <th>कुल फ़ॉलोअप</th>
-                                        <th>पूर्ण फ़ॉलोअप</th>
-                                        <th>कुल प्राप्त कॉल</th>
-                                        <th>प्राप्त फ़ॉलोअप प्रतिक्रिया</th>
-                                        <th>समस्या स्थिति</th>
-                                        <th>समस्या स्थिति अपडेट</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if (isset($reportOperator))
-                                        @foreach ($reportOperator as $prakar => $data)
+                        @if (!empty($reportOperator))
+                            @foreach ($reportOperator as $operatorId => $data)
+                                @if (!empty($data))
+                                    <div class="step-header bg-dark text-white p-2 rounded mt-4">
+                                        {{ $offices->firstWhere('admin_id', $operatorId)->admin_name ?? 'ऑपरेटर रिपोर्ट' }}:
+                                        {{ $dateRangeText }}
+                                    </div>
+
+                                    @php
+                                        $totals = [
+                                            'total' => 0,
+                                            'followups' => '0/0',
+                                            'completed_followups' => 0,
+                                            'overall_incoming' => 0,
+                                            'incoming_reason1' => '0/0',
+                                            'incoming_reason2' => 0,
+                                            'incoming_reason3' => 0,
+                                        ];
+                                    @endphp
+
+
+                                    <table class="table table-bordered table-sm mt-2" style="color: black">
+                                        <thead style="background-color: blanchedalmond">
                                             <tr>
-                                                <td style="font-weight: bold">{{ $prakar }}</td>
-                                                <td>{{ $data['total'] }}</td>
-                                                <td>{{ $data['followups'] ?? '-' }}</td>
-                                                <td>{{ $data['completed_followups'] ?? '-' }}</td>
-                                                <td>{{ $data['overall_incoming'] ?? '-' }}</td>
-                                                <td>{{ $data['incoming_reason1'] ?? '-' }}</td>
-                                                <td>{{ $data['incoming_reason2'] ?? '-' }}</td>
-                                                <td>{{ $data['incoming_reason3'] ?? '-' }}</td>
+                                                <th>प्रकार</th>
+                                                <th>कुल पंजीकृत</th>
+                                                <th>कुल फ़ॉलोअप</th>
+                                                <th>पूर्ण फ़ॉलोअप</th>
+                                                <th>कुल प्राप्त कॉल</th>
+                                                <th>प्राप्त फ़ॉलोअप प्रतिक्रिया</th>
+                                                <th>समस्या स्थिति</th>
+                                                <th>समस्या स्थिति अपडेट</th>
                                             </tr>
-                                        @endforeach
-                                    @endif
-                                </tbody>
-                            </table>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($data as $prakar => $d)
+                                                @php
+                                                    // Sum numeric values
+                                                    foreach (
+                                                        [
+                                                            'total',
+                                                            'completed_followups',
+                                                            'overall_incoming',
+                                                            'incoming_reason2',
+                                                            'incoming_reason3',
+                                                        ]
+                                                        as $key
+                                                    ) {
+                                                        $totals[$key] +=
+                                                            isset($d[$key]) && is_numeric($d[$key]) ? $d[$key] : 0;
+                                                    }
+
+                                                    // Sum fraction-like values
+                                                    if (isset($d['followups'])) {
+                                                        $totals['followups'] = sumFraction(
+                                                            $totals['followups'],
+                                                            $d['followups'],
+                                                        );
+                                                    }
+
+                                                    if (isset($d['incoming_reason1'])) {
+                                                        $totals['incoming_reason1'] = sumFraction(
+                                                            $totals['incoming_reason1'],
+                                                            $d['incoming_reason1'],
+                                                        );
+                                                    }
+                                                @endphp
+
+                                                <tr>
+                                                    <td style="font-weight:bold">{{ $prakar }}</td>
+                                                    <td>{{ $d['total'] ?? 0 }}</td>
+                                                    <td>{{ $d['followups'] ?? '-' }}</td>
+                                                    <td>{{ $d['completed_followups'] ?? '-' }}</td>
+                                                    <td>{{ $d['overall_incoming'] ?? '-' }}</td>
+                                                    <td>{{ $d['incoming_reason1'] ?? '-' }}</td>
+                                                    <td>{{ $d['incoming_reason2'] ?? '-' }}</td>
+                                                    <td>{{ $d['incoming_reason3'] ?? '-' }}</td>
+                                                </tr>
+                                            @endforeach
+                                            <tr style="font-weight:bold; background-color: #e2e3e5;">
+                                                <td>कुल</td>
+                                                <td>{{ $totals['total'] }}</td>
+                                                <td>{{ $totals['followups'] }}</td>
+                                                <td>{{ $totals['completed_followups'] }}</td>
+                                                <td>{{ $totals['overall_incoming'] }}</td>
+                                                <td>{{ $totals['incoming_reason1'] }}</td>
+                                                <td>{{ $totals['incoming_reason2'] }}</td>
+                                                <td>{{ $totals['incoming_reason3'] }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                @endif
+                            @endforeach
                         @endif
 
                         {{-- Member Report --}}
-                        @if ((isset($reportMember) && request('summary') == 'member') || !request('summary'))
-                            <div
-                                class="step-header border-header bg-dark text-white p-2 rounded d-flex justify-content-between align-items-center mb-3 mt-4">
-                                <h5 class="mb-0 text-white">कमांडर रिपोर्ट: {{ $dateRangeText }}</h5>
-                            </div>
-                            <table class="table table-bordered table-sm" style="color: black">
-                                <thead style="background-color: blanchedalmond">
-                                    <tr>
-                                        <th>प्रकार</th>
-                                        <th>कुल</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if (isset($reportMember))
-                                        @foreach ($reportMember as $prakar => $data)
+                        @if (!empty($reportMember))
+                            @php $grandTotalMembers = 0; @endphp
+
+                            @foreach ($reportMember as $memberId => $memberData)
+                                @if (!empty($memberData))
+                                    <div class="step-header bg-dark text-white p-2 rounded mt-4">
+                                        {{ $fields->firstWhere('member_id', $memberId)->name ?? 'कमांडर रिपोर्ट' }}:
+                                        {{ $dateRangeText }}
+                                    </div>
+
+                                    @php $memberTotal = 0; @endphp
+
+                                    <table class="table table-bordered table-sm mt-2" style="color: black">
+                                        <thead style="background-color: blanchedalmond">
                                             <tr>
-                                                <td style="font-weight: bold">{{ $prakar }}</td>
-                                                <td>{{ $data['total'] }}</td>
+                                                <th>प्रकार</th>
+                                                <th>कुल पंजीकृत</th>
                                             </tr>
-                                        @endforeach
-                                    @endif
-                                </tbody>
-                            </table>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($memberData as $prakar => $data)
+                                                @php
+                                                    $value =
+                                                        isset($data['total']) && is_numeric($data['total'])
+                                                            ? (int) $data['total']
+                                                            : 0;
+                                                    $memberTotal += $value;
+                                                @endphp
+                                                <tr>
+                                                    <td style="font-weight:bold">{{ $prakar }}</td>
+                                                    <td>{{ $value }}</td>
+                                                </tr>
+                                            @endforeach
+
+                                            <tr style="font-weight:bold; background-color: #e2e3e5;">
+                                                <td>कुल</td>
+                                                <td>{{ $memberTotal }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    @php $grandTotalMembers += $memberTotal; @endphp
+                                @endif
+                            @endforeach
                         @endif
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     @push('scripts')
         <script>
             function exportExcel() {
@@ -233,12 +389,7 @@
                 window.location.href = url.pathname + '?' + params.toString();
             }
 
-            window.addEventListener('load', function() {
-                if (window.location.search) {
-                    const cleanUrl = window.location.origin + window.location.pathname;
-                    window.history.replaceState({}, document.title, cleanUrl);
-                }
-            });
+
 
             function enableDropdowns() {
                 const val = document.querySelector('.summaryRadio:checked')?.value;
@@ -252,6 +403,13 @@
             });
 
             enableDropdowns();
+
+            window.addEventListener('load', function() {
+                if (window.location.search) {
+                    const cleanUrl = window.location.origin + window.location.pathname;
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+            });
 
             function printReport() {
                 const content = document.getElementById('report-results').innerHTML;
@@ -307,6 +465,7 @@
                                     background-color: blanchedalmond !important;
                                     font-weight: bold;
                                 }
+                                     table tbody tr:last-child { background-color: #e2e3e5 !important; font-weight: bold; }
                             </style>
                         </head>
                         <body>
