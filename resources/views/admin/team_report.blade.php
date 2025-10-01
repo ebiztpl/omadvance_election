@@ -83,8 +83,8 @@
                             <select name="commander_id" id="commanderSelect" class="form-control" disabled>
                                 <option value="">-- सभी --</option>
                                 @foreach ($fields as $commander)
-                                    <option value="{{ $commander->registration_id }}"
-                                        {{ request('commander_id') == $commander->registration_id ? 'selected' : '' }}>
+                                    <option value="{{ $commander->member_id }}"
+                                        {{ request('commander_id') == $commander->member_id ? 'selected' : '' }}>
                                         {{ $commander->name }}</option>
                                 @endforeach
                             </select>

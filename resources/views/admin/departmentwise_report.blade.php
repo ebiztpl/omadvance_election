@@ -1,8 +1,8 @@
 @php
-    $pageTitle = 'विभाग रिपोर्ट';
+    $pageTitle = 'समस्या विभाग रिपोर्ट';
     $breadcrumbs = [
         'एडमिन' => '#',
-        'विभाग रिपोर्ट' => '#',
+        'समस्या विभाग रिपोर्ट' => '#',
     ];
 @endphp
 
@@ -84,7 +84,7 @@
                                 @endphp
 
                                 <h5 class="mb-0 text-white">
-                                    विभाग रिपोर्ट:
+                                    समस्या विभाग रिपोर्ट:
                                     @if ($fromDate && $toDate)
                                         {{ $fromDate }} से {{ $toDate }}
                                     @elseif($fromDate)
@@ -92,7 +92,7 @@
                                     @elseif($toDate)
                                         {{ $toDate }} तक
                                     @else
-                                        -
+                                        {{ now()->format('d-m-Y') }} (तक)
                                     @endif
                                 </h5>
 

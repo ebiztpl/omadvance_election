@@ -1,8 +1,8 @@
 @php
-    $pageTitle = 'समस्या क्षेत्र रिपोर्ट';
+    $pageTitle = 'विकास कार्य क्षेत्र रिपोर्ट';
     $breadcrumbs = [
         'एडमिन' => '#',
-        'समस्या क्षेत्र रिपोर्ट' => '#',
+        'विकास कार्य क्षेत्र रिपोर्ट' => '#',
     ];
 @endphp
 
@@ -185,14 +185,14 @@
                                 <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
                                     id="complaint_received" value="received"
                                     {{ request('complaint_type', 'received') === 'received' ? 'checked' : '' }} disabled>
-                                <label class="form-check-label" for="complaint_received">शिकायत प्राप्त</label>
+                                <label class="form-check-label" for="complaint_received">विकास कार्य प्राप्त</label>
                             </div>
                             <div class="col-md-1 form-check type-radio form-check-inline big-radio-box"
                                 style="white-space: nowrap;">
                                 <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
                                     id="complaint_not_received" value="not_received"
                                     {{ request('complaint_type') === 'not_received' ? 'checked' : '' }} disabled>
-                                <label class="form-check-label" for="complaint_not_received">शिकायत अप्राप्त</label>
+                                <label class="form-check-label" for="complaint_not_received">विकास कार्य अप्राप्त</label>
                             </div>
                             <div class="col-md-1 form-check type-radio form-check-inline big-radio-box"
                                 style="white-space: nowrap;">
@@ -241,7 +241,7 @@
                                 @endphp
 
                                 <h5 class="mb-0 text-white">
-                                    समस्या क्षेत्र रिपोर्ट:
+                                    विकास कार्य क्षेत्र रिपोर्ट:
                                     @if ($fromDate && $toDate)
                                         {{ $fromDate }} से {{ $toDate }}
                                     @elseif($fromDate)
@@ -266,7 +266,7 @@
 
                                         <div class="text-center text-white py-1 rounded mb-2 complaint-type-title"
                                             style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; background-color: #4a54e9">
-                                            कुल शिकायतें: ({{ $totalsAll['total_registered'] }}),
+                                            कुल विकास कार्य: ({{ $totalsAll['total_registered'] }}),
                                             कुल निरस्त: ({{ $totalsAll['total_cancel'] }}),
                                             कुल समाधान: ({{ $totalsAll['total_solved'] }})
                                         </div>
@@ -327,7 +327,7 @@
                                             </table>
                                         </div>
                                     @else
-                                        <p class="text-center">कोई शिकायत उपलब्ध नहीं है।</p>
+                                        <p class="text-center">कोई विकास कार्य उपलब्ध नहीं है।</p>
                                     @endif
                                 @endif
 
@@ -348,7 +348,7 @@
 
                                     <div class="mt-4 mb-2 complaint-type-title text-center text-white py-1 rounded"
                                         style="font-size: 1.2rem; font-weight: 600; background-color:#4a54e9">
-                                        अप्राप्त शिकायत: कुल {{ $label }}:
+                                        अप्राप्त विकास कार्य: कुल {{ $label }}:
                                         ({{ $totalsAll['total_areas'] ?? 0 }}),
                                         पंजीकृत {{ $label }}:
                                         ({{ $totalsRegistered['total_areas'] ?? 0 }})
@@ -372,7 +372,7 @@
                                     <div>
                                         <div class="text-center text-white py-1 rounded mb-2 complaint-type-title"
                                             style="font-size: 1.2rem; font-weight: 600; background-color: #4a54e9">
-                                            कुल शिकायतें: ({{ $totalsAll['total_registered'] ?? 0 }}),
+                                            कुल विकास कार्य: ({{ $totalsAll['total_registered'] ?? 0 }}),
                                             कुल निरस्त: ({{ $totalsAll['total_cancel'] ?? 0 }}),
                                             कुल समाधान: ({{ $totalsAll['total_solved'] ?? 0 }})
                                         </div>
@@ -412,7 +412,7 @@
                                                             @break
                                                         @endswitch
                                                     </th>
-                                                    <th>कुल शिकायतें</th>
+                                                    <th>कुल विकास कार्य</th>
                                                     <th>कुल निरस्त</th>
                                                     <th>कुल समाधान</th>
                                                 </tr>
@@ -428,7 +428,8 @@
                                                     </tr>
                                                 @empty
                                                     <tr>
-                                                        <td colspan="5" class="text-center text-muted">कोई शिकायत
+                                                        <td colspan="5" class="text-center text-muted">कोई विकास
+                                                            कार्य
                                                             उपलब्ध
                                                             नहीं</td>
                                                     </tr>
@@ -453,7 +454,7 @@
 
                                             <div class="mt-4 mb-2 complaint-type-title text-center text-white py-1 rounded"
                                                 style="font-size: 1.2rem; font-weight: 600; background-color:#4a54e9">
-                                                अप्राप्त शिकायत: कुल {{ $label }}:
+                                                अप्राप्त विकास कार्य: कुल {{ $label }}:
                                                 ({{ $totalsAll['total_areas'] ?? 0 }}),
                                                 पंजीकृत {{ $label }}:
                                                 ({{ $totalsRegistered['total_areas'] ?? 0 }})

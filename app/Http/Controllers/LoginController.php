@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use App\Models\RegistrationForm;
+use App\Models\AssignPosition;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use Carbon\Carbon;
@@ -230,14 +231,23 @@ class LoginController extends Controller
 
         $sendToMobile = $inputMobile;
 
-        $member = RegistrationForm::where('mobile1', $inputMobile)
-            ->where('position_id', 8)
-            ->first();
+        $member = RegistrationForm::where('mobile1', $inputMobile)->first();
 
         if (!$member) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'मोबाइल नंबर पंजीकृत नहीं है या अधिकृत नहीं है!'
+            ]);
+        }
+
+        $assign = AssignPosition::where('member_id', $member->registration_id)
+            ->where('position_id', 8)
+            ->first();
+
+        if (!$assign) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'आप अधिकृत नहीं हैं!'
             ]);
         }
 
@@ -274,15 +284,22 @@ class LoginController extends Controller
         if (!($recaptcha->json()['success'] ?? false)) {
             return back()->withErrors(['g-recaptcha-response' => 'Please confirm you are not a robot.'])->withInput();
         }
-        
+
 
         $member = RegistrationForm::where('mobile1', $request->mobile)
             ->where('otp', $request->otp)
-            ->where('position_id', 8)
             ->first();
 
         if (!$member) {
             return back()->withErrors(['otp' => 'अमान्य ओटीपी या अनुमति नहीं है!']);
+        }
+
+        $assign = AssignPosition::where('member_id', $member->registration_id)
+            ->where('position_id', 8)
+            ->first();
+
+        if (!$assign) {
+            return back()->withErrors(['otp' => 'आप अधिकृत नहीं हैं!']);
         }
 
         $logId = DB::table('login_history')->insertGetId([

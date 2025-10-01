@@ -1,8 +1,8 @@
 @php
-    $pageTitle = 'रेफरेंस रिपोर्ट';
+    $pageTitle = 'समस्या रेफरेंस रिपोर्ट';
     $breadcrumbs = [
         'एडमिन' => '#',
-        'रेफरेंस रिपोर्ट' => '#',
+        'समस्या रेफरेंस रिपोर्ट' => '#',
     ];
 @endphp
 
@@ -84,7 +84,7 @@
                                 @endphp
 
                                 <h5 class="mb-0 text-white">
-                                    संदर्भ रिपोर्ट:
+                                    समस्या संदर्भ रिपोर्ट:
                                     @if ($fromDate && $toDate)
                                         {{ $fromDate }} से {{ $toDate }}
                                     @elseif($fromDate)

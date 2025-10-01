@@ -1,13 +1,13 @@
 @php
-    $pageTitle = 'समस्या जाति रिपोर्ट';
+    $pageTitle = 'सुचना रेफरेंस रिपोर्ट';
     $breadcrumbs = [
         'एडमिन' => '#',
-        'समस्या जाति रिपोर्ट' => '#',
+        'सुचना रेफरेंस रिपोर्ट' => '#',
     ];
 @endphp
 
 @extends('layouts.app')
-@section('title', 'View Jatiwise Report')
+@section('title', 'View Reference Report')
 
 @section('content')
     <div class="container">
@@ -39,22 +39,12 @@
                             </select>
                         </div>
 
-                        <div class="col-md-3 big-radio-box">
-                            <br>
-                            <input type="radio" name="show_all" value="1" id="show_all"
-                                {{ request('show_all') == '1' ? 'checked' : '' }}> <label for="show_all"
-                                class="mr-2">अप्राप्त शिकायतें</label>
-                            <input type="radio" name="show_all" value="0" id="show_registered"
-                                {{ request('show_all') == '0' ? 'checked' : '' }}> <label for="show_registered">प्राप्त
-                                शिकायतें</label>
-                        </div>
-
                         <div class="col-md-1 mt-2">
                             <br>
                             <button type="submit" class="btn btn-primary" style="font-size: 12px">फ़िल्टर</button>
                         </div>
 
-                        <div class="col-md-3 printExcel">
+                        <div class="col-md-3 printExcelbuttons">
                             <button type="button" class="btn btn-success" onclick="printReport()"
                                 style="font-size: 12px;">प्रिंट
                                 रिपोर्ट</button>
@@ -71,7 +61,7 @@
         <div class="row">
             <div class="col-12">
                 <div class="card">
-                    @if (isset($hasFilter) && $hasFilter)
+                    @if (isset($referenceData) && $referenceData->count())
                         <div class="card-body" id="report-results" style="color: black">
 
                             <div
@@ -94,7 +84,7 @@
                                 @endphp
 
                                 <h5 class="mb-0 text-white">
-                                    समस्या जाति रिपोर्ट:
+                                    सुचना संदर्भ रिपोर्ट:
                                     @if ($fromDate && $toDate)
                                         {{ $fromDate }} से {{ $toDate }}
                                     @elseif($fromDate)
@@ -113,72 +103,48 @@
                                 @endif
                             </div>
 
-
-
                             <div>
-                                @if ($showAll == '1')
-                                    <div class="text-center text-white py-1 rounded mb-2 complaint-type-title"
-                                        style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; background-color: #4a54e9">
-                                        कुल जाति: ({{ $totalsAll['total_jati'] }}),
-                                        पंजीकृत जाति: ({{ $totalsRegistered['total_jati'] }})
-                                    </div>
+                                <div class="text-center text-white py-1 rounded mb-2 complaint-type-title"
+                                    style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; background-color: #4a54e9">
+                                    कुल रेफरेंस: ({{ $totals['total_references'] }}),
+                                    कुल सुचना: ({{ $totals['total_registered'] }}),
+                                    कुल निरस्त: ({{ $totals['total_cancel'] }}),
+                                    कुल समाधान: ({{ $totals['total_solved'] }})
+                                </div>
 
-                                    <table class="table table-bordered table-sm text-center" style="color: black">
-                                        <tbody>
-                                            @foreach ($finalData as $row)
-                                                <tr>
-                                                    @foreach ($row as $jati)
-                                                        <td>{{ $jati->jati_name }}</td>
-                                                    @endforeach
-                                                    @for ($i = $row->count(); $i < 8; $i++)
-                                                        <td></td>
-                                                    @endfor
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                @else
-                                    <div class="text-center text-white py-1 rounded mb-2 complaint-type-title"
-                                        style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; background-color: #4a54e9">
-                                        कुल शिकायतें: ({{ $totalsAll['total_registered'] }}),
-                                        कुल निरस्त: ({{ $totalsAll['total_cancel'] }}),
-                                        कुल समाधान: ({{ $totalsAll['total_solved'] }})
-                                    </div>
-
-                                    <table class="table table-bordered table-sm" style="color: black">
-                                        <thead style="background-color: blanchedalmond">
+                                <table class="table table-bordered table-sm" style="color: black">
+                                    <thead style="background-color: blanchedalmond">
+                                        <tr>
+                                            <th>क्र.</th>
+                                            <th>रेफरेंस</th>
+                                            <th>कुल सुचना</th>
+                                            <th>कुल निरस्त</th>
+                                            <th>कुल समाधान</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($referenceData as $row)
                                             <tr>
-                                                <th>क्र.</th>
-                                                <th>जाति</th>
-                                                <th>कुल शिकायतें</th>
-                                                <th>कुल निरस्त</th>
-                                                <th>कुल समाधान</th>
+                                                <td>{{ $loop->iteration }}</td>
+                                                <td>{{ $row->reference }}</td>
+                                                <td>{{ $row->total_registered }}</td>
+                                                <td>{{ $row->total_cancel }}</td>
+                                                <td>{{ $row->total_solved }}</td>
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            @forelse($finalData as $row)
-                                                <tr>
-                                                    <td>{{ $loop->iteration }}</td>
-                                                    <td>{{ $row->jati_name }}</td>
-                                                    <td>{{ $row->total_registered }}</td>
-                                                    <td>{{ $row->total_cancel }}</td>
-                                                    <td>{{ $row->total_solved }}</td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="5" class="text-center text-muted">डाटा उपलब्ध नहीं है
-                                                    </td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                @endif
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">डाटा उपलब्ध नहीं है</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     @endif
                 </div>
             </div>
         </div>
+
     </div>
 
     @push('scripts')
@@ -204,7 +170,7 @@
                 printWindow.document.write(`
                         <html>
                         <head>
-                            <title>Jati Report</title>
+                            <title>Reference Report</title>
                             <style>
                                 body {
                                     font-family: Arial, sans-serif;

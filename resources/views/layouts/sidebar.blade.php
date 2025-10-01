@@ -70,7 +70,7 @@
                             class="nav-text">जाति रिपोर्ट</span></a></li> --}}
 
 
-                <li><a class="has-arrow" href="#" aria-expanded="false"><i class="icon icon-arrow-right"></i><span
+                {{-- <li><a class="has-arrow" href="#" aria-expanded="false"><i class="icon icon-arrow-right"></i><span
                             class="nav-text">सभी रिपोर्ट</span></a>
                     <ul aria-expanded="false">
                         <li><a href="{{ route('detailed_report.index') }}">रिपोर्ट</a></li>
@@ -79,6 +79,41 @@
                         <li><a href="{{ route('departmentwise_report.index') }}">विभाग रिपोर्ट</a></li>
                         <li><a href="{{ route('reference_report.index') }}">रेफरेंस रिपोर्ट</a></li>
                         <li><a href="{{ route('team_report.index') }}">टीम रिपोर्ट</a></li>
+                    </ul>
+                </li> --}}
+
+
+                <li><a class="has-arrow" href="#" aria-expanded="false"><i class="icon icon-arrow-right"></i><span
+                            class="nav-text">सभी रिपोर्ट</span></a>
+                    <ul aria-expanded="false">
+                        <li><a class="has-arrow" href="#" aria-expanded="false">समस्या रिपोर्ट</a>
+                            <ul aria-expanded="false">
+                                
+                                <li><a href="{{ route('areawise_report.index') }}">क्षेत्र रिपोर्ट</a></li>
+                                <li><a href="{{ route('jatiwise_report.index') }}">जाति रिपोर्ट</a></li>
+                                <li><a href="{{ route('departmentwise_report.index') }}">विभाग रिपोर्ट</a></li>
+                                <li><a href="{{ route('reference_report.index') }}">रेफरेंस रिपोर्ट</a></li>
+                               
+                            </ul>
+                        </li>
+                        <li><a class="has-arrow" href="#" aria-expanded="false">विकास रिपोर्ट</a>
+                            <ul aria-expanded="false">
+                                <li><a href="{{ route('vikashareawise_report.index') }}">क्षेत्र रिपोर्ट</a></li>
+                                <li><a href="{{ route('vikashjatiwise_report.index') }}">जाति रिपोर्ट</a></li>
+                                <li><a href="{{ route('vikashdepartmentwise_report.index') }}">विभाग रिपोर्ट</a></li>
+                                <li><a href="{{ route('vikashreference_report.index') }}">रेफरेंस रिपोर्ट</a></li>
+                            </ul>
+                        </li>
+                        <li><a class="has-arrow" href="#" aria-expanded="false">सुचना रिपोर्ट</a>
+                            <ul aria-expanded="false">
+                                <li><a href="{{ route('suchnaareawise_report.index') }}">क्षेत्र रिपोर्ट</a></li>
+                                <li><a href="{{ route('suchnajatiwise_report.index') }}">जाति रिपोर्ट</a></li>
+                                <li><a href="{{ route('suchnareference_report.index') }}">रेफरेंस रिपोर्ट</a></li>
+                            </ul>
+                        </li>
+
+                        <li><a href="{{ route('detailed_report.index') }}">रिपोर्ट</a></li>
+                         <li><a href="{{ route('team_report.index') }}">टीम रिपोर्ट</a></li>
                     </ul>
                 </li>
 

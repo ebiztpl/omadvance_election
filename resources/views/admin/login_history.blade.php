@@ -61,7 +61,7 @@
                             <select name="field_id" id="field_id" class="form-control">
                                 <option value="">-- सभी --</option>
                                 @foreach ($fields ?? [] as $field)
-                                    <option value="{{ $field->registration_id }}">{{ $field->name }}</option>
+                                    <option value="{{ $field->member_id }}">{{ $field->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -179,7 +179,7 @@
                                 if (row.role == 1) return "एडमिन";
                                 if (row.role == 2) return "मैनेजर";
                                 if (row.role == 3) return "कार्यालय";
-                                if (row.position_id == 8 && row.type == 3) return "फ़ील्ड(सदस्य)";
+                                if (row.position_id == 8) return "फ़ील्ड(सदस्य)";
                                 return "-";
                             }
                         },

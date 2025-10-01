@@ -176,11 +176,23 @@ Route::middleware('checklogin')->group(function () {
     Route::get('/admin/detailed_report', [AdminController::class, 'detailed_report_index'])->name('detailed_report.index');
 
 
-    // jati wise, department wise and area wise report
+    // jati wise, department wise and area wise report for samasya type 
     Route::get('/admin/jatiwise_report', [AdminController::class, 'jatiwise_report'])->name('jatiwise_report.index');
     Route::get('/admin/departmentwise_report', [AdminController::class, 'departmentReport'])->name('departmentwise_report.index');
     Route::get('/admin/areawise_report', [AdminController::class, 'areareport'])->name('areawise_report.index');
     Route::get('/admin/reference_report', [AdminController::class, 'referenceReport'])->name('reference_report.index');
+
+    // jati wise, department wise and area wise report for vikash type 
+    Route::get('/admin/jatiwise_vikash_report', [AdminController::class, 'vikashjatiwise_report'])->name('vikashjatiwise_report.index');
+    Route::get('/admin/departmentwise_vikash_report', [AdminController::class, 'vikashdepartmentReport'])->name('vikashdepartmentwise_report.index');
+    Route::get('/admin/areawise_vikash_report', [AdminController::class, 'vikashareareport'])->name('vikashareawise_report.index');
+    Route::get('/admin/reference_vikash_report', [AdminController::class, 'vikashreferenceReport'])->name('vikashreference_report.index');
+
+    // jati wise, department wise and area wise report for suchna type 
+    Route::get('/admin/jatiwise_suchna_report', [AdminController::class, 'suchnajatiwise_report'])->name('suchnajatiwise_report.index');
+    Route::get('/admin/areawise_suchna_report', [AdminController::class, 'suchnaareareport'])->name('suchnaareawise_report.index');
+    Route::get('/admin/reference_suchna_report', [AdminController::class, 'suchnareferenceReport'])->name('suchnareference_report.index');
+
     Route::get('/admin/team_report', [AdminController::class, 'teamReport'])->name('team_report.index');
 
     // activity log routes 

@@ -1,8 +1,8 @@
 @php
-    $pageTitle = 'समस्या जाति रिपोर्ट';
+    $pageTitle = 'विकास कार्य जाति रिपोर्ट';
     $breadcrumbs = [
         'एडमिन' => '#',
-        'समस्या जाति रिपोर्ट' => '#',
+        'विकास कार्य जाति रिपोर्ट' => '#',
     ];
 @endphp
 
@@ -43,10 +43,10 @@
                             <br>
                             <input type="radio" name="show_all" value="1" id="show_all"
                                 {{ request('show_all') == '1' ? 'checked' : '' }}> <label for="show_all"
-                                class="mr-2">अप्राप्त शिकायतें</label>
+                                class="mr-2">अप्राप्त विकास कार्य</label>
                             <input type="radio" name="show_all" value="0" id="show_registered"
                                 {{ request('show_all') == '0' ? 'checked' : '' }}> <label for="show_registered">प्राप्त
-                                शिकायतें</label>
+                                विकास कार्य</label>
                         </div>
 
                         <div class="col-md-1 mt-2">
@@ -94,7 +94,7 @@
                                 @endphp
 
                                 <h5 class="mb-0 text-white">
-                                    समस्या जाति रिपोर्ट:
+                                    विकास कार्य जाति रिपोर्ट:
                                     @if ($fromDate && $toDate)
                                         {{ $fromDate }} से {{ $toDate }}
                                     @elseif($fromDate)
@@ -140,7 +140,7 @@
                                 @else
                                     <div class="text-center text-white py-1 rounded mb-2 complaint-type-title"
                                         style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px; background-color: #4a54e9">
-                                        कुल शिकायतें: ({{ $totalsAll['total_registered'] }}),
+                                        कुल विकास कार्य: ({{ $totalsAll['total_registered'] }}),
                                         कुल निरस्त: ({{ $totalsAll['total_cancel'] }}),
                                         कुल समाधान: ({{ $totalsAll['total_solved'] }})
                                     </div>
@@ -150,7 +150,7 @@
                                             <tr>
                                                 <th>क्र.</th>
                                                 <th>जाति</th>
-                                                <th>कुल शिकायतें</th>
+                                                <th>कुल विकास कार्य</th>
                                                 <th>कुल निरस्त</th>
                                                 <th>कुल समाधान</th>
                                             </tr>
