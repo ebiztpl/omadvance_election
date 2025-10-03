@@ -121,7 +121,7 @@
                             <input type="date" name="programto_date" id="programto_date" class="form-control">
                         </div>
 
-                        <div class="col-md-2">
+                        {{-- <div class="col-md-2">
                             <label>फॉरवर्ड</label>
                             <select name="admin_id" id="admin_id" class="form-control">
                                 <option value="">-- सभी --</option>
@@ -143,7 +143,7 @@
                                 <option value="reference_null">रेफरेंस नहीं है</option>
                                 <option value="reference">रेफरेंस है</option>
                             </select>
-                        </div>
+                        </div> --}}
 
                         <div class="col-md-2 mt-1">
                             <br>
@@ -154,8 +154,8 @@
                 </form>
 
                 <div class="text-center mt-2">
-                    <i id="toggleFilterIcon" class="fa fa-angle-up"
-                        style="float: right; cursor: pointer; font-size: 24px;" title="फ़िल्टर छुपाएं"></i>
+                    <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
+                        title="फ़िल्टर छुपाएं"></i>
                 </div>
             </div>
         </div>
@@ -177,18 +177,19 @@
                         <ul class="nav nav-tabs nav-filters mb-1" id="complaintFilterTabs">
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'forwarded_manager' ? 'active' : '' }}"
-                                    style="color: black" data-filter="forwarded_manager" href="#">निर्देशित</a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === null ? 'active' : '' }}"
-                                    style="color: black" data-filter="" href="#">सभी</a>
+                                    style="color: black" data-filter="forwarded_manager" href="#">कुल निर्देशित</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'not_opened' ? 'active' : '' }}"
+                                <a class="nav-link filter-link {{ request('filter', 'not_opened') === 'not_opened' ? 'active' : '' }}"
                                     style="color: black" data-filter="not_opened" href="#">नई
                                     सूचनाएँ</a>
                             </li>
+
+                            {{-- <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === null ? 'active' : '' }}"
+                                    style="color: black" data-filter="" href="#">सभी</a>
+                            </li> --}}
+
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'cancel' ? 'active' : '' }}"
                                     style="color: black" data-filter="cancel" href="#">रद्द
@@ -225,7 +226,7 @@
                                         <th>सूचना की स्थिति</th>
                                         <th>आवेदक</th>
                                         <th>फॉरवर्ड अधिकारी</th>
-                                         <th style="display: none;">सूचना विवरण</th>
+                                        <th style="display: none;">सूचना विवरण</th>
                                         <th>सूचना का विषय</th>
                                         <th>कार्यक्रम दिनांक</th>
                                         <th>विस्तार से</th>
@@ -440,7 +441,11 @@
                             visible: false,
                             searchable: false
                         }
-                    ]
+                    ],
+                    language: {
+                        info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                        infoFiltered: ""
+                    }
                 });
 
                 table.on('preXhr.dt', function() {

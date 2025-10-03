@@ -6036,7 +6036,7 @@ class AdminController extends Controller
         $departments = Department::pluck('department_name', 'department_id');
 
         $complaintData = Complaint::query()
-            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->where('complaint_type', 'समस्या')
             ->when($fromDate, fn($q) => $q->whereDate('posted_date', '>=', $fromDate))
             ->when($toDate, fn($q) => $q->whereDate('posted_date', '<=', $toDate))
             ->when($officeType, fn($q) => $q->where('type', $officeType))
@@ -6628,7 +6628,7 @@ class AdminController extends Controller
         $officeType = $request->office_type;
 
         $complaints = Complaint::query()
-            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->where('complaint_type', 'समस्या')
             ->when($fromDate, fn($q) => $q->whereDate('posted_date', '>=', $fromDate))
             ->when($toDate, fn($q) => $q->whereDate('posted_date', '<=', $toDate))
             ->when($officeType, fn($q) => $q->where('type', $officeType))
@@ -6650,7 +6650,7 @@ class AdminController extends Controller
             ->values();
 
         $totals = [
-            'total_references' => $referenceData->count(),
+            'total_references' =>  $referenceData->filter(fn($row) => $row->reference !== 'उपलब्ध नहीं है')->count(),
             'total_registered' => $referenceData->sum('total_registered'),
             'total_cancel'     => $referenceData->sum('total_cancel'),
             'total_solved'     => $referenceData->sum('total_solved'),
@@ -7401,7 +7401,7 @@ class AdminController extends Controller
             ->values();
 
         $totals = [
-            'total_references' => $referenceData->count(),
+            'total_references' =>  $referenceData->filter(fn($row) => $row->reference !== 'उपलब्ध नहीं है')->count(),
             'total_registered' => $referenceData->sum('total_registered'),
             'total_cancel'     => $referenceData->sum('total_cancel'),
             'total_solved'     => $referenceData->sum('total_solved'),
@@ -8005,7 +8005,7 @@ class AdminController extends Controller
             ->values();
 
         $totals = [
-            'total_references' => $referenceData->count(),
+            'total_references' =>  $referenceData->filter(fn($row) => $row->reference !== 'उपलब्ध नहीं है')->count(),
             'total_registered' => $referenceData->sum('total_registered'),
             'total_cancel'     => $referenceData->sum('total_cancel'),
             'total_solved'     => $referenceData->sum('total_solved'),

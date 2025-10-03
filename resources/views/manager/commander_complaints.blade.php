@@ -131,7 +131,7 @@
                             <input type="date" name="to_date" id="to_date" class="form-control">
                         </div>
 
-                        <div class="col-md-2">
+                        {{-- <div class="col-md-2">
                             <label>फॉरवर्ड</label>
                             <select name="admin_id" id="admin_id" class="form-control">
                                 <option value="">-- सभी --</option>
@@ -149,13 +149,12 @@
                                 <option value="not_opened">नई शिकायतें</option>
                                 <option value="reviewed">रीव्यू की गई</option>
                                 <option value="important">महत्त्वपूर्ण</option>
-                                {{-- <option value="critical">गंभीर</option> --}}
                                 <option value="closed">पूर्ण</option>
                                 <option value="cancel">रद्द</option>
                                 <option value="reference_null">रेफरेंस नहीं है</option>
                                 <option value="reference">रेफरेंस है</option>
                             </select>
-                        </div>
+                        </div> --}}
 
                         <div class="col-md-2 mt-2">
                             <br>
@@ -166,8 +165,8 @@
                 </form>
 
                 <div class="text-center">
-                    <i id="toggleFilterIcon" class="fa fa-angle-up"
-                        style="float: right; cursor: pointer; font-size: 24px;" title="फ़िल्टर छुपाएं"></i>
+                    <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
+                        title="फ़िल्टर छुपाएं"></i>
                 </div>
             </div>
         </div>
@@ -188,50 +187,37 @@
 
                         <ul class="nav nav-tabs nav-filters mb-1" id="complaintFilterTabs">
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'forwarded_manager' ? 'active' : '' }}"
-                                    style="color: black" data-filter="forwarded_manager" href="#">निर्देशित</a>
+                                <a class="nav-link filter-link {{ request('filter') === 'forward_manager' ? 'active' : '' }}"
+                                    style="color: black" data-filter="forward_manager" href="#">कुल निर्देशित</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === null ? 'active' : '' }}"
-                                    style="color: black" data-filter="" href="#">सभी</a>
+                                <a class="nav-link filter-link {{ request('filter', 'not_opened') === 'not_opened' ? 'active' : '' }}"
+                                    style="color: black" data-filter="not_opened" href="#">नई शिकायतें</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'not_opened' ? 'active' : '' }}"
-                                    style="color: black" data-filter="not_opened" href="#">नई
-                                    शिकायतें</a>
-                            </li>
+
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'reviewed' ? 'active' : '' }}"
-                                    style="color: black" data-filter="reviewed" href="#">रीव्यू की
-                                    गई</a>
+                                    style="color: black" data-filter="reviewed" href="#">रीव्यू की गई</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'important' ? 'active' : '' }}"
                                     style="color: black" data-filter="important" href="#">महत्त्वपूर्ण</a>
                             </li>
-                            {{-- <li class="nav-item">
-                                <a class="nav-link filter-link {{ request('filter') === 'critical' ? 'active' : '' }}" style="color: black"
-                                    href="{{ route('operator.complaints.view', ['filter' => 'critical']) }}">गंभीर</a>
-                            </li> --}}
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'closed' ? 'active' : '' }}"
-                                    style="color: black" data-filter="closed" href="#">पूर्ण
-                                    शिकायतें</a>
+                                    style="color: black" data-filter="closed" href="#">पूर्ण शिकायतें</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'cancel' ? 'active' : '' }}"
-                                    style="color: black" data-filter="cancel" href="#">रद्द
-                                    शिकायतें</a>
+                                    style="color: black" data-filter="cancel" href="#">रद्द शिकायतें</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'reference_null' ? 'active' : '' }}"
-                                    style="color: black" data-filter="reference_null" href="#">रेफरेंस
-                                    नहीं है</a>
+                                    style="color: black" data-filter="reference_null" href="#">रेफरेंस नहीं है</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === 'reference' ? 'active' : '' }}"
-                                    style="color: black" data-filter="reference" href="#">रेफरेंस
-                                    है</a>
+                                    style="color: black" data-filter="reference" href="#">रेफरेंस है</a>
                             </li>
                         </ul>
 
@@ -568,7 +554,11 @@
                             visible: false,
                             searchable: false
                         }
-                    ]
+                    ],
+                    language: {
+                        info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                        infoFiltered: ""
+                    }
                 });
 
                 table.on('preXhr.dt', function() {

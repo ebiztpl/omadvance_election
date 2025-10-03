@@ -331,12 +331,27 @@ class MemberController extends Controller
     {
         $request->validate([
             'area_id' => 'required|integer',
-            'video' => 'required|file|mimetypes:video/*|max:15360',
+            'video' => 'nullable|file|mimetypes:video/*|max:153600',
+            'NameText' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    if ($value) {
+                        $wordCount = str_word_count($value);
+                        if ($wordCount > 200) {
+                            $fail('विवरण अधिकतम 200 शब्दों का हो सकता है। वर्तमान: ' . $wordCount);
+                        }
+                    }
+                },
+            ],
             'complaint_type' => 'nullable|string'
         ], [
-            'video.max' => 'वीडियो फ़ाइल अधिकतम 15MB हो सकती है (लगभग 1:00 मिनट)।',
+            'video.max' => 'वीडियो फ़ाइल अधिकतम 150MB हो सकती है (लगभग 1:00 मिनट)।',
             'video.mimetypes' => 'केवल वीडियो फ़ॉर्मेट स्वीकार्य है।',
         ]);
+
+        if (!$request->hasFile('video') && empty(trim($request->NameText))) {
+            return back()->withInput()->with('error', 'कृपया वीडियो या विवरण में से कम से कम एक दर्ज करें।');
+        }
 
         $registrationId = session('registration_id');
         if (!$registrationId) {
@@ -455,7 +470,7 @@ class MemberController extends Controller
             'complaint_created_by' => null,
             'complaint_status' => $complaintStatus,
             'issue_title' => '',
-            'issue_description' => '',
+            'issue_description' => $request->NameText ?? '',
             'issue_attachment' => $videoFilename,
             'name' => '',
             'email' => '',

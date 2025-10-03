@@ -49,7 +49,7 @@
                             <span class="text-danger small" id="complaint_type-error"></span>
                         </div>
 
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <label for="area_id">ग्राम चौपाल चुनें: <span class="error">*</span></label>
                             <select name="area_id" id="area_id" class="form-control" required>
                                 <option value="">--चुनें--</option>
@@ -61,11 +61,19 @@
                             </select>
                         </div>
 
-                        <div class="col-md-6">
-                            <label for="video">वीडियो अपलोड करें: <span class="error">*</span></label>
-                            <input type="file" name="video" id="video" class="form-control" accept="video/*"
-                                required>
+
+
+                        <div class="col-md-2">
+                            <label for="video">वीडियो अपलोड करें: </label>
+                            <input type="file" name="video" id="video" class="form-control" accept="video/*">
                             <span class="text-danger small" id="video-error"></span>
+                        </div>
+
+                        <div class="col-md-4 mb-1">
+                            <label>विवरण <span class="error">*</span></label>
+                            <textarea class="form-control" placeholder="हिंदी में टाइप करने के लिए कृपया हिंदी कीबोर्ड चालू करें" name="NameText"
+                                id="NameText" rows="5"></textarea>
+                            <small id="wordCountMessage" class="text-danger"></small>
                         </div>
 
                         <div class="col-md-2 mt-2">
@@ -88,10 +96,55 @@
     @push('scripts')
         <script>
             $(document).ready(function() {
+                const textarea = document.getElementById('NameText');
+                const wordCountMessage = document.getElementById('wordCountMessage');
+                const maxWords = 200;
+                const videoInput = document.getElementById('video');
+
+                textarea.addEventListener('input', () => {
+                    const words = textarea.value.trim().split(/\s+/).filter(Boolean);
+                    if (words.length > maxWords) {
+                        wordCountMessage.textContent =
+                            `अधिकतम ${maxWords} शब्द ही दर्ज किए जा सकते हैं। वर्तमान में: ${words.length}`;
+                    } else {
+                        wordCountMessage.textContent = '';
+                    }
+                });
+
                 $('#complaintForm').on('submit', function(e) {
                     e.preventDefault();
-                    // $("#loader-wrapper").show();
+
                     $('#video-error').text('');
+                    wordCountMessage.textContent = '';
+
+                    const words = textarea.value.trim().split(/\s+/).filter(Boolean);
+                    const videoFile = videoInput.files[0];
+
+                    if (!videoFile && words.length === 0) {
+                        $('#success-message').text('कृपया वीडियो या विवरण में से कम से कम एक दर्ज करें।');
+                        $('#success-alert').removeClass('d-none').addClass(
+                        'alert-danger'); 
+                        window.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
+                        return false;
+                    }
+                    
+                    if (words.length > maxWords) {
+                        wordCountMessage.textContent =
+                            `अधिकतम ${maxWords} शब्द ही दर्ज किए जा सकते हैं। वर्तमान में: ${words.length}`;
+                        return false;
+                    }
+
+                    if (videoFile) {
+                        const maxSize = 150 * 1024 * 1024;
+                        if (videoFile.size > maxSize) {
+                            $('#video-error').text('वीडियो फ़ाइल अधिकतम 150MB हो सकती है।(लगभग 1:00 मिनट)');
+                            return false;
+                        }
+                    }
+
                     $('#progressBar').css('width', '0%').text('0%').removeClass('bg-success');
                     $('#progress-container').removeClass('d-none');
 
@@ -108,77 +161,49 @@
                             xhr.upload.addEventListener('progress', function(e) {
                                 if (e.lengthComputable) {
                                     var percent = Math.round((e.loaded / e.total) * 100);
-                                    $('#progressBar')
-                                        .css('width', percent + '%')
-                                        .text(percent + '%');
-
-                                    if (percent === 100) {
-                                        $('#progressBar').addClass('bg-success');
-                                    }
+                                    $('#progressBar').css('width', percent + '%').text(
+                                        percent + '%');
+                                    if (percent === 100) $('#progressBar').addClass(
+                                        'bg-success');
                                 }
                             });
                             return xhr;
                         },
                         success: function(response) {
-                            // $("#loader-wrapper").hide();
-                            $('#progressBar').css('width', '0%').text('0%');
-                            $('#progressBar').removeClass('bg-success');
+                            $('#progressBar').css('width', '0%').text('0%').removeClass(
+                                'bg-success');
                             $('#progress-container').addClass('d-none');
-
 
                             if (response.success) {
                                 $('#success-message').text(response.message);
-
                                 $('#success-alert').removeClass('d-none');
-
                                 window.scrollTo({
                                     top: 0,
                                     behavior: 'smooth'
                                 });
-
                                 $('#complaintForm')[0].reset();
                             }
 
-                            setTimeout(function() {
-                                $('#success-alert').addClass('d-none');
-                            }, 5000);
+                            setTimeout(() => $('#success-alert').addClass('d-none'), 5000);
                         },
                         error: function(xhr) {
-                            // $("#loader-wrapper").hide();
                             $('#progressBar').css('width', '0%').text('0%').removeClass(
                                 'bg-success');
                             $('#progress-container').addClass('d-none');
 
                             if (xhr.responseJSON && xhr.responseJSON.errors) {
-                                if (xhr.responseJSON.errors.video) {
-                                    $('#video-error').text(xhr.responseJSON.errors.video[0]);
-                                }
-                                if (xhr.responseJSON.errors.area_id) {
-                                    alert(xhr.responseJSON.errors.area_id[
-                                        0]);
-                                }
-                                if (xhr.responseJSON.errors.complaint_type) {
-                                    $('#complaint_type-error').text(xhr.responseJSON.errors
-                                        .complaint_type[0]);
-                                }
+                                if (xhr.responseJSON.errors.video) $('#video-error').text(xhr
+                                    .responseJSON.errors.video[0]);
+                                if (xhr.responseJSON.errors.area_id) alert(xhr.responseJSON.errors
+                                    .area_id[0]);
+                                if (xhr.responseJSON.errors.complaint_type) $(
+                                    '#complaint_type-error').text(xhr.responseJSON.errors
+                                    .complaint_type[0]);
                             } else {
                                 alert('त्रुटि: शिकायत दर्ज नहीं की जा सकी।');
                             }
                         }
                     });
-                });
-
-                $('#video').on('change', function() {
-                    const file = this.files[0];
-                    const maxSize = 15 * 1024 * 1024;  //15 MB
-                    $('#video-error').text('');
-
-                    if (!file) return;
-
-                    if (file.size > maxSize) {
-                        $('#video-error').text('वीडियो फ़ाइल अधिकतम 15MB हो सकती है (लगभग 1:00 मिनट)|');
-                        $(this).val('');
-                    }
                 });
             });
         </script>
