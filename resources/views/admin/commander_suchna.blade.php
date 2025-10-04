@@ -131,16 +131,33 @@
                             </select>
                         </div>
 
+                        <div class="col-md-2">
+                            <label>अन्य फ़िल्टर चुनें</label>
+                            <select id="complaintOtherFilter" class="form-control">
+                                <option value="">सभी</option>
+                                <option value="forwarded_manager">कुल निर्देशित</option>
+                                <option value="not_opened">नई सूचनाएँ</option>
+                                <option value="sammilit_done">सम्मिलित हुए</option>
+                                <option value="sammilit_notdone">सम्मिलित नहीं हुए</option>
+                                <option value="cancel">रद्द</option>
+                                <option value="reference_null">रेफरेंस नहीं है</option>
+                                <option value="reference">रेफरेंस है</option>
+                            </select>
+                            <span id="filterMsg" style="color: red; display: none; font-size: 11px;">पहले फॉरवर्ड मैनेजर
+                                चुनें</span>
+                        </div>
+
                         <div class="col-md-2 mt-2">
                             <br>
-                           <button type="submit" class="btn btn-primary" style="font-size: 12px" id="applyFilters">फ़िल्टर</button>
+                            <button type="submit" class="btn btn-primary" style="font-size: 12px"
+                                id="applyFilters">फ़िल्टर</button>
                         </div>
                     </div>
                 </form>
 
                 <div class="text-center">
-                    <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
-                        title="फ़िल्टर छुपाएं"></i>
+                    <i id="toggleFilterIcon" class="fa fa-angle-up"
+                        style="float: right; cursor: pointer; font-size: 24px;" title="फ़िल्टर छुपाएं"></i>
                 </div>
             </div>
         </div>
@@ -158,6 +175,38 @@
                                 </button>
                             </div>
                         @endif
+
+                        <ul class="nav nav-tabs nav-filters mb-1" id="complaintFilterTabs">
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === null ? 'active' : '' }}"
+                                    style="color: black" data-filter="" href="#">सभी</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'not_opened' ? 'active' : '' }}"
+                                    style="color: black" data-filter="not_opened" href="#">नई सूचनाएँ</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'cancel' ? 'active' : '' }}"
+                                    style="color: black" data-filter="cancel" href="#">रद्द
+                                    सूचनाएँ</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'sammilit_done' ? 'active' : '' }}"
+                                    style="color: black" data-filter="sammilit_done" href="#">सम्मिलित हुए
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference_null' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reference_null" href="#">रेफरेंस नहीं है</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reference" href="#">रेफरेंस है</a>
+                            </li>
+                        </ul>
 
                         <div class="table-responsive">
                             <span
@@ -181,7 +230,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="complaintsTableBody">
-                                    
+
                                 </tbody>
                             </table>
                         </div>
@@ -196,6 +245,23 @@
     @push('scripts')
         <script>
             $(document).ready(function() {
+                const adminSelect = document.getElementById('admin_id');
+                const filterSelect = document.getElementById('complaintOtherFilter');
+                const filterMsg = document.getElementById('filterMsg');
+
+                filterSelect.addEventListener('change', function() {
+                    if (this.value === 'forwarded_manager' && adminSelect.value === "") {
+                        this.value = '';
+
+                        filterMsg.style.display = 'inline';
+                        setTimeout(() => {
+                            filterMsg.style.display = 'none';
+                        }, 3000);
+                    } else {
+                        filterMsg.style.display = 'none';
+                    }
+                });
+
                 // Mandal → Gram
                 $('#mandal_id').on('change', function() {
                     let mandalId = $(this).val();
@@ -245,7 +311,7 @@
                     }
                 });
 
-             
+
 
 
                 const filterForm = $('#complaintFilterForm');
@@ -278,8 +344,22 @@
                     });
                 });
 
+                $('#complaintFilterTabs a').on('click', function(e) {
+                    e.preventDefault();
 
-               let table = $('#example').DataTable({
+                    $('#complaintFilterTabs a').removeClass('active');
+                    $(this).addClass('active');
+
+                    const filter = $(this).data('filter');
+                    $('#loader-wrapper').show();
+
+                    table.ajax.reload(function() {
+                        $('#loader-wrapper').hide();
+                    }, false);
+                });
+
+
+                let table = $('#example').DataTable({
                     processing: true,
                     serverSide: true,
                     destroy: true,
@@ -292,7 +372,7 @@
                                 modifier: {
                                     page: "all"
                                 },
-                                  columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
+                                columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
                             },
                         },
                         {
@@ -301,7 +381,7 @@
                                 modifier: {
                                     page: "all"
                                 },
-                                  columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
+                                columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
                             },
                         }
 
@@ -322,12 +402,12 @@
                             d.from_date = $('#from_date').val();
                             d.to_date = $('#to_date').val();
                             d.admin_id = $('#admin_id').val();
-                             d.jati_id = $('#jati_id').val();
+                            d.jati_id = $('#jati_id').val();
                             d.issue_title = $('#issue_title').val();
                             d.programfrom_date = $('#programfrom_date').val();
                             d.programto_date = $('#programto_date').val();
                             d.complaintOtherFilter = $('#complaintOtherFilter').val();
-
+                            d.filter = $('#complaintFilterTabs a.active').data('filter') || '';
                         }
                     },
                     columns: [{
@@ -366,7 +446,7 @@
                             data: 'action',
                             orderable: false,
                             searchable: false,
-                             className: 'not-export-col'
+                            className: 'not-export-col'
                         },
                         {
                             data: 'voter_id',
@@ -460,7 +540,7 @@
             document.getElementById('complaint_type').addEventListener('change', function() {
                 const type = this.value;
                 const replySelect = document.getElementById('issue_title');
-                replySelect.innerHTML = '<option value="">-- सभी --</option>'; 
+                replySelect.innerHTML = '<option value="">-- सभी --</option>';
 
                 if (subjects[type]) {
                     subjects[type].forEach(sub => {

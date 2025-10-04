@@ -511,7 +511,7 @@ class AdminController extends Controller
         ]);
     }
 
-  
+
 
     public function getForwardedComplaintsPerManager()
     {
@@ -3013,24 +3013,15 @@ class AdminController extends Controller
         if ($request->filled('complaintOtherFilter')) {
             switch ($request->complaintOtherFilter) {
                 case 'forwarded_manager':
-                    $loggedInId = session('user_id');
-                    $query->whereHas('replies', function ($q) use ($loggedInId) {
-                        $q->where('forwarded_to', $loggedInId)
-                            ->whereRaw('reply_date = (
-                              SELECT MAX(reply_date)
-                              FROM complaint_reply
-                              WHERE complaint_reply.complaint_id = complaint.complaint_id
-                          )');
+                    $query->whereHas('replies', function ($q2) use ($request) {
+                        $q2->where('forwarded_to', $request->admin_id);
                     });
                     break;
 
                 case 'not_opened':
-                    $query->whereHas('replies', function ($q) {
-                        $q->where('complaint_status', 1)
-                            ->where('complaint_reply', 'शिकायत दर्ज की गई है।')
-                            ->where('forwarded_to', 6)
-                            ->whereNull('selected_reply');
-                    })->has('replies', '=', 1);
+                    $query->whereHas('latestReply', function ($q) use ($request) {
+                        $q->where('forwarded_to', $request->admin_id);
+                    });
                     break;
 
                 case 'reviewed':
@@ -3092,7 +3083,6 @@ class AdminController extends Controller
         if ($request->filled('complaint_type')) {
             $query->where('complaint_type', $request->complaint_type);
         } else {
-            // Apply default filter for initial load or sabhi
             $query->where('complaint_type', 'समस्या');
         }
 
@@ -3160,19 +3150,6 @@ class AdminController extends Controller
                 case 'reference':
                     $query->whereNotNull('reference_name');
                     break;
-
-                case 'forwarded_manager':
-                    $loggedInId = session('user_id');
-
-                    $query->whereHas('replies', function ($q) use ($loggedInId) {
-                        $q->where('forwarded_to', $loggedInId)
-                            ->whereRaw('reply_date = (
-                            SELECT MAX(reply_date)
-                            FROM complaint_reply
-                            WHERE complaint_reply.complaint_id = complaint.complaint_id
-                        )');
-                    });
-                    break;
             }
         }
 
@@ -3196,7 +3173,7 @@ class AdminController extends Controller
         }
 
         if ($request->filled('admin_id')) {
-            $query->whereHas('latestReply', function ($q) use ($request) {
+            $query->whereHas('replies', function ($q) use ($request) {
                 $q->where('forwarded_to', $request->admin_id);
             });
         }
@@ -3376,17 +3353,294 @@ class AdminController extends Controller
         return response()->json(['success' => 'शिकायत सफलतापूर्वक हटा दी गई।']);
     }
 
+    // public function OperatorComplaints(Request $request)
+    // {
+    //     // $vidhansabhaId = 49;
+    //     // $districtId = 11;
+    //     // $divisionId = 2;
+
+    //     $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 2)->whereIn('complaint_type', ['समस्या', 'विकास']);
+    //     // ->where('district_id', $districtId)
+    //     // ->where('vidhansabha_id', $vidhansabhaId);
+
+    //     // Filters
+
+    //     if ($request->filled('complaint_status')) {
+    //         $query->where('complaint_status', $request->complaint_status);
+    //     }
+
+    //     if ($request->filled('complaint_type')) {
+    //         $query->where('complaint_type', $request->complaint_type);
+    //     } else {
+    //         // Apply default filter for initial load or sabhi
+    //         $query->where('complaint_type', 'समस्या');
+    //     }
+
+    //     // if ($request->filled('department_id')) {
+    //     //     $query->where('complaint_department', $request->department_id);
+    //     // }
+
+    //     // if ($request->filled('subject_id')) {
+    //     //     $query->where('issue_title', $request->subject_id);
+    //     // }
+
+    //     if ($request->filled('department_id')) {
+    //         $department = Department::find($request->department_id);
+    //         if ($department) {
+    //             $query->where('complaint_department', $department->department_name);
+    //         }
+    //     }
+
+    //     if ($request->filled('admin_id')) {
+    //         $query->whereHas('latestReply', function ($q) use ($request) {
+    //             $q->where('forwarded_to', $request->admin_id);
+    //         });
+    //     }
+
+    //     if ($request->filled('reply_id')) {
+    //         $query->whereHas('replies', function ($q) use ($request) {
+    //             $q->where('selected_reply', $request->reply_id);
+    //         });
+    //     }
+
+    //     if ($request->filled('jati_id')) {
+    //         $query->where('jati_id', $request->jati_id);
+    //     }
+
+    //     if ($request->filled('subject_id')) {
+    //         $subject = Subject::find($request->subject_id);
+    //         if ($subject) {
+    //             $query->where('issue_title', $subject->subject);
+    //         }
+    //     }
+
+    //     if ($request->filled('mandal_id')) {
+    //         $query->where('mandal_id', $request->mandal_id);
+    //     }
+
+    //     if ($request->filled('gram_id')) {
+    //         $query->where('gram_id', $request->gram_id);
+    //     }
+
+    //     if ($request->filled('polling_id')) {
+    //         $query->where('polling_id', $request->polling_id);
+    //     }
+
+    //     if ($request->filled('area_id')) {
+    //         $query->where('area_id', $request->area_id);
+    //     }
+
+    //     if ($request->filled('from_date')) {
+    //         $query->whereDate('posted_date', '>=', $request->from_date);
+    //     }
+
+    //     if ($request->filled('to_date')) {
+    //         $query->whereDate('posted_date', '<=', $request->to_date);
+    //     }
+
+    //     $start = $request->input('start', 0);
+    //     $length = $request->input('length', 10);
+
+    //     $recordsFiltered = $query->count(); // total after filters
+    //     $recordsTotal = $query->count();
+
+    //     $complaints = $query->orderBy('posted_date', 'desc')
+    //         ->offset($start)
+    //         ->limit($length)
+    //         ->get();
+
+
+    //     // Add extra data to each complaint
+    //     foreach ($complaints as $complaint) {
+    //         $admin = DB::table('admin_master')->where('admin_id', $complaint->complaint_created_by)->first();
+    //         $complaint->admin_name = $admin->admin_name ?? '';
+    //         $complaint->pending_days = in_array($complaint->complaint_status, [4, 5])
+    //             ? 0
+    //             : \Carbon\Carbon::parse($complaint->posted_date)->diffInDays(now());
+
+    //         $lastReply = $complaint->replies
+    //             ->whereNotNull('forwarded_to')
+    //             ->sortByDesc('reply_date')
+    //             ->first();
+
+    //         $complaint->forwarded_to_name = $lastReply?->forwardedToManager?->admin_name ?? '-';
+    //         $complaint->forwarded_reply_date = $lastReply?->reply_date?->format('d-m-Y h:i') ?? '-';
+    //     }
+
+    //     if ($request->ajax()) {
+    //         $data = [];
+    //         foreach ($complaints as $index => $complaint) {
+
+    //             $pendingText = $complaint->complaint_status == 4 ? 'पूर्ण' : ($complaint->complaint_status == 5 ? 'रद्द' : $complaint->pending_days . ' दिन');
+
+
+    //             $data[] = [
+    //                 'index' => $start + $index + 1,
+    //                 'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>" .
+    //                     "<strong>नाम: </strong>{$complaint->name}<br>" .
+    //                     "<strong>मोबाइल: </strong>{$complaint->mobile_number}<br>" .
+    //                     "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
+    //                     "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
+    //                     "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+
+    //                 'reference_name' => $complaint->reference_name ?? '',
+
+    //                 'area_details' => "<strong>संभाग: </strong>" . ($complaint->division?->division_name ?? '') . ",<br>" .
+    //                     "<strong>जिला: </strong>" . ($complaint->district?->district_name ?? '') . ",<br>" .
+    //                     "<strong>विधानसभा: </strong>" . ($complaint->vidhansabha?->vidhansabha ?? '') . ",<br>" .
+    //                     "<strong>मंडल: </strong>" . ($complaint->mandal?->mandal_name ?? '') . ",<br>" .
+    //                     "<strong>नगर/ग्राम: </strong>" . ($complaint->gram?->nagar_name ?? '') . ",<br>" .
+    //                     "<strong>मतदान केंद्र: </strong>" . ($complaint->polling?->polling_name ?? '') .
+    //                     " (" . ($complaint->polling?->polling_no ?? '') . ") ,<br>" .
+    //                     "<strong>ग्राम/वार्ड: </strong>" . ($complaint->area?->area_name ?? '') . ",<br>",
+
+    //                 // 'area_details' => '<span title="
+    //                 //         विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
+    //                 //         जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
+    //                 //         विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
+    //                 //         मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
+    //                 //         नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
+    //                 //         मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
+    //                 //         क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
+    //                 //     ' . ($complaint->division?->division_name ?? '') . '<br>' .
+    //                 //     ($complaint->district?->district_name ?? '') . '<br>' .
+    //                 //     ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
+    //                 //     ($complaint->mandal?->mandal_name ?? '') . '<br>' .
+    //                 //     ($complaint->gram?->nagar_name ?? '') . '<br>' .
+    //                 //     ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
+    //                 //     ($complaint->area?->area_name ?? '') .
+    //                 //     '</span>',
+
+    //                 'issue_description' => $complaint->issue_description,
+    //                 'complaint_department' => $complaint->complaint_department,
+    //                 'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
+
+    //                 'review_date' => optional($complaint->replies->sortByDesc('reply_date')->first())->review_date ?? 'N/A',
+    //                 'importance' => $complaint->latestReply?->importance ?? 'N/A',
+    //                 'applicant_name' => $complaint->admin->admin_name ?? '',
+    //                 'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
+    //                 'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
+    //                 <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
+    //                 <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
+    //                 </div>',
+
+    //                 'voter_id' => $complaint->voter_id ?? ''
+    //             ];
+    //         }
+
+    //         return response()->json([
+    //             'draw' => intval($request->input('draw')),
+    //             'recordsTotal' => $recordsTotal,
+    //             'recordsFiltered' => $recordsFiltered,
+    //             'data' => $data
+    //         ]);
+    //     }
+
+    //     $mandals = Mandal::where('vidhansabha_id', 49)->get();
+    //     $grams = $request->mandal_id ? Nagar::where('mandal_id', $request->mandal_id)->get() : collect();
+    //     $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
+    //     $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
+    //     $departments = Department::all();
+    //     $jatis = Jati::all();
+    //     $replyOptions = ComplaintReply::all();
+    //     $subjects = $request->department_id ? Subject::where('department_id', $request->department_id)->get() : collect();
+    //     $managers = User::where('role', 2)->get();
+
+    //     return view('admin.operator_complaints', compact(
+    //         'complaints',
+    //         'mandals',
+    //         'grams',
+    //         'pollings',
+    //         'areas',
+    //         'departments',
+    //         'subjects',
+    //         'replyOptions',
+    //         'managers',
+    //         'jatis'
+    //     ));
+    // }
+
     public function OperatorComplaints(Request $request)
     {
         // $vidhansabhaId = 49;
         // $districtId = 11;
         // $divisionId = 2;
 
-        $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 2)->whereIn('complaint_type', ['समस्या', 'विकास']);
+        $query = Complaint::with(
+            'registrationDetails',
+            'replies.forwardedToManager',
+            'latestReply.forwardedToManager'
+        )->where('type', 2)->whereIn('complaint_type', ['समस्या', 'विकास']);
         // ->where('district_id', $districtId)
         // ->where('vidhansabha_id', $vidhansabhaId);
 
-        // Filters
+        if ($request->filled('complaintOtherFilter')) {
+            switch ($request->complaintOtherFilter) {
+                case 'forwarded_manager':
+                    $query->whereHas('replies', function ($q2) use ($request) {
+                        $q2->where('forwarded_to', $request->admin_id);
+                    });
+                    break;
+
+                case 'not_opened':
+                    $query->whereHas('latestReply', function ($q) use ($request) {
+                        $q->where('forwarded_to', $request->admin_id);
+                    });
+                    break;
+
+                case 'reviewed':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('review_date')
+                            ->whereRaw('reply_date = (
+                              SELECT MAX(reply_date)
+                              FROM complaint_reply
+                              WHERE complaint_reply.complaint_id = complaint.complaint_id
+                          )');
+                    });
+                    break;
+
+                case 'important':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('importance')
+                            ->whereRaw('reply_date = (
+                              SELECT MAX(reply_date)
+                              FROM complaint_reply
+                              WHERE complaint_reply.complaint_id = complaint.complaint_id
+                          )');
+                    })->orderByRaw("FIELD(
+                        (SELECT importance 
+                         FROM complaint_reply 
+                         WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                         ORDER BY reply_date DESC 
+                         LIMIT 1),
+                        'उच्च', 'मध्यम', 'कम'
+                    )");
+                    break;
+
+
+
+                case 'closed':
+                    $query->where('complaint_status', 4);
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 5);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+
+                default:
+                    // यदि कोई filter नहीं है या 'all', तो कोई extra condition नहीं लगाई जाएगी
+                    break;
+            }
+        }
+
 
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
@@ -3395,17 +3649,73 @@ class AdminController extends Controller
         if ($request->filled('complaint_type')) {
             $query->where('complaint_type', $request->complaint_type);
         } else {
-            // Apply default filter for initial load or sabhi
             $query->where('complaint_type', 'समस्या');
         }
 
-        // if ($request->filled('department_id')) {
-        //     $query->where('complaint_department', $request->department_id);
-        // }
+        if ($request->filled('filter')) {
+            switch ($request->filter) {
+                case 'not_opened':
+                    $query->whereHas('latestReply', function ($q) use ($request) {
+                        $q->where('forwarded_to',  $request->admin_id);
+                    });
+                    break;
 
-        // if ($request->filled('subject_id')) {
-        //     $query->where('issue_title', $request->subject_id);
-        // }
+
+
+                case 'reviewed':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('review_date')
+                            ->whereRaw('reply_date = (
+                                SELECT MAX(reply_date)
+                                FROM complaint_reply
+                                WHERE complaint_reply.complaint_id = complaint.complaint_id
+                            )');
+                    })->orderByRaw("
+                                (SELECT review_date 
+                                FROM complaint_reply 
+                                WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                                ORDER BY reply_date DESC 
+                                LIMIT 1)
+                            ");
+                    break;
+
+                case 'important':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('importance')
+                            ->whereRaw('reply_date = (
+                            SELECT MAX(reply_date)
+                            FROM complaint_reply
+                            WHERE complaint_reply.complaint_id = complaint.complaint_id
+                                )');
+                    })->orderByRaw("FIELD(
+                                (SELECT importance 
+                                FROM complaint_reply 
+                                WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                                ORDER BY reply_date DESC 
+                                LIMIT 1),
+                                'उच्च', 'मध्यम', 'कम'
+                            )");
+                    break;
+
+
+
+                case 'closed':
+                    $query->where('complaint_status', 4);
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 5);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+            }
+        }
 
         if ($request->filled('department_id')) {
             $department = Department::find($request->department_id);
@@ -3415,7 +3725,7 @@ class AdminController extends Controller
         }
 
         if ($request->filled('admin_id')) {
-            $query->whereHas('latestReply', function ($q) use ($request) {
+            $query->whereHas('replies', function ($q) use ($request) {
                 $q->where('forwarded_to', $request->admin_id);
             });
         }
@@ -3426,15 +3736,15 @@ class AdminController extends Controller
             });
         }
 
-        if ($request->filled('jati_id')) {
-            $query->where('jati_id', $request->jati_id);
-        }
-
         if ($request->filled('subject_id')) {
             $subject = Subject::find($request->subject_id);
             if ($subject) {
                 $query->where('issue_title', $subject->subject);
             }
+        }
+
+        if ($request->filled('jati_id')) {
+            $query->where('jati_id', $request->jati_id);
         }
 
         if ($request->filled('mandal_id')) {
@@ -3505,9 +3815,7 @@ class AdminController extends Controller
                         "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
                         "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
                         "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
-
                     'reference_name' => $complaint->reference_name ?? '',
-
                     'area_details' => "<strong>संभाग: </strong>" . ($complaint->division?->division_name ?? '') . ",<br>" .
                         "<strong>जिला: </strong>" . ($complaint->district?->district_name ?? '') . ",<br>" .
                         "<strong>विधानसभा: </strong>" . ($complaint->vidhansabha?->vidhansabha ?? '') . ",<br>" .
@@ -3516,24 +3824,6 @@ class AdminController extends Controller
                         "<strong>मतदान केंद्र: </strong>" . ($complaint->polling?->polling_name ?? '') .
                         " (" . ($complaint->polling?->polling_no ?? '') . ") ,<br>" .
                         "<strong>ग्राम/वार्ड: </strong>" . ($complaint->area?->area_name ?? '') . ",<br>",
-
-                    // 'area_details' => '<span title="
-                    //         विभाग: ' . ($complaint->division?->division_name ?? 'N/A') . '
-                    //         जिला: ' . ($complaint->district?->district_name ?? 'N/A') . '
-                    //         विधानसभा: ' . ($complaint->vidhansabha?->vidhansabha ?? 'N/A') . '
-                    //         मंडल: ' . ($complaint->mandal?->mandal_name ?? 'N/A') . '
-                    //         नगर/ग्राम: ' . ($complaint->gram?->nagar_name ?? 'N/A') . '
-                    //         मतदान केंद्र: ' . ($complaint->polling?->polling_name ?? 'N/A') . ' (' . ($complaint->polling?->polling_no ?? 'N/A') . ')
-                    //         क्षेत्र: ' . ($complaint->area?->area_name ?? 'N/A') . '">
-                    //     ' . ($complaint->division?->division_name ?? '') . '<br>' .
-                    //     ($complaint->district?->district_name ?? '') . '<br>' .
-                    //     ($complaint->vidhansabha?->vidhansabha ?? '') . '<br>' .
-                    //     ($complaint->mandal?->mandal_name ?? '') . '<br>' .
-                    //     ($complaint->gram?->nagar_name ?? '') . '<br>' .
-                    //     ($complaint->polling?->polling_name ?? '') . ' (' . ($complaint->polling?->polling_no ?? '') . ')<br>' .
-                    //     ($complaint->area?->area_name ?? '') .
-                    //     '</span>',
-
                     'issue_description' => $complaint->issue_description,
                     'complaint_department' => $complaint->complaint_department,
                     'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
@@ -3543,7 +3833,7 @@ class AdminController extends Controller
                     'applicant_name' => $complaint->admin->admin_name ?? '',
                     'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
                     'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
-                    <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
+                   <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
                     <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
                     </div>',
 
@@ -3584,16 +3874,263 @@ class AdminController extends Controller
     }
 
 
+    // public function CommanderSuchnas(Request $request)
+    // {
+    //     $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 1)->whereIn('complaint_type', ['अशुभ सुचना', 'शुभ सुचना']);
 
+    //     if ($request->filled('complaint_status')) {
+    //         $query->where('complaint_status', $request->complaint_status);
+    //     }
+
+    //     if ($request->filled('complaint_type')) {
+    //         $query->where('complaint_type', $request->complaint_type);
+    //     } else if (!$request->has('filter')) {
+    //         $query->where('complaint_type', 'शुभ सुचना');
+    //     }
+
+
+    //     if ($request->filled('admin_id')) {
+    //         $query->whereHas('latestReply', function ($q) use ($request) {
+    //             $q->where('forwarded_to', $request->admin_id);
+    //         });
+    //     }
+
+    //     if ($request->filled('jati_id')) {
+    //         $query->where('jati_id', $request->jati_id);
+    //     }
+
+    //     if ($request->filled('mandal_id')) {
+    //         $query->where('mandal_id', $request->mandal_id);
+    //     }
+
+    //     if ($request->filled('issue_title')) {
+    //         $query->where('issue_title', $request->issue_title);
+    //     }
+
+    //     if ($request->filled('gram_id')) {
+    //         $query->where('gram_id', $request->gram_id);
+    //     }
+
+    //     if ($request->filled('polling_id')) {
+    //         $query->where('polling_id', $request->polling_id);
+    //     }
+
+    //     if ($request->filled('area_id')) {
+    //         $query->where('area_id', $request->area_id);
+    //     }
+
+    //     if ($request->filled('from_date')) {
+    //         $query->whereDate('posted_date', '>=', $request->from_date);
+    //     }
+
+    //     if ($request->filled('to_date')) {
+    //         $query->whereDate('posted_date', '<=', $request->to_date);
+    //     }
+
+    //     if ($request->filled('programfrom_date')) {
+    //         $query->whereDate('program_date', '>=', $request->programfrom_date);
+    //     }
+
+    //     if ($request->filled('programto_date')) {
+    //         $query->whereDate('program_date', '<=', $request->programto_date);
+    //     }
+
+
+    //     $start = $request->input('start', 0);
+    //     $length = $request->input('length', 10);
+
+    //     $recordsFiltered = $query->count();
+    //     $recordsTotal = $query->count();
+
+    //     $complaints = $query->orderBy('posted_date', 'desc')
+    //         ->offset($start)
+    //         ->limit($length)
+    //         ->get();
+
+    //     foreach ($complaints as $complaint) {
+    //         if (!in_array($complaint->complaint_status, [13, 14, 15, 16, 17, 18])) {
+    //             $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+    //         } else {
+    //             $complaint->pending_days = 0;
+    //         }
+
+    //         $lastReply = $complaint->replies
+    //             ->whereNotNull('forwarded_to')
+    //             ->sortByDesc('reply_date')
+    //             ->first();
+
+    //         $complaint->forwarded_to_name = $lastReply?->forwardedToManager?->admin_name ?? '-';
+    //         $complaint->forwarded_reply_date = $lastReply?->reply_date?->format('d-m-Y h:i') ?? '-';
+    //     }
+
+    //     if ($request->ajax()) {
+    //         $data = [];
+
+    //         foreach ($complaints as $index => $complaint) {
+    //             if ($complaint->complaint_status == 13) {
+    //                 $pendingText = 'सम्मिलित हुए';
+    //             } elseif ($complaint->complaint_status == 14) {
+    //                 $pendingText = 'सम्मिलित नहीं हुए';
+    //             } elseif ($complaint->complaint_status == 15) {
+    //                 $pendingText = 'फोन पर संपर्क किया';
+    //             } elseif ($complaint->complaint_status == 16) {
+    //                 $pendingText = 'ईमेल पर संपर्क किया';
+    //             } elseif ($complaint->complaint_status == 17) {
+    //                 $pendingText = 'व्हाट्सएप पर संपर्क किया';
+    //             } elseif ($complaint->complaint_status == 18) {
+    //                 $pendingText = 'रद्द';
+    //             } else {
+    //                 $pendingText = $complaint->pending_days . ' दिन';
+    //             }
+
+    //             $data[] = [
+    //                 'index' => $start + $index + 1,
+    //                 'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>" .
+    //                     "<strong>नाम: </strong>{$complaint->name}<br>" .
+    //                     "<strong>मोबाइल: </strong>{$complaint->mobile_number}<br>" .
+    //                     "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
+    //                     "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
+    //                     "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+
+    //                 'reference_name' => $complaint->reference_name ?? '',
+
+    //                 'area_details' => "<strong>संभाग: </strong>" . ($complaint->division?->division_name ?? '') . ",<br>" .
+    //                     "<strong>जिला: </strong>" . ($complaint->district?->district_name ?? '') . ",<br>" .
+    //                     "<strong>विधानसभा: </strong>" . ($complaint->vidhansabha?->vidhansabha ?? '') . ",<br>" .
+    //                     "<strong>मंडल: </strong>" . ($complaint->mandal?->mandal_name ?? '') . ",<br>" .
+    //                     "<strong>नगर/ग्राम: </strong>" . ($complaint->gram?->nagar_name ?? '') . ",<br>" .
+    //                     "<strong>मतदान केंद्र: </strong>" . ($complaint->polling?->polling_name ?? '') .
+    //                     " (" . ($complaint->polling?->polling_no ?? '') . ") ,<br>" .
+    //                     "<strong>ग्राम/वार्ड: </strong>" . ($complaint->area?->area_name ?? '') . ",<br>",
+
+    //                 'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
+
+
+    //                 'applicant_name' => $complaint->registrationDetails->name ?? '',
+
+    //                 'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
+    //                 'issue_description' => $complaint->issue_description,
+    //                 'issue_title' => $complaint->issue_title,
+    //                 'program_date' => $complaint->program_date,
+    //                 'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
+    //                 <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
+    //                 <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
+    //                 </div>',
+
+    //                 'voter_id' => $complaint->voter_id ?? ''
+    //             ];
+    //         }
+
+    //         return response()->json([
+    //             'draw' => intval($request->input('draw')),
+    //             'recordsTotal' => $recordsTotal,
+    //             'recordsFiltered' => $recordsFiltered,
+    //             'data' => $data
+    //         ]);
+    //     }
+
+
+    //     $mandals = Mandal::where('vidhansabha_id', 49)->get();
+    //     $grams = $request->mandal_id ? Nagar::where('mandal_id', $request->mandal_id)->get() : collect();
+    //     $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
+    //     $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
+    //     $departments = Department::all();
+    //     $jatis = Jati::all();
+    //     $replyOptions = ComplaintReply::all();
+    //     $managers = User::where('role', 2)->get();
+
+    //     return view('admin/commander_suchna', compact(
+    //         'complaints',
+    //         'mandals',
+    //         'grams',
+    //         'pollings',
+    //         'areas',
+    //         'departments',
+    //         'replyOptions',
+    //         'managers',
+    //         'jatis'
+    //     ));
+    // }
 
 
     public function CommanderSuchnas(Request $request)
     {
         $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 1)->whereIn('complaint_type', ['अशुभ सुचना', 'शुभ सुचना']);
 
+        if ($request->filled('complaintOtherFilter')) {
+            switch ($request->complaintOtherFilter) {
+                case 'forwarded_manager':
+                    $query->whereHas('replies', function ($q) use ($request) {
+                        $q->where('forwarded_to', $request->admin_id);
+                    });
+                    break;
+
+                case 'not_opened':
+                    $query->whereHas('latestReply', function ($q) use ($request) {
+                        $q->where('forwarded_to', $request->admin_id);
+                    });
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 18);
+                    break;
+
+                case 'sammilit_done':
+                    $query->where('complaint_status', 13);
+                    break;
+
+                case 'sammilit_notdone':
+                    $query->where('complaint_status', 14);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+            }
+        }
+
+
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
         }
+
+        if ($request->filled('filter')) {
+            switch ($request->filter) {
+                case 'not_opened':
+                    $query->whereHas('replies', function ($q) {
+                        $q->where('complaint_status', 11)
+                            ->where('complaint_reply', 'सूचना दर्ज की गई है।')
+                            ->where('forwarded_to', 6)
+                            ->whereNull('selected_reply');
+                    });
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 18);
+                    break;
+
+                case 'sammilit_done':
+                    $query->where('complaint_status', 13);
+                    break;
+
+                case 'sammilit_notdone':
+                    $query->where('complaint_status', 14);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+            }
+        }
+
 
         if ($request->filled('complaint_type')) {
             $query->where('complaint_type', $request->complaint_type);
@@ -3603,7 +4140,7 @@ class AdminController extends Controller
 
 
         if ($request->filled('admin_id')) {
-            $query->whereHas('latestReply', function ($q) use ($request) {
+            $query->whereHas('replies', function ($q) use ($request) {
                 $q->where('forwarded_to', $request->admin_id);
             });
         }
@@ -3783,12 +4320,259 @@ class AdminController extends Controller
         ));
     }
 
+    // public function OperatorSuchnas(Request $request)
+    // {
+    //     $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 2)->whereIn('complaint_type', ['अशुभ सुचना', 'शुभ सुचना']);
+
+    //     if ($request->filled('complaint_status')) {
+    //         $query->where('complaint_status', $request->complaint_status);
+    //     }
+
+    //     if ($request->filled('complaint_type')) {
+    //         $query->where('complaint_type', $request->complaint_type);
+    //     } else if (!$request->has('filter')) {
+    //         $query->where('complaint_type', 'शुभ सुचना');
+    //     }
+
+    //     if ($request->filled('admin_id')) {
+    //         $query->whereHas('latestReply', function ($q) use ($request) {
+    //             $q->where('forwarded_to', $request->admin_id);
+    //         });
+    //     }
+
+    //     if ($request->filled('issue_title')) {
+    //         $query->where('issue_title', $request->issue_title);
+    //     }
+
+
+    //     if ($request->filled('mandal_id')) {
+    //         $query->where('mandal_id', $request->mandal_id);
+    //     }
+
+    //     if ($request->filled('gram_id')) {
+    //         $query->where('gram_id', $request->gram_id);
+    //     }
+
+    //     if ($request->filled('polling_id')) {
+    //         $query->where('polling_id', $request->polling_id);
+    //     }
+
+    //     if ($request->filled('area_id')) {
+    //         $query->where('area_id', $request->area_id);
+    //     }
+
+    //     if ($request->filled('jati_id')) {
+    //         $query->where('jati_id', $request->jati_id);
+    //     }
+
+    //     if ($request->filled('from_date')) {
+    //         $query->whereDate('posted_date', '>=', $request->from_date);
+    //     }
+
+    //     if ($request->filled('to_date')) {
+    //         $query->whereDate('posted_date', '<=', $request->to_date);
+    //     }
+
+
+    //     if ($request->filled('programfrom_date')) {
+    //         $query->whereDate('program_date', '>=', $request->programfrom_date);
+    //     }
+
+    //     if ($request->filled('programto_date')) {
+    //         $query->whereDate('program_date', '<=', $request->programto_date);
+    //     }
+
+
+    //     $start = $request->input('start', 0);
+    //     $length = $request->input('length', 10);
+
+    //     $recordsFiltered = $query->count();
+    //     $recordsTotal = $query->count();
+
+    //     $complaints = $query->orderBy('posted_date', 'desc')
+    //         ->offset($start)
+    //         ->limit($length)
+    //         ->get();
+
+    //     foreach ($complaints as $complaint) {
+    //         if (!in_array($complaint->complaint_status, [13, 14, 15, 16, 17, 18])) {
+    //             $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+    //         } else {
+    //             $complaint->pending_days = 0;
+    //         }
+
+    //         $lastReply = $complaint->replies
+    //             ->whereNotNull('forwarded_to')
+    //             ->sortByDesc('reply_date')
+    //             ->first();
+
+    //         $complaint->forwarded_to_name = $lastReply?->forwardedToManager?->admin_name ?? '-';
+    //         $complaint->forwarded_reply_date = $lastReply?->reply_date?->format('d-m-Y h:i') ?? '-';
+    //     }
+
+    //     if ($request->ajax()) {
+    //         $data = [];
+
+    //         foreach ($complaints as $index => $complaint) {
+    //             if ($complaint->complaint_status == 13) {
+    //                 $pendingText = 'सम्मिलित हुए';
+    //             } elseif ($complaint->complaint_status == 14) {
+    //                 $pendingText = 'सम्मिलित नहीं हुए';
+    //             } elseif ($complaint->complaint_status == 15) {
+    //                 $pendingText = 'फोन पर संपर्क किया';
+    //             } elseif ($complaint->complaint_status == 16) {
+    //                 $pendingText = 'ईमेल पर संपर्क किया';
+    //             } elseif ($complaint->complaint_status == 17) {
+    //                 $pendingText = 'व्हाट्सएप पर संपर्क किया';
+    //             } elseif ($complaint->complaint_status == 18) {
+    //                 $pendingText = 'रद्द';
+    //             } else {
+    //                 $pendingText = $complaint->pending_days . ' दिन';
+    //             }
+
+    //             $data[] = [
+    //                 'index' => $start + $index + 1,
+    //                 'name' => "<strong>शिकायत क्र.: </strong>{$complaint->complaint_number}<br>" .
+    //                     "<strong>नाम: </strong>{$complaint->name}<br>" .
+    //                     "<strong>मोबाइल: </strong>{$complaint->mobile_number}<br>" .
+    //                     "<strong>पुत्र श्री: </strong>{$complaint->father_name}<br>" .
+    //                     "<strong>जाति: </strong>" . ($complaint->jati->jati_name ?? '-') . "<br>" .
+    //                     "<strong>स्थिति: </strong>{$complaint->statusTextPlain()}",
+
+    //                 'reference_name' => $complaint->reference_name ?? '',
+
+    //                 'area_details' => "<strong>संभाग: </strong>" . ($complaint->division?->division_name ?? '') . ",<br>" .
+    //                     "<strong>जिला: </strong>" . ($complaint->district?->district_name ?? '') . ",<br>" .
+    //                     "<strong>विधानसभा: </strong>" . ($complaint->vidhansabha?->vidhansabha ?? '') . ",<br>" .
+    //                     "<strong>मंडल: </strong>" . ($complaint->mandal?->mandal_name ?? '') . ",<br>" .
+    //                     "<strong>नगर/ग्राम: </strong>" . ($complaint->gram?->nagar_name ?? '') . ",<br>" .
+    //                     "<strong>मतदान केंद्र: </strong>" . ($complaint->polling?->polling_name ?? '') .
+    //                     " (" . ($complaint->polling?->polling_no ?? '') . ") ,<br>" .
+    //                     "<strong>ग्राम/वार्ड: </strong>" . ($complaint->area?->area_name ?? '') . ",<br>",
+
+    //                 'posted_date' => "<strong>तिथि: " . \Carbon\Carbon::parse($complaint->posted_date)->format('d-m-Y h:i A') . "</strong><br>" . $pendingText,
+
+
+    //                 'applicant_name' => $complaint->admin->admin_name ?? '',
+
+    //                 'forwarded_to_name' => ($complaint->forwarded_to_name ?? '-') . '<br>' . ($complaint->forwarded_reply_date ?? '-'),
+    //                 'issue_description' => $complaint->issue_description,
+    //                 'issue_title' => $complaint->issue_title,
+    //                 'program_date' => $complaint->program_date,
+    //                 'action' => '<div style="display: inline-flex; gap: 5px; white-space: nowrap;">
+    //                 <a href="' . route('admincomplaints.summary', $complaint->complaint_id) . '" class="btn btn-sm btn-warning" style="white-space: nowrap;">विवरण देखें</a>
+    //                 <button class="btn btn-sm btn-danger delete-complaint" data-id="' . $complaint->complaint_id . '">हटाएं</button>
+    //                 </div>',
+
+    //                 'voter_id' => $complaint->voter_id ?? ''
+    //             ];
+    //         }
+
+    //         return response()->json([
+    //             'draw' => intval($request->input('draw')),
+    //             'recordsTotal' => $recordsTotal,
+    //             'recordsFiltered' => $recordsFiltered,
+    //             'data' => $data
+    //         ]);
+    //     }
+
+    //     $mandals = Mandal::where('vidhansabha_id', 49)->get();
+    //     $grams = $request->mandal_id ? Nagar::where('mandal_id', $request->mandal_id)->get() : collect();
+    //     $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
+    //     $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
+    //     $departments = Department::all();
+    //     $jatis = Jati::all();
+    //     $replyOptions = ComplaintReply::all();
+    //     $managers = User::where('role', 2)->get();
+
+    //     return view('admin.operator_suchna', compact(
+    //         'complaints',
+    //         'mandals',
+    //         'grams',
+    //         'pollings',
+    //         'areas',
+    //         'departments',
+    //         'replyOptions',
+    //         'managers',
+    //         'jatis'
+    //     ));
+    // }
+
     public function OperatorSuchnas(Request $request)
     {
         $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 2)->whereIn('complaint_type', ['अशुभ सुचना', 'शुभ सुचना']);
 
+        if ($request->filled('complaintOtherFilter')) {
+            switch ($request->complaintOtherFilter) {
+                case 'forwarded_manager':
+                    $query->whereHas('replies', function ($q2) use ($request) {
+                        $q2->where('forwarded_to', $request->admin_id);
+                    });
+                    break;
+
+                case 'not_opened':
+                    $query->whereHas('latestReply', function ($q) use ($request) {
+                        $q->where('forwarded_to', $request->admin_id);
+                    });
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 18);
+                    break;
+
+                case 'sammilit_done':
+                    $query->where('complaint_status', 13);
+                    break;
+
+                case 'sammilit_notdone':
+                    $query->where('complaint_status', 14);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+            }
+        }
+
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
+        }
+
+        if ($request->filled('filter')) {
+            switch ($request->filter) {
+                case 'not_opened':
+                    $query->whereHas('replies', function ($q) {
+                        $q->where('complaint_status', 11)
+                            ->where('complaint_reply', 'सूचना दर्ज की गई है।')
+                            ->where('forwarded_to', 6)
+                            ->whereNull('selected_reply');
+                    });
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 18);
+                    break;
+
+                case 'sammilit_done':
+                    $query->where('complaint_status', 13);
+                    break;
+
+                case 'sammilit_notdone':
+                    $query->where('complaint_status', 14);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+            }
         }
 
         if ($request->filled('complaint_type')) {
@@ -3798,7 +4582,7 @@ class AdminController extends Controller
         }
 
         if ($request->filled('admin_id')) {
-            $query->whereHas('latestReply', function ($q) use ($request) {
+            $query->whereHas('replies', function ($q) use ($request) {
                 $q->where('forwarded_to', $request->admin_id);
             });
         }

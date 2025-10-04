@@ -129,6 +129,22 @@
                             </select>
                         </div>
 
+                        <div class="col-md-2">
+                            <label>अन्य फ़िल्टर चुनें</label>
+                            <select id="complaintOtherFilter" class="form-control">
+                                <option value="">सभी</option>
+                                <option value="forwarded_manager">कुल निर्देशित</option>
+                                <option value="not_opened">नई सूचनाएँ</option>
+                                <option value="sammilit_done">सम्मिलित हुए</option>
+                                <option value="sammilit_notdone">सम्मिलित नहीं हुए</option>
+                                <option value="cancel">रद्द</option>
+                                <option value="reference_null">रेफरेंस नहीं है</option>
+                                <option value="reference">रेफरेंस है</option>
+                            </select>
+                            <span id="filterMsg" style="color: red; display: none; font-size: 11px;">पहले फॉरवर्ड मैनेजर
+                                चुनें</span>
+                        </div>
+
                         <div class="col-md-2 mt-2">
                             <br>
                             <button type="submit" class="btn btn-primary" style="font-size: 12px"
@@ -157,6 +173,38 @@
                                 </button>
                             </div>
                         @endif
+
+                        <ul class="nav nav-tabs nav-filters mb-1" id="complaintFilterTabs">
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === null ? 'active' : '' }}"
+                                    style="color: black" data-filter="" href="#">सभी</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'not_opened' ? 'active' : '' }}"
+                                    style="color: black" data-filter="not_opened" href="#">नई सूचनाएँ</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'cancel' ? 'active' : '' }}"
+                                    style="color: black" data-filter="cancel" href="#">रद्द
+                                    सूचनाएँ</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'sammilit_done' ? 'active' : '' }}"
+                                    style="color: black" data-filter="sammilit_done" href="#">सम्मिलित हुए
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference_null' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reference_null" href="#">रेफरेंस नहीं है</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reference" href="#">रेफरेंस है</a>
+                            </li>
+                        </ul>
 
                         <div class="table-responsive">
                             <span
@@ -194,6 +242,23 @@
     @push('scripts')
         <script>
             $(document).ready(function() {
+                  const adminSelect = document.getElementById('admin_id');
+                const filterSelect = document.getElementById('complaintOtherFilter');
+                const filterMsg = document.getElementById('filterMsg');
+
+                filterSelect.addEventListener('change', function() {
+                    if (this.value === 'forwarded_manager' && adminSelect.value === "") {
+                        this.value = '';
+
+                        filterMsg.style.display = 'inline';
+                        setTimeout(() => {
+                            filterMsg.style.display = 'none';
+                        }, 3000);
+                    } else {
+                        filterMsg.style.display = 'none';
+                    }
+                });
+
                 $('#mandal_id').on('change', function() {
                     let mandalId = $(this).val();
                     $('#gram_id').html('<option value="">ग्राम चयन करें</option>');
@@ -275,6 +340,20 @@
                     });
                 });
 
+
+                $('#complaintFilterTabs a').on('click', function(e) {
+                    e.preventDefault();
+
+                    $('#complaintFilterTabs a').removeClass('active');
+                    $(this).addClass('active');
+
+                    const filter = $(this).data('filter');
+                    $('#loader-wrapper').show();
+
+                    table.ajax.reload(function() {
+                        $('#loader-wrapper').hide();
+                    }, false);
+                });
 
                 let table = $('#example').DataTable({
                     processing: true,

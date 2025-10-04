@@ -141,16 +141,34 @@
                             </select>
                         </div>
 
-                       <div class="col-md-2 mt-2">
+                        <div class="col-md-2">
+                            <label>अन्य फ़िल्टर चुनें</label>
+                            <select id="complaintOtherFilter" class="form-control">
+                                <option value="">सभी</option>
+                                <option value="forwarded_manager">कुल निर्देशित</option>
+                                <option value="not_opened">नई शिकायतें</option>
+                                <option value="reviewed">रीव्यू की गई</option>
+                                <option value="important">महत्त्वपूर्ण</option>
+                                <option value="closed">पूर्ण</option>
+                                <option value="cancel">रद्द</option>
+                                <option value="reference_null">रेफरेंस नहीं है</option>
+                                <option value="reference">रेफरेंस है</option>
+                            </select>
+                            <span id="filterMsg" style="color: red; display: none; font-size: 11px;">पहले फॉरवर्ड मैनेजर
+                                चुनें</span>
+                        </div>
+
+                        <div class="col-md-2 mt-2">
                             <br>
-                            <button type="submit" class="btn btn-primary" style="font-size: 12px" id="applyFilters">फ़िल्टर</button>
+                            <button type="submit" class="btn btn-primary" style="font-size: 12px"
+                                id="applyFilters">फ़िल्टर</button>
                         </div>
                     </div>
                 </form>
 
                 <div class="text-center">
-                    <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
-                        title="फ़िल्टर छुपाएं"></i>
+                    <i id="toggleFilterIcon" class="fa fa-angle-up"
+                        style="float: right; cursor: pointer; font-size: 24px;" title="फ़िल्टर छुपाएं"></i>
                 </div>
             </div>
         </div>
@@ -169,6 +187,42 @@
                             </div>
                         @endif
 
+                        <ul class="nav nav-tabs nav-filters mb-1" id="complaintFilterTabs">
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === null ? 'active' : '' }}"
+                                    style="color: black" data-filter="" href="#">सभी</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'not_opened' ? 'active' : '' }}"
+                                    style="color: black" data-filter="not_opened" href="#">नई शिकायतें</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reviewed' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reviewed" href="#">रीव्यू की गई</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'important' ? 'active' : '' }}"
+                                    style="color: black" data-filter="important" href="#">महत्त्वपूर्ण</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'closed' ? 'active' : '' }}"
+                                    style="color: black" data-filter="closed" href="#">पूर्ण शिकायतें</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'cancel' ? 'active' : '' }}"
+                                    style="color: black" data-filter="cancel" href="#">रद्द शिकायतें</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference_null' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reference_null" href="#">रेफरेंस नहीं है</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reference" href="#">रेफरेंस है</a>
+                            </li>
+                        </ul>
+
                         <div class="table-responsive">
                             <span
                                 style="margin-bottom: 0px; font-size: 18px; color: green; text-align: right; margin-left: 50px; float: right">कुल
@@ -177,7 +231,7 @@
                             <table id="example" style="min-width: 845px" class="display table-bordered">
                                 <thead>
                                     <tr>
-                                      <th>क्र.</th>
+                                        <th>क्र.</th>
                                         <th style="min-width: 100px;">शिकायतकर्ता</th>
                                         <th>रेफरेंस</th>
                                         <th style="min-width: 130px;">क्षेत्र</th>
@@ -195,7 +249,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="complaintsTableBody">
-                                    
+
                                 </tbody>
                             </table>
                         </div>
@@ -208,6 +262,23 @@
     @push('scripts')
         <script>
             $(document).ready(function() {
+                const adminSelect = document.getElementById('admin_id');
+                const filterSelect = document.getElementById('complaintOtherFilter');
+                const filterMsg = document.getElementById('filterMsg');
+
+                filterSelect.addEventListener('change', function() {
+                    if (this.value === 'forwarded_manager' && adminSelect.value === "") {
+                        this.value = '';
+
+                        filterMsg.style.display = 'inline';
+                        setTimeout(() => {
+                            filterMsg.style.display = 'none';
+                        }, 3000);
+                    } else {
+                        filterMsg.style.display = 'none';
+                    }
+                });
+                
                 // Mandal → Gram
                 $('#mandal_id').on('change', function() {
                     let mandalId = $(this).val();
@@ -316,7 +387,19 @@
                     });
                 });
 
+                $('#complaintFilterTabs a').on('click', function(e) {
+                    e.preventDefault();
 
+                    $('#complaintFilterTabs a').removeClass('active');
+                    $(this).addClass('active');
+
+                    const filter = $(this).data('filter');
+                    $('#loader-wrapper').show();
+
+                    table.ajax.reload(function() {
+                        $('#loader-wrapper').hide();
+                    }, false);
+                });
 
 
                 let table = $('#example').DataTable({
@@ -332,7 +415,7 @@
                                 modifier: {
                                     page: "all"
                                 },
-                                  columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
+                                columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
                             },
                         },
                         {
@@ -341,7 +424,7 @@
                                 modifier: {
                                     page: "all"
                                 },
-                                  columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
+                                columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
                             },
                         }
 
@@ -360,13 +443,14 @@
                             d.mandal_id = $('#mandal_id').val();
                             d.gram_id = $('#gram_id').val();
                             d.polling_id = $('#polling_id').val();
-                             d.jati_id = $('#jati_id').val();
+                            d.jati_id = $('#jati_id').val();
                             d.area_id = $('#area_id').val();
                             d.from_date = $('#from_date').val();
                             d.to_date = $('#to_date').val();
                             d.reply_id = $('#reply_id').val();
                             d.admin_id = $('#admin_id').val();
                             d.complaintOtherFilter = $('#complaintOtherFilter').val();
+                            d.filter = $('#complaintFilterTabs a.active').data('filter') || '';
 
                         }
                     },
@@ -407,7 +491,7 @@
                             data: 'action',
                             orderable: false,
                             searchable: false,
-                             className: 'not-export-col'
+                            className: 'not-export-col'
                         },
                         {
                             data: 'voter_id',

@@ -145,7 +145,7 @@
                             <label>अन्य फ़िल्टर चुनें</label>
                             <select id="complaintOtherFilter" class="form-control">
                                 <option value="">सभी</option>
-                                <option value="forwarded_manager">निर्देशित</option>
+                                <option value="forwarded_manager">कुल निर्देशित</option>
                                 <option value="not_opened">नई शिकायतें</option>
                                 <option value="reviewed">रीव्यू की गई</option>
                                 <option value="important">महत्त्वपूर्ण</option>
@@ -154,6 +154,8 @@
                                 <option value="reference_null">रेफरेंस नहीं है</option>
                                 <option value="reference">रेफरेंस है</option>
                             </select>
+                            <span id="filterMsg" style="color: red; display: none; font-size: 11px;">पहले फॉरवर्ड मैनेजर
+                                चुनें</span>
                         </div>
 
                         <div class="col-md-2 mt-2">
@@ -185,8 +187,8 @@
                             </div>
                         @endif
 
-                         <ul class="nav nav-tabs nav-filters mb-1" id="complaintFilterTabs">
-                             <li class="nav-item">
+                        <ul class="nav nav-tabs nav-filters mb-1" id="complaintFilterTabs">
+                            <li class="nav-item">
                                 <a class="nav-link filter-link {{ request('filter') === null ? 'active' : '' }}"
                                     style="color: black" data-filter="" href="#">सभी</a>
                             </li>
@@ -263,6 +265,23 @@
     @push('scripts')
         <script>
             $(document).ready(function() {
+                const adminSelect = document.getElementById('admin_id');
+                const filterSelect = document.getElementById('complaintOtherFilter');
+                const filterMsg = document.getElementById('filterMsg');
+
+                filterSelect.addEventListener('change', function() {
+                    if (this.value === 'forwarded_manager' && adminSelect.value === "") {
+                        this.value = '';
+
+                        filterMsg.style.display = 'inline';
+                        setTimeout(() => {
+                            filterMsg.style.display = 'none';
+                        }, 3000);
+                    } else {
+                        filterMsg.style.display = 'none';
+                    }
+                });
+
                 // Mandal → Gram
                 $('#mandal_id').on('change', function() {
                     let mandalId = $(this).val();

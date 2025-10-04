@@ -62,13 +62,21 @@
                             'संभाग का नाम' => $complaint->division->division_name ?? null,
                             'जिले का नाम' => $complaint->district->district_name ?? null,
                             'विधानसभा का नाम' => $complaint->vidhansabha->vidhansabha ?? null,
-                            'नगर/मंडल' =>
-                                ($complaint->gram->nagar_name ?? null) .
-                                ($complaint->mandal->mandal_name ? ' - ' . $complaint->mandal->mandal_name : ''),
-                            'मतदान केंद्र/ग्राम/वार्ड' =>
-                                ($complaint->polling->polling_name ?? null) .
-                                ($complaint->polling->polling_no ? ' (' . $complaint->polling->polling_no . ')' : '') .
-                                ($complaint->area->area_name ? ' - ' . $complaint->area->area_name : ''),
+
+                            'नगर/मंडल' => trim(
+                                ($complaint->gram->nagar_name ?? '' ? $complaint->gram->nagar_name : '') .
+                                    (optional($complaint->mandal)->mandal_name ?? ''
+                                        ? ' - ' . optional($complaint->mandal)->mandal_name
+                                        : ''),
+                            ),
+                            'मतदान केंद्र/ग्राम/वार्ड' => trim(
+                                ($complaint->polling?->polling_name ?? '') .
+                                    ($complaint->polling?->polling_no
+                                        ? ' (' . $complaint->polling->polling_no . ')'
+                                        : '') .
+                                    ($complaint->area?->area_name ? ' - ' . $complaint->area->area_name : ''),
+                            ),
+
                             'रेफरेंस नाम' => $complaint->reference_name,
                             'लिंग' => $complaint->registration->gender ?? null,
                             'धर्म' => $complaint->registration->religion ?? null,
@@ -85,7 +93,13 @@
                     @foreach ($fields as $label => $value)
                         @if (!empty($value))
                             @php
-                                $highlighted = ['विभाग', 'नगर/मंडल', 'मतदान केंद्र/ग्राम/वार्ड', 'जाति', 'मतदाता पहचान'];
+                                $highlighted = [
+                                    'विभाग',
+                                    'नगर/मंडल',
+                                    'मतदान केंद्र/ग्राम/वार्ड',
+                                    'जाति',
+                                    'मतदाता पहचान',
+                                ];
                                 $isHighlighted = in_array($label, $highlighted);
                             @endphp
 
