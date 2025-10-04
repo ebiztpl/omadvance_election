@@ -1,0 +1,80 @@
+@extends('mastermanager::layouts.login_layout')
+@section('title', 'Login')
+@section('content')
+    <div class="container h-100 d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+        <div class="col-md-6">
+            <div class="authincation-content">
+                <div class="row no-gutters">
+                    <div class="col-xl-12">
+                        <div class="auth-form">
+
+                            <h4 class="text-center mb-4">साइन इन करें</h4>
+
+                            @if (session('success'))
+                                <div class="alert alert-success">{{ session('success') }}</div>
+                            @endif
+
+                            @if (session('error'))
+                                <div class="alert alert-danger">{{ session('error') }}</div>
+                            @endif
+
+                            @if (isset($errors) && $errors->any())
+                                <div class="alert alert-danger">
+                                    <ul class="mb-0">
+                                        @foreach ($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+                            <div id="ajax-message"></div>
+                            <form id="loginForm" method="POST" action="{{ route('master.login') }}">
+                                @csrf
+                                <div class="form-group">
+                                    <label><strong>यूज़रनेम</strong></label>
+                                    <input type="text" name="name" class="form-control" placeholder="यूज़रनेम"
+                                        autocomplete="off" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label><strong>पासवर्ड</strong></label>
+                                    <input type="password" name="password" class="form-control" autocomplete="new-password"
+                                        placeholder="पासवर्ड" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="g-recaptcha" style="margin-top: 6px; margin-bottom: 8px"
+                                        data-sitekey={{ config('services.recaptcha.key') }}></div>
+                                </div>
+
+                                <div class="text-center">
+                                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+        <script>
+            $('#loginForm').on('submit', function(e) {
+    e.preventDefault();
+    $.ajax({
+        url: $(this).attr('action'),
+        type: "POST",
+        data: $(this).serialize(),
+        success: function(response) {
+            if(response.success){
+                window.location.href = response.redirect;
+            } else {
+                $('#ajax-message').html('<div class="alert alert-danger">' + response.message + '</div>');
+            }
+        }
+    });
+});
+        </script>
+    @endpush
+@endsection

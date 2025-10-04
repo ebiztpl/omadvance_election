@@ -77,6 +77,20 @@ return [
             'engine' => null,
         ],
 
+        'master' => [
+            'driver' => 'mysql',
+            'host' => env('MASTER_DB_HOST', '127.0.0.1'),
+            'port' => env('MASTER_DB_PORT', '3306'),
+            'database' => env('MASTER_DB_DATABASE', 'master_db'),
+            'username' => env('MASTER_DB_USERNAME', 'root'),
+            'password' => env('MASTER_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
