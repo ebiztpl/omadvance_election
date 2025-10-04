@@ -52,6 +52,32 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::middleware('checklogin')->group(function () {
 
     Route::get('/admin/page', [AdminController::class, 'page'])->name('admin.page');
+    Route::get('/admin/calendar-data', [AdminController::class, 'getCalendarData']);
+    Route::get('/admin/complaint-summary', [AdminController::class, 'getComplaintSummary']);
+    Route::get('/admin/fetch-suchna', [AdminController::class, 'fetchSuchna']);
+    Route::get('/admin/fetch-vibhaag-count', [AdminController::class, 'fetchVibhaagWiseCount']);
+    Route::get('/admin/fetch-status', [AdminController::class, 'fetchStatus']);
+    Route::get('/admin/fetch-status-suchna', [AdminController::class, 'fetchSuchnaStatus']);
+    Route::get('/admin/dashboard/stats', [AdminController::class, 'fetchDashboardStats']);
+    Route::get('/admin/complaints/{section}', [AdminController::class, 'sectionView']);
+    Route::get('/admin/voters/details', [AdminController::class, 'voterDetails']);
+    Route::get('/admin/detail_suchna/{id}', [AdminController::class, 'detail_suchna']);
+    Route::get('/admin/ajax/forwarded-counts', [AdminController::class, 'getForwardedCounts'])
+        ->name('adminajax.forwarded.counts');
+    Route::get('/admin/ajax/forwarded-counts-vikash', [AdminController::class, 'getForwardedVikashCounts'])
+        ->name('adminajax.forwarded.counts.vikash');
+    Route::get('/admin/fetch-forwards', [AdminController::class, 'getForwardedComplaintsPerManager']);
+    Route::get('/admin/ajax/complaints/not_opened_count', [AdminController::class, 'countUnheardComplaints']);
+    Route::get('/admin/ajax/complaints/not_opened_count_vikash', [AdminController::class, 'countUnheardComplaintsVikash']);
+    Route::get('/admin/voters/details/download', [AdminController::class, 'downloadVoters'])->name('adminvoterlistdashboard.download');
+    Route::get('/admin/dashboard/followup-counts', [AdminController::class, 'getFollowupCounts'])->name('admindashboard.followupCounts');
+    Route::get('/admin/followup/followup-details', [AdminController::class, 'followupDetails'])
+        ->name('admincomplaints.followupDetails');
+    Route::get('/admin/dashboard/followup-not-done-details', [AdminController::class, 'notDoneDetails'])
+        ->name('admindashboard.notDoneDetails');
+    Route::get('/admin/dashboard/followup-not-done-counts', [AdminController::class, 'getNotDoneCounts'])
+        ->name('admindashboard.notDoneCounts');
+
 
     Route::get('admin/users/create', [AdminController::class, 'usercreate'])->name('user.create');
     Route::post('admin/users', [AdminController::class, 'userstore'])->name('admin.store');

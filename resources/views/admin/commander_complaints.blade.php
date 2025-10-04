@@ -141,6 +141,21 @@
                             </select>
                         </div>
 
+                        <div class="col-md-2">
+                            <label>अन्य फ़िल्टर चुनें</label>
+                            <select id="complaintOtherFilter" class="form-control">
+                                <option value="">सभी</option>
+                                <option value="forwarded_manager">निर्देशित</option>
+                                <option value="not_opened">नई शिकायतें</option>
+                                <option value="reviewed">रीव्यू की गई</option>
+                                <option value="important">महत्त्वपूर्ण</option>
+                                <option value="closed">पूर्ण</option>
+                                <option value="cancel">रद्द</option>
+                                <option value="reference_null">रेफरेंस नहीं है</option>
+                                <option value="reference">रेफरेंस है</option>
+                            </select>
+                        </div>
+
                         <div class="col-md-2 mt-2">
                             <br>
                             <button type="submit" class="btn btn-primary" style="font-size: 12px"
@@ -150,8 +165,8 @@
                 </form>
 
                 <div class="text-center">
-                    <i id="toggleFilterIcon" class="fa fa-angle-up" style="float: right; cursor: pointer; font-size: 24px;"
-                        title="फ़िल्टर छुपाएं"></i>
+                    <i id="toggleFilterIcon" class="fa fa-angle-up"
+                        style="float: right; cursor: pointer; font-size: 24px;" title="फ़िल्टर छुपाएं"></i>
                 </div>
             </div>
         </div>
@@ -169,6 +184,42 @@
                                 </button>
                             </div>
                         @endif
+
+                         <ul class="nav nav-tabs nav-filters mb-1" id="complaintFilterTabs">
+                             <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === null ? 'active' : '' }}"
+                                    style="color: black" data-filter="" href="#">सभी</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'not_opened' ? 'active' : '' }}"
+                                    style="color: black" data-filter="not_opened" href="#">नई शिकायतें</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reviewed' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reviewed" href="#">रीव्यू की गई</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'important' ? 'active' : '' }}"
+                                    style="color: black" data-filter="important" href="#">महत्त्वपूर्ण</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'closed' ? 'active' : '' }}"
+                                    style="color: black" data-filter="closed" href="#">पूर्ण शिकायतें</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'cancel' ? 'active' : '' }}"
+                                    style="color: black" data-filter="cancel" href="#">रद्द शिकायतें</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference_null' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reference_null" href="#">रेफरेंस नहीं है</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link filter-link {{ request('filter') === 'reference' ? 'active' : '' }}"
+                                    style="color: black" data-filter="reference" href="#">रेफरेंस है</a>
+                            </li>
+                        </ul>
 
                         <div class="table-responsive">
 
@@ -321,6 +372,19 @@
                     });
                 });
 
+                $('#complaintFilterTabs a').on('click', function(e) {
+                    e.preventDefault();
+
+                    $('#complaintFilterTabs a').removeClass('active');
+                    $(this).addClass('active');
+
+                    const filter = $(this).data('filter');
+                    $('#loader-wrapper').show();
+
+                    table.ajax.reload(function() {
+                        $('#loader-wrapper').hide();
+                    }, false);
+                });
 
 
                 let table = $('#example').DataTable({
@@ -336,7 +400,7 @@
                                 modifier: {
                                     page: "all"
                                 },
-                               columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
+                                columns: ':visible:not(.not-export-col), :hidden:not(.not-export-col)'
                             },
                         },
                         {
@@ -371,7 +435,7 @@
                             d.reply_id = $('#reply_id').val();
                             d.admin_id = $('#admin_id').val();
                             d.complaintOtherFilter = $('#complaintOtherFilter').val();
-
+                            d.filter = $('#complaintFilterTabs a.active').data('filter') || '';
                         }
                     },
                     columns: [{
@@ -411,7 +475,7 @@
                             data: 'action',
                             orderable: false,
                             searchable: false,
-                             className: 'not-export-col'
+                            className: 'not-export-col'
                         },
                         {
                             data: 'voter_id',

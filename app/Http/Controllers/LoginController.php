@@ -88,7 +88,7 @@ class LoginController extends Controller
 
             switch ($request->user_role) {
                 case 'एडमिन':
-                    return redirect('/admin/dashboard');
+                    return redirect('/admin/page');
                 case 'मैनेजर':
                     return redirect('/manager/dashboard');
                 case 'कार्यालय':

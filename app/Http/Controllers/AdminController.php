@@ -54,6 +54,1532 @@ class AdminController extends Controller
         return view('admin/page');
     }
 
+    public function getCalendarData(Request $request)
+    {
+        $month = (int) $request->month;
+        $year = (int) $request->year;
+
+        if (!$month || !$year) {
+            return response()->json(['error' => 'Invalid month or year'], 400);
+        }
+
+        $start = Carbon::createFromDate($year, $month, 1)->startOfMonth()->toDateString();
+        $end = Carbon::createFromDate($year, $month, 1)->endOfMonth()->toDateString();
+
+        $loggedInId = session('user_id');
+
+        $records = DB::table('complaint')
+            ->join('complaint_reply as cr', 'complaint.complaint_id', '=', 'cr.complaint_id')
+            ->whereRaw('cr.reply_date = (
+            SELECT MAX(cr2.reply_date)
+            FROM complaint_reply cr2
+            WHERE cr2.complaint_id = complaint.complaint_id
+        )')
+            ->where('cr.forwarded_to', $loggedInId)
+            ->whereBetween(DB::raw('DATE(complaint.program_date)'), [$start, $end])
+            ->selectRaw("DATE(complaint.program_date) as date,
+                     SUM(CASE WHEN complaint.complaint_type = 'शुभ सुचना' THEN 1 ELSE 0 END) as shubh,
+                     SUM(CASE WHEN complaint.complaint_type = 'अशुभ सुचना' THEN 1 ELSE 0 END) as asubh")
+            ->groupBy(DB::raw("DATE(complaint.program_date)"))
+            ->get();
+
+        $data = [];
+        foreach ($records as $row) {
+            $data[$row->date] = [
+                'shubh' => (int) $row->shubh,
+                'asubh' => (int) $row->asubh,
+            ];
+        }
+
+        return response()->json($data);
+    }
+
+    public function getComplaintSummary()
+    {
+        $now = Carbon::now();
+
+        $ranges = [
+            'आज' => [$now->copy()->startOfDay(), $now->copy()->endOfDay()],
+            'कल' => [$now->copy()->subDay()->startOfDay(), $now->copy()->subDay()->endOfDay()],
+            'इस सप्ताह' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],
+            'इस माह' => [$now->copy()->startOfMonth(), $now],
+            'कुल' => [
+                Carbon::create(2000, 1, 1)->format('Y-m-d H:i:s'),
+                $now->format('Y-m-d H:i:s')
+            ]
+        ];
+
+        $sectionMap = [
+            'आज' => 'today',
+            'कल' => 'yesterday',
+            'इस सप्ताह' => 'current-week',
+            'इस माह' => 'current-month',
+            'कुल' => 'all',
+        ];
+
+        $result = [];
+
+        foreach ($ranges as $label => [$start, $end]) {
+            $records = DB::table('complaint')
+                ->selectRaw("
+                    type,
+                    SUM(CASE WHEN complaint_type = 'समस्या' THEN 1 ELSE 0 END) as samasya,
+                    SUM(CASE WHEN complaint_type = 'विकास' THEN 1 ELSE 0 END) as vikash
+                ")
+                ->whereBetween('posted_date', [$start, $end])
+                ->whereIn('complaint_id', function ($query) {
+                    $query->select(DB::raw('cr1.complaint_id'))
+                        ->from('complaint_reply as cr1')
+                        ->whereRaw('cr1.complaint_reply_id = (
+                        SELECT MAX(cr2.complaint_reply_id) 
+                        FROM complaint_reply cr2 
+                        WHERE cr2.complaint_id = cr1.complaint_id
+                    )');
+                    // ->whereNotIn('cr1.complaint_status', [4, 5]); // exclude पूर्ण & रद्द
+                })
+                ->groupBy('type')
+                ->get();
+
+            $replyCounts = DB::table('complaint')
+                ->join('complaint_reply', 'complaint.complaint_id', '=', 'complaint_reply.complaint_id')
+                ->whereBetween('complaint.posted_date', [$start, $end])
+                ->where('complaint.complaint_type', 'समस्या')
+                ->select('complaint.type', DB::raw('COUNT(*) as reply_count'))
+                ->groupBy('complaint.type')
+                ->pluck('reply_count', 'complaint.type');
+
+            $replyVikashCounts = DB::table('complaint')
+                ->join('complaint_reply', 'complaint.complaint_id', '=', 'complaint_reply.complaint_id')
+                ->whereBetween('complaint.posted_date', [$start, $end])
+                ->where('complaint.complaint_type', 'विकास')
+                ->select('complaint.type', DB::raw('COUNT(*) as reply_count'))
+                ->groupBy('complaint.type')
+                ->pluck('reply_count', 'complaint.type');
+
+            $entry = [
+                'samay' => $label,
+                'section' => $sectionMap[$label] ?? null,
+                'samasya' => ['operator' => 0, 'commander' => 0],
+                'vikash' => ['operator' => 0, 'commander' => 0],
+                'replies' => [
+                    'operator' => $replyCounts[2] ?? 0,
+                    'commander' => $replyCounts[1] ?? 0,
+                ],
+
+                'repliesvikash' => [
+                    'operator' => $replyVikashCounts[2] ?? 0,
+                    'commander' => $replyVikashCounts[1] ?? 0,
+                ],
+            ];
+
+            foreach ($records as $row) {
+                $type = $row->type == 1 ? 'commander' : 'operator';
+                $entry['samasya'][$type] = $row->samasya;
+                $entry['vikash'][$type] = $row->vikash;
+            }
+
+            $result[] = $entry;
+        }
+
+        return response()->json($result);
+    }
+
+
+
+    public function fetchSuchna()
+    {
+        $loggedInId = session('user_id');
+        if (!$loggedInId) {
+            return response()->json(['error' => 'User not logged in.'], 401);
+        }
+
+        $today = \Carbon\Carbon::today();
+        $tomorrow = \Carbon\Carbon::tomorrow();
+        $weekEnd = \Carbon\Carbon::today()->addDays(6);
+
+        $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+            ->groupBy('complaint_id');
+
+        $table = (new \App\Models\Complaint)->getTable();
+
+        $records = \App\Models\Complaint::with('area')
+            ->joinSub($latestRepliesSub, 'latest', function ($join) use ($table) {
+                $join->on("$table.complaint_id", '=', 'latest.complaint_id');
+            })
+            ->join('complaint_reply as cr', function ($join) use ($table) {
+                $join->on("$table.complaint_id", '=', 'cr.complaint_id')
+                    ->on('cr.reply_date', '=', 'latest.latest_date');
+            })
+            ->where('cr.forwarded_to', $loggedInId)
+            ->whereIn("$table.complaint_type", ['शुभ सुचना', 'अशुभ सुचना'])
+            ->whereBetween("$table.program_date", [$today, $weekEnd])
+            ->orderBy("$table.program_date", 'asc')
+            ->get([
+                "$table.complaint_id",
+                "$table.name",
+                "$table.mobile_number",
+                "$table.area_id",
+                "$table.issue_description",
+                "$table.complaint_type",
+                "$table.program_date",
+                "$table.news_time"
+            ]);
+
+        $todayData = [];
+        $tomorrowData = [];
+        $weekData = [];
+
+        foreach ($records as $row) {
+            $date = \Carbon\Carbon::parse($row->program_date)->toDateString();
+
+            $recordData = $row->toArray();
+            $recordData['area_name'] = $row->area->area_name ?? 'N/A';
+
+            if ($date == $today->toDateString()) {
+                $todayData[] = $recordData;
+            } elseif ($date == $tomorrow->toDateString()) {
+                $tomorrowData[] = $recordData;
+            }
+
+            $weekData[] = $recordData;
+        }
+
+        return response()->json([
+            'today' => $todayData,
+            'tomorrow' => $tomorrowData,
+            'week' => $weekData
+        ]);
+    }
+
+
+
+
+    public function fetchVibhaagWiseCount()
+    {
+        $data = DB::table('complaint')
+            ->select(
+                'complaint_department as department',
+                DB::raw('COUNT(*) as total')
+            )
+            ->whereNotNull('complaint_department')
+            ->where('complaint_department', '!=', '')
+            ->where('complaint_department', '!=', '--चुने--')
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->groupBy('complaint_department')
+            ->orderBy('total', 'DESC')
+            ->get();
+
+        return response()->json($data);
+    }
+
+    public function fetchStatus(Request $request)
+    {
+        $statusLabels = [
+            1 => 'शिकायत दर्ज',
+            2 => 'प्रक्रिया में',
+            3 => 'स्थगित',
+            4 => 'पूर्ण',
+            5 => 'रद्द',
+        ];
+
+        $latestReplyIds = DB::table('complaint_reply')
+            ->select('complaint_id', DB::raw('MAX(complaint_reply_id) as latest_id'))
+            ->groupBy('complaint_id');
+
+        $query = DB::table('complaint_reply as cr')
+            ->joinSub($latestReplyIds, 'latest', function ($join) {
+                $join->on('cr.complaint_id', '=', 'latest.complaint_id')
+                    ->on('cr.complaint_reply_id', '=', 'latest.latest_id');
+            })
+            ->join('complaint as c', 'c.complaint_id', '=', 'cr.complaint_id')
+            ->whereIn('c.complaint_type', ['समस्या', 'विकास']);
+
+        $filter = $request->input('filter', 'all');
+        $dates = match ($filter) {
+            'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+            'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+            'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+            'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
+            default => null,
+        };
+
+        if ($dates) {
+            $query->whereBetween('cr.reply_date', $dates);
+        }
+
+        $data = $query
+            ->select('cr.complaint_status', DB::raw('COUNT(*) as total'))
+            ->groupBy('cr.complaint_status')
+            ->orderByDesc('total')
+            ->get()
+            ->map(function ($item) use ($statusLabels) {
+                return [
+                    'status' => $statusLabels[$item->complaint_status] ?? 'अन्य',
+                    'total' => $item->total,
+                ];
+            });
+
+        return response()->json($data);
+    }
+
+    public function fetchSuchnaStatus(Request $request)
+    {
+        $statusLabels = [
+            11 => 'सूचना प्राप्त',
+            12 => 'फॉरवर्ड किया',
+            13 => 'सम्मिलित हुए',
+            14 => 'सम्मिलित नहीं हुए',
+            15 => 'फोन पर संपर्क किया',
+            16 => 'ईमेल पर संपर्क किया',
+            17 => 'व्हाट्सएप पर संपर्क किया',
+            18 => 'रद्द'
+        ];
+
+        $latestReplyIds = DB::table('complaint_reply')
+            ->select('complaint_id', DB::raw('MAX(complaint_reply_id) as latest_id'))
+            ->groupBy('complaint_id');
+
+        $query = DB::table('complaint_reply as cr')
+            ->joinSub($latestReplyIds, 'latest', function ($join) {
+                $join->on('cr.complaint_id', '=', 'latest.complaint_id')
+                    ->on('cr.complaint_reply_id', '=', 'latest.latest_id');
+            })
+            ->join('complaint as c', 'c.complaint_id', '=', 'cr.complaint_id')
+            ->whereIn('c.complaint_type', ['शुभ सुचना', 'अशुभ सुचना']);
+
+        $filter = $request->input('filter', 'all');
+        $dates = match ($filter) {
+            'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+            'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+            'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+            'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
+            default => null,
+        };
+
+        if ($dates) {
+            $query->whereBetween('cr.reply_date', $dates);
+        }
+
+        $data = $query
+            ->select('cr.complaint_status', DB::raw('COUNT(*) as total'))
+            ->groupBy('cr.complaint_status')
+            ->orderByDesc('total')
+            ->get()
+            ->map(function ($item) use ($statusLabels) {
+                return [
+                    'status' => $statusLabels[$item->complaint_status] ?? 'अन्य',
+                    'total' => $item->total,
+                ];
+            });
+
+        return response()->json($data);
+    }
+
+    public function fetchDashboardStats()
+    {
+        $today = now()->toDateString();
+
+        $newVotersToday = DB::table('registration_form')
+            ->whereDate('date_time', $today)
+            ->where('type', 1)
+            ->count();
+
+        $newContactsToday = DB::table('registration_form')
+            ->whereDate('date_time', $today)
+            ->whereIn('type', [1, 2])
+            ->count();
+
+        $totalVoters = DB::table('registration_form')
+            ->where('type', 1)
+            ->count();
+
+        $totalContacts = DB::table('registration_form')
+            ->whereIn('type', [1, 2])
+            ->count();
+
+        return response()->json([
+            'new_voters'     => $newVotersToday,
+            'new_contacts'   => $newContactsToday,
+            'total_voters'   => $totalVoters,
+            'total_contacts' => $totalContacts,
+        ]);
+    }
+
+    public function getForwardedCounts()
+    {
+        $username = session('logged_in_user');
+
+        if (!$username) {
+            return response()->json(['error' => 'User not logged in.'], 401);
+        }
+
+        $user = \App\Models\User::where('admin_name', $username)->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'User not found.'], 404);
+        }
+
+        $userId = $user->admin_id;
+        $today = now()->toDateString();
+
+        $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+            ->groupBy('complaint_id');
+
+        $latestReplies = \App\Models\Reply::joinSub($latestRepliesSub, 'latest', function ($join) {
+            $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
+                ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
+        })
+            ->whereNotNull('forwarded_to')
+            ->whereHas('complaint', function ($query) {
+                $query->whereNotIn('complaint_status', [4, 5])
+                    ->where('complaint_type', 'समस्या');
+            })
+            ->where(function ($query) use ($today) {
+                $query->whereNull('review_date')
+                    ->orWhereDate('review_date', '<=', $today);
+            })
+            ->select('complaint_reply.*');
+
+        $forwardedToYou = (clone $latestReplies)
+            ->where('complaint_reply.forwarded_to', $userId)
+            ->distinct('complaint_reply.complaint_id')
+            ->count('complaint_reply.complaint_id');
+
+        // $forwardedToOthers = (clone $latestReplies)
+        //     ->where('complaint_reply.forwarded_to', '!=', $userId)
+        //     ->whereNotNull('complaint_reply.forwarded_to')
+        //     ->where('complaint_reply.forwarded_to', '!=', 0)
+        //     ->distinct('complaint_reply.complaint_id')
+        //     ->count('complaint_reply.complaint_id');
+
+        return response()->json([
+            'forwarded_to_you' => $forwardedToYou,
+            // 'forwarded_to_others' => $forwardedToOthers,
+        ]);
+    }
+
+    public function getForwardedVikashCounts()
+    {
+        $username = session('logged_in_user');
+
+        if (!$username) {
+            return response()->json(['error' => 'User not logged in.'], 401);
+        }
+
+        $user = \App\Models\User::where('admin_name', $username)->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'User not found.'], 404);
+        }
+
+        $userId = $user->admin_id;
+        $today = now()->toDateString();
+
+        $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+            ->groupBy('complaint_id');
+
+        $latestReplies = \App\Models\Reply::joinSub($latestRepliesSub, 'latest', function ($join) {
+            $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
+                ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
+        })
+            ->whereNotNull('forwarded_to')
+            ->whereHas('complaint', function ($query) {
+                $query->whereNotIn('complaint_status', [4, 5])
+                    ->where('complaint_type', 'विकास');
+            })
+            ->where(function ($query) use ($today) {
+                $query->whereNull('review_date')
+                    ->orWhereDate('review_date', '<=', $today);
+            })
+            ->select('complaint_reply.*');
+
+        $forwardedToYou = (clone $latestReplies)
+            ->where('complaint_reply.forwarded_to', $userId)
+            ->distinct('complaint_reply.complaint_id')
+            ->count('complaint_reply.complaint_id');
+
+        // $forwardedToOthers = (clone $latestReplies)
+        //     ->where('complaint_reply.forwarded_to', '!=', $userId)
+        //     ->whereNotNull('complaint_reply.forwarded_to')
+        //     ->where('complaint_reply.forwarded_to', '!=', 0)
+        //     ->distinct('complaint_reply.complaint_id')
+        //     ->count('complaint_reply.complaint_id');
+
+        return response()->json([
+            'forwarded_to_you' => $forwardedToYou,
+            // 'forwarded_to_others' => $forwardedToOthers,
+        ]);
+    }
+
+  
+
+    public function getForwardedComplaintsPerManager()
+    {
+
+        $latestRepliesSub = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+            ->groupBy('complaint_id');
+
+        $latestReplies = \App\Models\Reply::joinSub($latestRepliesSub, 'latest', function ($join) {
+            $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
+                ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
+        })
+            ->whereNotNull('forwarded_to')
+            ->whereHas('complaint', function ($query) {
+                $query->whereNotIn('complaint_status', [4, 5]);
+            })
+            ->with('complaint:complaint_id,complaint_type')
+            ->get();
+
+        $counts = $latestReplies->groupBy(['forwarded_to', fn($item) => $item->complaint->complaint_type]);
+
+        $managers = \App\Models\User::where('role', 2)
+            ->get(['admin_id', 'admin_name']);
+
+        $result = $managers->map(function ($manager) use ($counts) {
+            return [
+                'forward' => $manager->admin_name,
+                'subh'    => optional($counts[$manager->admin_id]['शुभ सुचना'] ?? null)->count() ?? 0,
+                'asubh'   => optional($counts[$manager->admin_id]['अशुभ सुचना'] ?? null)->count() ?? 0,
+                'samasya' => optional($counts[$manager->admin_id]['समस्या'] ?? null)->count() ?? 0,
+                'vikash'  => optional($counts[$manager->admin_id]['विकास'] ?? null)->count() ?? 0,
+            ];
+        });
+
+        return response()->json($result);
+    }
+
+    public function countUnheardComplaints()
+    {
+        $validComplaintIdsQuery = DB::table('complaint_reply as cr')
+            ->select('cr.complaint_id')
+            ->join(DB::raw('(
+            SELECT complaint_id, COUNT(*) as reply_count, MIN(complaint_reply_id) as min_id
+            FROM complaint_reply
+            GROUP BY complaint_id
+            HAVING COUNT(*) = 1
+        ) as reply_info'), function ($join) {
+                $join->on('cr.complaint_id', '=', 'reply_info.complaint_id')
+                    ->on('cr.complaint_reply_id', '=', 'reply_info.min_id');
+            })
+            ->where('cr.complaint_status', 1)
+            ->where('cr.complaint_reply', 'शिकायत दर्ज की गई है।')
+            ->where('cr.forwarded_to', 6)
+            ->whereNull('cr.selected_reply');
+
+        $count = DB::table('complaint')
+            ->whereIn('complaint_id', $validComplaintIdsQuery)
+            ->where('complaint_type', 'समस्या')
+            ->count();
+
+        return response()->json(['count' => $count]);
+    }
+
+    public function countUnheardComplaintsVikash()
+    {
+        $validComplaintIdsQuery = DB::table('complaint_reply as cr')
+            ->select('cr.complaint_id')
+            ->join(DB::raw('(
+            SELECT complaint_id, COUNT(*) as reply_count, MIN(complaint_reply_id) as min_id
+            FROM complaint_reply
+            GROUP BY complaint_id
+            HAVING COUNT(*) = 1
+        ) as reply_info'), function ($join) {
+                $join->on('cr.complaint_id', '=', 'reply_info.complaint_id')
+                    ->on('cr.complaint_reply_id', '=', 'reply_info.min_id');
+            })
+            ->where('cr.complaint_status', 1)
+            ->where('cr.complaint_reply', 'शिकायत दर्ज की गई है।')
+            ->where('cr.forwarded_to', 6)
+            ->whereNull('cr.selected_reply');
+
+        $count = DB::table('complaint')
+            ->whereIn('complaint_id', $validComplaintIdsQuery)
+            ->where('complaint_type', 'विकास')
+            ->count();
+
+        return response()->json(['count' => $count]);
+    }
+
+    public function getNotDoneCounts(Request $request)
+    {
+        $today = now()->toDateString();
+
+        $complaints = Complaint::with([
+            'latestReplyWithoutFollowup',
+            'latestNonDefaultReply.latestFollowupAlways',
+        ])
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->where('complaint_status', '!=', 5)
+            ->whereHas('latestReplyWithoutFollowup')
+            ->get()
+            ->sortByDesc(fn($c) => optional($c->latestReplyWithoutFollowup)->reply_date)
+            ->values();
+
+        $counts = [];
+
+        foreach ($complaints as $complaint) {
+            $type = $complaint->complaint_type;
+
+            if (!isset($counts[$type])) {
+                $counts[$type] = [
+                    'not_done' => 0,
+                ];
+            }
+
+            // Pick the latest relevant reply
+            $latestReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+            $latestFollowup = $latestReply?->latestFollowupAlways;
+
+            // Count as not done if no followup exists or followup is today and incomplete
+            if (!$latestFollowup || ($latestFollowup->followup_status == 1 && $latestFollowup->followup_date->toDateString() === $today)) {
+                $counts[$type]['not_done']++;
+            }
+        }
+
+        // Format for JSON response
+        $result = [];
+        foreach ($counts as $type => $val) {
+            $result[] = [
+                'complaint_type' => $type,
+                'not_done' => $val['not_done'],
+            ];
+        }
+
+        return response()->json($result);
+    }
+
+    public function notDoneDetails(Request $request)
+    {
+        $status = $request->status;
+        $type = $request->type ?? null;
+        $complaints = Complaint::with([
+            'latestReplyWithoutFollowup',
+            'latestNonDefaultReply.latestFollowupAlways',
+            'registrationDetails',
+            'admin',
+        ])
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->where('complaint_status', '!=', 5)
+            ->when($type, fn($q) => $q->where('complaint_type', $type))
+            ->whereHas('latestReplyWithoutFollowup')
+            ->get()
+            ->sortByDesc(fn($c) => optional($c->latestReplyWithoutFollowup)->reply_date)
+            ->values();
+
+        $notDoneComplaints = $complaints->filter(function ($complaint) {
+            $latestReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+            $latestFollowup = $latestReply?->latestFollowupAlways;
+
+            return !$latestFollowup || ($latestFollowup->followup_status == 1 && $latestFollowup->followup_date->toDateString() === now()->toDateString());
+        });
+
+        return view('admin.followup_notdone_details', [
+            'complaints' => $notDoneComplaints,
+            'status' => $status,
+            'type' => $type,
+        ]);
+    }
+
+
+    public function getFollowupCounts(Request $request)
+    {
+        $today = Carbon::today();
+        $dateFilter = $request->filter ?? null;
+        $operatorId = $request->operator ?? 'सभी';
+
+        $complaints = Complaint::with([
+            'latestReplyWithoutFollowup',
+            'latestNonDefaultReply.latestFollowup',
+            'replies.followups'
+        ])
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->where('complaint_status', '!=', 5)
+            ->get();
+
+        $dateRanges = [
+            'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+            'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+            'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+            'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
+        ];
+
+
+        if ($dateFilter && isset($dateRanges[$dateFilter])) {
+            [$start, $end] = $dateRanges[$dateFilter];
+
+            $complaints = $complaints->filter(function ($complaint) use ($start, $end) {
+                $followup = $complaint->latestReplyWithoutFollowup?->latestFollowup
+                    ?? $complaint->latestNonDefaultReply?->latestFollowup;
+
+                if (!$followup) return false;
+
+                $followupDate = Carbon::parse($followup->followup_date);
+
+                return $followupDate->between($start, $end);
+            });
+        }
+
+        if ($operatorId !== 'सभी') {
+            $complaints = $complaints->filter(function ($complaint) use ($operatorId) {
+                // Get the latest relevant reply
+                $latestReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+                if (!$latestReply) return false;
+
+                // Get the latest followup for this reply
+                $latestFollowup = $latestReply->latestFollowup;
+                if (!$latestFollowup) return false;
+
+                // Compare operator ID
+                return $latestFollowup->followup_created_by == $operatorId;
+            });
+        }
+
+
+        $counts = [];
+
+        foreach ($complaints as $complaint) {
+            $type = $complaint->complaint_type;
+
+            if (!isset($counts[$type])) {
+                $counts[$type] = [
+                    'completed' => 0,
+                    'pending' => 0,
+                    'in_process' => 0,
+                    'not_done' => 0,
+                ];
+            }
+
+            // Pick **the latest relevant reply**: either without followup or non-default with followup
+            $latestReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+
+            // Get latest followup for this reply, if any
+            $latestFollowup = $latestReply?->latestFollowup ?? null;
+
+            if (!$latestFollowup) {
+                $counts[$type]['not_done']++;
+                continue;
+            }
+
+            switch ($latestFollowup->followup_status) {
+                case 2: // Completed
+                    $counts[$type]['completed']++;
+                    break;
+
+                case 1: // Followup done
+                    if ($latestFollowup->followup_date->toDateString() === $today) {
+                        $counts[$type]['pending']++;
+                    } else {
+                        // Check if there is a newer reply after this latest followup
+                        $hasNewReplyAfterFollowup = $complaint->replies()
+                            ->where('reply_date', '>', $latestFollowup->followup_date)
+                            ->where('complaint_reply', '!=', 'शिकायत दर्ज की गई है।')
+                            ->exists();
+
+                        if ($hasNewReplyAfterFollowup) {
+                            $counts[$type]['not_done']++;
+                        } else {
+                            $counts[$type]['in_process']++;
+                        }
+                    }
+                    break;
+
+                case 0: // Not done
+                default:
+                    $counts[$type]['in_process']++;
+                    break;
+            }
+        }
+
+        $result = [];
+        foreach ($counts as $type => $vals) {
+            $result[] = [
+                'complaint_type' => $type,
+                'completed' => $vals['completed'],
+                'in_process' => $vals['in_process'],
+            ];
+        }
+
+        if ($request->ajax()) {
+            return response()->json($result);
+        }
+
+        return view('admin.page');
+    }
+
+
+    public function followupDetails(Request $request)
+    {
+        $status = $request->status;
+        $type = $request->type ?? null;
+        $dateFilter = $request->filter ?? null;
+        $operatorId = $request->operator ?? 'सभी';
+
+        $today = Carbon::today();
+
+        $complaints = Complaint::with([
+            'latestReplyWithoutFollowup.replyfrom',
+            'latestReplyWithoutFollowup.forwardedToManager',
+            'latestNonDefaultReply.latestFollowup',
+            'latestNonDefaultReply.replyfrom',
+        ])
+            ->whereIn('complaint_type', ['समस्या', 'विकास'])
+            ->when($type, fn($q) => $q->where('complaint_type', $type))
+            ->where('complaint_status', '!=', 5)
+            ->get()
+            ->map(function ($complaint) {
+                $complaint->latestRelevantReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+                return $complaint;
+            });
+
+
+
+        $dateRanges = [
+            'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+            'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+            'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+            'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
+        ];
+
+        // Apply date filter if selected
+        if ($dateFilter && isset($dateRanges[$dateFilter])) {
+            [$start, $end] = $dateRanges[$dateFilter];
+
+            $complaints = $complaints->filter(function ($complaint) use ($start, $end) {
+                $latestReply = $complaint->latestRelevantReply;
+                $latestFollowup = $latestReply?->latestFollowup ?? null;
+
+                if (!$latestFollowup) return false;
+
+                $followupDate = Carbon::parse($latestFollowup->followup_date);
+
+                return $followupDate->between($start, $end);
+            });
+        }
+
+        if ($operatorId !== 'सभी') {
+            $complaints = $complaints->filter(function ($complaint) use ($operatorId) {
+                // Get the latest relevant reply
+                $latestReply = $complaint->latestReplyWithoutFollowup ?? $complaint->latestNonDefaultReply;
+                if (!$latestReply) return false;
+
+                // Get the latest followup for this reply
+                $latestFollowup = $latestReply->latestFollowup;
+                if (!$latestFollowup) return false;
+
+                // Compare operator ID
+                return $latestFollowup->followup_created_by == $operatorId;
+            });
+        }
+
+        $operatorName = 'सभी';
+        if ($operatorId !== 'सभी') {
+            $operator = User::find($operatorId);
+            if ($operator) {
+                $operatorName = $operator->admin_name;
+            }
+        }
+
+        $complaints = $complaints->filter(function ($complaint) use ($status, $today) {
+            $latestReply = $complaint->latestRelevantReply;
+            $latestFollowup = $latestReply?->latestFollowup ?? null;
+
+            switch ($status) {
+                case 'completed':
+                    return $latestFollowup && $latestFollowup->followup_status == 2;
+                case 'pending':
+                    return $latestFollowup && $latestFollowup->followup_status == 1
+                        && $latestFollowup->followup_date->toDateString() === $today;
+                case 'in_process':
+                    if (!$latestFollowup) return false;
+                    if ($latestFollowup->followup_status == 1 && $latestFollowup->followup_date->toDateString() < $today) {
+                        // Ensure no newer reply exists after latest followup
+                        $hasNewReplyAfterFollowup = $latestReply->complaint->replies()
+                            ->where('reply_date', '>', $latestFollowup->followup_date)
+                            ->where('complaint_reply', '!=', 'शिकायत दर्ज की गई है।')
+                            ->exists();
+                        return !$hasNewReplyAfterFollowup;
+                    }
+                    return $latestFollowup->followup_status == 0;
+                case 'not_done':
+                    return !$latestFollowup;
+                default:
+                    return true;
+            }
+        });
+
+        $complaints = $complaints->sortByDesc(function ($complaint) {
+            $latestFollowup = $complaint->latestRelevantReply?->latestFollowup;
+            return $latestFollowup?->followup_date?->timestamp ?? 0;
+        })->values();
+
+        return view('admin/followup_details', compact('complaints', 'status', 'type', 'dateFilter', 'operatorId', 'operatorName'));
+    }
+
+
+
+
+
+    public function sectionView($section, Request $request)
+    {
+        $now = Carbon::now();
+        $complaints = collect();
+        $type = $request->query('type');
+        $user = $request->query('user');
+        $title = 'शिकायतें';
+
+
+        $loadForwardedTo = function ($complaints) {
+            foreach ($complaints as $complaint) {
+                if (!in_array($complaint->complaint_status, [4, 5])) {
+                    $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+                } else {
+                    $complaint->pending_days = 0;
+                }
+
+                $lastReply = $complaint->replies()
+                    ->with('forwardedToManager')
+                    ->whereNotNull('forwarded_to')
+                    ->orderByDesc('reply_date')
+                    ->first();
+
+                $complaint->forwarded_to_name = $lastReply?->forwardedToManager?->admin_name ?? '-';
+                $complaint->forwarded_to_date = $lastReply?->reply_date?->format('d-m-Y H:i') ?? '-';
+            }
+
+            return $complaints;
+        };
+
+        switch ($section) {
+            case 'today':
+                $start = $now->copy()->startOfDay();
+                $end = $now->copy()->endOfDay();
+                $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
+                foreach ($complaints as $complaint) {
+                    if (!in_array($complaint->complaint_status, [4, 5])) {
+                        $complaint->pending_days = Carbon::parse($complaint->posted_date)->diffInDays(now());
+                    } else {
+                        $complaint->pending_days = 0;
+                    }
+                }
+                $title .= ' (आज)';
+                break;
+
+            case 'yesterday':
+                $start = $now->copy()->subDay()->startOfDay();
+                $end = $now->copy()->subDay()->endOfDay();
+                $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
+                $complaints = $loadForwardedTo($complaints);
+                $title .= ' (कल)';
+                break;
+
+            case 'current-week':
+                $start = $now->copy()->startOfWeek();
+                $end = $now->copy()->endOfWeek();
+                $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
+                $complaints = $loadForwardedTo($complaints);
+                $title .= ' (इस सप्ताह)';
+                break;
+
+            case 'current-month':
+                $start = $now->copy()->startOfMonth();
+                $end = $now;
+                $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
+                $complaints = $loadForwardedTo($complaints);
+                $title .= ' (इस माह)';
+                break;
+            case 'all':
+                $start = Carbon::create(2000, 1, 1)->startOfDay();
+                $end = Carbon::now()->endOfDay();
+
+                $complaints = $this->getComplaintsBetween($start, $end, $type, $user);
+                $complaints = $loadForwardedTo($complaints);
+                $title = 'सभी शिकायतें';
+                break;
+
+
+            case 'vibhag-details':
+                $department = $request->query('department');
+
+                if (!$department) {
+                    abort(400, 'Department not specified');
+                }
+
+                $complaints = Complaint::where('complaint_department', $department)
+                    ->orderBy('posted_date', 'desc')
+                    ->get();
+
+                $complaints = $loadForwardedTo($complaints);
+                $title = "शिकायतें (विभाग: " . $department . ")";
+                break;
+
+            case 'status-details':
+                $statusMap = [
+                    'शिकायत दर्ज' => 1,
+                    'प्रक्रिया में' => 2,
+                    'स्थगित' => 3,
+                    'पूर्ण' => 4,
+                    'रद्द' => 5,
+                ];
+
+                $label = $request->query('status');
+                $filter = $request->query('filter', 'सभी');
+
+                $statusCode = collect($statusMap)
+                    ->filter(fn($v, $k) => trim($k) === trim($label))
+                    ->first();
+
+                if ($statusCode === false) {
+                    abort(400, 'Invalid status');
+                }
+
+                $latestReplyIds = DB::table('complaint_reply')
+                    ->select('complaint_id', DB::raw('MAX(complaint_reply_id) as latest_id'))
+                    ->groupBy('complaint_id');
+
+                $query = DB::table('complaint_reply as cr')
+                    ->joinSub($latestReplyIds, 'latest', function ($join) {
+                        $join->on('cr.complaint_id', '=', 'latest.complaint_id')
+                            ->on('cr.complaint_reply_id', '=', 'latest.latest_id');
+                    })
+                    ->join('complaint as c', 'c.complaint_id', '=', 'cr.complaint_id')
+                    ->where('cr.complaint_status', $statusCode)
+                    ->whereIn('c.complaint_type', ['समस्या', 'विकास']);
+
+                $dates = match ($filter) {
+                    'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+                    'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+                    'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+                    'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
+                    default => null,
+                };
+
+                if ($dates) {
+                    $query->whereBetween('cr.reply_date', $dates);
+                }
+
+                $complaintIds = $query->pluck('c.complaint_id');
+
+                $complaints = Complaint::whereIn('complaint_id', $complaintIds)
+                    ->orderBy('posted_date', 'desc')
+                    ->get();
+
+                $complaints = $loadForwardedTo($complaints);
+
+                $title = "शिकायतें ({$label}) - {$filter}";
+                break;
+
+            case 'suchna-status-details':
+                $statusMap = [
+                    'सूचना प्राप्त' => 11,
+                    'फॉरवर्ड किया' => 12,
+                    'सम्मिलित हुए' => 13,
+                    'सम्मिलित नहीं हुए' => 14,
+                    'फोन पर संपर्क किया' => 15,
+                    'ईमेल पर संपर्क किया' => 16,
+                    'व्हाट्सएप पर संपर्क किया' => 17,
+                    'रद्द' => 18
+                ];
+
+                $label = $request->query('status');
+                $filter = $request->query('filter', 'सभी');
+
+                $statusCode = collect($statusMap)
+                    ->filter(fn($v, $k) => trim($k) === trim($label))
+                    ->first();
+
+                if ($statusCode === false) {
+                    abort(400, 'Invalid status');
+                }
+
+                $latestReplyIds = DB::table('complaint_reply')
+                    ->select('complaint_id', DB::raw('MAX(complaint_reply_id) as latest_id'))
+                    ->groupBy('complaint_id');
+
+                $query = DB::table('complaint_reply as cr')
+                    ->joinSub($latestReplyIds, 'latest', function ($join) {
+                        $join->on('cr.complaint_id', '=', 'latest.complaint_id')
+                            ->on('cr.complaint_reply_id', '=', 'latest.latest_id');
+                    })
+                    ->join('complaint as c', 'c.complaint_id', '=', 'cr.complaint_id')
+                    ->where('cr.complaint_status', $statusCode)
+                    ->whereIn('c.complaint_type', ['शुभ सुचना', 'अशुभ सुचना']);
+
+                $dates = match ($filter) {
+                    'आज' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
+                    'कल' => [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()],
+                    'पिछले सात दिन' => [Carbon::now()->subWeek()->startOfDay(), Carbon::now()->endOfDay()],
+                    'पिछले तीस दिन' => [Carbon::now()->subMonth()->startOfDay(), Carbon::now()->endOfDay()],
+                    default => null,
+                };
+
+                if ($dates) {
+                    $query->whereBetween('cr.reply_date', $dates);
+                }
+
+                $complaintIds = $query->pluck('c.complaint_id');
+
+                $complaints = Complaint::whereIn('complaint_id', $complaintIds)
+                    ->orderBy('posted_date', 'desc')
+                    ->get();
+
+                $complaints = $loadForwardedTo($complaints);
+
+                $title = "सूचनाएँ ({$label}) - {$filter}";
+                break;
+
+            case 'date-wise':
+                $date = $request->query('date');
+                if (!$date) {
+                    abort(400, 'Invalid date');
+                }
+
+                $start = Carbon::parse($date)->startOfDay();
+                $end = Carbon::parse($date)->endOfDay();
+                $loggedInId = session('user_id');
+
+                $complaints = Complaint::with('latestReply')
+                    ->whereBetween('program_date', [$start, $end])
+                    ->whereIn('complaint_type', ['शुभ सुचना', 'अशुभ सुचना'])
+                    ->whereHas('latestReply', function ($q) use ($loggedInId) {
+                        $q->where('forwarded_to', $loggedInId);
+                    })
+                    ->get();
+
+                // $complaints = $this->getComplaintsBetween($start, $end, $type, $user)->filter(function ($complaint) {
+                //     return in_array($complaint->complaint_type, ['शुभ सुचना', 'अशुभ सुचना']);
+                // });
+                $complaints = $loadForwardedTo($complaints);
+                $title = 'सुचना (' . Carbon::parse($date)->format('d M Y') . ')';
+                break;
+
+            case 'forwarded':
+                $user = \App\Models\User::where('admin_name', session('logged_in_user'))->first();
+
+                if (!$user) {
+                    abort(403, 'User not logged in.');
+                }
+
+                $userId = $user->admin_id;
+                $today = now()->toDateString();
+                $direction = $request->query('direction');
+
+                $latestReplies = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+                    ->groupBy('complaint_id');
+
+                $latestForwardedReplies = \App\Models\Reply::joinSub($latestReplies, 'latest', function ($join) {
+                    $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
+                        ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
+                })
+                    ->whereNotNull('forwarded_to')
+                    ->whereHas('complaint', function ($query) {
+                        $query->whereNotIn('complaint_status', [4, 5])
+                            ->where('complaint_type', 'समस्या');
+                    })
+                    ->where(function ($query) use ($today) {
+                        $query->whereNull('review_date')
+                            ->orWhereDate('review_date', '<=', $today);
+                    })
+                    ->with('complaint.replies');
+
+                if ($direction === 'to') {
+                    $latestForwardedReplies = $latestForwardedReplies->where('forwarded_to', $userId);
+                    $title = 'आपको निर्देशित शिकायतें';
+                } elseif ($direction === 'others') {
+                    $latestForwardedReplies = $latestForwardedReplies->where('forwarded_to', '!=', $userId)->where('forwarded_to', '!=', 0);
+                    $title = 'अन्य को निर्देशित शिकायतें';
+                }
+
+                $replies = $latestForwardedReplies->get();
+
+
+                $complaints = $replies
+                    ->pluck('complaint')
+                    ->filter()
+                    ->unique('complaint_id')
+                    ->sortByDesc('posted_date')
+                    ->values();
+                $complaints = $loadForwardedTo($complaints);
+
+                break;
+
+            case 'forwardedvikash':
+                $user = \App\Models\User::where('admin_name', session('logged_in_user'))->first();
+
+                if (!$user) {
+                    abort(403, 'User not logged in.');
+                }
+
+                $userId = $user->admin_id;
+                $direction = $request->query('direction');
+                $today = now()->toDateString();
+
+                $latestReplies = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+                    ->groupBy('complaint_id');
+
+                $latestForwardedReplies = \App\Models\Reply::joinSub($latestReplies, 'latest', function ($join) {
+                    $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
+                        ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
+                })
+                    ->whereNotNull('forwarded_to')
+                    ->whereHas('complaint', function ($query) {
+                        $query->whereNotIn('complaint_status', [4, 5])
+                            ->where('complaint_type', 'विकास');
+                    })
+                    ->where(function ($query) use ($today) {
+                        $query->whereNull('review_date')
+                            ->orWhereDate('review_date', '<=', $today);
+                    })
+                    ->with('complaint.replies');
+
+                if ($direction === 'to') {
+                    $latestForwardedReplies = $latestForwardedReplies->where('forwarded_to', $userId);
+                    $title = 'आपको निर्देशित';
+                } elseif ($direction === 'others') {
+                    $latestForwardedReplies = $latestForwardedReplies->where('forwarded_to', '!=', $userId)->where('forwarded_to', '!=', 0);
+                    $title = 'अन्य को निर्देशित';
+                }
+
+                $replies = $latestForwardedReplies->get();
+
+
+                $complaints = $replies
+                    ->pluck('complaint')
+                    ->filter()
+                    ->unique('complaint_id')
+                    ->sortByDesc('posted_date')
+                    ->values();
+                $complaints = $loadForwardedTo($complaints);
+
+                break;
+
+            case 'forward-details':
+                $managerName = $request->query('forward');
+                $type = $request->query('type'); // complaint type from query string
+
+                if (!$managerName) {
+                    abort(400, 'Manager name not provided.');
+                }
+
+                $manager = \App\Models\User::where('admin_name', $managerName)
+                    ->where('role', 2)
+                    ->first();
+
+                if (!$manager) {
+                    abort(404, 'Manager not found.');
+                }
+
+                $managerId = $manager->admin_id;
+
+                // Subquery to get latest reply per complaint
+                $latestReplies = \App\Models\Reply::selectRaw('MAX(reply_date) as latest_date, complaint_id')
+                    ->groupBy('complaint_id');
+
+                $latestForwardedReplies = \App\Models\Reply::joinSub($latestReplies, 'latest', function ($join) {
+                    $join->on('complaint_reply.reply_date', '=', 'latest.latest_date')
+                        ->on('complaint_reply.complaint_id', '=', 'latest.complaint_id');
+                })
+                    ->where('complaint_reply.forwarded_to', $managerId)
+                    ->whereHas('complaint', function ($query) use ($type) {
+                        $query->whereNotIn('complaint_status', [4, 5]);
+
+                        if ($type) {
+                            // If type filter is provided
+                            $query->where('complaint_type', $type);
+                        }
+                    })
+                    ->with('complaint.replies');
+
+                $replies = $latestForwardedReplies->get();
+
+                $complaints = $replies
+                    ->pluck('complaint')
+                    ->filter()
+                    ->unique('complaint_id')
+                    ->sortByDesc('posted_date')
+                    ->values();
+
+                $complaints = $loadForwardedTo($complaints);
+
+                $title = "निर्देशित शिकायतें (" . $managerName . ")";
+                if ($type) {
+                    $title .= " - " . $type;
+                }
+                break;
+
+            case 'not_opened':
+
+                $validComplaintIds = DB::table('complaint_reply as cr')
+                    ->select('cr.complaint_id')
+                    ->join(DB::raw('(
+                            SELECT complaint_id, COUNT(*) as reply_count, MIN(complaint_reply_id) as min_id
+                            FROM complaint_reply
+                            GROUP BY complaint_id
+                            HAVING COUNT(*) = 1
+                        ) as reply_info'), function ($join) {
+                        $join->on('cr.complaint_id', '=', 'reply_info.complaint_id')
+                            ->on('cr.complaint_reply_id', '=', 'reply_info.min_id');
+                    })
+                    ->where('cr.complaint_status', 1)
+                    ->where('cr.complaint_reply', 'शिकायत दर्ज की गई है।')
+                    ->where('cr.forwarded_to', 6)
+                    ->whereNull('cr.selected_reply');
+
+                $complaints = Complaint::whereIn('complaint_id', $validComplaintIds->pluck('complaint_id'))
+                    ->where('complaint_type', 'समस्या')
+                    ->orderBy('posted_date', 'desc')
+                    ->get();
+
+                $complaints = $loadForwardedTo($complaints);
+
+                $title = "अनसुनी शिकायतें";
+                break;
+
+            case 'not_opened_vikash':
+
+                $validComplaintIds = DB::table('complaint_reply as cr')
+                    ->select('cr.complaint_id')
+                    ->join(DB::raw('(
+                            SELECT complaint_id, COUNT(*) as reply_count, MIN(complaint_reply_id) as min_id
+                            FROM complaint_reply
+                            GROUP BY complaint_id
+                            HAVING COUNT(*) = 1
+                        ) as reply_info'), function ($join) {
+                        $join->on('cr.complaint_id', '=', 'reply_info.complaint_id')
+                            ->on('cr.complaint_reply_id', '=', 'reply_info.min_id');
+                    })
+                    ->where('cr.complaint_status', 1)
+                    ->where('cr.complaint_reply', 'शिकायत दर्ज की गई है।')
+                    ->where('cr.forwarded_to', 6)
+                    ->whereNull('cr.selected_reply');
+
+                $complaints = Complaint::whereIn('complaint_id', $validComplaintIds->pluck('complaint_id'))
+                    ->where('complaint_type', 'विकास')
+                    ->orderBy('posted_date', 'desc')
+                    ->get();
+
+                $complaints = $loadForwardedTo($complaints);
+
+                $title = "अनसुनी";
+                break;
+
+            default:
+                abort(404);
+        }
+
+        return view('admin/dashboard_details', compact('complaints', 'title', 'section'));
+    }
+
+    private function getComplaintsBetween($start, $end, $type = null, $user = null)
+    {
+        $query = Complaint::with(['division', 'district', 'vidhansabha', 'mandal', 'gram', 'polling', 'area', 'registrationDetails', 'admin', 'latestReply'])
+            ->whereBetween('posted_date', [$start, $end]);
+
+
+        if ($type) {
+            $query->where('complaint_type', $type);
+        }
+
+        if ($user) {
+            $userType = $user === 'commander' ? 1 : ($user === 'operator' ? 2 : null);
+            if ($userType !== null) {
+                $query->where('type', $userType);
+            }
+        }
+
+        return $query->orderBy('posted_date', 'desc')->get();
+    }
+
+
+    public function voterDetails(Request $request)
+    {
+        $filter = $request->query('filter');
+
+        $query = RegistrationForm::with(['position', 'step2', 'step2.area', 'step3', 'step4']);
+
+        switch ($filter) {
+            case 'today-voters':
+                $title = 'आज के मतदाता';
+                $query->whereDate('date_time', now())->where('type', 1);
+                break;
+
+            case 'today-contacts':
+                $title = 'आज के संपर्क';
+                $query->whereDate('date_time', now())->whereIn('type', [1, 2]);
+                break;
+
+            case 'total-voters':
+                $title = 'कुल मतदाता';
+                $query->where('type', 1);
+                break;
+
+            case 'total-contacts':
+                $title = 'कुल संपर्क';
+                $query->whereIn('type', [1, 2]);
+                break;
+
+            default:
+                abort(404);
+        }
+
+
+        if ($request->ajax()) {
+            $start = $request->input('start');
+            $length = $request->input('length');
+            $draw = $request->input('draw');
+
+            $total = $query->count();
+
+            $data = $query->orderBy('date_time', 'desc')
+                ->skip($start)
+                ->take($length)
+                ->get();
+
+            $results = [];
+
+            $serial = $start + 1;
+
+            foreach ($data as $voter) {
+                $viewUrl = route('voter.show', $voter->registration_id);
+                $deleteUrl = route('register.destroy', $voter->registration_id);
+
+                $actionButtons = '
+                    <div class="d-flex gap-1">
+                        <a href="' . $viewUrl . '" class="btn btn-sm btn-success mr-2">View</a>
+                        <form action="' . $deleteUrl . '" method="POST" onsubmit="return confirm(\'क्या आप वाकई रिकॉर्ड हटाना चाहते हैं?\')">
+                            ' . csrf_field() . method_field('DELETE') . '
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </div>
+                ';
+
+                $results[] = [
+                    $serial++,
+                    $voter->name,
+                    $voter->father_name,
+                    $voter->step2->house ?? '',
+                    $voter->age,
+                    $voter->gender,
+                    $voter->voter_id,
+                    $voter->step2->area->area_name ?? '-',
+                    $voter->jati,
+                    $voter->step2->matdan_kendra_no ?? '',
+                    $voter->step3->total_member ?? '',
+                    $voter->step3->mukhiya_mobile ?? '',
+                    $voter->death_left ?? '',
+                    \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y'),
+                    $actionButtons
+                ];
+            }
+
+            return response()->json([
+                'draw' => intval($draw),
+                'recordsTotal' => $total,
+                'recordsFiltered' => $total,
+                'data' => $results,
+            ]);
+        }
+
+
+        // $entries = $query->orderBy('date_time', 'desc')->paginate($perPage)->withQueryString();
+
+        return view('admin/contact_voter_details', compact('title'));
+    }
+
+    public function downloadVoters(Request $request)
+    {
+        $filter = $request->query('filter');
+        $query = RegistrationForm::with(['step2.area', 'step3']);
+
+        switch ($filter) {
+            case 'today-voters':
+                $query->whereDate('date_time', now())->where('type', 1);
+                break;
+            case 'today-contacts':
+                $query->whereDate('date_time', now())->whereIn('type', [1, 2]);
+                break;
+            case 'total-voters':
+                $query->where('type', 1);
+                break;
+            case 'total-contacts':
+                $query->whereIn('type', [1, 2]);
+                break;
+            default:
+                abort(404);
+        }
+
+        $data = $query->get();
+
+        $csvData = [];
+        foreach ($data as $voter) {
+            $csvData[] = [
+                'नाम' => $voter->name,
+                'पिता/पति' => $voter->father_name,
+                'मकान क्र.' => $voter->step2->house ?? '',
+                'उम्र' => $voter->age,
+                'लिंग' => $voter->gender,
+                'मतदाता आईडी' => $voter->voter_id,
+                'मतदान क्षेत्र' => $voter->step2->area->area_name ?? '',
+                'जाति' => $voter->jati,
+                'मतदान क्र.' => $voter->step2->matdan_kendra_no ?? '',
+                'कुल सदस्य' => $voter->step3->total_member ?? '',
+                'मुखिया मोबाइल' => $voter->step3->mukhiya_mobile ?? '',
+                'मृत्यु/स्थानांतरित' => $voter->death_left ?? '',
+                'दिनांक' => \Carbon\Carbon::parse($voter->date_time)->format('d-m-Y'),
+            ];
+        }
+
+        $filename = 'voter_data_' . now()->format('Ymd_His') . '.csv';
+
+        $handle = fopen('php://output', 'w');
+        ob_start();
+        fputcsv($handle, array_keys($csvData[0] ?? []));
+        foreach ($csvData as $row) {
+            fputcsv($handle, $row);
+        }
+        $csv = ob_get_clean();
+
+        return response($csv)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    public function detail_suchna($id)
+    {
+        $complaint = Complaint::with(
+            'registration',
+            'division',
+            'district',
+            'vidhansabha',
+            'mandal',
+            'gram',
+            'polling',
+            'area',
+            'admin',
+            'registrationDetails'
+        )->findOrFail($id);
+
+        // Choose applicant name based on type
+        $aavedak = $complaint->type == 2
+            ? ($complaint->admin->admin_name ?? '-')
+            : ($complaint->registrationDetails->name ?? '-');
+
+        return response()->json([
+            'name' => $complaint->name,
+            'mobile_number' => $complaint->mobile_number,
+            'area' => $complaint->area,
+            'issue_description' => $complaint->issue_description,
+            'voter_id' => $complaint->voter_id,
+            'program_date' => $complaint->program_date,
+            'news_time' => $complaint->news_time,
+            'complaint_type' => $complaint->complaint_type,
+            'complaint_number' => $complaint->complaint_number,
+            'status_text' => $complaint->statusText(),
+            'aavedak' => $aavedak,
+            'issue_attachment' => $complaint->issue_attachment,
+        ]);
+    }
+
+
     public function usercreate()
     {
         $admins = User::all();
@@ -1484,6 +3010,80 @@ class AdminController extends Controller
     {
         $query = Complaint::with('registrationDetails', 'replies.forwardedToManager')->where('type', 1)->whereIn('complaint_type', ['समस्या', 'विकास']);
 
+        if ($request->filled('complaintOtherFilter')) {
+            switch ($request->complaintOtherFilter) {
+                case 'forwarded_manager':
+                    $loggedInId = session('user_id');
+                    $query->whereHas('replies', function ($q) use ($loggedInId) {
+                        $q->where('forwarded_to', $loggedInId)
+                            ->whereRaw('reply_date = (
+                              SELECT MAX(reply_date)
+                              FROM complaint_reply
+                              WHERE complaint_reply.complaint_id = complaint.complaint_id
+                          )');
+                    });
+                    break;
+
+                case 'not_opened':
+                    $query->whereHas('replies', function ($q) {
+                        $q->where('complaint_status', 1)
+                            ->where('complaint_reply', 'शिकायत दर्ज की गई है।')
+                            ->where('forwarded_to', 6)
+                            ->whereNull('selected_reply');
+                    })->has('replies', '=', 1);
+                    break;
+
+                case 'reviewed':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('review_date')
+                            ->whereRaw('reply_date = (
+                              SELECT MAX(reply_date)
+                              FROM complaint_reply
+                              WHERE complaint_reply.complaint_id = complaint.complaint_id
+                          )');
+                    });
+                    break;
+
+                case 'important':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('importance')
+                            ->whereRaw('reply_date = (
+                              SELECT MAX(reply_date)
+                              FROM complaint_reply
+                              WHERE complaint_reply.complaint_id = complaint.complaint_id
+                          )');
+                    })->orderByRaw("FIELD(
+                        (SELECT importance 
+                         FROM complaint_reply 
+                         WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                         ORDER BY reply_date DESC 
+                         LIMIT 1),
+                        'उच्च', 'मध्यम', 'कम'
+                    )");
+                    break;
+
+
+
+                case 'closed':
+                    $query->where('complaint_status', 4);
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 5);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+
+                default:
+                    break;
+            }
+        }
 
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
@@ -1494,6 +3094,86 @@ class AdminController extends Controller
         } else {
             // Apply default filter for initial load or sabhi
             $query->where('complaint_type', 'समस्या');
+        }
+
+        if ($request->filled('filter')) {
+            switch ($request->filter) {
+                case 'not_opened':
+                    $query->whereHas('replies', function ($q) {
+                        $q->where('complaint_status', 1)
+                            ->where('complaint_reply', 'शिकायत दर्ज की गई है।')
+                            ->where('forwarded_to', 6)
+                            ->whereNull('selected_reply');
+                    })->has('replies', '=', 1);
+                    break;
+
+
+                case 'reviewed':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('review_date')
+                            ->whereRaw('reply_date = (
+                                SELECT MAX(reply_date)
+                                FROM complaint_reply
+                                WHERE complaint_reply.complaint_id = complaint.complaint_id
+                            )');
+                    })->orderByRaw("
+                                (SELECT review_date 
+                                FROM complaint_reply 
+                                WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                                ORDER BY reply_date DESC 
+                                LIMIT 1)
+                            ");
+                    break;
+
+                case 'important':
+                    $query->whereHas('replies', function ($q) {
+                        $q->whereNotNull('importance')
+                            ->whereRaw('reply_date = (
+                            SELECT MAX(reply_date)
+                            FROM complaint_reply
+                            WHERE complaint_reply.complaint_id = complaint.complaint_id
+                                )');
+                    })->orderByRaw("FIELD(
+                                (SELECT importance 
+                                FROM complaint_reply 
+                                WHERE complaint_reply.complaint_id = complaint.complaint_id 
+                                ORDER BY reply_date DESC 
+                                LIMIT 1),
+                                'उच्च', 'मध्यम', 'कम'
+                            )");
+                    break;
+
+
+
+                case 'closed':
+                    $query->where('complaint_status', 4);
+                    break;
+
+                case 'cancel':
+                    $query->where('complaint_status', 5);
+                    break;
+
+                case 'reference_null':
+                    $query->whereNull('reference_name');
+                    break;
+
+                case 'reference':
+                    $query->whereNotNull('reference_name');
+                    break;
+
+                case 'forwarded_manager':
+                    $loggedInId = session('user_id');
+
+                    $query->whereHas('replies', function ($q) use ($loggedInId) {
+                        $q->where('forwarded_to', $loggedInId)
+                            ->whereRaw('reply_date = (
+                            SELECT MAX(reply_date)
+                            FROM complaint_reply
+                            WHERE complaint_reply.complaint_id = complaint.complaint_id
+                        )');
+                    });
+                    break;
+            }
         }
 
         // if ($request->filled('department_id')) {
