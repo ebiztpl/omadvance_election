@@ -40,6 +40,39 @@
                         </div>
 
                         <div class="col-md-2">
+                            <label>संभाग</label>
+                            <select name="division_id" id="division_id" class="form-control">
+                                <option value="">--चुने--</option>
+                                @foreach ($divisions as $division)
+                                    <option value="{{ $division->division_id }}">
+                                        {{ $division->division_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label>जिला</label>
+                            <select name="district_id" id="district_id" class="form-control">
+                                <option value="">--चुने--</option>
+                                @foreach ($districts as $district)
+                                    <option value="{{ $district->district_id }}">
+                                        {{ $district->district_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>विधानसभा</label>
+                            <select name="vidhansabha_id" id="vidhansabha_id" class="form-control">
+                                <option value="">--चुने--</option>
+                                @foreach ($vidhansabhas as $vidhansabha)
+                                    <option value="{{ $vidhansabha->vidhansabha_id }}">{{ $vidhansabha->vidhansabha }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
                             <label>मंडल</label>
                             <select name="mandal_id" id="mandal_id" class="form-control">
                                 <option value="">-- सभी --</option>
@@ -246,6 +279,40 @@
     @push('scripts')
         <script>
             $(document).ready(function() {
+                $('#division_id').on('change', function() {
+                    const divisionId = $(this).val();
+                    $('#district_id, #vidhansabha_id, #gram_id, #polling_id, #area_id').html('');
+                    $('#district_id').append('<option value="">--चुने--</option>');
+                    $('#vidhansabha_id').append('<option value="">--चुने--</option>');
+                    $('#gram_id, #polling_id, #area_id').append('<option value="">-- सभी --</option>');
+                    if (!divisionId) return;
+                    $.get('/manager/get-districts/' + divisionId, function(data) {
+                        data.forEach(option => $('#district_id').append(option));
+                    });
+                });
+
+                $('#district_id').on('change', function() {
+                    const districtId = $(this).val();
+                    $('#vidhansabha_id, #gram_id, #polling_id, #area_id').html('');
+                    $('#vidhansabha_id').append('<option value="">--चुने--</option>');
+                    $('#gram_id, #polling_id, #area_id').append('<option value="">-- सभी --</option>');
+                    if (!districtId) return;
+                    $.get('/manager/get-vidhansabha/' + districtId, function(data) {
+                        data.forEach(option => $('#vidhansabha_id').append(option));
+                    });
+                });
+
+                $('#vidhansabha_id').on('change', function() {
+                    const vidhansabhaId = $(this).val();
+                    $('#mandal_id, #gram_id, #polling_id, #area_id').html('');
+                    $('#mandal_id').append('<option value="">-- सभी --</option>');
+                    $('#gram_id, #polling_id, #area_id').append('<option value="">-- सभी --</option>');
+                    if (!vidhansabhaId) return;
+                    $.get('/manager/get-mandal/' + vidhansabhaId, function(data) {
+                        data.forEach(option => $('#mandal_id').append(option));
+                    });
+                });
+
                 // Mandal → Gram
                 $('#mandal_id').on('change', function() {
                     let mandalId = $(this).val();
@@ -390,6 +457,9 @@
                         data: function(d) {
                             d.complaint_status = $('#complaint_status').val();
                             d.complaint_type = $('#complaint_type').val();
+                            d.division_id = $('#division_id').val();
+                            d.district_id = $('#district_id').val();
+                            d.vidhansabha_id = $('#vidhansabha_id').val();
                             d.mandal_id = $('#mandal_id').val();
                             d.gram_id = $('#gram_id').val();
                             d.polling_id = $('#polling_id').val();

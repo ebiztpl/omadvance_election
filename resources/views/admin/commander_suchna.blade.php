@@ -41,6 +41,39 @@
                         </div>
 
                         <div class="col-md-2">
+                            <label>संभाग</label>
+                            <select name="division_id" id="division_id" class="form-control">
+                                <option value="">--चुने--</option>
+                                @foreach ($divisions as $division)
+                                    <option value="{{ $division->division_id }}">
+                                        {{ $division->division_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label>जिला</label>
+                            <select name="district_id" id="district_id" class="form-control">
+                                <option value="">--चुने--</option>
+                                @foreach ($districts as $district)
+                                    <option value="{{ $district->district_id }}">
+                                        {{ $district->district_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>विधानसभा</label>
+                            <select name="vidhansabha_id" id="vidhansabha_id" class="form-control">
+                                <option value="">--चुने--</option>
+                                @foreach ($vidhansabhas as $vidhansabha)
+                                    <option value="{{ $vidhansabha->vidhansabha_id }}">{{ $vidhansabha->vidhansabha }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
                             <label>मंडल</label>
                             <select name="mandal_id" id="mandal_id" class="form-control">
                                 <option value="">-- सभी --</option>
@@ -262,6 +295,40 @@
                     }
                 });
 
+                  $('#division_id').on('change', function() {
+                    const divisionId = $(this).val();
+                    $('#district_id, #vidhansabha_id, #gram_id, #polling_id, #area_id').html('');
+                    $('#district_id').append('<option value="">--चुने--</option>');
+                    $('#vidhansabha_id').append('<option value="">--चुने--</option>');
+                    $('#gram_id, #polling_id, #area_id').append('<option value="">-- सभी --</option>');
+                    if (!divisionId) return;
+                    $.get('/admin/get-districts/' + divisionId, function(data) {
+                        data.forEach(option => $('#district_id').append(option));
+                    });
+                });
+
+                $('#district_id').on('change', function() {
+                    const districtId = $(this).val();
+                    $('#vidhansabha_id, #gram_id, #polling_id, #area_id').html('');
+                    $('#vidhansabha_id').append('<option value="">--चुने--</option>');
+                    $('#gram_id, #polling_id, #area_id').append('<option value="">-- सभी --</option>');
+                    if (!districtId) return;
+                    $.get('/admin/get-vidhansabha/' + districtId, function(data) {
+                        data.forEach(option => $('#vidhansabha_id').append(option));
+                    });
+                });
+
+                $('#vidhansabha_id').on('change', function() {
+                    const vidhansabhaId = $(this).val();
+                    $('#mandal_id, #gram_id, #polling_id, #area_id').html('');
+                    $('#mandal_id').append('<option value="">-- सभी --</option>');
+                    $('#gram_id, #polling_id, #area_id').append('<option value="">-- सभी --</option>');
+                    if (!vidhansabhaId) return;
+                    $.get('/admin/get-mandal/' + vidhansabhaId, function(data) {
+                        data.forEach(option => $('#mandal_id').append(option));
+                    });
+                });
+
                 // Mandal → Gram
                 $('#mandal_id').on('change', function() {
                     let mandalId = $(this).val();
@@ -358,6 +425,30 @@
                     }, false);
                 });
 
+                const urlParams = new URLSearchParams(window.location.search);
+
+                if (urlParams.has('complaint_status')) $('#complaint_status').val(urlParams.get('complaint_status'));
+                if (urlParams.has('complaint_type')) $('#complaint_type').val(urlParams.get('complaint_type'));
+                if (urlParams.has('subject_id')) $('#subject_id').val(urlParams.get('subject_id'));
+                if (urlParams.has('division_id')) $('#division_id').val(urlParams.get('division_id'));
+                if (urlParams.has('district_id')) $('#district_id').val(urlParams.get('district_id'));
+                if (urlParams.has('vidhansabha_id')) $('#vidhansabha_id').val(urlParams.get('vidhansabha_id'));
+                if (urlParams.has('mandal_id')) $('#mandal_id').val(urlParams.get('mandal_id'));
+                if (urlParams.has('gram_id')) $('#gram_id').val(urlParams.get('gram_id'));
+                if (urlParams.has('polling_id')) $('#polling_id').val(urlParams.get('polling_id'));
+                if (urlParams.has('area_id')) $('#area_id').val(urlParams.get('area_id'));
+                if (urlParams.has('from_date')) $('#from_date').val(urlParams.get('from_date'));
+                if (urlParams.has('to_date')) $('#to_date').val(urlParams.get('to_date'));
+                if (urlParams.has('admin_id')) $('#admin_id').val(urlParams.get('admin_id'));
+                if (urlParams.has('reply_id')) $('#reply_id').val(urlParams.get('reply_id'));
+
+                // Handle jati_id or jati_null
+                if (urlParams.has('jati_null') && urlParams.get('jati_null') === '1') {
+                    $('#jati_id').val(''); // Keep empty for null
+                } else if (urlParams.has('jati_id')) {
+                    $('#jati_id').val(urlParams.get('jati_id'));
+                }
+
 
                 let table = $('#example').DataTable({
                     processing: true,
@@ -395,6 +486,9 @@
                         data: function(d) {
                             d.complaint_status = $('#complaint_status').val();
                             d.complaint_type = $('#complaint_type').val();
+                             d.division_id = $('#division_id').val();
+                            d.district_id = $('#district_id').val();
+                            d.vidhansabha_id = $('#vidhansabha_id').val();
                             d.mandal_id = $('#mandal_id').val();
                             d.gram_id = $('#gram_id').val();
                             d.polling_id = $('#polling_id').val();

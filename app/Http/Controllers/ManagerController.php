@@ -2728,6 +2728,18 @@ class ManagerController extends Controller
             });
         }
 
+        if ($request->filled('division_id')) {
+            $query->where('division_id', $request->division_id);
+        }
+
+        if ($request->filled('district_id')) {
+            $query->where('district_id', $request->district_id);
+        }
+
+        if ($request->filled('vidhansabha_id')) {
+            $query->where('vidhansabha_id', $request->vidhansabha_id);
+        }
+
         if ($request->filled('mandal_id')) {
             $query->where('mandal_id', $request->mandal_id);
         }
@@ -2828,7 +2840,10 @@ class ManagerController extends Controller
         }
 
         // Prepare dropdowns
-        $mandals = Mandal::where('vidhansabha_id', 49)->get();
+        $divisions = Division::all();
+        $districts = $request->division_id ? District::where('division_id', $request->division_id)->get() : collect();
+        $vidhansabhas = $request->district_id ? VidhansabhaLokSabha::where('district_id', $request->district_id)->get() : collect();
+        $mandals = $request->vidhansabha_id ? Mandal::where('vidhansabha_id', $request->vidhansabha_id)->get() : collect();
         $grams = $request->mandal_id ? Nagar::where('mandal_id', $request->mandal_id)->get() : collect();
         $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
         $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
@@ -2840,6 +2855,9 @@ class ManagerController extends Controller
 
         return view('manager.commander_complaints', compact(
             'complaints',
+            'divisions',
+            'districts',
+            'vidhansabhas',
             'mandals',
             'grams',
             'pollings',
@@ -3290,6 +3308,18 @@ class ManagerController extends Controller
             });
         }
 
+        if ($request->filled('division_id')) {
+            $query->where('division_id', $request->division_id);
+        }
+
+        if ($request->filled('district_id')) {
+            $query->where('district_id', $request->district_id);
+        }
+
+        if ($request->filled('vidhansabha_id')) {
+            $query->where('vidhansabha_id', $request->vidhansabha_id);
+        }
+
         if ($request->filled('mandal_id')) {
             $query->where('mandal_id', $request->mandal_id);
         }
@@ -3398,7 +3428,10 @@ class ManagerController extends Controller
         }
 
         // Dropdowns
-        $mandals = Mandal::where('vidhansabha_id', 49)->get();
+        $divisions = Division::all();
+        $districts = $request->division_id ? District::where('division_id', $request->division_id)->get() : collect();
+        $vidhansabhas = $request->district_id ? VidhansabhaLokSabha::where('district_id', $request->district_id)->get() : collect();
+        $mandals = $request->vidhansabha_id ? Mandal::where('vidhansabha_id', $request->vidhansabha_id)->get() : collect();
         $grams = $request->mandal_id ? Nagar::where('mandal_id', $request->mandal_id)->get() : collect();
         $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
         $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
@@ -3410,6 +3443,9 @@ class ManagerController extends Controller
 
         return view('manager.operator_complaints', compact(
             'complaints',
+            'divisions',
+            'districts',
+            'vidhansabhas',
             'mandals',
             'grams',
             'pollings',
@@ -3765,6 +3801,18 @@ class ManagerController extends Controller
             });
         }
 
+        if ($request->filled('division_id')) {
+            $query->where('division_id', $request->division_id);
+        }
+
+        if ($request->filled('district_id')) {
+            $query->where('district_id', $request->district_id);
+        }
+
+        if ($request->filled('vidhansabha_id')) {
+            $query->where('vidhansabha_id', $request->vidhansabha_id);
+        }
+
         if ($request->filled('mandal_id')) {
             $query->where('mandal_id', $request->mandal_id);
         }
@@ -3897,7 +3945,10 @@ class ManagerController extends Controller
         }
 
         // Dropdowns
-        $mandals = Mandal::where('vidhansabha_id', 49)->get();
+        $divisions = Division::all();
+        $districts = $request->division_id ? District::where('division_id', $request->division_id)->get() : collect();
+        $vidhansabhas = $request->district_id ? VidhansabhaLokSabha::where('district_id', $request->district_id)->get() : collect();
+        $mandals = $request->vidhansabha_id ? Mandal::where('vidhansabha_id', $request->vidhansabha_id)->get() : collect();
         $grams = $request->mandal_id ? Nagar::where('mandal_id', $request->mandal_id)->get() : collect();
         $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
         $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
@@ -3908,6 +3959,9 @@ class ManagerController extends Controller
 
         return view('manager.commander_suchna', compact(
             'complaints',
+            'divisions',
+            'districts',
+            'vidhansabhas',
             'mandals',
             'grams',
             'pollings',
@@ -3980,6 +4034,19 @@ class ManagerController extends Controller
                 $q->where('forwarded_to', $request->admin_id);
             });
         }
+
+        if ($request->filled('division_id')) {
+            $query->where('division_id', $request->division_id);
+        }
+
+        if ($request->filled('district_id')) {
+            $query->where('district_id', $request->district_id);
+        }
+
+        if ($request->filled('vidhansabha_id')) {
+            $query->where('vidhansabha_id', $request->vidhansabha_id);
+        }
+
         if ($request->filled('mandal_id')) {
             $query->where('mandal_id', $request->mandal_id);
         }
@@ -4102,7 +4169,10 @@ class ManagerController extends Controller
         }
 
         // Dropdowns
-        $mandals = Mandal::where('vidhansabha_id', 49)->get();
+        $divisions = Division::all();
+        $districts = $request->division_id ? District::where('division_id', $request->division_id)->get() : collect();
+        $vidhansabhas = $request->district_id ? VidhansabhaLokSabha::where('district_id', $request->district_id)->get() : collect();
+        $mandals = $request->vidhansabha_id ? Mandal::where('vidhansabha_id', $request->vidhansabha_id)->get() : collect();
         $grams = $request->mandal_id ? Nagar::where('mandal_id', $request->mandal_id)->get() : collect();
         $pollings = $request->gram_id ? Polling::where('nagar_id', $request->gram_id)->get() : collect();
         $areas = $request->polling_id ? Area::where('polling_id', $request->polling_id)->get() : collect();
@@ -4113,6 +4183,9 @@ class ManagerController extends Controller
 
         return view('manager.operator_suchna', compact(
             'complaints',
+            'divisions',
+            'districts',
+            'vidhansabhas',
             'mandals',
             'grams',
             'pollings',
@@ -4843,7 +4916,7 @@ class ManagerController extends Controller
                 'father_name' => $complaint->father_name,
                 'reference_name' => $complaint->reference_name,
                 'email' => $complaint->email,
-                'voter_id' => $complaint->voter_id,
+                'voter_id' => $complaint->voter_id ?? null,
                 'division_id' => $complaint->division_id,
                 'district_id' => $complaint->district_id,
                 'vidhansabha_id' => $complaint->vidhansabha_id,
@@ -5132,7 +5205,7 @@ class ManagerController extends Controller
                 'father_name' => $complaint->father_name,
                 'reference_name' => $complaint->reference_name,
                 'email' => $complaint->email,
-                'voter_id' => $complaint->voter_id,
+                'voter_id' => $complaint->voter_id ?? null,
                 'division_id' => $complaint->division_id,
                 'district_id' => $complaint->district_id,
                 'vidhansabha_id' => $complaint->vidhansabha_id,

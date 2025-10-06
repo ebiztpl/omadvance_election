@@ -31,10 +31,9 @@
                         <div class="col-md-2">
                             <label>आवेदक प्रकार</label>
                             <select name="office_type" class="form-control">
-                                <option value="">-- सभी --</option>
-                                <option value="1" {{ request('office_type') == '1' ? 'selected' : '' }}>कमांडर
+                                <option value="1" {{ request('office_type', '2') == '1' ? 'selected' : '' }}>कमांडर
                                 </option>
-                                <option value="2" {{ request('office_type') == '2' ? 'selected' : '' }}>कार्यालय
+                                <option value="2" {{ request('office_type', '2') == '2' ? 'selected' : '' }}>कार्यालय
                                 </option>
                             </select>
                         </div>
@@ -122,7 +121,7 @@
                                             <th>कुल समाधान</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    {{-- <tbody>
                                         @forelse($withComplaints as $row)
                                             <tr>
                                                 <td>{{ $loop->iteration }}</td>
@@ -136,6 +135,134 @@
                                                 <td colspan="5" class="text-center text-muted">कोई विकास कार्य
                                                     उपलब्ध
                                                     नहीं</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody> --}}
+
+                                     <tbody>
+                                        @forelse($withComplaints as $row)
+                                            @php
+                                                $officeType = request('office_type', '2');
+                                                $fromDate = request('from_date');
+                                                $toDate = request('to_date');
+
+                                                $isUnavailable = $row->department_name === 'उपलब्ध नहीं है';
+                                            @endphp
+                                            <tr>
+                                                <td>{{ $loop->iteration }}</td>
+                                                <td>{{ $row->department_name }}</td>
+
+                                                {{-- कुल शिकायतें --}}
+                                                <td>
+                                                    @if ($row->total_registered > 0)
+                                                        @php
+                                                            $baseRoute =
+                                                                $officeType == '1'
+                                                                    ? route('commander.complaint.view')
+                                                                    : route('operator.complaint.view');
+
+                                                            $params = [];
+                                                            if ($fromDate) {
+                                                                $params['from_date'] = $fromDate;
+                                                            }
+                                                            if ($toDate) {
+                                                                $params['to_date'] = $toDate;
+                                                            }
+                                                            $params['complaint_type'] = 'विकास';
+
+                                                            if ($isUnavailable) {
+                                                                $params['department_null'] = '1';
+                                                            } else {
+                                                                $params['department_id'] = $row->department_id;
+                                                            }
+
+                                                            $url = $baseRoute . '?' . http_build_query($params);
+                                                        @endphp
+                                                        <a href="{{ $url }}" class="text-primary"
+                                                            style="cursor: pointer;" target="_blank">
+                                                            {{ $row->total_registered }}
+                                                        </a>
+                                                    @else
+                                                        {{ $row->total_registered }}
+                                                    @endif
+                                                </td>
+
+                                                {{-- कुल निरस्त --}}
+                                                <td>
+                                                    @if ($row->total_cancel > 0)
+                                                        @php
+                                                            $baseRoute =
+                                                                $officeType == '1'
+                                                                    ? route('commander.complaint.view')
+                                                                    : route('operator.complaint.view');
+
+                                                            $params = [];
+                                                            if ($fromDate) {
+                                                                $params['from_date'] = $fromDate;
+                                                            }
+                                                            if ($toDate) {
+                                                                $params['to_date'] = $toDate;
+                                                            }
+                                                            $params['complaint_type'] = 'विकास';
+                                                            $params['complaint_status'] = 5;
+
+                                                            if ($isUnavailable) {
+                                                                $params['department_null'] = '1';
+                                                            } else {
+                                                                $params['department_id'] = $row->department_id;
+                                                            }
+
+                                                            $url = $baseRoute . '?' . http_build_query($params);
+                                                        @endphp
+                                                        <a href="{{ $url }}" class="text-primary"
+                                                            style="cursor: pointer;" target="_blank">
+                                                            {{ $row->total_cancel }}
+                                                        </a>
+                                                    @else
+                                                        {{ $row->total_cancel }}
+                                                    @endif
+                                                </td>
+
+                                                {{-- कुल समाधान --}}
+                                                <td>
+                                                    @if ($row->total_solved > 0)
+                                                        @php
+                                                            $baseRoute =
+                                                                $officeType == '1'
+                                                                    ? route('commander.complaint.view')
+                                                                    : route('operator.complaint.view');
+
+                                                            $params = [];
+                                                            if ($fromDate) {
+                                                                $params['from_date'] = $fromDate;
+                                                            }
+                                                            if ($toDate) {
+                                                                $params['to_date'] = $toDate;
+                                                            }
+                                                            $params['complaint_type'] = 'विकास';
+                                                            $params['complaint_status'] = 4;
+
+                                                            if ($isUnavailable) {
+                                                                $params['department_null'] = '1';
+                                                            } else {
+                                                                $params['department_id'] = $row->department_id;
+                                                            }
+
+                                                            $url = $baseRoute . '?' . http_build_query($params);
+                                                        @endphp
+                                                        <a href="{{ $url }}" class="text-primary"
+                                                            style="cursor: pointer;" target="_blank">
+                                                            {{ $row->total_solved }}
+                                                        </a>
+                                                    @else
+                                                        {{ $row->total_solved }}
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">कोई शिकायत उपलब्ध नहीं
+                                                </td>
                                             </tr>
                                         @endforelse
                                     </tbody>

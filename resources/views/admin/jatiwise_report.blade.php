@@ -5,10 +5,8 @@
         'समस्या जाति रिपोर्ट' => '#',
     ];
 @endphp
-
 @extends('layouts.app')
 @section('title', 'View Jatiwise Report')
-
 @section('content')
     <div class="container">
         <div class="row page-titles mx-0">
@@ -19,9 +17,7 @@
                             <label>तिथि से</label>
                             <input type="date" name="from_date" id="from_date" class="form-control"
                                 value="{{ request('from_date') }}">
-
                         </div>
-
                         <div class="col-md-2">
                             <label>तिथि तक</label>
                             <input type="date" name="to_date" id="to_date" class="form-control"
@@ -31,14 +27,12 @@
                         <div class="col-md-2">
                             <label>आवेदक प्रकार</label>
                             <select name="office_type" class="form-control">
-                                <option value="">-- सभी --</option>
-                                <option value="1" {{ request('office_type') == '1' ? 'selected' : '' }}>कमांडर
+                                <option value="1" {{ request('office_type', '2') == '1' ? 'selected' : '' }}>कमांडर
                                 </option>
-                                <option value="2" {{ request('office_type') == '2' ? 'selected' : '' }}>कार्यालय
+                                <option value="2" {{ request('office_type', '2') == '2' ? 'selected' : '' }}>कार्यालय
                                 </option>
                             </select>
                         </div>
-
                         <div class="col-md-3 big-radio-box">
                             <br>
                             <input type="radio" name="show_all" value="1" id="show_all"
@@ -48,17 +42,14 @@
                                 {{ request('show_all') == '0' ? 'checked' : '' }}> <label for="show_registered">प्राप्त
                                 शिकायतें</label>
                         </div>
-
                         <div class="col-md-1 mt-2">
                             <br>
                             <button type="submit" class="btn btn-primary" style="font-size: 12px">फ़िल्टर</button>
                         </div>
-
                         <div class="col-md-3 printExcel">
                             <button type="button" class="btn btn-success" onclick="printReport()"
                                 style="font-size: 12px;">प्रिंट
                                 रिपोर्ट</button>
-
                             <button type="button" class="btn btn-info" style="font-size: 12px;"
                                 onclick="exportExcel()">Excel</button>
                         </div>
@@ -66,14 +57,11 @@
                 </form>
             </div>
         </div>
-
-
         <div class="row">
             <div class="col-12">
                 <div class="card">
                     @if (isset($hasFilter) && $hasFilter)
                         <div class="card-body" id="report-results" style="color: black">
-
                             <div
                                 class="step-header border-header bg-dark text-white p-2 rounded d-flex justify-content-between align-items-center mb-3">
                                 @php
@@ -92,7 +80,6 @@
                                         $officeLabel = 'कार्यालय';
                                     }
                                 @endphp
-
                                 <h5 class="mb-0 text-white">
                                     समस्या जाति रिपोर्ट:
                                     @if ($fromDate && $toDate)
@@ -105,16 +92,12 @@
                                         {{ now()->format('d-m-Y') }} (तक)
                                     @endif
                                 </h5>
-
                                 @if ($officeLabel)
                                     <span class="step-number badge bg-light text-dark fs-4" style="font-size: 100%">
                                         {{ $officeLabel }}
                                     </span>
                                 @endif
                             </div>
-
-
-
                             <div>
                                 @if ($showAll == '1')
                                     <div class="text-center text-white py-1 rounded mb-2 complaint-type-title"
@@ -122,7 +105,6 @@
                                         कुल जाति: ({{ $totalsAll['total_jati'] }}),
                                         पंजीकृत जाति: ({{ $totalsRegistered['total_jati'] }})
                                     </div>
-
                                     <table class="table table-bordered table-sm text-center" style="color: black">
                                         <tbody>
                                             @foreach ($finalData as $row)
@@ -144,7 +126,6 @@
                                         कुल निरस्त: ({{ $totalsAll['total_cancel'] }}),
                                         कुल समाधान: ({{ $totalsAll['total_solved'] }})
                                     </div>
-
                                     <table class="table table-bordered table-sm" style="color: black">
                                         <thead style="background-color: blanchedalmond">
                                             <tr>
@@ -157,12 +138,124 @@
                                         </thead>
                                         <tbody>
                                             @forelse($finalData as $row)
+                                                @php
+                                                    $officeType = request('office_type');
+                                                    $fromDate = request('from_date');
+                                                    $toDate = request('to_date');
+
+                                                    $isUnavailable = $row->jati_name === 'उपलब्ध नहीं है';
+                                                    $hasOfficeType = !empty($officeType);
+                                                @endphp
                                                 <tr>
                                                     <td>{{ $loop->iteration }}</td>
                                                     <td>{{ $row->jati_name }}</td>
-                                                    <td>{{ $row->total_registered }}</td>
-                                                    <td>{{ $row->total_cancel }}</td>
-                                                    <td>{{ $row->total_solved }}</td>
+
+                                                    {{-- कुल शिकायतें --}}
+                                                    <td>
+                                                        @if ($hasOfficeType && $row->total_registered > 0)
+                                                            @php
+                                                                $baseRoute =
+                                                                    $officeType == '1'
+                                                                        ? route('commander.complaint.view')
+                                                                        : route('operator.complaint.view');
+
+                                                                $params = [];
+                                                                if ($fromDate) {
+                                                                    $params['from_date'] = $fromDate;
+                                                                }
+                                                                if ($toDate) {
+                                                                    $params['to_date'] = $toDate;
+                                                                }
+                                                                $params['complaint_type'] = 'समस्या';
+
+                                                                if ($isUnavailable) {
+                                                                    $params['jati_null'] = '1';
+                                                                } else {
+                                                                    $params['jati_id'] = $row->jati_id;
+                                                                }
+
+                                                                $url = $baseRoute . '?' . http_build_query($params);
+                                                            @endphp
+                                                            <a href="{{ $url }}" class="text-primary"
+                                                                style="cursor: pointer;" target="_blank">
+                                                                {{ $row->total_registered }}
+                                                            </a>
+                                                        @else
+                                                            {{ $row->total_registered }}
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- कुल निरस्त --}}
+                                                    <td>
+                                                        @if ($hasOfficeType && $row->total_cancel > 0)
+                                                            @php
+                                                                $baseRoute =
+                                                                    $officeType == '1'
+                                                                        ? route('commander.complaint.view')
+                                                                        : route('operator.complaint.view');
+
+                                                                $params = [];
+                                                                if ($fromDate) {
+                                                                    $params['from_date'] = $fromDate;
+                                                                }
+                                                                if ($toDate) {
+                                                                    $params['to_date'] = $toDate;
+                                                                }
+                                                                $params['complaint_type'] = 'समस्या';
+                                                                $params['complaint_status'] = 5;
+
+                                                                if ($isUnavailable) {
+                                                                    $params['jati_null'] = '1';
+                                                                } else {
+                                                                    $params['jati_id'] = $row->jati_id;
+                                                                }
+
+                                                                $url = $baseRoute . '?' . http_build_query($params);
+                                                            @endphp
+                                                            <a href="{{ $url }}" class="text-primary"
+                                                                style="cursor: pointer;" target="_blank">
+                                                                {{ $row->total_cancel }}
+                                                            </a>
+                                                        @else
+                                                            {{ $row->total_cancel }}
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- कुल समाधान --}}
+                                                    <td>
+                                                        @if ($hasOfficeType && $row->total_solved > 0)
+                                                            @php
+                                                                $baseRoute =
+                                                                    $officeType == '1'
+                                                                        ? route('commander.complaint.view')
+                                                                        : route('operator.complaint.view');
+
+                                                                $params = [];
+                                                                if ($fromDate) {
+                                                                    $params['from_date'] = $fromDate;
+                                                                }
+                                                                if ($toDate) {
+                                                                    $params['to_date'] = $toDate;
+                                                                }
+                                                                $params['complaint_type'] = 'समस्या';
+                                                                $params['complaint_status'] = 4;
+
+                                                                if ($isUnavailable) {
+                                                                    $params['jati_null'] = '1';
+                                                                } else {
+                                                                    $params['jati_id'] = $row->jati_id;
+                                                                }
+
+                                                                $url = $baseRoute . '?' . http_build_query($params);
+                                                            @endphp
+                                                            <a href="{{ $url }}" class="text-primary"
+                                                                style="cursor: pointer;" target="_blank">
+                                                                {{ $row->total_solved }}
+                                                            </a>
+                                                        @else
+                                                            {{ $row->total_solved }}
+                                                        @endif
+                                                    </td>
                                                 </tr>
                                             @empty
                                                 <tr>
@@ -180,7 +273,6 @@
             </div>
         </div>
     </div>
-
     @push('scripts')
         <script>
             function exportExcel() {
@@ -190,7 +282,6 @@
                 params.append('export', 'excel');
                 window.location.href = url.pathname + '?' + params.toString();
             }
-
             window.addEventListener('load', function() {
                 if (window.location.search) {
                     const cleanUrl = window.location.origin + window.location.pathname;
@@ -258,7 +349,6 @@
                         </body>
                         </html>
                     `);
-
                 printWindow.document.close();
                 printWindow.focus();
                 printWindow.print();
