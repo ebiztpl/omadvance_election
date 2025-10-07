@@ -28,14 +28,25 @@
                         <div class="col-md-2">
                             <label>आवेदक प्रकार</label>
                             <select name="office_type" class="form-control">
-                                <option value="">-- सभी --</option>
-                                <option value="1" {{ request('office_type') == '1' ? 'selected' : '' }}>कमांडर</option>
-                                <option value="2" {{ request('office_type') == '2' ? 'selected' : '' }}>कार्यालय
+                                <option value="1" {{ request('office_type', '2') == '1' ? 'selected' : '' }}>कमांडर
+                                </option>
+                                <option value="2" {{ request('office_type', '2') == '2' ? 'selected' : '' }}>कार्यालय
                                 </option>
                             </select>
                         </div>
 
-                        <div class="col-md-7 d-flex flex-wrap align-items-center mt-2">
+                        <div class="col-md-2">
+                            <label>सूचना प्रकार</label>
+                            <select name="suchna_type" class="form-control">
+                                <option value="शुभ सुचना"
+                                    {{ request('suchna_type', 'शुभ सुचना') == 'शुभ सुचना' ? 'selected' : '' }}>शुभ सुचना
+                                </option>
+                                <option value="अशुभ सुचना" {{ request('suchna_type') == 'अशुभ सुचना' ? 'selected' : '' }}>
+                                    अशुभ सुचना</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 d-flex flex-wrap align-items-center mt-2">
                             @php
                                 $filterOptions = [
                                     'sambhag' => 'संभाग',
@@ -52,17 +63,10 @@
                                     <input class="form-check-input summaryRadio" type="radio" name="summary"
                                         id="summary_{{ $val }}" value="{{ $val }}"
                                         {{ request('summary') == $val ? 'checked' : '' }}>
-                                    <label class="form-check-label"
+                                    <label class="form-check-label arearadio"
                                         for="summary_{{ $val }}">{{ $label }}</label>
                                 </div>
                             @endforeach
-
-                            <button type="button" class="btn btn-sm btn-success" onclick="printReport()"
-                                style="font-size: 12px; margin-left: 14px">प्रिंट रिपोर्ट</button>
-
-                            <button type="button" class="btn btn-sm btn-info" style="margin-left: 14px"
-                                onclick="exportExcel()">Excel</button>
-
                         </div>
                     </div>
 
@@ -177,6 +181,14 @@
                             <button type="submit" class="btn btn-primary" id="filterBtn"
                                 style="font-size: 12px">फ़िल्टर</button>
                         </div>
+
+                        <div class="col-md-3 suchnaprintExcel">
+                            <button type="button" class="btn btn-sm btn-success" onclick="printReport()"
+                                style="font-size: 12px; margin-left: 14px">प्रिंट रिपोर्ट</button>
+
+                            <button type="button" class="btn btn-sm btn-info" style="margin-left: 14px"
+                                onclick="exportExcel()">Excel</button>
+                        </div>
                     </div>
 
                     <div class="row mt-2 mb-2">
@@ -201,11 +213,6 @@
                                     {{ request('complaint_type') === 'all' ? 'checked' : '' }} disabled>
                                 <label class="form-check-label" for="complaint_all">सभी</label>
                             </div>
-
-
-
-
-
                         </div>
                     </div>
                 </form>
@@ -220,6 +227,189 @@
                 <div class="col-12">
                     <div class="card" id="reportContainer" style="display: none;">
                         <div class="card-body" id="report-results" style="color: black">
+                            @php
+                                $buildComplaintUrl = function ($data, $status = null) {
+                                    $officeType = request('office_type');
+                                    $suchnaType = request('suchna_type', 'शुभ सुचना');
+                                    $baseRoute =
+                                        $officeType == '1'
+                                            ? route('commander.suchnas.view')
+                                            : route('operator.suchnas.view');
+
+                                    $params = [
+                                        'complaint_type' => $suchnaType,
+                                        'from_date' => request('from_date'),
+                                        'to_date' => request('to_date'),
+                                    ];
+
+                                    $summary = request('summary');
+
+                                    $isUnavailable = isset($data->area_name) && $data->area_name === 'उपलब्ध नहीं';
+
+                                    if ($isUnavailable) {
+                                        $params['show_unavailable'] = $summary;
+                                    } else {
+                                        switch ($summary) {
+                                            case 'sambhag':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                }
+                                                break;
+
+                                            case 'jila':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                }
+                                                break;
+
+                                            case 'vidhansabha':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                }
+                                                break;
+
+                                            case 'mandal':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                }
+                                                break;
+
+                                            case 'nagar':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                } elseif (request('mandal_id')) {
+                                                    $params['mandal_id'] = request('mandal_id');
+                                                }
+                                                if (isset($data->gram_id)) {
+                                                    $params['gram_id'] = $data->gram_id;
+                                                }
+                                                break;
+
+                                            case 'polling':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                } elseif (request('mandal_id')) {
+                                                    $params['mandal_id'] = request('mandal_id');
+                                                }
+                                                if (isset($data->gram_id)) {
+                                                    $params['gram_id'] = $data->gram_id;
+                                                } elseif (request('gram_id')) {
+                                                    $params['gram_id'] = request('gram_id');
+                                                }
+                                                if (isset($data->polling_id)) {
+                                                    $params['polling_id'] = $data->polling_id;
+                                                }
+                                                break;
+
+                                            case 'area':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                } elseif (request('mandal_id')) {
+                                                    $params['mandal_id'] = request('mandal_id');
+                                                }
+                                                if (isset($data->gram_id)) {
+                                                    $params['gram_id'] = $data->gram_id;
+                                                } elseif (request('gram_id')) {
+                                                    $params['gram_id'] = request('gram_id');
+                                                }
+                                                if (isset($data->polling_id)) {
+                                                    $params['polling_id'] = $data->polling_id;
+                                                } elseif (request('polling_id')) {
+                                                    $params['polling_id'] = request('polling_id');
+                                                }
+                                                if (isset($data->area_id)) {
+                                                    $params['area_id'] = $data->area_id;
+                                                }
+                                                break;
+                                        }
+                                    }
+
+                                    if ($status) {
+                                        if (is_array($status)) {
+                                            $params['complaint_status'] = implode(',', $status);
+                                        } else {
+                                            $params['complaint_status'] = $status;
+                                        }
+                                    }
+
+                                    return $baseRoute . '?' . http_build_query($params);
+                                };
+                            @endphp
 
                             <div
                                 class="step-header border-header bg-dark text-white p-2 rounded d-flex justify-content-between align-items-center mb-3">
@@ -318,9 +508,36 @@
                                                         <tr>
                                                             <td>{{ $index + 1 }}</td>
                                                             <td>{{ $data->area_name }}</td>
-                                                            <td>{{ $data->total_registered }}</td>
-                                                            <td>{{ $data->total_cancel }}</td>
-                                                            <td>{{ $data->total_solved }}</td>
+                                                            <td>
+                                                                @if (request('office_type') && $data->total_registered > 0)
+                                                                    <a href="{{ $buildComplaintUrl($data) }}"
+                                                                        class="text-primary" target="_blank">
+                                                                        {{ $data->total_registered }}
+                                                                    </a>
+                                                                @else
+                                                                    {{ $data->total_registered }}
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                @if (request('office_type') && $data->total_cancel > 0)
+                                                                    <a href="{{ $buildComplaintUrl($data, 5) }}"
+                                                                        class="text-primary" target="_blank">
+                                                                        {{ $data->total_cancel }}
+                                                                    </a>
+                                                                @else
+                                                                    {{ $data->total_cancel }}
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                @if (request('office_type') && $data->total_solved > 0)
+                                                                    <a href="{{ $buildComplaintUrl($data, [13, 14, 15, 16, 17]) }}"
+                                                                        class="text-primary" target="_blank">
+                                                                        {{ $data->total_solved }}
+                                                                    </a>
+                                                                @else
+                                                                    {{ $data->total_solved }}
+                                                                @endif
+                                                            </td>
                                                         </tr>
                                                     @endforeach
                                                 </tbody>
@@ -417,24 +634,45 @@
                                                     <th>कुल समाधान</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
-                                                @forelse($withComplaints as $row)
-                                                    <tr>
-                                                        <td>{{ $loop->iteration }}</td>
-                                                        <td>{{ $row->area_name }}</td>
-                                                        <td>{{ $row->total_registered }}</td>
-                                                        <td>{{ $row->total_cancel }}</td>
-                                                        <td>{{ $row->total_solved }}</td>
-                                                    </tr>
-                                                @empty
-                                                    <tr>
-                                                        <td colspan="5" class="text-center text-muted">कोई सुचना
-                                                            उपलब्ध
-                                                            नहीं</td>
-                                                    </tr>
-                                                @endforelse
-                                            </tbody>
-                                        </table>
+                                              <tbody>
+                                                    @foreach ($withComplaints as $index => $data)
+                                                        <tr>
+                                                            <td>{{ $index + 1 }}</td>
+                                                            <td>{{ $data->area_name }}</td>
+                                                            <td>
+                                                                @if (request('office_type') && $data->total_registered > 0)
+                                                                    <a href="{{ $buildComplaintUrl($data) }}"
+                                                                        class="text-primary" target="_blank">
+                                                                        {{ $data->total_registered }}
+                                                                    </a>
+                                                                @else
+                                                                    {{ $data->total_registered }}
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                @if (request('office_type') && $data->total_cancel > 0)
+                                                                    <a href="{{ $buildComplaintUrl($data, 5) }}"
+                                                                        class="text-primary" target="_blank">
+                                                                        {{ $data->total_cancel }}
+                                                                    </a>
+                                                                @else
+                                                                    {{ $data->total_cancel }}
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                @if (request('office_type') && $data->total_solved > 0)
+                                                                    <a href="{{ $buildComplaintUrl($data, [13, 14, 15, 16, 17]) }}"
+                                                                        class="text-primary" target="_blank">
+                                                                        {{ $data->total_solved }}
+                                                                    </a>
+                                                                @else
+                                                                    {{ $data->total_solved }}
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
 
                                         @if ($noComplaints->count() > 0)
 

@@ -615,13 +615,18 @@ label {
 
 .big-radio-box label {
     display: inline-block;
-    padding: 5px 10px;
+    padding: 4px 10px;
     border: 2px solid #4a54e9;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 400;
     color: #4a54e9;
     transition: all 0.3s ease;
+}
+
+.arearadio {
+    margin-left: 4px;
+    margin-top: 3px;
 }
 
 .big-radio-box input:checked + label {
@@ -715,9 +720,20 @@ select:disabled option {
 
 form#complaintFilterForm .printExcel {
     display: flex;
-    flex: 0 0 27%;
+    flex: 0 0 28%;
     gap: 8px;
-    max-width: 27%;
+    max-width: 28%;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: flex-end;
+    margin-top: 25px !important;
+}
+
+form#complaintFilterForm .suchnaprintExcel {
+    display: flex;
+    flex: 0 0 18%;
+    gap: 8px;
+    max-width: 18%;
     flex-wrap: wrap;
     align-content: center;
     justify-content: flex-end;
@@ -729,6 +745,17 @@ form#complaintFilterForm .printExcelbuttons {
     flex: 0 0 54%;
     gap: 8px;
     max-width: 54%;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: flex-end;
+    margin-top: 25px !important;
+}
+
+form#complaintFilterForm .suchnaprintExcelbuttons {
+    display: flex;
+    flex: 0 0 42%;
+    gap: 8px;
+    max-width: 42%;
     flex-wrap: wrap;
     align-content: center;
     justify-content: flex-end;

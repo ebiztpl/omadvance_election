@@ -424,7 +424,6 @@
 
                 const urlParams = new URLSearchParams(window.location.search);
 
-                if (urlParams.has('complaint_status')) $('#complaint_status').val(urlParams.get('complaint_status'));
                 if (urlParams.has('complaint_type')) $('#complaint_type').val(urlParams.get('complaint_type'));
                 if (urlParams.has('subject_id')) $('#subject_id').val(urlParams.get('subject_id'));
                 if (urlParams.has('division_id')) $('#division_id').val(urlParams.get('division_id'));
@@ -441,9 +440,17 @@
 
                 // Handle jati_id or jati_null
                 if (urlParams.has('jati_null') && urlParams.get('jati_null') === '1') {
-                    $('#jati_id').val(''); // Keep empty for null
+                    $('#jati_id').val('');
                 } else if (urlParams.has('jati_id')) {
                     $('#jati_id').val(urlParams.get('jati_id'));
+                }
+
+                if (urlParams.has('complaint_status')) {
+                    const statusValue = urlParams.get('complaint_status');
+                    $('#complaint_status').val(statusValue);
+                    if (statusValue.includes(',')) {
+                        $('#complaint_status').attr('data-multi-status', statusValue);
+                    }
                 }
 
                 let table = $('#example').DataTable({
@@ -480,7 +487,17 @@
                     ajax: {
                         url: "{{ route('operator.suchnas.view') }}",
                         data: function(d) {
-                            d.complaint_status = $('#complaint_status').val();
+                            if (urlParams.has('show_unavailable')) {
+                                d.show_unavailable = urlParams.get('show_unavailable');
+                            }
+
+                            const statusSelect = $('#complaint_status');
+                            if (urlParams.has('complaint_status')) {
+                                d.complaint_status = urlParams.get('complaint_status');
+                            } else {
+                                d.complaint_status = statusSelect.val();
+                            }
+
                             d.complaint_type = $('#complaint_type').val();
                             d.division_id = $('#division_id').val();
                             d.district_id = $('#district_id').val();
@@ -492,11 +509,26 @@
                             d.from_date = $('#from_date').val();
                             d.to_date = $('#to_date').val();
                             d.admin_id = $('#admin_id').val();
-                            d.jati_id = $('#jati_id').val();
+
+                            if (urlParams.has('jati_null') && urlParams.get('jati_null') === '1') {
+                                d.jati_null = '1';
+                            } else if (urlParams.has('jati_id')) {
+                                d.jati_id = urlParams.get('jati_id');
+                            } else {
+                                d.jati_id = $('#jati_id').val();
+                            }
+
                             d.issue_title = $('#issue_title').val();
                             d.programfrom_date = $('#programfrom_date').val();
                             d.programto_date = $('#programto_date').val();
                             d.complaintOtherFilter = $('#complaintOtherFilter').val();
+
+                            if (urlParams.has('reference_null') && urlParams.get('reference_null') ===
+                                '1') {
+                                d.reference_null = '1';
+                            } else if (urlParams.has('reference_name')) {
+                                d.reference_name = urlParams.get('reference_name');
+                            }
 
                             d.filter = $('#complaintFilterTabs a.active').data('filter') || '';
                         }

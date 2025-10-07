@@ -234,164 +234,169 @@
                                         'to_date' => request('to_date'),
                                     ];
 
-                                    // Add area-specific ID based on summary level and available properties
                                     $summary = request('summary');
 
-                                    // Auto-detect and include parent filters based on data relationships
-                                    switch ($summary) {
-                                        case 'sambhag':
-                                            // For sambhag, no parent filters
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            }
-                                            break;
+                                    $isUnavailable = isset($data->area_name) && $data->area_name === 'उपलब्ध नहीं';
 
-                                        case 'jila':
-                                            // For jila, auto-include division_id from the data
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            }
-                                            break;
+                                    if ($isUnavailable) {
+                                        $params['show_unavailable'] = $summary;
+                                    } else {
+                                        // Auto-detect and include parent filters based on data relationships
+                                        switch ($summary) {
+                                            case 'sambhag':
+                                                // For sambhag, no parent filters
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                }
+                                                break;
 
-                                        case 'vidhansabha':
-                                            // For vidhansabha, auto-include division_id and district_id
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            } elseif (request('district_id')) {
-                                                $params['district_id'] = request('district_id');
-                                            }
-                                            if (isset($data->vidhansabha_id)) {
-                                                $params['vidhansabha_id'] = $data->vidhansabha_id;
-                                            }
-                                            break;
+                                            case 'jila':
+                                                // For jila, auto-include division_id from the data
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                }
+                                                break;
 
-                                        case 'mandal':
-                                            // For mandal, auto-include all parent IDs
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            } elseif (request('district_id')) {
-                                                $params['district_id'] = request('district_id');
-                                            }
-                                            if (isset($data->vidhansabha_id)) {
-                                                $params['vidhansabha_id'] = $data->vidhansabha_id;
-                                            } elseif (request('vidhansabha_id')) {
-                                                $params['vidhansabha_id'] = request('vidhansabha_id');
-                                            }
-                                            if (isset($data->mandal_id)) {
-                                                $params['mandal_id'] = $data->mandal_id;
-                                            }
-                                            break;
+                                            case 'vidhansabha':
+                                                // For vidhansabha, auto-include division_id and district_id
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                }
+                                                break;
 
-                                        case 'nagar':
-                                            // For nagar, auto-include all parent IDs
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            } elseif (request('district_id')) {
-                                                $params['district_id'] = request('district_id');
-                                            }
-                                            if (isset($data->vidhansabha_id)) {
-                                                $params['vidhansabha_id'] = $data->vidhansabha_id;
-                                            } elseif (request('vidhansabha_id')) {
-                                                $params['vidhansabha_id'] = request('vidhansabha_id');
-                                            }
-                                            if (isset($data->mandal_id)) {
-                                                $params['mandal_id'] = $data->mandal_id;
-                                            } elseif (request('mandal_id')) {
-                                                $params['mandal_id'] = request('mandal_id');
-                                            }
-                                            if (isset($data->gram_id)) {
-                                                $params['gram_id'] = $data->gram_id;
-                                            }
-                                            break;
+                                            case 'mandal':
+                                                // For mandal, auto-include all parent IDs
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                }
+                                                break;
 
-                                        case 'polling':
-                                            // For polling, auto-include all parent IDs
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            } elseif (request('district_id')) {
-                                                $params['district_id'] = request('district_id');
-                                            }
-                                            if (isset($data->vidhansabha_id)) {
-                                                $params['vidhansabha_id'] = $data->vidhansabha_id;
-                                            } elseif (request('vidhansabha_id')) {
-                                                $params['vidhansabha_id'] = request('vidhansabha_id');
-                                            }
-                                            if (isset($data->mandal_id)) {
-                                                $params['mandal_id'] = $data->mandal_id;
-                                            } elseif (request('mandal_id')) {
-                                                $params['mandal_id'] = request('mandal_id');
-                                            }
-                                            if (isset($data->gram_id)) {
-                                                $params['gram_id'] = $data->gram_id;
-                                            } elseif (request('gram_id')) {
-                                                $params['gram_id'] = request('gram_id');
-                                            }
-                                            if (isset($data->polling_id)) {
-                                                $params['polling_id'] = $data->polling_id;
-                                            }
-                                            break;
+                                            case 'nagar':
+                                                // For nagar, auto-include all parent IDs
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                } elseif (request('mandal_id')) {
+                                                    $params['mandal_id'] = request('mandal_id');
+                                                }
+                                                if (isset($data->gram_id)) {
+                                                    $params['gram_id'] = $data->gram_id;
+                                                }
+                                                break;
 
-                                        case 'area':
-                                            // For area, auto-include all parent IDs
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            } elseif (request('district_id')) {
-                                                $params['district_id'] = request('district_id');
-                                            }
-                                            if (isset($data->vidhansabha_id)) {
-                                                $params['vidhansabha_id'] = $data->vidhansabha_id;
-                                            } elseif (request('vidhansabha_id')) {
-                                                $params['vidhansabha_id'] = request('vidhansabha_id');
-                                            }
-                                            if (isset($data->mandal_id)) {
-                                                $params['mandal_id'] = $data->mandal_id;
-                                            } elseif (request('mandal_id')) {
-                                                $params['mandal_id'] = request('mandal_id');
-                                            }
-                                            if (isset($data->gram_id)) {
-                                                $params['gram_id'] = $data->gram_id;
-                                            } elseif (request('gram_id')) {
-                                                $params['gram_id'] = request('gram_id');
-                                            }
-                                            if (isset($data->polling_id)) {
-                                                $params['polling_id'] = $data->polling_id;
-                                            } elseif (request('polling_id')) {
-                                                $params['polling_id'] = request('polling_id');
-                                            }
-                                            if (isset($data->area_id)) {
-                                                $params['area_id'] = $data->area_id;
-                                            }
-                                            break;
+                                            case 'polling':
+                                                // For polling, auto-include all parent IDs
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                } elseif (request('mandal_id')) {
+                                                    $params['mandal_id'] = request('mandal_id');
+                                                }
+                                                if (isset($data->gram_id)) {
+                                                    $params['gram_id'] = $data->gram_id;
+                                                } elseif (request('gram_id')) {
+                                                    $params['gram_id'] = request('gram_id');
+                                                }
+                                                if (isset($data->polling_id)) {
+                                                    $params['polling_id'] = $data->polling_id;
+                                                }
+                                                break;
+
+                                            case 'area':
+                                                // For area, auto-include all parent IDs
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                } elseif (request('mandal_id')) {
+                                                    $params['mandal_id'] = request('mandal_id');
+                                                }
+                                                if (isset($data->gram_id)) {
+                                                    $params['gram_id'] = $data->gram_id;
+                                                } elseif (request('gram_id')) {
+                                                    $params['gram_id'] = request('gram_id');
+                                                }
+                                                if (isset($data->polling_id)) {
+                                                    $params['polling_id'] = $data->polling_id;
+                                                } elseif (request('polling_id')) {
+                                                    $params['polling_id'] = request('polling_id');
+                                                }
+                                                if (isset($data->area_id)) {
+                                                    $params['area_id'] = $data->area_id;
+                                                }
+                                                break;
+                                        }
                                     }
 
                                     if ($status) {

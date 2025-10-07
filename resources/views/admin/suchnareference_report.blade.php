@@ -31,11 +31,21 @@
                         <div class="col-md-2">
                             <label>आवेदक प्रकार</label>
                             <select name="office_type" class="form-control">
-                                <option value="">-- सभी --</option>
-                                <option value="1" {{ request('office_type') == '1' ? 'selected' : '' }}>कमांडर
+                                <option value="1" {{ request('office_type', '2') == '1' ? 'selected' : '' }}>कमांडर
                                 </option>
-                                <option value="2" {{ request('office_type') == '2' ? 'selected' : '' }}>कार्यालय
+                                <option value="2" {{ request('office_type', '2') == '2' ? 'selected' : '' }}>कार्यालय
                                 </option>
+                            </select>
+                        </div>
+
+                         <div class="col-md-2">
+                            <label>सूचना प्रकार</label>
+                            <select name="suchna_type" class="form-control">
+                                <option value="शुभ सुचना"
+                                    {{ request('suchna_type', 'शुभ सुचना') == 'शुभ सुचना' ? 'selected' : '' }}>शुभ सुचना
+                                </option>
+                                <option value="अशुभ सुचना" {{ request('suchna_type') == 'अशुभ सुचना' ? 'selected' : '' }}>
+                                    अशुभ सुचना</option>
                             </select>
                         </div>
 
@@ -44,7 +54,7 @@
                             <button type="submit" class="btn btn-primary" style="font-size: 12px">फ़िल्टर</button>
                         </div>
 
-                        <div class="col-md-3 printExcelbuttons">
+                        <div class="col-md-3 suchnaprintExcelbuttons">
                             <button type="button" class="btn btn-success" onclick="printReport()"
                                 style="font-size: 12px;">प्रिंट
                                 रिपोर्ट</button>
@@ -123,13 +133,139 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse($referenceData as $row)
+                                        {{-- @forelse($referenceData as $row)
                                             <tr>
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td>{{ $row->reference }}</td>
                                                 <td>{{ $row->total_registered }}</td>
                                                 <td>{{ $row->total_cancel }}</td>
                                                 <td>{{ $row->total_solved }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">डाटा उपलब्ध नहीं है</td>
+                                            </tr>
+                                        @endforelse --}}
+
+                                        @forelse($referenceData as $row)
+                                            @php
+                                                $officeType = request('office_type');
+                                                $fromDate = request('from_date');
+                                                $toDate = request('to_date');
+                                                $suchnaType = request('suchna_type', 'शुभ सुचना');
+
+                                                $isUnavailable = $row->reference === 'उपलब्ध नहीं है';
+                                            @endphp
+                                            <tr>
+                                                <td>{{ $loop->iteration }}</td>
+                                                <td>{{ $row->reference }}</td>
+
+                                                {{-- कुल सुचना --}}
+                                                <td>
+                                                    @if ($row->total_registered > 0)
+                                                        @php
+                                                            $baseRoute =
+                                                                $officeType == '1'
+                                                                    ? route('commander.suchnas.view')
+                                                                    : route('operator.suchnas.view');
+
+                                                            $params = [];
+                                                            if ($fromDate) {
+                                                                $params['from_date'] = $fromDate;
+                                                            }
+                                                            if ($toDate) {
+                                                                $params['to_date'] = $toDate;
+                                                            }
+                                                            $params['complaint_type'] = $suchnaType;
+
+                                                            if ($isUnavailable) {
+                                                                $params['reference_null'] = '1';
+                                                            } else {
+                                                                $params['reference_name'] = $row->reference;
+                                                            }
+
+                                                            $url = $baseRoute . '?' . http_build_query($params);
+                                                        @endphp
+                                                        <a href="{{ $url }}" class="text-primary"
+                                                            style="cursor: pointer;" target="_blank">
+                                                            {{ $row->total_registered }}
+                                                        </a>
+                                                    @else
+                                                        {{ $row->total_registered }}
+                                                    @endif
+                                                </td>
+
+                                                {{-- कुल निरस्त --}}
+                                                <td>
+                                                    @if ($row->total_cancel > 0)
+                                                        @php
+                                                            $baseRoute =
+                                                                $officeType == '1'
+                                                                    ? route('commander.suchnas.view')
+                                                                    : route('operator.suchnas.view');
+
+                                                            $params = [];
+                                                            if ($fromDate) {
+                                                                $params['from_date'] = $fromDate;
+                                                            }
+                                                            if ($toDate) {
+                                                                $params['to_date'] = $toDate;
+                                                            }
+                                                            $params['complaint_type'] = $suchnaType;
+                                                            $params['complaint_status'] = '18';
+
+                                                            if ($isUnavailable) {
+                                                                $params['reference_null'] = '1';
+                                                            } else {
+                                                                $params['reference_name'] = $row->reference;
+                                                            }
+
+                                                            $url = $baseRoute . '?' . http_build_query($params);
+                                                        @endphp
+                                                        <a href="{{ $url }}" class="text-primary"
+                                                            style="cursor: pointer;" target="_blank">
+                                                            {{ $row->total_cancel }}
+                                                        </a>
+                                                    @else
+                                                        {{ $row->total_cancel }}
+                                                    @endif
+                                                </td>
+
+                                                {{-- कुल समाधान --}}
+                                                <td>
+                                                    @if ($row->total_solved > 0)
+                                                        @php
+                                                            $baseRoute =
+                                                                $officeType == '1'
+                                                                    ? route('commander.suchnas.view')
+                                                                    : route('operator.suchnas.view');
+
+                                                            $params = [];
+                                                            if ($fromDate) {
+                                                                $params['from_date'] = $fromDate;
+                                                            }
+                                                            if ($toDate) {
+                                                                $params['to_date'] = $toDate;
+                                                            }
+                                                            $params['complaint_type'] = $suchnaType;
+                                                            $params['complaint_status'] = '13,14,15,16,17';
+
+                                                            if ($isUnavailable) {
+                                                                $params['reference_null'] = '1';
+                                                            } else {
+                                                                $params['reference_name'] = $row->reference;
+                                                            }
+
+                                                            $url = $baseRoute . '?' . http_build_query($params);
+                                                        @endphp
+                                                        <a href="{{ $url }}" class="text-primary"
+                                                            style="cursor: pointer;" target="_blank">
+                                                            {{ $row->total_solved }}
+                                                        </a>
+                                                    @else
+                                                        {{ $row->total_solved }}
+                                                    @endif
+                                                </td>
                                             </tr>
                                         @empty
                                             <tr>

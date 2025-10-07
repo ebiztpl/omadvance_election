@@ -529,6 +529,9 @@
                     ajax: {
                         url: "{{ route('commander.complaint.view') }}",
                         data: function(d) {
+                            if (urlParams.has('show_unavailable')) {
+                                d.show_unavailable = urlParams.get('show_unavailable');
+                            }
                             d.complaint_status = $('#complaint_status').val();
                             d.complaint_type = $('#complaint_type').val();
                             if (urlParams.has('department_null') && urlParams.get('department_null') ===

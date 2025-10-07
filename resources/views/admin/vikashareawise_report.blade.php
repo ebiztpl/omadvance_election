@@ -181,20 +181,20 @@
 
                     <div class="row mt-2 mb-2">
                         <div class="col-md-12 d-flex justify-content-start align-items-center" style="gap: 6px;">
-                            <div class="col-md-1 form-check form-check-inline big-radio-box" style="white-space: nowrap;">
+                            <div class="col-md-2 form-check form-check-inline big-radio-box" style="white-space: nowrap;">
                                 <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
                                     id="complaint_received" value="received"
                                     {{ request('complaint_type', 'received') === 'received' ? 'checked' : '' }} disabled>
                                 <label class="form-check-label" for="complaint_received">विकास कार्य प्राप्त</label>
                             </div>
-                            <div class="col-md-1 form-check type-radio form-check-inline big-radio-box"
+                            <div class="col-md-2 form-check type-radio form-check-inline big-radio-box"
                                 style="white-space: nowrap;">
                                 <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
                                     id="complaint_not_received" value="not_received"
                                     {{ request('complaint_type') === 'not_received' ? 'checked' : '' }} disabled>
                                 <label class="form-check-label" for="complaint_not_received">विकास कार्य अप्राप्त</label>
                             </div>
-                            <div class="col-md-1 form-check type-radio form-check-inline big-radio-box"
+                            <div class="col-md-2 form-check type-radio form-check-inline big-radio-box"
                                 style="white-space: nowrap;">
                                 <input class="form-check-input complaintTypeRadio" type="radio" name="complaint_type"
                                     id="complaint_all" value="all"
@@ -221,7 +221,7 @@
                     <div class="card" id="reportContainer" style="display: none;">
                         <div class="card-body" id="report-results" style="color: black">
 
-                            
+
                             @php
                                 $buildComplaintUrl = function ($data, $status = null) {
                                     $officeType = request('office_type');
@@ -238,153 +238,159 @@
 
                                     $summary = request('summary');
 
-                                    switch ($summary) {
-                                        case 'sambhag':
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            }
-                                            break;
+                                    $isUnavailable = isset($data->area_name) && $data->area_name === 'उपलब्ध नहीं';
 
-                                        case 'jila':
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            }
-                                            break;
+                                    if ($isUnavailable) {
+                                        $params['show_unavailable'] = $summary;
+                                    } else {
+                                        switch ($summary) {
+                                            case 'sambhag':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                }
+                                                break;
 
-                                        case 'vidhansabha':
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            } elseif (request('district_id')) {
-                                                $params['district_id'] = request('district_id');
-                                            }
-                                            if (isset($data->vidhansabha_id)) {
-                                                $params['vidhansabha_id'] = $data->vidhansabha_id;
-                                            }
-                                            break;
+                                            case 'jila':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                }
+                                                break;
 
-                                        case 'mandal':
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            } elseif (request('district_id')) {
-                                                $params['district_id'] = request('district_id');
-                                            }
-                                            if (isset($data->vidhansabha_id)) {
-                                                $params['vidhansabha_id'] = $data->vidhansabha_id;
-                                            } elseif (request('vidhansabha_id')) {
-                                                $params['vidhansabha_id'] = request('vidhansabha_id');
-                                            }
-                                            if (isset($data->mandal_id)) {
-                                                $params['mandal_id'] = $data->mandal_id;
-                                            }
-                                            break;
+                                            case 'vidhansabha':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                }
+                                                break;
 
-                                        case 'nagar':
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            } elseif (request('district_id')) {
-                                                $params['district_id'] = request('district_id');
-                                            }
-                                            if (isset($data->vidhansabha_id)) {
-                                                $params['vidhansabha_id'] = $data->vidhansabha_id;
-                                            } elseif (request('vidhansabha_id')) {
-                                                $params['vidhansabha_id'] = request('vidhansabha_id');
-                                            }
-                                            if (isset($data->mandal_id)) {
-                                                $params['mandal_id'] = $data->mandal_id;
-                                            } elseif (request('mandal_id')) {
-                                                $params['mandal_id'] = request('mandal_id');
-                                            }
-                                            if (isset($data->gram_id)) {
-                                                $params['gram_id'] = $data->gram_id;
-                                            }
-                                            break;
+                                            case 'mandal':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                }
+                                                break;
 
-                                        case 'polling':
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            } elseif (request('district_id')) {
-                                                $params['district_id'] = request('district_id');
-                                            }
-                                            if (isset($data->vidhansabha_id)) {
-                                                $params['vidhansabha_id'] = $data->vidhansabha_id;
-                                            } elseif (request('vidhansabha_id')) {
-                                                $params['vidhansabha_id'] = request('vidhansabha_id');
-                                            }
-                                            if (isset($data->mandal_id)) {
-                                                $params['mandal_id'] = $data->mandal_id;
-                                            } elseif (request('mandal_id')) {
-                                                $params['mandal_id'] = request('mandal_id');
-                                            }
-                                            if (isset($data->gram_id)) {
-                                                $params['gram_id'] = $data->gram_id;
-                                            } elseif (request('gram_id')) {
-                                                $params['gram_id'] = request('gram_id');
-                                            }
-                                            if (isset($data->polling_id)) {
-                                                $params['polling_id'] = $data->polling_id;
-                                            }
-                                            break;
+                                            case 'nagar':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                } elseif (request('mandal_id')) {
+                                                    $params['mandal_id'] = request('mandal_id');
+                                                }
+                                                if (isset($data->gram_id)) {
+                                                    $params['gram_id'] = $data->gram_id;
+                                                }
+                                                break;
 
-                                        case 'area':
-                                            if (isset($data->division_id)) {
-                                                $params['division_id'] = $data->division_id;
-                                            } elseif (request('division_id')) {
-                                                $params['division_id'] = request('division_id');
-                                            }
-                                            if (isset($data->district_id)) {
-                                                $params['district_id'] = $data->district_id;
-                                            } elseif (request('district_id')) {
-                                                $params['district_id'] = request('district_id');
-                                            }
-                                            if (isset($data->vidhansabha_id)) {
-                                                $params['vidhansabha_id'] = $data->vidhansabha_id;
-                                            } elseif (request('vidhansabha_id')) {
-                                                $params['vidhansabha_id'] = request('vidhansabha_id');
-                                            }
-                                            if (isset($data->mandal_id)) {
-                                                $params['mandal_id'] = $data->mandal_id;
-                                            } elseif (request('mandal_id')) {
-                                                $params['mandal_id'] = request('mandal_id');
-                                            }
-                                            if (isset($data->gram_id)) {
-                                                $params['gram_id'] = $data->gram_id;
-                                            } elseif (request('gram_id')) {
-                                                $params['gram_id'] = request('gram_id');
-                                            }
-                                            if (isset($data->polling_id)) {
-                                                $params['polling_id'] = $data->polling_id;
-                                            } elseif (request('polling_id')) {
-                                                $params['polling_id'] = request('polling_id');
-                                            }
-                                            if (isset($data->area_id)) {
-                                                $params['area_id'] = $data->area_id;
-                                            }
-                                            break;
+                                            case 'polling':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                } elseif (request('mandal_id')) {
+                                                    $params['mandal_id'] = request('mandal_id');
+                                                }
+                                                if (isset($data->gram_id)) {
+                                                    $params['gram_id'] = $data->gram_id;
+                                                } elseif (request('gram_id')) {
+                                                    $params['gram_id'] = request('gram_id');
+                                                }
+                                                if (isset($data->polling_id)) {
+                                                    $params['polling_id'] = $data->polling_id;
+                                                }
+                                                break;
+
+                                            case 'area':
+                                                if (isset($data->division_id)) {
+                                                    $params['division_id'] = $data->division_id;
+                                                } elseif (request('division_id')) {
+                                                    $params['division_id'] = request('division_id');
+                                                }
+                                                if (isset($data->district_id)) {
+                                                    $params['district_id'] = $data->district_id;
+                                                } elseif (request('district_id')) {
+                                                    $params['district_id'] = request('district_id');
+                                                }
+                                                if (isset($data->vidhansabha_id)) {
+                                                    $params['vidhansabha_id'] = $data->vidhansabha_id;
+                                                } elseif (request('vidhansabha_id')) {
+                                                    $params['vidhansabha_id'] = request('vidhansabha_id');
+                                                }
+                                                if (isset($data->mandal_id)) {
+                                                    $params['mandal_id'] = $data->mandal_id;
+                                                } elseif (request('mandal_id')) {
+                                                    $params['mandal_id'] = request('mandal_id');
+                                                }
+                                                if (isset($data->gram_id)) {
+                                                    $params['gram_id'] = $data->gram_id;
+                                                } elseif (request('gram_id')) {
+                                                    $params['gram_id'] = request('gram_id');
+                                                }
+                                                if (isset($data->polling_id)) {
+                                                    $params['polling_id'] = $data->polling_id;
+                                                } elseif (request('polling_id')) {
+                                                    $params['polling_id'] = request('polling_id');
+                                                }
+                                                if (isset($data->area_id)) {
+                                                    $params['area_id'] = $data->area_id;
+                                                }
+                                                break;
+                                        }
                                     }
 
                                     if ($status) {
