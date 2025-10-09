@@ -3126,6 +3126,142 @@ class AdminController extends Controller
             }
         }
 
+        if ($request->filled('created_by_member')) {
+            $query->where('complaint_created_by_member', $request->created_by_member);
+        }
+
+        $hasExplicitComplaintIds = false;
+
+        if ($request->filled('operatorfilter')) {
+            \Log::debug("=== OPERATOR FILTER DEBUG ===");
+            \Log::debug("Operator Filter: " . $request->operatorfilter);
+
+            switch ($request->operatorfilter) {
+                case 'followups':
+                case 'followups_operator':
+                case 'followups_commander':
+                    if ($request->filled('followup_complaint_ids')) {
+                        $rawIds = $request->followup_complaint_ids;
+                        \Log::debug("Raw Followup IDs: " . $rawIds);
+
+                        // Process IDs
+                        $decodedIds = urldecode($rawIds);
+                        $complaintIds = array_map('trim', explode(',', $decodedIds));
+                        $complaintIds = array_filter($complaintIds, function ($id) {
+                            return is_numeric($id) && $id > 0;
+                        });
+                        $complaintIds = array_map('intval', $complaintIds);
+
+                        \Log::debug("Processed Followup IDs: ", $complaintIds);
+
+                        if (!empty($complaintIds)) {
+                            // RESET QUERY AND MARK THAT WE HAVE EXPLICIT IDs
+                            $query = Complaint::whereIn('complaint_id', $complaintIds);
+                            $hasExplicitComplaintIds = true;
+                            \Log::debug("RESET QUERY - Showing ONLY these IDs: " . implode(',', $complaintIds));
+                        }
+                    }
+                    break;
+
+                case 'completed_followups':
+                case 'completed_followups_operator':
+                case 'completed_followups_commander':
+                    // For completed followups, filter by status but NOT by dates
+                    $query->whereHas('followups', function ($q) {
+                        $q->where('followup_status', 2);
+                    });
+                    break;
+
+                case 'overall_incoming':
+                case 'overall_incoming_operator':
+                case 'overall_incoming_commander':
+                case 'incoming_reason1':
+                case 'incoming_reason1_operator':
+                case 'incoming_reason1_commander':
+                case 'incoming_reason2':
+                case 'incoming_reason2_operator':
+                case 'incoming_reason2_commander':
+                case 'incoming_reason3':
+                case 'incoming_reason3_operator':
+                case 'incoming_reason3_commander':
+                    \Log::debug("Incoming Filter: " . $request->operatorfilter);
+                    if ($request->filled('incoming_complaint_ids')) {
+                        $rawIds = $request->incoming_complaint_ids;
+                        \Log::debug("Raw Incoming IDs: " . $rawIds);
+
+                        // Process IDs
+                        $decodedIds = urldecode($rawIds);
+                        $complaintIds = array_map('trim', explode(',', $decodedIds));
+                        $complaintIds = array_filter($complaintIds, function ($id) {
+                            return is_numeric($id) && $id > 0;
+                        });
+                        $complaintIds = array_map('intval', $complaintIds);
+
+                        \Log::debug("Processed Incoming IDs: ", $complaintIds);
+
+                        if (!empty($complaintIds)) {
+                            // RESET QUERY AND MARK THAT WE HAVE EXPLICIT IDs
+                            $query = Complaint::whereIn('complaint_id', $complaintIds);
+                            $hasExplicitComplaintIds = true;
+                            \Log::debug("RESET QUERY - Showing ONLY these IDs: " . implode(',', $complaintIds));
+                        }
+                    }
+                    break;
+            }
+        }
+
+        if (!$hasExplicitComplaintIds) {
+            // Apply date filters ONLY when showing general results
+            if ($request->filled('from_date')) {
+                $fromDate = Carbon::parse($request->from_date)->startOfDay();
+                $query->whereDate('posted_date', '>=', $fromDate);
+            }
+
+            if ($request->filled('to_date')) {
+                $toDate = Carbon::parse($request->to_date)->endOfDay();
+                $query->whereDate('posted_date', '<=', $toDate);
+            }
+        } else {
+            \Log::debug("SKIPPING date filters because explicit complaint IDs were provided");
+        }
+        if ($request->filled('managerfilter')) {
+            switch ($request->managerfilter) {
+                case 'total':
+                case 'total_replies':
+                case 'reply_from':
+                case 'not_forward':
+                case 'total_reviewed':
+                case 'total_solved':
+                case 'total_cancelled':
+                case 'total_updates':
+                case 'commander':
+                case 'operator':
+                case 'replies_commander':
+                case 'replies_operator':
+                case 'reply_from_commander':
+                case 'reply_from_operator':
+                case 'not_forward_commander':
+                case 'not_forward_operator':
+                case 'solved_commander':
+                case 'solved_operator':
+                case 'cancelled_commander':
+                case 'cancelled_operator':
+                case 'updates_commander':
+                case 'updates_operator':
+                    if ($request->filled('complaint_ids') && !empty(trim($request->complaint_ids))) {
+                        $complaintIds = explode(',', $request->complaint_ids);
+                        $complaintIds = array_filter(array_map('intval', $complaintIds));
+
+                        if (!empty($complaintIds)) {
+                            $query->whereIn('complaint_id', $complaintIds);
+                        }
+                        // Remove the else block that sets complaint_id = 0
+                    }
+                    // Remove the else block that sets complaint_id = 0
+                    break;
+            }
+        }
+
         if ($request->filled('complaint_status')) {
             $query->where('complaint_status', $request->complaint_status);
         }
@@ -3284,13 +3420,13 @@ class AdminController extends Controller
             $query->where('area_id', $request->area_id);
         }
 
-        if ($request->filled('from_date')) {
-            $query->whereDate('posted_date', '>=', $request->from_date);
-        }
+        // if ($request->filled('from_date')) {
+        //     $query->whereDate('posted_date', '>=', $request->from_date);
+        // }
 
-        if ($request->filled('to_date')) {
-            $query->whereDate('posted_date', '<=', $request->to_date);
-        }
+        // if ($request->filled('to_date')) {
+        //     $query->whereDate('posted_date', '<=', $request->to_date);
+        // }
 
         $start = $request->input('start', 0);
         $length = $request->input('length', 10);
@@ -3723,6 +3859,143 @@ class AdminController extends Controller
             }
         }
 
+        $hasExplicitComplaintIds = false;
+
+        if ($request->filled('operatorfilter')) {
+            \Log::debug("=== OPERATOR FILTER DEBUG ===");
+            \Log::debug("Operator Filter: " . $request->operatorfilter);
+
+            switch ($request->operatorfilter) {
+                case 'followups':
+                case 'followups_operator':
+                case 'followups_commander':
+                    if ($request->filled('followup_complaint_ids')) {
+                        $rawIds = $request->followup_complaint_ids;
+                        \Log::debug("Raw Followup IDs: " . $rawIds);
+
+                        // Process IDs
+                        $decodedIds = urldecode($rawIds);
+                        $complaintIds = array_map('trim', explode(',', $decodedIds));
+                        $complaintIds = array_filter($complaintIds, function ($id) {
+                            return is_numeric($id) && $id > 0;
+                        });
+                        $complaintIds = array_map('intval', $complaintIds);
+
+                        \Log::debug("Processed Followup IDs: ", $complaintIds);
+
+                        if (!empty($complaintIds)) {
+                            // RESET QUERY AND MARK THAT WE HAVE EXPLICIT IDs
+                            $query = Complaint::whereIn('complaint_id', $complaintIds);
+                            $hasExplicitComplaintIds = true;
+                            \Log::debug("RESET QUERY - Showing ONLY these IDs: " . implode(',', $complaintIds));
+                        }
+                    }
+                    break;
+
+                case 'completed_followups':
+                case 'completed_followups_operator':
+                case 'completed_followups_commander':
+                    // For completed followups, filter by status but NOT by dates
+                    $query->whereHas('followups', function ($q) {
+                        $q->where('followup_status', 2);
+                    });
+                    break;
+
+                case 'overall_incoming':
+                case 'overall_incoming_operator':
+                case 'overall_incoming_commander':
+                case 'incoming_reason1':
+                case 'incoming_reason1_operator':
+                case 'incoming_reason1_commander':
+                case 'incoming_reason2':
+                case 'incoming_reason2_operator':
+                case 'incoming_reason2_commander':
+                case 'incoming_reason3':
+                case 'incoming_reason3_operator':
+                case 'incoming_reason3_commander':
+                    \Log::debug("Incoming Filter: " . $request->operatorfilter);
+                    if ($request->filled('incoming_complaint_ids')) {
+                        $rawIds = $request->incoming_complaint_ids;
+                        \Log::debug("Raw Incoming IDs: " . $rawIds);
+
+                        // Process IDs
+                        $decodedIds = urldecode($rawIds);
+                        $complaintIds = array_map('trim', explode(',', $decodedIds));
+                        $complaintIds = array_filter($complaintIds, function ($id) {
+                            return is_numeric($id) && $id > 0;
+                        });
+                        $complaintIds = array_map('intval', $complaintIds);
+
+                        \Log::debug("Processed Incoming IDs: ", $complaintIds);
+
+                        if (!empty($complaintIds)) {
+                            // RESET QUERY AND MARK THAT WE HAVE EXPLICIT IDs
+                            $query = Complaint::whereIn('complaint_id', $complaintIds);
+                            $hasExplicitComplaintIds = true;
+                            \Log::debug("RESET QUERY - Showing ONLY these IDs: " . implode(',', $complaintIds));
+                        }
+                    }
+                    break;
+            }
+        }
+
+        if (!$hasExplicitComplaintIds) {
+            // Apply date filters ONLY when showing general results
+            if ($request->filled('from_date')) {
+                $fromDate = Carbon::parse($request->from_date)->startOfDay();
+                $query->whereDate('posted_date', '>=', $fromDate);
+            }
+
+            if ($request->filled('to_date')) {
+                $toDate = Carbon::parse($request->to_date)->endOfDay();
+                $query->whereDate('posted_date', '<=', $toDate);
+            }
+        } else {
+            \Log::debug("SKIPPING date filters because explicit complaint IDs were provided");
+        }
+
+        if ($request->filled('managerfilter')) {
+            switch ($request->managerfilter) {
+                case 'total':
+                case 'total_replies':
+                case 'reply_from':
+                case 'not_forward':
+                case 'total_reviewed':
+                case 'total_solved':
+                case 'total_cancelled':
+                case 'total_updates':
+                case 'commander':
+                case 'operator':
+                case 'replies_commander':
+                case 'replies_operator':
+                case 'reply_from_commander':
+                case 'reply_from_operator':
+                case 'not_forward_commander':
+                case 'not_forward_operator':
+                case 'solved_commander':
+                case 'solved_operator':
+                case 'cancelled_commander':
+                case 'cancelled_operator':
+                case 'updates_commander':
+                case 'updates_operator':
+                    if ($request->filled('complaint_ids') && !empty(trim($request->complaint_ids))) {
+                        $complaintIds = explode(',', $request->complaint_ids);
+                        $complaintIds = array_filter(array_map('intval', $complaintIds));
+
+                        if (!empty($complaintIds)) {
+                            $query->whereIn('complaint_id', $complaintIds);
+                        }
+                        // Remove the else block that sets complaint_id = 0
+                    }
+                    // Remove the else block that sets complaint_id = 0
+                    break;
+            }
+        }
+
+        if ($request->filled('operator_id')) {
+            $query->where('complaint_created_by', $request->operator_id);
+        }
+
         if ($request->has('show_unavailable')) {
             switch ($request->show_unavailable) {
                 case 'mandal':
@@ -3929,13 +4202,13 @@ class AdminController extends Controller
             $query->where('area_id', $request->area_id);
         }
 
-        if ($request->filled('from_date')) {
-            $query->whereDate('posted_date', '>=', $request->from_date);
-        }
+        // if ($request->filled('from_date')) {
+        //     $query->whereDate('posted_date', '>=', $request->from_date);
+        // }
 
-        if ($request->filled('to_date')) {
-            $query->whereDate('posted_date', '<=', $request->to_date);
-        }
+        // if ($request->filled('to_date')) {
+        //     $query->whereDate('posted_date', '<=', $request->to_date);
+        // }
 
         $start = $request->input('start', 0);
         $length = $request->input('length', 10);
@@ -4265,6 +4538,142 @@ class AdminController extends Controller
             }
         }
 
+        $hasExplicitComplaintIds = false;
+
+        if ($request->filled('operatorfilter')) {
+            \Log::debug("=== OPERATOR FILTER DEBUG ===");
+            \Log::debug("Operator Filter: " . $request->operatorfilter);
+
+            switch ($request->operatorfilter) {
+                case 'followups':
+                case 'followups_operator':
+                case 'followups_commander':
+                    if ($request->filled('followup_complaint_ids')) {
+                        $rawIds = $request->followup_complaint_ids;
+                        \Log::debug("Raw Followup IDs: " . $rawIds);
+
+                        // Process IDs
+                        $decodedIds = urldecode($rawIds);
+                        $complaintIds = array_map('trim', explode(',', $decodedIds));
+                        $complaintIds = array_filter($complaintIds, function ($id) {
+                            return is_numeric($id) && $id > 0;
+                        });
+                        $complaintIds = array_map('intval', $complaintIds);
+
+                        \Log::debug("Processed Followup IDs: ", $complaintIds);
+
+                        if (!empty($complaintIds)) {
+                            // RESET QUERY AND MARK THAT WE HAVE EXPLICIT IDs
+                            $query = Complaint::whereIn('complaint_id', $complaintIds);
+                            $hasExplicitComplaintIds = true;
+                            \Log::debug("RESET QUERY - Showing ONLY these IDs: " . implode(',', $complaintIds));
+                        }
+                    }
+                    break;
+
+                case 'completed_followups':
+                case 'completed_followups_operator':
+                case 'completed_followups_commander':
+                    // For completed followups, filter by status but NOT by dates
+                    $query->whereHas('followups', function ($q) {
+                        $q->where('followup_status', 2);
+                    });
+                    break;
+
+                case 'overall_incoming':
+                case 'overall_incoming_operator':
+                case 'overall_incoming_commander':
+                case 'incoming_reason1':
+                case 'incoming_reason1_operator':
+                case 'incoming_reason1_commander':
+                case 'incoming_reason2':
+                case 'incoming_reason2_operator':
+                case 'incoming_reason2_commander':
+                case 'incoming_reason3':
+                case 'incoming_reason3_operator':
+                case 'incoming_reason3_commander':
+                    \Log::debug("Incoming Filter: " . $request->operatorfilter);
+                    if ($request->filled('incoming_complaint_ids')) {
+                        $rawIds = $request->incoming_complaint_ids;
+                        \Log::debug("Raw Incoming IDs: " . $rawIds);
+
+                        // Process IDs
+                        $decodedIds = urldecode($rawIds);
+                        $complaintIds = array_map('trim', explode(',', $decodedIds));
+                        $complaintIds = array_filter($complaintIds, function ($id) {
+                            return is_numeric($id) && $id > 0;
+                        });
+                        $complaintIds = array_map('intval', $complaintIds);
+
+                        \Log::debug("Processed Incoming IDs: ", $complaintIds);
+
+                        if (!empty($complaintIds)) {
+                            // RESET QUERY AND MARK THAT WE HAVE EXPLICIT IDs
+                            $query = Complaint::whereIn('complaint_id', $complaintIds);
+                            $hasExplicitComplaintIds = true;
+                            \Log::debug("RESET QUERY - Showing ONLY these IDs: " . implode(',', $complaintIds));
+                        }
+                    }
+                    break;
+            }
+        }
+
+        if (!$hasExplicitComplaintIds) {
+            // Apply date filters ONLY when showing general results
+            if ($request->filled('from_date')) {
+                $fromDate = Carbon::parse($request->from_date)->startOfDay();
+                $query->whereDate('posted_date', '>=', $fromDate);
+            }
+
+            if ($request->filled('to_date')) {
+                $toDate = Carbon::parse($request->to_date)->endOfDay();
+                $query->whereDate('posted_date', '<=', $toDate);
+            }
+        } else {
+            \Log::debug("SKIPPING date filters because explicit complaint IDs were provided");
+        }
+        
+        if ($request->filled('managerfilter')) {
+            switch ($request->managerfilter) {
+                case 'total':
+                case 'total_replies':
+                case 'reply_from':
+                case 'not_forward':
+                case 'total_reviewed':
+                case 'total_solved':
+                case 'total_cancelled':
+                case 'total_updates':
+                case 'commander':
+                case 'operator':
+                case 'replies_commander':
+                case 'replies_operator':
+                case 'reply_from_commander':
+                case 'reply_from_operator':
+                case 'not_forward_commander':
+                case 'not_forward_operator':
+                case 'solved_commander':
+                case 'solved_operator':
+                case 'cancelled_commander':
+                case 'cancelled_operator':
+                case 'updates_commander':
+                case 'updates_operator':
+                    if ($request->filled('complaint_ids') && !empty(trim($request->complaint_ids))) {
+                        $complaintIds = explode(',', $request->complaint_ids);
+                        $complaintIds = array_filter(array_map('intval', $complaintIds));
+
+                        if (!empty($complaintIds)) {
+                            $query->whereIn('complaint_id', $complaintIds);
+                        }
+                        // Remove the else block that sets complaint_id = 0
+                    }
+                    // Remove the else block that sets complaint_id = 0
+                    break;
+            }
+        }
+
+        if ($request->filled('created_by_member')) {
+            $query->where('complaint_created_by_member', $request->created_by_member);
+        }
 
         // if ($request->filled('complaint_status')) {
         //     $query->where('complaint_status', $request->complaint_status);
@@ -4382,8 +4791,8 @@ class AdminController extends Controller
 
         if ($request->filled('complaint_type')) {
             $query->where('complaint_type', $request->complaint_type);
-        } else if (!$request->has('filter')) {
-            $query->where('complaint_type', 'शुभ सुचना');
+        } else {
+            $query->where('complaint_type', 'शुभ सुचना'); // default for suchna
         }
 
 
@@ -4425,13 +4834,13 @@ class AdminController extends Controller
             $query->where('area_id', $request->area_id);
         }
 
-        if ($request->filled('from_date')) {
-            $query->whereDate('posted_date', '>=', $request->from_date);
-        }
+        // if ($request->filled('from_date')) {
+        //     $query->whereDate('posted_date', '>=', $request->from_date);
+        // }
 
-        if ($request->filled('to_date')) {
-            $query->whereDate('posted_date', '<=', $request->to_date);
-        }
+        // if ($request->filled('to_date')) {
+        //     $query->whereDate('posted_date', '<=', $request->to_date);
+        // }
 
         if ($request->filled('programfrom_date')) {
             $query->whereDate('program_date', '>=', $request->programfrom_date);
@@ -4809,6 +5218,181 @@ class AdminController extends Controller
             }
         }
 
+        $hasExplicitComplaintIds = false;
+
+        if ($request->filled('operatorfilter')) {
+            \Log::debug("=== OPERATOR FILTER DEBUG ===");
+            \Log::debug("Operator Filter: " . $request->operatorfilter);
+
+            switch ($request->operatorfilter) {
+                case 'followups':
+                case 'followups_operator':
+                case 'followups_commander':
+                    if ($request->filled('followup_complaint_ids')) {
+                        $rawIds = $request->followup_complaint_ids;
+                        \Log::debug("Raw Followup IDs: " . $rawIds);
+
+                        // Process IDs
+                        $decodedIds = urldecode($rawIds);
+                        $complaintIds = array_map('trim', explode(',', $decodedIds));
+                        $complaintIds = array_filter($complaintIds, function ($id) {
+                            return is_numeric($id) && $id > 0;
+                        });
+                        $complaintIds = array_map('intval', $complaintIds);
+
+                        \Log::debug("Processed Followup IDs: ", $complaintIds);
+
+                        if (!empty($complaintIds)) {
+                            // RESET QUERY AND MARK THAT WE HAVE EXPLICIT IDs
+                            $query = Complaint::whereIn('complaint_id', $complaintIds);
+                            $hasExplicitComplaintIds = true;
+                            \Log::debug("RESET QUERY - Showing ONLY these IDs: " . implode(',', $complaintIds));
+                        }
+                    }
+                    break;
+
+                case 'completed_followups':
+                case 'completed_followups_operator':
+                case 'completed_followups_commander':
+                    // For completed followups, filter by status but NOT by dates
+                    $query->whereHas('followups', function ($q) {
+                        $q->where('followup_status', 2);
+                    });
+                    break;
+
+                case 'overall_incoming':
+                case 'overall_incoming_operator':
+                case 'overall_incoming_commander':
+                case 'incoming_reason1':
+                case 'incoming_reason1_operator':
+                case 'incoming_reason1_commander':
+                case 'incoming_reason2':
+                case 'incoming_reason2_operator':
+                case 'incoming_reason2_commander':
+                case 'incoming_reason3':
+                case 'incoming_reason3_operator':
+                case 'incoming_reason3_commander':
+                    \Log::debug("Incoming Filter: " . $request->operatorfilter);
+                    if ($request->filled('incoming_complaint_ids')) {
+                        $rawIds = $request->incoming_complaint_ids;
+                        \Log::debug("Raw Incoming IDs: " . $rawIds);
+
+                        // Process IDs
+                        $decodedIds = urldecode($rawIds);
+                        $complaintIds = array_map('trim', explode(',', $decodedIds));
+                        $complaintIds = array_filter($complaintIds, function ($id) {
+                            return is_numeric($id) && $id > 0;
+                        });
+                        $complaintIds = array_map('intval', $complaintIds);
+
+                        \Log::debug("Processed Incoming IDs: ", $complaintIds);
+
+                        if (!empty($complaintIds)) {
+                            // RESET QUERY AND MARK THAT WE HAVE EXPLICIT IDs
+                            $query = Complaint::whereIn('complaint_id', $complaintIds);
+                            $hasExplicitComplaintIds = true;
+                            \Log::debug("RESET QUERY - Showing ONLY these IDs: " . implode(',', $complaintIds));
+                        }
+                    }
+                    break;
+            }
+        }
+
+        if (!$hasExplicitComplaintIds) {
+            // Apply date filters ONLY when showing general results
+            if ($request->filled('from_date')) {
+                $fromDate = Carbon::parse($request->from_date)->startOfDay();
+                $query->whereDate('posted_date', '>=', $fromDate);
+            }
+
+            if ($request->filled('to_date')) {
+                $toDate = Carbon::parse($request->to_date)->endOfDay();
+                $query->whereDate('posted_date', '<=', $toDate);
+            }
+        } else {
+            \Log::debug("SKIPPING date filters because explicit complaint IDs were provided");
+        }
+
+        if ($request->filled('managerfilter')) {
+            switch ($request->managerfilter) {
+                case 'total':
+                case 'total_replies':
+                case 'reply_from':
+                case 'not_forward':
+                case 'total_reviewed':
+                case 'total_solved':
+                case 'total_cancelled':
+                case 'total_updates':
+                case 'commander':
+                case 'operator':
+                case 'replies_commander':
+                case 'replies_operator':
+                case 'reply_from_commander':
+                case 'reply_from_operator':
+                case 'not_forward_commander':
+                case 'not_forward_operator':
+                case 'solved_commander':
+                case 'solved_operator':
+                case 'cancelled_commander':
+                case 'cancelled_operator':
+                case 'updates_commander':
+                case 'updates_operator':
+                    if ($request->filled('complaint_ids') && !empty(trim($request->complaint_ids))) {
+                        $complaintIds = explode(',', $request->complaint_ids);
+                        $complaintIds = array_filter(array_map('intval', $complaintIds));
+
+                        if (!empty($complaintIds)) {
+                            $query->whereIn('complaint_id', $complaintIds);
+                        }
+                        // Remove the else block that sets complaint_id = 0
+                    }
+                    // Remove the else block that sets complaint_id = 0
+                    break;
+            }
+        }
+
+        if ($request->filled('operator_id')) {
+            $query->where('complaint_created_by', $request->operator_id);
+        }
+
+        // if ($request->filled('managerfilter')) {
+        //     switch ($request->managerfilter) {
+        //         case 'total':
+        //         case 'total_replies':
+        //         case 'reply_from':
+        //         case 'not_forward':
+        //         case 'total_reviewed':
+        //         case 'total_solved':
+        //         case 'total_cancelled':
+        //         case 'total_updates':
+        //         case 'commander':
+        //         case 'operator':
+        //         case 'replies_commander':
+        //         case 'replies_operator':
+        //         case 'reply_from_commander':
+        //         case 'reply_from_operator':
+        //         case 'not_forward_commander':
+        //         case 'not_forward_operator':
+        //         case 'solved_commander':
+        //         case 'solved_operator':
+        //         case 'cancelled_commander':
+        //         case 'cancelled_operator':
+        //         case 'updates_commander':
+        //         case 'updates_operator':
+        //             if ($request->filled('complaint_ids') && !empty(trim($request->complaint_ids))) {
+        //                 $complaintIds = explode(',', $request->complaint_ids);
+        //                 $complaintIds = array_filter(array_map('intval', $complaintIds));
+
+        //                 if (!empty($complaintIds)) {
+        //                     $query->whereIn('complaint_id', $complaintIds);
+        //                 }
+        //                 // Remove the else block that sets complaint_id = 0
+        //             }
+        //             // Remove the else block that sets complaint_id = 0
+        //             break;
+        //     }
+        // }
+
         if ($request->has('show_unavailable')) {
             switch ($request->show_unavailable) {
                 case 'mandal':
@@ -4964,13 +5548,13 @@ class AdminController extends Controller
             $query->where('jati_id', $request->jati_id);
         }
 
-        if ($request->filled('from_date')) {
-            $query->whereDate('posted_date', '>=', $request->from_date);
-        }
+        // if ($request->filled('from_date')) {
+        //     $query->whereDate('posted_date', '>=', $request->from_date);
+        // }
 
-        if ($request->filled('to_date')) {
-            $query->whereDate('posted_date', '<=', $request->to_date);
-        }
+        // if ($request->filled('to_date')) {
+        //     $query->whereDate('posted_date', '<=', $request->to_date);
+        // }
 
 
         if ($request->filled('programfrom_date')) {
@@ -12373,8 +12957,245 @@ class AdminController extends Controller
             'managers' => $managers ?? collect(),
             'offices' => $offices ?? collect(),
             'fields' => $fields ?? collect(),
+            'request' => $request,
         ]);
     }
+
+    // private function getManagerReport($selectedRole, $selectedManagerId, $request)
+    // {
+    //     $managerReport = [];
+    //     if ($selectedRole !== 'manager') return $managerReport;
+
+    //     $fromDate = $request->from_date ? Carbon::parse($request->from_date)->startOfDay() : null;
+    //     $toDate = $request->to_date ? Carbon::parse($request->to_date)->endOfDay() : null;
+
+    //     $complaints = \App\Models\Complaint::with(['replies'])->get();
+    //     $complaintTypes = $complaints->pluck('complaint_type')->unique();
+
+    //     foreach ($complaintTypes as $type) {
+    //         $complaintsOfType = $complaints->where('complaint_type', $type);
+
+    //         // Total complaints filtered by posted_date
+    //         $filteredComplaints = $complaintsOfType->filter(function ($c) use ($fromDate, $toDate) {
+    //             $posted = Carbon::parse($c->posted_date);
+    //             if ($fromDate && $posted->lt($fromDate)) return false;
+    //             if ($toDate && $posted->gt($toDate)) return false;
+    //             return true;
+    //         });
+    //         $totalComplaints = $filteredComplaints->count();
+
+    //         $totalComplaintIds = $filteredComplaints->pluck('complaint_id')->unique()->toArray();
+
+    //         $displayRepliesCount = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+    //             return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+    //                 if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+    //                 $replyDate = Carbon::parse($r->reply_date);
+    //                 if ($fromDate && $replyDate->lt($fromDate)) return false;
+    //                 if ($toDate && $replyDate->gt($toDate)) return false;
+
+    //                 return true;
+    //             })->count();
+    //         });
+
+
+    //         // Total replies
+    //         // Total replies
+    //         $totalReplies = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+    //             return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+    //                 if ($r->forwarded_to === null) return false;
+
+    //                 // Only count replies from other than selected manager if manager selected
+    //                 if ($selectedManagerId && $r->forwarded_to != $selectedManagerId) return false;
+    //                 if ($selectedManagerId && $r->reply_from == $selectedManagerId) return false;
+
+    //                 $replyDate = Carbon::parse($r->reply_date);
+    //                 if ($fromDate && $replyDate->lt($fromDate)) return false;
+    //                 if ($toDate && $replyDate->gt($toDate)) return false;
+
+    //                 return true;
+    //             })->count();
+    //         });
+
+    //         // Complaints with replies
+    //         $complaintsWithReplies = $complaintsOfType->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+    //             return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+    //                 if ($r->forwarded_to === null) return false;
+
+    //                 if ($selectedManagerId && $r->forwarded_to != $selectedManagerId) return false;
+    //                 if ($selectedManagerId && $r->reply_from == $selectedManagerId) return false;
+
+    //                 $replyDate = Carbon::parse($r->reply_date);
+    //                 if ($fromDate && $replyDate->lt($fromDate)) return false;
+    //                 if ($toDate && $replyDate->gt($toDate)) return false;
+
+    //                 return true;
+    //             })->isNotEmpty();
+    //         })->count();
+
+    //         $complaintsWithRepliesCount = $complaintsWithReplies->count();
+    //         $complaintsWithRepliesIds = $complaintsWithReplies->pluck('complaint_id')->unique()->toArray();
+
+    //         // Replies from manager
+    //         // Total replies from manager (or all if no manager selected) and not forwarded to self
+    //         $totalRepliesFrom = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+    //             return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+    //                 if ($r->reply_from === null || $r->forwarded_to === null) return false;
+
+    //                 // Only include replies from selected manager (or all if none selected)
+    //                 if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+    //                 // Exclude replies where reply_from == forwarded_to
+    //                 if ($r->reply_from == $r->forwarded_to) return false;
+
+    //                 $replyDate = Carbon::parse($r->reply_date);
+    //                 if ($fromDate && $replyDate->lt($fromDate)) return false;
+    //                 if ($toDate && $replyDate->gt($toDate)) return false;
+
+    //                 return true;
+    //             })->count();
+    //         });
+
+    //         // Complaints that have such replies
+    //         $complaintsWithRepliesFrom = $complaintsOfType->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+    //             return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+    //                 if ($r->reply_from === null || $r->forwarded_to === null) return false;
+
+    //                 if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+    //                 if ($r->reply_from == $r->forwarded_to) return false;
+
+    //                 $replyDate = Carbon::parse($r->reply_date);
+    //                 if ($fromDate && $replyDate->lt($fromDate)) return false;
+    //                 if ($toDate && $replyDate->gt($toDate)) return false;
+
+    //                 return true;
+    //             })->isNotEmpty();
+    //         })->count();
+
+
+    //         // Replies where reply_from != forwarded_to
+    //         // Total replies where reply_from = forwarded_to (filtered by manager if selected)
+    //         $totalRepliesNotForwarded = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+    //             return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+    //                 if ($r->reply_from === null || $r->forwarded_to === null) return false;
+
+    //                 // Only include replies where reply_from = forwarded_to
+    //                 if ($r->reply_from != $r->forwarded_to) return false;
+
+    //                 // If a manager is selected, only include rows where both equal the selected manager
+    //                 if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+    //                 $replyDate = Carbon::parse($r->reply_date);
+    //                 if ($fromDate && $replyDate->lt($fromDate)) return false;
+    //                 if ($toDate && $replyDate->gt($toDate)) return false;
+
+    //                 return true;
+    //             })->count();
+    //         });
+
+    //         // Complaints that have such replies
+    //         $complaintsWithRepliesNotForwarded = $complaintsOfType->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+    //             return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+    //                 if ($r->reply_from === null || $r->forwarded_to === null) return false;
+
+    //                 if ($r->reply_from != $r->forwarded_to) return false;
+
+    //                 if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+    //                 $replyDate = Carbon::parse($r->reply_date);
+    //                 if ($fromDate && $replyDate->lt($fromDate)) return false;
+    //                 if ($toDate && $replyDate->gt($toDate)) return false;
+
+    //                 return true;
+    //             })->isNotEmpty();
+    //         })->count();
+
+
+
+    //         // Solved & Cancelled
+    //         $totalSolved = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
+    //             return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $fromDate, $toDate) {
+    //                 if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+    //                 $replyDate = Carbon::parse($r->reply_date);
+    //                 if ($fromDate && $replyDate->lt($fromDate)) return false;
+    //                 if ($toDate && $replyDate->gt($toDate)) return false;
+
+    //                 if (in_array($type, ['समस्या', 'विकास'])) return $r->complaint_status == 4;
+    //                 if (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) return in_array($r->complaint_status, [13, 14, 15, 16]);
+
+    //                 return false;
+    //             })->count();
+    //         });
+
+    //         $totalCancelled = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
+    //             return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $fromDate, $toDate) {
+    //                 if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+    //                 $replyDate = Carbon::parse($r->reply_date);
+    //                 if ($fromDate && $replyDate->lt($fromDate)) return false;
+    //                 if ($toDate && $replyDate->gt($toDate)) return false;
+
+    //                 if (in_array($type, ['समस्या', 'विकास'])) return $r->complaint_status == 5;
+    //                 if (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) return $r->complaint_status == 18;
+
+    //                 return false;
+    //             })->count();
+    //         });
+
+    //         // Reviewed
+    //         $complaintsWithReview = $complaintsOfType->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+    //             return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+    //                 if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+    //                 if (!$r->review_date) return false;
+
+    //                 $reviewDate = Carbon::parse($r->review_date);
+    //                 if ($fromDate && $reviewDate->lt($fromDate)) return false;
+    //                 if ($toDate && $reviewDate->gt($toDate)) return false;
+
+    //                 return true;
+    //             })->isNotEmpty();
+    //         })->count();
+
+    //         $totalRepliesWithReview = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+    //             return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+    //                 if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+    //                 if (!$r->review_date) return false;
+
+    //                 $reviewDate = Carbon::parse($r->review_date);
+    //                 if ($fromDate && $reviewDate->lt($fromDate)) return false;
+    //                 if ($toDate && $reviewDate->gt($toDate)) return false;
+
+    //                 return true;
+    //             })->count();
+    //         });
+
+    //         // Updates filtered by created_at
+    //         $totalUpdates = \DB::table('update_complaints')
+    //             ->when($selectedManagerId, fn($q) => $q->where('updated_by', $selectedManagerId))
+    //             ->where('complaint_type', $type)
+    //             ->when($fromDate, fn($q) => $q->whereDate('created_at', '>=', $fromDate))
+    //             ->when($toDate, fn($q) => $q->whereDate('created_at', '<=', $toDate))
+    //             ->count();
+
+    //         $managerReport[$type] = [
+    //             'total' => $totalComplaints,
+    //             'replies' => $displayRepliesCount,
+    //             'total_replies' => $complaintsWithReplies . ' / ' . $totalReplies,
+    //             // 'reply_from' => $complaintsWithRepliesFrom . ' / ' . $totalRepliesFrom,
+    //             'reply_from' => $totalRepliesFrom,
+    //             // 'not_forward' => $complaintsWithRepliesNotForwarded . ' / ' . $totalRepliesNotForwarded,
+    //             'not_forward' => $totalRepliesNotForwarded,
+    //             'total_solved' => $totalSolved,
+    //             'total_cancelled' => $totalCancelled,
+    //             'total_reviewed' => $complaintsWithReview . ' / ' . $totalRepliesWithReview,
+    //             'total_updates' => $totalUpdates,
+    //         ];
+    //     }
+
+    //     return $managerReport;
+    // }
 
     private function getManagerReport($selectedRole, $selectedManagerId, $request)
     {
@@ -12390,7 +13211,6 @@ class AdminController extends Controller
         foreach ($complaintTypes as $type) {
             $complaintsOfType = $complaints->where('complaint_type', $type);
 
-            // Total complaints filtered by posted_date
             $filteredComplaints = $complaintsOfType->filter(function ($c) use ($fromDate, $toDate) {
                 $posted = Carbon::parse($c->posted_date);
                 if ($fromDate && $posted->lt($fromDate)) return false;
@@ -12399,215 +13219,943 @@ class AdminController extends Controller
             });
             $totalComplaints = $filteredComplaints->count();
 
+            $totalComplaintIds = $filteredComplaints->pluck('complaint_id')->unique()->toArray();
 
-            $displayRepliesCount = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+            $commanderComplaints = $filteredComplaints->where('type', 1);
+            $operatorComplaints = $filteredComplaints->where('type', 2);
+
+            $commanderCount = $commanderComplaints->count();
+            $operatorCount = $operatorComplaints->count();
+
+            $commanderComplaintIds = $commanderComplaints->pluck('complaint_id')->unique()->toArray();
+            $operatorComplaintIds = $operatorComplaints->pluck('complaint_id')->unique()->toArray();
+
+            // Display replies count by separation type
+            $displayRepliesCommanderCount = $commanderComplaints->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
                 return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
                     if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
-
                     $replyDate = Carbon::parse($r->reply_date);
                     if ($fromDate && $replyDate->lt($fromDate)) return false;
                     if ($toDate && $replyDate->gt($toDate)) return false;
-
                     return true;
                 })->count();
             });
 
+            $displayRepliesOperatorCount = $operatorComplaints->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+                    $replyDate = Carbon::parse($r->reply_date);
+                    if ($fromDate && $replyDate->lt($fromDate)) return false;
+                    if ($toDate && $replyDate->gt($toDate)) return false;
+                    return true;
+                })->count();
+            });
 
-            // Total replies
-            // Total replies
-            $totalReplies = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+            $displayRepliesCount = $displayRepliesCommanderCount + $displayRepliesOperatorCount;
+
+            // Total replies by separation type
+            $totalRepliesCommander = $commanderComplaints->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
                 return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
                     if ($r->forwarded_to === null) return false;
-
-                    // Only count replies from other than selected manager if manager selected
                     if ($selectedManagerId && $r->forwarded_to != $selectedManagerId) return false;
                     if ($selectedManagerId && $r->reply_from == $selectedManagerId) return false;
-
                     $replyDate = Carbon::parse($r->reply_date);
                     if ($fromDate && $replyDate->lt($fromDate)) return false;
                     if ($toDate && $replyDate->gt($toDate)) return false;
-
                     return true;
                 })->count();
             });
 
-            // Complaints with replies
-            $complaintsWithReplies = $complaintsOfType->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+            $totalRepliesOperator = $operatorComplaints->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
                 return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
                     if ($r->forwarded_to === null) return false;
-
                     if ($selectedManagerId && $r->forwarded_to != $selectedManagerId) return false;
                     if ($selectedManagerId && $r->reply_from == $selectedManagerId) return false;
-
                     $replyDate = Carbon::parse($r->reply_date);
                     if ($fromDate && $replyDate->lt($fromDate)) return false;
                     if ($toDate && $replyDate->gt($toDate)) return false;
-
-                    return true;
-                })->isNotEmpty();
-            })->count();
-
-            // Replies from manager
-            // Total replies from manager (or all if no manager selected) and not forwarded to self
-            $totalRepliesFrom = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
-                return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
-                    if ($r->reply_from === null || $r->forwarded_to === null) return false;
-
-                    // Only include replies from selected manager (or all if none selected)
-                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
-
-                    // Exclude replies where reply_from == forwarded_to
-                    if ($r->reply_from == $r->forwarded_to) return false;
-
-                    $replyDate = Carbon::parse($r->reply_date);
-                    if ($fromDate && $replyDate->lt($fromDate)) return false;
-                    if ($toDate && $replyDate->gt($toDate)) return false;
-
                     return true;
                 })->count();
             });
 
-            // Complaints that have such replies
-            $complaintsWithRepliesFrom = $complaintsOfType->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+            $totalReplies = $totalRepliesCommander + $totalRepliesOperator;
+
+            // Complaints with replies by separation type
+            $complaintsWithRepliesCommander = $commanderComplaints->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
                 return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
-                    if ($r->reply_from === null || $r->forwarded_to === null) return false;
-
-                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
-
-                    if ($r->reply_from == $r->forwarded_to) return false;
-
+                    if ($r->forwarded_to === null) return false;
+                    if ($selectedManagerId && $r->forwarded_to != $selectedManagerId) return false;
+                    if ($selectedManagerId && $r->reply_from == $selectedManagerId) return false;
                     $replyDate = Carbon::parse($r->reply_date);
                     if ($fromDate && $replyDate->lt($fromDate)) return false;
                     if ($toDate && $replyDate->gt($toDate)) return false;
-
                     return true;
                 })->isNotEmpty();
-            })->count();
+            });
 
-
-            // Replies where reply_from != forwarded_to
-            // Total replies where reply_from = forwarded_to (filtered by manager if selected)
-            $totalRepliesNotForwarded = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+            $complaintsWithRepliesOperator = $operatorComplaints->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
                 return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
-                    if ($r->reply_from === null || $r->forwarded_to === null) return false;
-
-                    // Only include replies where reply_from = forwarded_to
-                    if ($r->reply_from != $r->forwarded_to) return false;
-
-                    // If a manager is selected, only include rows where both equal the selected manager
-                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
-
+                    if ($r->forwarded_to === null) return false;
+                    if ($selectedManagerId && $r->forwarded_to != $selectedManagerId) return false;
+                    if ($selectedManagerId && $r->reply_from == $selectedManagerId) return false;
                     $replyDate = Carbon::parse($r->reply_date);
                     if ($fromDate && $replyDate->lt($fromDate)) return false;
                     if ($toDate && $replyDate->gt($toDate)) return false;
+                    return true;
+                })->isNotEmpty();
+            });
 
+            $complaintsWithRepliesCount = $complaintsWithRepliesCommander->count() + $complaintsWithRepliesOperator->count();
+            $complaintsWithRepliesIds = array_merge(
+                $complaintsWithRepliesCommander->pluck('complaint_id')->unique()->toArray(),
+                $complaintsWithRepliesOperator->pluck('complaint_id')->unique()->toArray()
+            );
+
+            // Replies from manager by separation type
+            $totalRepliesFromCommander = $commanderComplaints->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+                    if ($r->reply_from === null || $r->forwarded_to === null) return false;
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+                    if ($r->reply_from == $r->forwarded_to) return false;
+                    $replyDate = Carbon::parse($r->reply_date);
+                    if ($fromDate && $replyDate->lt($fromDate)) return false;
+                    if ($toDate && $replyDate->gt($toDate)) return false;
                     return true;
                 })->count();
             });
 
-            // Complaints that have such replies
-            $complaintsWithRepliesNotForwarded = $complaintsOfType->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+            $totalRepliesFromOperator = $operatorComplaints->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
                 return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
                     if ($r->reply_from === null || $r->forwarded_to === null) return false;
-
-                    if ($r->reply_from != $r->forwarded_to) return false;
-
                     if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
-
+                    if ($r->reply_from == $r->forwarded_to) return false;
                     $replyDate = Carbon::parse($r->reply_date);
                     if ($fromDate && $replyDate->lt($fromDate)) return false;
                     if ($toDate && $replyDate->gt($toDate)) return false;
+                    return true;
+                })->count();
+            });
 
+            $totalRepliesFrom = $totalRepliesFromCommander + $totalRepliesFromOperator;
+
+            // Get complaint IDs for reply_from by separation type
+            $complaintsWithRepliesFromCommander = $commanderComplaints->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+                    if ($r->reply_from === null || $r->forwarded_to === null) return false;
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+                    if ($r->reply_from == $r->forwarded_to) return false;
+                    $replyDate = Carbon::parse($r->reply_date);
+                    if ($fromDate && $replyDate->lt($fromDate)) return false;
+                    if ($toDate && $replyDate->gt($toDate)) return false;
                     return true;
                 })->isNotEmpty();
-            })->count();
+            });
 
+            $complaintsWithRepliesFromOperator = $operatorComplaints->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+                    if ($r->reply_from === null || $r->forwarded_to === null) return false;
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+                    if ($r->reply_from == $r->forwarded_to) return false;
+                    $replyDate = Carbon::parse($r->reply_date);
+                    if ($fromDate && $replyDate->lt($fromDate)) return false;
+                    if ($toDate && $replyDate->gt($toDate)) return false;
+                    return true;
+                })->isNotEmpty();
+            });
 
+            $complaintsWithRepliesFromIds = array_merge(
+                $complaintsWithRepliesFromCommander->pluck('complaint_id')->unique()->toArray(),
+                $complaintsWithRepliesFromOperator->pluck('complaint_id')->unique()->toArray()
+            );
 
-            // Solved & Cancelled
+            // Replies where reply_from != forwarded_to by separation type
+            $totalRepliesNotForwardedCommander = $commanderComplaints->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+                    if ($r->reply_from === null || $r->forwarded_to === null) return false;
+                    if ($r->reply_from != $r->forwarded_to) return false;
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+                    $replyDate = Carbon::parse($r->reply_date);
+                    if ($fromDate && $replyDate->lt($fromDate)) return false;
+                    if ($toDate && $replyDate->gt($toDate)) return false;
+                    return true;
+                })->count();
+            });
+
+            $totalRepliesNotForwardedOperator = $operatorComplaints->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+                    if ($r->reply_from === null || $r->forwarded_to === null) return false;
+                    if ($r->reply_from != $r->forwarded_to) return false;
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+                    $replyDate = Carbon::parse($r->reply_date);
+                    if ($fromDate && $replyDate->lt($fromDate)) return false;
+                    if ($toDate && $replyDate->gt($toDate)) return false;
+                    return true;
+                })->count();
+            });
+
+            $totalRepliesNotForwarded = $totalRepliesNotForwardedCommander + $totalRepliesNotForwardedOperator;
+
+            // Get complaint IDs for not_forward by separation type
+            $complaintsWithRepliesNotForwardedCommander = $commanderComplaints->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+                    if ($r->reply_from === null || $r->forwarded_to === null) return false;
+                    if ($r->reply_from != $r->forwarded_to) return false;
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+                    $replyDate = Carbon::parse($r->reply_date);
+                    if ($fromDate && $replyDate->lt($fromDate)) return false;
+                    if ($toDate && $replyDate->gt($toDate)) return false;
+                    return true;
+                })->isNotEmpty();
+            });
+
+            $complaintsWithRepliesNotForwardedOperator = $operatorComplaints->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+                    if ($r->reply_from === null || $r->forwarded_to === null) return false;
+                    if ($r->reply_from != $r->forwarded_to) return false;
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+                    $replyDate = Carbon::parse($r->reply_date);
+                    if ($fromDate && $replyDate->lt($fromDate)) return false;
+                    if ($toDate && $replyDate->gt($toDate)) return false;
+                    return true;
+                })->isNotEmpty();
+            });
+
+            $complaintsWithRepliesNotForwardedIds = array_merge(
+                $complaintsWithRepliesNotForwardedCommander->pluck('complaint_id')->unique()->toArray(),
+                $complaintsWithRepliesNotForwardedOperator->pluck('complaint_id')->unique()->toArray()
+            );
+
             $totalSolved = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
-                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $c, $fromDate, $toDate) {
                     if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
 
-                    $replyDate = Carbon::parse($r->reply_date);
-                    if ($fromDate && $replyDate->lt($fromDate)) return false;
-                    if ($toDate && $replyDate->gt($toDate)) return false;
+                    // Check if reply_date exists
+                    if (!$r->reply_date) return false;
 
-                    if (in_array($type, ['समस्या', 'विकास'])) return $r->complaint_status == 4;
-                    if (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) return in_array($r->complaint_status, [13, 14, 15, 16]);
+                    try {
+                        $replyDate = Carbon::parse($r->reply_date);
+                        if ($fromDate && $replyDate->lt($fromDate)) return false;
+                        if ($toDate && $replyDate->gt($toDate)) return false;
+                    } catch (\Exception $e) {
+                        return false;
+                    }
 
+                    // Use complaint status from the complaint, not reply
+                    if (in_array($type, ['समस्या', 'विकास'])) {
+                        return $c->complaint_status == 4;
+                    } elseif (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) {
+                        return in_array($c->complaint_status, [13, 14, 15, 16, 17]);
+                    }
                     return false;
                 })->count();
             });
+
+            // Get solved counts by separation type
+            $solvedCommanderCount = $commanderComplaints->sum(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $c, $fromDate, $toDate) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    if (!$r->reply_date) return false;
+
+                    try {
+                        $replyDate = Carbon::parse($r->reply_date);
+                        if ($fromDate && $replyDate->lt($fromDate)) return false;
+                        if ($toDate && $replyDate->gt($toDate)) return false;
+                    } catch (\Exception $e) {
+                        return false;
+                    }
+
+                    if (in_array($type, ['समस्या', 'विकास'])) {
+                        return $c->complaint_status == 4;
+                    } elseif (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) {
+                        return in_array($c->complaint_status, [13, 14, 15, 16, 17]);
+                    }
+                    return false;
+                })->count();
+            });
+
+            $solvedOperatorCount = $operatorComplaints->sum(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $c, $fromDate, $toDate) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    if (!$r->reply_date) return false;
+
+                    try {
+                        $replyDate = Carbon::parse($r->reply_date);
+                        if ($fromDate && $replyDate->lt($fromDate)) return false;
+                        if ($toDate && $replyDate->gt($toDate)) return false;
+                    } catch (\Exception $e) {
+                        return false;
+                    }
+
+                    if (in_array($type, ['समस्या', 'विकास'])) {
+                        return $c->complaint_status == 4;
+                    } elseif (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) {
+                        return in_array($c->complaint_status, [13, 14, 15, 16, 17]);
+                    }
+                    return false;
+                })->count();
+            });
+
+            $solvedCommanderIds = $commanderComplaints->filter(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $c, $fromDate, $toDate) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    if (!$r->reply_date) return false;
+
+                    try {
+                        $replyDate = Carbon::parse($r->reply_date);
+                        if ($fromDate && $replyDate->lt($fromDate)) return false;
+                        if ($toDate && $replyDate->gt($toDate)) return false;
+                    } catch (\Exception $e) {
+                        return false;
+                    }
+
+                    if (in_array($type, ['समस्या', 'विकास'])) {
+                        return $c->complaint_status == 4;
+                    } elseif (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) {
+                        return in_array($c->complaint_status, [13, 14, 15, 16, 17]);
+                    }
+                    return false;
+                })->isNotEmpty();
+            })->pluck('complaint_id')->unique()->toArray();
+
+            $solvedOperatorIds = $operatorComplaints->filter(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $c, $fromDate, $toDate) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    if (!$r->reply_date) return false;
+
+                    try {
+                        $replyDate = Carbon::parse($r->reply_date);
+                        if ($fromDate && $replyDate->lt($fromDate)) return false;
+                        if ($toDate && $replyDate->gt($toDate)) return false;
+                    } catch (\Exception $e) {
+                        return false;
+                    }
+
+                    if (in_array($type, ['समस्या', 'विकास'])) {
+                        return $c->complaint_status == 4;
+                    } elseif (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) {
+                        return in_array($c->complaint_status, [13, 14, 15, 16, 17]);
+                    }
+                    return false;
+                })->isNotEmpty();
+            })->pluck('complaint_id')->unique()->toArray();
 
             $totalCancelled = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
-                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $c, $fromDate, $toDate) {
                     if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
 
-                    $replyDate = Carbon::parse($r->reply_date);
-                    if ($fromDate && $replyDate->lt($fromDate)) return false;
-                    if ($toDate && $replyDate->gt($toDate)) return false;
+                    if (!$r->reply_date) return false;
 
-                    if (in_array($type, ['समस्या', 'विकास'])) return $r->complaint_status == 5;
-                    if (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) return $r->complaint_status == 18;
+                    try {
+                        $replyDate = Carbon::parse($r->reply_date);
+                        if ($fromDate && $replyDate->lt($fromDate)) return false;
+                        if ($toDate && $replyDate->gt($toDate)) return false;
+                    } catch (\Exception $e) {
+                        return false;
+                    }
 
+                    if (in_array($type, ['समस्या', 'विकास'])) {
+                        return $c->complaint_status == 5;
+                    } elseif (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) {
+                        return $c->complaint_status == 18;
+                    }
                     return false;
                 })->count();
             });
 
+            $cancelledCommanderCount = $commanderComplaints->sum(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $c, $fromDate, $toDate) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    if (!$r->reply_date) return false;
+
+                    try {
+                        $replyDate = Carbon::parse($r->reply_date);
+                        if ($fromDate && $replyDate->lt($fromDate)) return false;
+                        if ($toDate && $replyDate->gt($toDate)) return false;
+                    } catch (\Exception $e) {
+                        return false;
+                    }
+
+                    if (in_array($type, ['समस्या', 'विकास'])) {
+                        return $c->complaint_status == 5;
+                    } elseif (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) {
+                        return $c->complaint_status == 18;
+                    }
+                    return false;
+                })->count();
+            });
+
+            $cancelledOperatorCount = $operatorComplaints->sum(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $c, $fromDate, $toDate) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    if (!$r->reply_date) return false;
+
+                    try {
+                        $replyDate = Carbon::parse($r->reply_date);
+                        if ($fromDate && $replyDate->lt($fromDate)) return false;
+                        if ($toDate && $replyDate->gt($toDate)) return false;
+                    } catch (\Exception $e) {
+                        return false;
+                    }
+
+                    if (in_array($type, ['समस्या', 'विकास'])) {
+                        return $c->complaint_status == 5;
+                    } elseif (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) {
+                        return $c->complaint_status == 18;
+                    }
+                    return false;
+                })->count();
+            });
+
+            // Get cancelled complaint IDs for each separation type
+            $cancelledCommanderIds = $commanderComplaints->filter(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $c, $fromDate, $toDate) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    if (!$r->reply_date) return false;
+
+                    try {
+                        $replyDate = Carbon::parse($r->reply_date);
+                        if ($fromDate && $replyDate->lt($fromDate)) return false;
+                        if ($toDate && $replyDate->gt($toDate)) return false;
+                    } catch (\Exception $e) {
+                        return false;
+                    }
+
+                    if (in_array($type, ['समस्या', 'विकास'])) {
+                        return $c->complaint_status == 5;
+                    } elseif (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) {
+                        return $c->complaint_status == 18;
+                    }
+                    return false;
+                })->isNotEmpty();
+            })->pluck('complaint_id')->unique()->toArray();
+
+            $cancelledOperatorIds = $operatorComplaints->filter(function ($c) use ($selectedManagerId, $type, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $type, $c, $fromDate, $toDate) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+
+                    if (!$r->reply_date) return false;
+
+                    try {
+                        $replyDate = Carbon::parse($r->reply_date);
+                        if ($fromDate && $replyDate->lt($fromDate)) return false;
+                        if ($toDate && $replyDate->gt($toDate)) return false;
+                    } catch (\Exception $e) {
+                        return false;
+                    }
+
+                    if (in_array($type, ['समस्या', 'विकास'])) {
+                        return $c->complaint_status == 5;
+                    } elseif (in_array($type, ['अशुभ सुचना', 'शुभ सुचना'])) {
+                        return $c->complaint_status == 18;
+                    }
+                    return false;
+                })->isNotEmpty();
+            })->pluck('complaint_id')->unique()->toArray();
+
             // Reviewed
-            $complaintsWithReview = $complaintsOfType->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+            $complaintsWithReviewCommander = $commanderComplaints->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
                 return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
                     if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
                     if (!$r->review_date) return false;
-
                     $reviewDate = Carbon::parse($r->review_date);
                     if ($fromDate && $reviewDate->lt($fromDate)) return false;
                     if ($toDate && $reviewDate->gt($toDate)) return false;
-
                     return true;
                 })->isNotEmpty();
-            })->count();
+            });
 
-            $totalRepliesWithReview = $complaintsOfType->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+            $complaintsWithReviewOperator = $operatorComplaints->filter(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
                 return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
                     if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
                     if (!$r->review_date) return false;
-
                     $reviewDate = Carbon::parse($r->review_date);
                     if ($fromDate && $reviewDate->lt($fromDate)) return false;
                     if ($toDate && $reviewDate->gt($toDate)) return false;
+                    return true;
+                })->isNotEmpty();
+            });
 
+            $complaintsWithReviewCount = $complaintsWithReviewCommander->count() + $complaintsWithReviewOperator->count();
+            $complaintsWithReviewIds = array_merge(
+                $complaintsWithReviewCommander->pluck('complaint_id')->unique()->toArray(),
+                $complaintsWithReviewOperator->pluck('complaint_id')->unique()->toArray()
+            );
+
+            $totalRepliesWithReviewCommander = $commanderComplaints->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+                    if (!$r->review_date) return false;
+                    $reviewDate = Carbon::parse($r->review_date);
+                    if ($fromDate && $reviewDate->lt($fromDate)) return false;
+                    if ($toDate && $reviewDate->gt($toDate)) return false;
                     return true;
                 })->count();
             });
 
-            // Updates filtered by created_at
-            $totalUpdates = \DB::table('update_complaints')
-                ->when($selectedManagerId, fn($q) => $q->where('updated_by', $selectedManagerId))
-                ->where('complaint_type', $type)
-                ->when($fromDate, fn($q) => $q->whereDate('created_at', '>=', $fromDate))
-                ->when($toDate, fn($q) => $q->whereDate('created_at', '<=', $toDate))
+            $totalRepliesWithReviewOperator = $operatorComplaints->sum(function ($c) use ($selectedManagerId, $fromDate, $toDate) {
+                return $c->replies->filter(function ($r) use ($selectedManagerId, $fromDate, $toDate) {
+                    if ($selectedManagerId && $r->reply_from != $selectedManagerId) return false;
+                    if (!$r->review_date) return false;
+                    $reviewDate = Carbon::parse($r->review_date);
+                    if ($fromDate && $reviewDate->lt($fromDate)) return false;
+                    if ($toDate && $reviewDate->gt($toDate)) return false;
+                    return true;
+                })->count();
+            });
+
+            $totalRepliesWithReview = $totalRepliesWithReviewCommander + $totalRepliesWithReviewOperator;
+
+            // Updates filtered by created_at by separation type
+            $totalUpdatesCommander = \DB::table('update_complaints')
+                ->join('complaint', 'update_complaints.complaint_id', '=', 'complaint.complaint_id')
+                ->where('complaint.complaint_type', $type)
+                ->where('complaint.type', 1) // Commander
+                ->when($selectedManagerId, fn($q) => $q->where('update_complaints.updated_by', $selectedManagerId))
+                ->when($fromDate, fn($q) => $q->whereDate('update_complaints.created_at', '>=', $fromDate))
+                ->when($toDate, fn($q) => $q->whereDate('update_complaints.created_at', '<=', $toDate))
                 ->count();
+
+            $totalUpdatesOperator = \DB::table('update_complaints')
+                ->join('complaint', 'update_complaints.complaint_id', '=', 'complaint.complaint_id')
+                ->where('complaint.complaint_type', $type)
+                ->where('complaint.type', 2) // Operator
+                ->when($selectedManagerId, fn($q) => $q->where('update_complaints.updated_by', $selectedManagerId))
+                ->when($fromDate, fn($q) => $q->whereDate('update_complaints.created_at', '>=', $fromDate))
+                ->when($toDate, fn($q) => $q->whereDate('update_complaints.created_at', '<=', $toDate))
+                ->count();
+
+            $totalUpdates = $totalUpdatesCommander + $totalUpdatesOperator;
+
+            // Get complaint IDs for updates by separation type - FIXED
+            $updateCommanderIds = \DB::table('update_complaints')
+                ->join('complaint', 'update_complaints.complaint_id', '=', 'complaint.complaint_id')
+                ->where('complaint.complaint_type', $type)
+                ->where('complaint.type', 1) // Commander
+                ->when($selectedManagerId, fn($q) => $q->where('update_complaints.updated_by', $selectedManagerId))
+                ->when($fromDate, fn($q) => $q->whereDate('update_complaints.created_at', '>=', $fromDate))
+                ->when($toDate, fn($q) => $q->whereDate('update_complaints.created_at', '<=', $toDate))
+                ->pluck('update_complaints.complaint_id')
+                ->unique()
+                ->values()
+                ->toArray();
+
+            $updateOperatorIds = \DB::table('update_complaints')
+                ->join('complaint', 'update_complaints.complaint_id', '=', 'complaint.complaint_id')
+                ->where('complaint.complaint_type', $type)
+                ->where('complaint.type', 2) // Operator
+                ->when($selectedManagerId, fn($q) => $q->where('update_complaints.updated_by', $selectedManagerId))
+                ->when($fromDate, fn($q) => $q->whereDate('update_complaints.created_at', '>=', $fromDate))
+                ->when($toDate, fn($q) => $q->whereDate('update_complaints.created_at', '<=', $toDate))
+                ->pluck('update_complaints.complaint_id')
+                ->unique()
+                ->values()
+                ->toArray();
+
+            $updateComplaintIds = array_merge($updateCommanderIds, $updateOperatorIds);
 
             $managerReport[$type] = [
                 'total' => $totalComplaints,
+                'commander_total' => $commanderCount,
+                'operator_total' => $operatorCount,
+
                 'replies' => $displayRepliesCount,
-                'total_replies' => $complaintsWithReplies . ' / ' . $totalReplies,
-                // 'reply_from' => $complaintsWithRepliesFrom . ' / ' . $totalRepliesFrom,
+                'replies_commander' => $displayRepliesCommanderCount,
+                'replies_operator' => $displayRepliesOperatorCount,
+
+                'total_replies' => $complaintsWithRepliesCount . ' / ' . $totalReplies,
+                'total_replies_commander' => $complaintsWithRepliesCommander->count() . ' / ' . $totalRepliesCommander,
+                'total_replies_operator' => $complaintsWithRepliesOperator->count() . ' / ' . $totalRepliesOperator,
+
                 'reply_from' => $totalRepliesFrom,
-                // 'not_forward' => $complaintsWithRepliesNotForwarded . ' / ' . $totalRepliesNotForwarded,
+                'reply_from_commander' => $totalRepliesFromCommander,
+                'reply_from_operator' => $totalRepliesFromOperator,
+
                 'not_forward' => $totalRepliesNotForwarded,
+                'not_forward_commander' => $totalRepliesNotForwardedCommander,
+                'not_forward_operator' => $totalRepliesNotForwardedOperator,
+
                 'total_solved' => $totalSolved,
+                'total_solved_commander' => $solvedCommanderCount,
+                'total_solved_operator' => $solvedOperatorCount,
+
                 'total_cancelled' => $totalCancelled,
-                'total_reviewed' => $complaintsWithReview . ' / ' . $totalRepliesWithReview,
+                'total_cancelled_commander' => $cancelledCommanderCount,
+                'total_cancelled_operator' => $cancelledOperatorCount,
+
+                'total_reviewed' => $complaintsWithReviewCount . ' / ' . $totalRepliesWithReview,
+                'total_reviewed_commander' => $complaintsWithReviewCommander->count() . ' / ' . $totalRepliesWithReviewCommander,
+                'total_reviewed_operator' => $complaintsWithReviewOperator->count() . ' / ' . $totalRepliesWithReviewOperator,
+
                 'total_updates' => $totalUpdates,
+                'total_updates_commander' => $totalUpdatesCommander,
+                'total_updates_operator' => $totalUpdatesOperator,
+
+                // Link parameters
+                'total_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($totalComplaintIds) ? implode(',', $totalComplaintIds) : '',
+                    'managerfilter' => 'total'
+                ],
+
+                'commander_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($commanderComplaintIds) ? implode(',', $commanderComplaintIds) : '',
+                    'managerfilter' => 'commander',
+                    'separation_type' => 'commander'
+                ],
+
+                'operator_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($operatorComplaintIds) ? implode(',', $operatorComplaintIds) : '',
+                    'managerfilter' => 'operator',
+                    'separation_type' => 'operator'
+                ],
+
+                'total_replies_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($complaintsWithRepliesIds) ? implode(',', $complaintsWithRepliesIds) : '',
+                    'managerfilter' => 'total_replies'
+                ],
+
+                'replies_commander_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($commanderComplaintIds) ? implode(',', $commanderComplaintIds) : '',
+                    'managerfilter' => 'replies_commander',
+                    'separation_type' => 'commander'
+                ],
+
+                'replies_operator_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($operatorComplaintIds) ? implode(',', $operatorComplaintIds) : '',
+                    'managerfilter' => 'replies_operator',
+                    'separation_type' => 'operator'
+                ],
+
+                'reply_from_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($complaintsWithRepliesFromIds) ? implode(',', $complaintsWithRepliesFromIds) : '',
+                    'managerfilter' => 'reply_from'
+                ],
+
+                'reply_from_commander_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($complaintsWithRepliesFromCommander->pluck('complaint_id')->unique()->toArray()) ? implode(',', $complaintsWithRepliesFromCommander->pluck('complaint_id')->unique()->toArray()) : '',
+                    'managerfilter' => 'reply_from_commander',
+                    'separation_type' => 'commander'
+                ],
+
+                'reply_from_operator_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($complaintsWithRepliesFromOperator->pluck('complaint_id')->unique()->toArray()) ? implode(',', $complaintsWithRepliesFromOperator->pluck('complaint_id')->unique()->toArray()) : '',
+                    'managerfilter' => 'reply_from_operator',
+                    'separation_type' => 'operator'
+                ],
+
+                'not_forward_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($complaintsWithRepliesNotForwardedIds) ? implode(',', $complaintsWithRepliesNotForwardedIds) : '',
+                    'managerfilter' => 'not_forward'
+                ],
+
+                'not_forward_commander_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($complaintsWithRepliesNotForwardedCommander->pluck('complaint_id')->unique()->toArray()) ? implode(',', $complaintsWithRepliesNotForwardedCommander->pluck('complaint_id')->unique()->toArray()) : '',
+                    'managerfilter' => 'not_forward_commander',
+                    'separation_type' => 'commander'
+                ],
+
+                'not_forward_operator_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($complaintsWithRepliesNotForwardedOperator->pluck('complaint_id')->unique()->toArray()) ? implode(',', $complaintsWithRepliesNotForwardedOperator->pluck('complaint_id')->unique()->toArray()) : '',
+                    'managerfilter' => 'not_forward_operator',
+                    'separation_type' => 'operator'
+                ],
+
+                'total_reviewed_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($complaintsWithReviewIds) ? implode(',', $complaintsWithReviewIds) : '',
+                    'managerfilter' => 'total_reviewed'
+                ],
+
+                'total_solved_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty(array_merge($solvedCommanderIds, $solvedOperatorIds)) ? implode(',', array_merge($solvedCommanderIds, $solvedOperatorIds)) : '',
+                    'managerfilter' => 'total_solved'
+                ],
+
+                'solved_commander_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($solvedCommanderIds) ? implode(',', $solvedCommanderIds) : '',
+                    'managerfilter' => 'solved_commander',
+                    'separation_type' => 'commander'
+                ],
+
+                'solved_operator_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($solvedOperatorIds) ? implode(',', $solvedOperatorIds) : '',
+                    'managerfilter' => 'solved_operator',
+                    'separation_type' => 'operator'
+                ],
+
+                'total_cancelled_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty(array_merge($cancelledCommanderIds, $cancelledOperatorIds)) ? implode(',', array_merge($cancelledCommanderIds, $cancelledOperatorIds)) : '',
+                    'managerfilter' => 'total_cancelled'
+                ],
+
+                'cancelled_commander_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($cancelledCommanderIds) ? implode(',', $cancelledCommanderIds) : '',
+                    'managerfilter' => 'cancelled_commander',
+                    'separation_type' => 'commander'
+                ],
+
+                'cancelled_operator_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($cancelledOperatorIds) ? implode(',', $cancelledOperatorIds) : '',
+                    'managerfilter' => 'cancelled_operator',
+                    'separation_type' => 'operator'
+                ],
+
+                'total_updates_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($updateComplaintIds) ? implode(',', $updateComplaintIds) : '',
+                    'managerfilter' => 'total_updates'
+                ],
+
+                'updates_commander_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($updateCommanderIds) ? implode(',', $updateCommanderIds) : '',
+                    'managerfilter' => 'updates_commander',
+                    'separation_type' => 'commander'
+                ],
+
+                'updates_operator_link_params' => [
+                    'complaint_type' => $type,
+                    'manager_id' => $selectedManagerId,
+                    'from_date' => $request->from_date,
+                    'to_date' => $request->to_date,
+                    'complaint_ids' => !empty($updateOperatorIds) ? implode(',', $updateOperatorIds) : '',
+                    'managerfilter' => 'updates_operator',
+                    'separation_type' => 'operator'
+                ],
             ];
         }
 
         return $managerReport;
     }
 
+    // private function generateOperatorReport($selectedRole, $selectedOperatorId, $request)
+    // {
+    //     $report = [];
+    //     if ($selectedRole !== 'operator') return $report;
+
+    //     $fromDate = $request->from_date ? Carbon::parse($request->from_date)->startOfDay() : null;
+    //     $toDate = $request->to_date ? Carbon::parse($request->to_date)->endOfDay() : null;
+
+    //     $complaints = Complaint::all();
+    //     $complaintTypes = $complaints->pluck('complaint_type')->unique();
+    //     $complaintsById = $complaints->keyBy('complaint_id');
+
+    //     $operatorComplaintIds = $selectedOperatorId
+    //         ? $complaints->where('complaint_created_by', $selectedOperatorId)->pluck('complaint_id')->all()
+    //         : $complaints->pluck('complaint_id')->all();
+
+    //     foreach ($complaintTypes as $type) {
+    //         $complaintsOfType = $complaints->where('complaint_type', $type);
+
+    //         // Total complaints filtered by posted_date and type=2
+    //         $totalComplaints = $complaintsOfType->filter(function ($c) use ($request, $selectedOperatorId, $fromDate, $toDate) {
+    //             if ($c->type != 2) return false;
+    //             if ($selectedOperatorId && $c->complaint_created_by != $selectedOperatorId) return false;
+
+    //             $posted = Carbon::parse($c->posted_date);
+    //             if ($fromDate && $posted->lt($fromDate)) return false;
+    //             if ($toDate && $posted->gt($toDate)) return false;
+
+    //             return true;
+    //         })->count();
+
+    //         // Followups
+    //         $followupsAll = \App\Models\FollowupStatus::query()
+    //             ->whereIn('complaint_id', $operatorComplaintIds)
+    //             ->when($selectedOperatorId, fn($q) => $q->where('followup_created_by', $selectedOperatorId))
+    //             ->when($fromDate, fn($q) => $q->whereDate('followup_date', '>=', $fromDate))
+    //             ->when($toDate, fn($q) => $q->whereDate('followup_date', '<=', $toDate))
+    //             ->get();
+
+    //         $followupsGrouped = $followupsAll->groupBy(fn($f) => $complaintsById->get($f->complaint_id)?->complaint_type ?? 'unknown');
+
+    //         $followupGroup = ($followupsGrouped[$type] ?? collect())->filter(function ($f) use ($fromDate, $toDate) {
+    //             $followupDate = Carbon::parse($f->followup_date);
+    //             if ($fromDate && $followupDate->lt($fromDate)) return false;
+    //             if ($toDate && $followupDate->gt($toDate)) return false;
+    //             return true;
+    //         });
+
+    //         $followupRepliesByType = $followupGroup->count();
+    //         $followupComplaintsByType = $followupGroup->pluck('complaint_id')->unique()->count();
+    //         $completedFollowupsByType = $followupGroup->where('followup_status', 2)->count();
+
+    //         $followupComplaintIds = $followupGroup->count() > 0 ? $followupGroup->pluck('complaint_id')->unique()->toArray() : [];
+
+    //         $incomingAll = \DB::table('incoming_calls')
+    //             ->whereIn('complaint_id', $operatorComplaintIds)
+    //             ->when($selectedOperatorId, fn($q) => $q->where('incoming_created_by', $selectedOperatorId))
+    //             ->when($fromDate, fn($q) => $q->whereDate('created_at', '>=', $fromDate))
+    //             ->when($toDate, fn($q) => $q->whereDate('created_at', '<=', $toDate))
+    //             ->get();
+
+    //         $incomingGroupedByType = $incomingAll->groupBy(fn($call) => $complaintsById->get($call->complaint_id)?->complaint_type ?? 'unknown');
+
+    //         $incomingReason1 = collect($incomingGroupedByType[$type] ?? [])->where('reason', 1);
+    //         $incomingReason2 = collect($incomingGroupedByType[$type] ?? [])->where('reason', 2);
+    //         $incomingReason3 = collect($incomingGroupedByType[$type] ?? [])->where('reason', 3);
+
+    //         $overallIncoming = collect($incomingGroupedByType[$type] ?? []);
+
+    //         $incomingReason1ComplaintIds = $incomingReason1->count() > 0 ? $incomingReason1->pluck('complaint_id')->unique()->toArray() : [];
+    //         $incomingReason2ComplaintIds = $incomingReason2->count() > 0 ? $incomingReason2->pluck('complaint_id')->unique()->toArray() : [];
+    //         $incomingReason3ComplaintIds = $incomingReason3->count() > 0 ? $incomingReason3->pluck('complaint_id')->unique()->toArray() : [];
+    //         $overallIncomingComplaintIds = $overallIncoming->count() > 0 ? $overallIncoming->pluck('complaint_id')->unique()->toArray() : [];
+
+    //         $report[$type] = [
+    //             'total' => $totalComplaints,
+    //             'followups' => $followupComplaintsByType . ' / ' . $followupRepliesByType,
+    //             'completed_followups' => $completedFollowupsByType,
+    //             'incoming_reason1' => count($incomingReason1) . ' / ' . count($incomingReason1),
+    //             'incoming_reason2' => count($incomingReason2),
+    //             'incoming_reason3' => count($incomingReason3),
+    //             'overall_incoming' => $overallIncoming->count(),
+
+    //             'followup_link_params' => [
+    //                 'complaint_type' => $type,
+    //                 'operator_id' => $selectedOperatorId,
+    //                 'from_date' => $request->from_date,
+    //                 'to_date' => $request->to_date,
+    //                 'followup_complaint_ids' => !empty($followupComplaintIds) ? implode(',', $followupComplaintIds) : '',
+    //                 'operatorfilter' => 'followups'
+    //             ],
+
+    //             'completed_followup_link_params' => [
+    //                 'complaint_type' => $type,
+    //                 'operator_id' => $selectedOperatorId,
+    //                 'from_date' => $request->from_date,
+    //                 'to_date' => $request->to_date,
+    //                 'followup_status' => 2,
+    //                 'operatorfilter' => 'completed_followups'
+    //             ],
+
+    //             'incoming_reason1_link_params' => [
+    //                 'complaint_type' => $type,
+    //                 'operator_id' => $selectedOperatorId,
+    //                 'from_date' => $request->from_date,
+    //                 'to_date' => $request->to_date,
+    //                 'incoming_complaint_ids' =>  !empty($incomingReason1ComplaintIds) ? implode(',', $incomingReason1ComplaintIds) : '',
+    //                 'operatorfilter' => 'incoming_reason1'
+    //             ],
+
+    //             'incoming_reason2_link_params' => [
+    //                 'complaint_type' => $type,
+    //                 'operator_id' => $selectedOperatorId,
+    //                 'from_date' => $request->from_date,
+    //                 'to_date' => $request->to_date,
+    //                 'incoming_complaint_ids' =>  !empty($incomingReason2ComplaintIds) ? implode(',', $incomingReason2ComplaintIds) : '',
+    //                 'operatorfilter' => 'incoming_reason2'
+    //             ],
+
+    //             'incoming_reason3_link_params' => [
+    //                 'complaint_type' => $type,
+    //                 'operator_id' => $selectedOperatorId,
+    //                 'from_date' => $request->from_date,
+    //                 'to_date' => $request->to_date,
+    //                 'incoming_complaint_ids' =>  !empty($incomingReason3ComplaintIds) ? implode(',', $incomingReason3ComplaintIds) : '',
+    //                 'operatorfilter' => 'incoming_reason3'
+    //             ],
+
+    //             'overall_incoming_link_params' => [
+    //                 'complaint_type' => $type,
+    //                 'operator_id' => $selectedOperatorId,
+    //                 'from_date' => $request->from_date,
+    //                 'to_date' => $request->to_date,
+    //                 'incoming_complaint_ids' =>  !empty($overallIncomingComplaintIds) ? implode(',', $overallIncomingComplaintIds) : '',
+    //                 'operatorfilter' => 'overall_incoming'
+    //             ],
+    //         ];
+    //     }
+
+    //     return $report;
+    // }
 
     private function generateOperatorReport($selectedRole, $selectedOperatorId, $request)
     {
@@ -12628,7 +14176,7 @@ class AdminController extends Controller
         foreach ($complaintTypes as $type) {
             $complaintsOfType = $complaints->where('complaint_type', $type);
 
-            // Total complaints filtered by posted_date and type=2
+            // Total complaints WITH date filters (for counts)
             $totalComplaints = $complaintsOfType->filter(function ($c) use ($request, $selectedOperatorId, $fromDate, $toDate) {
                 if ($c->type != 2) return false;
                 if ($selectedOperatorId && $c->complaint_created_by != $selectedOperatorId) return false;
@@ -12640,7 +14188,8 @@ class AdminController extends Controller
                 return true;
             })->count();
 
-            // Followups
+            // Followups WITH date filters (for counts)
+            // Followups - FIXED: Separate ID collection for Commander and Operator
             $followupsAll = \App\Models\FollowupStatus::query()
                 ->whereIn('complaint_id', $operatorComplaintIds)
                 ->when($selectedOperatorId, fn($q) => $q->where('followup_created_by', $selectedOperatorId))
@@ -12657,11 +14206,41 @@ class AdminController extends Controller
                 return true;
             });
 
+            // ORIGINAL COUNTS (with date filters)
             $followupRepliesByType = $followupGroup->count();
             $followupComplaintsByType = $followupGroup->pluck('complaint_id')->unique()->count();
             $completedFollowupsByType = $followupGroup->where('followup_status', 2)->count();
 
-            // Incoming calls
+            // SEPARATED COUNTS FOR DROPDOWN (with date filters)
+            $followupOperator = $followupGroup->filter(fn($f) => $complaintsById->get($f->complaint_id)?->type == 2);
+            $followupCommander = $followupGroup->filter(fn($f) => $complaintsById->get($f->complaint_id)?->type == 1);
+
+            $followupComplaintsOperator = $followupOperator->pluck('complaint_id')->unique()->count();
+            $followupComplaintsCommander = $followupCommander->pluck('complaint_id')->unique()->count();
+            $completedFollowupsOperator = $followupOperator->where('followup_status', 2)->count();
+            $completedFollowupsCommander = $followupCommander->where('followup_status', 2)->count();
+
+            // FIXED: Get SEPARATE complaint IDs for Operator and Commander WITHOUT date filters
+            $followupComplaintIdsAll = \App\Models\FollowupStatus::query()
+                ->whereIn('complaint_id', $operatorComplaintIds)
+                ->when($selectedOperatorId, fn($q) => $q->where('followup_created_by', $selectedOperatorId))
+                // NO date filters for ID collection
+                ->get()
+                ->groupBy(fn($f) => $complaintsById->get($f->complaint_id)?->complaint_type ?? 'unknown');
+
+            $followupGroupAll = $followupComplaintIdsAll[$type] ?? collect();
+
+            // FIXED: Separate IDs for Operator and Commander
+            $followupComplaintIdsOperator = $followupGroupAll->filter(fn($f) => $complaintsById->get($f->complaint_id)?->type == 2)
+                ->pluck('complaint_id')->unique()->toArray();
+
+            $followupComplaintIdsCommander = $followupGroupAll->filter(fn($f) => $complaintsById->get($f->complaint_id)?->type == 1)
+                ->pluck('complaint_id')->unique()->toArray();
+
+            // For backward compatibility, keep the original array with all IDs
+            $followupComplaintIds = $followupGroupAll->count() > 0 ? $followupGroupAll->pluck('complaint_id')->unique()->toArray() : [];
+
+            // Incoming calls WITH date filters (for counts)
             $incomingAll = \DB::table('incoming_calls')
                 ->whereIn('complaint_id', $operatorComplaintIds)
                 ->when($selectedOperatorId, fn($q) => $q->where('incoming_created_by', $selectedOperatorId))
@@ -12677,14 +14256,113 @@ class AdminController extends Controller
 
             $overallIncoming = collect($incomingGroupedByType[$type] ?? []);
 
+            // ORIGINAL COUNTS (with date filters)
+            $incomingReason1Count = count($incomingReason1);
+            $incomingReason2Count = count($incomingReason2);
+            $incomingReason3Count = count($incomingReason3);
+            $overallIncomingCount = $overallIncoming->count();
+
+            // SEPARATED COUNTS FOR DROPDOWN (with date filters)
+            $incomingReason1Operator = $incomingReason1->filter(fn($call) => $complaintsById->get($call->complaint_id)?->type == 2);
+            $incomingReason1Commander = $incomingReason1->filter(fn($call) => $complaintsById->get($call->complaint_id)?->type == 1);
+            $incomingReason2Operator = $incomingReason2->filter(fn($call) => $complaintsById->get($call->complaint_id)?->type == 2);
+            $incomingReason2Commander = $incomingReason2->filter(fn($call) => $complaintsById->get($call->complaint_id)?->type == 1);
+            $incomingReason3Operator = $incomingReason3->filter(fn($call) => $complaintsById->get($call->complaint_id)?->type == 2);
+            $incomingReason3Commander = $incomingReason3->filter(fn($call) => $complaintsById->get($call->complaint_id)?->type == 1);
+            $overallIncomingOperator = $overallIncoming->filter(fn($call) => $complaintsById->get($call->complaint_id)?->type == 2);
+            $overallIncomingCommander = $overallIncoming->filter(fn($call) => $complaintsById->get($call->complaint_id)?->type == 1);
+
+            // FIXED: Get complaint IDs WITHOUT date filters for links
+            $incomingAllIds = \DB::table('incoming_calls')
+                ->whereIn('complaint_id', $operatorComplaintIds)
+                ->when($selectedOperatorId, fn($q) => $q->where('incoming_created_by', $selectedOperatorId))
+                // NO date filters for ID collection
+                ->get()
+                ->groupBy(fn($call) => $complaintsById->get($call->complaint_id)?->complaint_type ?? 'unknown');
+
+            $incomingReason1All = collect($incomingAllIds[$type] ?? [])->where('reason', 1);
+            $incomingReason2All = collect($incomingAllIds[$type] ?? [])->where('reason', 2);
+            $incomingReason3All = collect($incomingAllIds[$type] ?? [])->where('reason', 3);
+            $overallIncomingAll = collect($incomingAllIds[$type] ?? []);
+
+            $incomingReason1ComplaintIds = $incomingReason1All->count() > 0 ? $incomingReason1All->pluck('complaint_id')->unique()->toArray() : [];
+            $incomingReason2ComplaintIds = $incomingReason2All->count() > 0 ? $incomingReason2All->pluck('complaint_id')->unique()->toArray() : [];
+            $incomingReason3ComplaintIds = $incomingReason3All->count() > 0 ? $incomingReason3All->pluck('complaint_id')->unique()->toArray() : [];
+            $overallIncomingComplaintIds = $overallIncomingAll->count() > 0 ? $overallIncomingAll->pluck('complaint_id')->unique()->toArray() : [];
+
             $report[$type] = [
+                // ORIGINAL VALUES (with date filters)
                 'total' => $totalComplaints,
                 'followups' => $followupComplaintsByType . ' / ' . $followupRepliesByType,
                 'completed_followups' => $completedFollowupsByType,
-                'incoming_reason1' => count($incomingReason1) . ' / ' . count($incomingReason1),
-                'incoming_reason2' => count($incomingReason2),
-                'incoming_reason3' => count($incomingReason3),
-                'overall_incoming' => $overallIncoming->count(),
+                'incoming_reason1' => $incomingReason1Count . ' / ' . $incomingReason1Count,
+                'incoming_reason2' => $incomingReason2Count,
+                'incoming_reason3' => $incomingReason3Count,
+                'overall_incoming' => $overallIncomingCount,
+
+                // SEPARATED VALUES FOR DROPDOWNS (with date filters)
+                'followups_operator' => $followupComplaintsOperator,
+                'followups_commander' => $followupComplaintsCommander,
+                'completed_followups_operator' => $completedFollowupsOperator,
+                'completed_followups_commander' => $completedFollowupsCommander,
+                'overall_incoming_operator' => $overallIncomingOperator->count(),
+                'overall_incoming_commander' => $overallIncomingCommander->count(),
+                'incoming_reason1_operator' => $incomingReason1Operator->count(),
+                'incoming_reason1_commander' => $incomingReason1Commander->count(),
+                'incoming_reason2_operator' => $incomingReason2Operator->count(),
+                'incoming_reason2_commander' => $incomingReason2Commander->count(),
+                'incoming_reason3_operator' => $incomingReason3Operator->count(),
+                'incoming_reason3_commander' => $incomingReason3Commander->count(),
+
+                // Link parameters - WITHOUT date filters
+                'followup_link_params' => [
+                    'complaint_type' => $type,
+                    'operator_id' => $selectedOperatorId,
+                    'followup_complaint_ids' => !empty($followupComplaintIdsOperator) ? implode(',', $followupComplaintIdsOperator) : '',
+                    'operatorfilter' => 'followups'
+                ],
+
+                'followup_link_params_commander' => [
+                    'complaint_type' => $type,
+                    'operator_id' => $selectedOperatorId,
+                    'followup_complaint_ids' => !empty($followupComplaintIdsCommander) ? implode(',', $followupComplaintIdsCommander) : '',
+                    'operatorfilter' => 'followups'
+                ],
+
+                'completed_followup_link_params' => [
+                    'complaint_type' => $type,
+                    'operator_id' => $selectedOperatorId,
+                    'followup_status' => 2,
+                    'operatorfilter' => 'completed_followups'
+                ],
+
+                'incoming_reason1_link_params' => [
+                    'complaint_type' => $type,
+                    'operator_id' => $selectedOperatorId,
+                    'incoming_complaint_ids' =>  !empty($incomingReason1ComplaintIds) ? implode(',', $incomingReason1ComplaintIds) : '',
+                    'operatorfilter' => 'incoming_reason1'
+                ],
+
+                'incoming_reason2_link_params' => [
+                    'complaint_type' => $type,
+                    'operator_id' => $selectedOperatorId,
+                    'incoming_complaint_ids' =>  !empty($incomingReason2ComplaintIds) ? implode(',', $incomingReason2ComplaintIds) : '',
+                    'operatorfilter' => 'incoming_reason2'
+                ],
+
+                'incoming_reason3_link_params' => [
+                    'complaint_type' => $type,
+                    'operator_id' => $selectedOperatorId,
+                    'incoming_complaint_ids' =>  !empty($incomingReason3ComplaintIds) ? implode(',', $incomingReason3ComplaintIds) : '',
+                    'operatorfilter' => 'incoming_reason3'
+                ],
+
+                'overall_incoming_link_params' => [
+                    'complaint_type' => $type,
+                    'operator_id' => $selectedOperatorId,
+                    'incoming_complaint_ids' =>  !empty($overallIncomingComplaintIds) ? implode(',', $overallIncomingComplaintIds) : '',
+                    'operatorfilter' => 'overall_incoming'
+                ],
             ];
         }
 

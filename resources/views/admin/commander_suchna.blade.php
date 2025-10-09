@@ -529,6 +529,42 @@
                                 d.reference_name = urlParams.get('reference_name');
                             }
                             d.filter = $('#complaintFilterTabs a.active').data('filter') || '';
+
+                            if (urlParams.has('created_by_member')) {
+                                d.created_by_member = urlParams.get('created_by_member');
+                            }
+
+                                                        if (urlParams.has('operatorfilter')) {
+                                d.operatorfilter = urlParams.get('operatorfilter');
+                            }
+
+                            if (urlParams.has('followup_complaint_ids') && urlParams.get(
+                                    'followup_complaint_ids').trim() !== '') {
+                                d.followup_complaint_ids = urlParams.get('followup_complaint_ids');
+                            }
+
+                            if (urlParams.has('followup_status')) {
+                                d.followup_status = urlParams.get('followup_status');
+                            }
+
+                            // Only send incoming_complaint_ids if it's not empty
+                            if (urlParams.has('incoming_complaint_ids') && urlParams.get(
+                                    'incoming_complaint_ids').trim() !== '') {
+                                d.incoming_complaint_ids = urlParams.get('incoming_complaint_ids');
+                            }
+
+                            if (urlParams.has('managerfilter')) {
+                                d.managerfilter = urlParams.get('managerfilter');
+                            }
+
+                            if (urlParams.has('complaint_ids') && urlParams.get('complaint_ids').trim() !==
+                                '') {
+                                d.complaint_ids = urlParams.get('complaint_ids');
+                            }
+
+                            if (urlParams.has('manager_id')) {
+                                d.manager_id = urlParams.get('manager_id');
+                            }
                         }
                     },
                     columns: [{

@@ -133,7 +133,7 @@
                                 return $curA + $addA . '/' . ($curB + $addB);
                             }
                         @endphp
-                        @if (!empty($managerReport))
+                        {{-- @if (!empty($managerReport))
                             @foreach ($managerReport as $managerId => $reports)
                                 @if (!empty($reports))
                                     <div class="step-header bg-dark text-white p-2 rounded mt-4">
@@ -229,10 +229,605 @@
                                     </table>
                                 @endif
                             @endforeach
+                        @endif --}}
+
+                        @if (!empty($managerReport))
+                            @foreach ($managerReport as $managerId => $reports)
+                                @if (!empty($reports))
+                                    <div class="step-header bg-dark text-white p-2 rounded mt-4">
+                                        मैनेजर {{ $managers->firstWhere('admin_id', $managerId)->admin_name ?? '' }}
+                                        रिपोर्ट : {{ $dateRangeText }}
+                                    </div>
+
+                                    @php
+                                        // Initialize totals before the loop
+                                        $totals = [
+                                            'total' => 0,
+                                            'total_replies' => '0/0',
+                                            'replies' => 0,
+                                            'reply_from' => 0,
+                                            'not_forward' => 0,
+                                            'total_solved' => 0,
+                                            'total_cancelled' => 0,
+                                            'total_reviewed' => '0/0',
+                                            'total_updates' => 0,
+                                        ];
+                                    @endphp
+
+                                    <table class="table table-bordered table-sm mt-2" style="color: black">
+                                        <thead style="background-color: blanchedalmond">
+                                            <tr>
+                                                <th>प्रकार</th>
+                                                <th>कुल प्राप्त</th>
+                                                <th>कुल फॉरवर्ड</th>
+                                                <th>कुल जवाब दर्ज</th>
+                                                <th>कुल जवाब आगे भेजे</th>
+                                                <th>कुल जवाब आगे नहीं भेजे</th>
+                                                <th>कुल समाधान</th>
+                                                <th>कुल निरस्त</th>
+                                                <th>कुल रीव्यू पर</th>
+                                                <th>कुल अपडेट</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($reports as $prakar => $data)
+                                                @php
+                                                    // Sum numeric values
+                                                    foreach (
+                                                        [
+                                                            'total',
+                                                            'replies',
+                                                            'reply_from',
+                                                            'total_solved',
+                                                            'not_forward',
+                                                            'total_cancelled',
+                                                            'total_updates',
+                                                        ]
+                                                        as $key
+                                                    ) {
+                                                        $totals[$key] +=
+                                                            isset($data[$key]) && is_numeric($data[$key])
+                                                                ? $data[$key]
+                                                                : 0;
+                                                    }
+                                                    // Sum fraction values
+                                                    foreach (['total_replies', 'total_reviewed'] as $key) {
+                                                        if (isset($data[$key])) {
+                                                            $totals[$key] = sumFraction($totals[$key], $data[$key]);
+                                                        }
+                                                    }
+
+                                                    // Determine base routes based on complaint type
+                                                    $isSuchnaType = in_array($prakar, ['शुभ सुचना', 'अशुभ सुचना']);
+
+                                                    if ($isSuchnaType) {
+                                                        $operatorRoute = 'operator.suchnas.view';
+                                                        $commanderRoute = 'commander.suchnas.view';
+                                                    } else {
+                                                        $operatorRoute = 'operator.complaint.view';
+                                                        $commanderRoute = 'commander.complaint.view';
+                                                    }
+
+                                                    // Create base link parameters
+                                                    $baseLinkParams = [
+                                                        'complaint_type' => $prakar,
+                                                        'manager_id' =>
+                                                            $managerId !== 'Grand Total' ? $managerId : null,
+                                                        'from_date' => request('from_date'),
+                                                        'to_date' => request('to_date'),
+                                                    ];
+
+                                                    $baseLinkParams = array_filter($baseLinkParams, function ($value) {
+                                                        return $value !== null && $value !== '';
+                                                    });
+
+                                                    $totalLinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'total',
+                                                            'complaint_ids' =>
+                                                                $data['total_link_params']['complaint_ids'] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    $totalLinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'total',
+                                                            'complaint_ids' =>
+                                                                $data['total_link_params']['complaint_ids'] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    // Replies links
+                                                    $repliesLinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'replies',
+                                                            'complaint_ids' =>
+                                                                $data['total_replies_link_params']['complaint_ids'] ??
+                                                                '',
+                                                        ]),
+                                                    );
+
+                                                    $repliesLinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'replies',
+                                                            'complaint_ids' =>
+                                                                $data['total_replies_link_params']['complaint_ids'] ??
+                                                                '',
+                                                        ]),
+                                                    );
+
+                                                    // Total Replies links
+                                                    $totalRepliesLinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'total_replies',
+                                                            'complaint_ids' =>
+                                                                $data['total_replies_link_params']['complaint_ids'] ??
+                                                                '',
+                                                        ]),
+                                                    );
+
+                                                    $totalRepliesLinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'total_replies',
+                                                            'complaint_ids' =>
+                                                                $data['total_replies_link_params']['complaint_ids'] ??
+                                                                '',
+                                                        ]),
+                                                    );
+
+                                                    // Reply From links
+                                                    $replyFromLinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'reply_from',
+                                                            'complaint_ids' =>
+                                                                $data['reply_from_link_params']['complaint_ids'] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    $replyFromLinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'reply_from',
+                                                            'complaint_ids' =>
+                                                                $data['reply_from_link_params']['complaint_ids'] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    // Not Forward links
+                                                    $notForwardLinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'not_forward',
+                                                            'complaint_ids' =>
+                                                                $data['not_forward_link_params']['complaint_ids'] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    $notForwardLinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'not_forward',
+                                                            'complaint_ids' =>
+                                                                $data['not_forward_link_params']['complaint_ids'] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    // Total Solved links
+                                                    $totalSolvedLinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'total_solved',
+                                                            'complaint_ids' =>
+                                                                $data['total_solved_link_params']['complaint_ids'] ??
+                                                                '',
+                                                        ]),
+                                                    );
+
+                                                    $totalSolvedLinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'total_solved',
+                                                            'complaint_ids' =>
+                                                                $data['total_solved_link_params']['complaint_ids'] ??
+                                                                '',
+                                                        ]),
+                                                    );
+
+                                                    // Total Cancelled links
+                                                    $totalCancelledLinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'total_cancelled',
+                                                            'complaint_ids' =>
+                                                                $data['total_cancelled_link_params']['complaint_ids'] ??
+                                                                '',
+                                                        ]),
+                                                    );
+
+                                                    $totalCancelledLinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'total_cancelled',
+                                                            'complaint_ids' =>
+                                                                $data['total_cancelled_link_params']['complaint_ids'] ??
+                                                                '',
+                                                        ]),
+                                                    );
+
+                                                    // Total Reviewed links
+                                                    $totalReviewedLinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'total_reviewed',
+                                                            'complaint_ids' =>
+                                                                $data['total_reviewed_link_params']['complaint_ids'] ??
+                                                                '',
+                                                        ]),
+                                                    );
+
+                                                    $totalReviewedLinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'total_reviewed',
+                                                            'complaint_ids' =>
+                                                                $data['total_reviewed_link_params']['complaint_ids'] ??
+                                                                '',
+                                                        ]),
+                                                    );
+
+                                                    // Total Updates links
+                                                    $totalUpdatesLinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'updates_operator',
+                                                            'complaint_ids' =>
+                                                                $data['updates_operator_link_params'][
+                                                                    'complaint_ids'
+                                                                ] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    $totalUpdatesLinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'managerfilter' => 'updates_commander',
+                                                            'complaint_ids' =>
+                                                                $data['updates_commander_link_params'][
+                                                                    'complaint_ids'
+                                                                ] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    // Check if counts are zero
+                                                    $hasTotal = ($data['total'] ?? 0) > 0;
+                                                    $hasTotalReplies = ($data['total_replies'] ?? '0 / 0') !== '0 / 0';
+                                                    $hasReplies = ($data['replies'] ?? 0) > 0;
+                                                    $hasReplyFrom = ($data['reply_from'] ?? 0) > 0;
+                                                    $hasNotForward = ($data['not_forward'] ?? 0) > 0;
+                                                    $hasTotalSolved = ($data['total_solved'] ?? 0) > 0;
+                                                    $hasTotalCancelled = ($data['total_cancelled'] ?? 0) > 0;
+                                                    $hasTotalReviewed =
+                                                        ($data['total_reviewed'] ?? '0 / 0') !== '0 / 0';
+                                                    $hasTotalUpdates = ($data['total_updates'] ?? 0) > 0;
+
+                                                    $repliesCommanderCount = $data['replies_commander'] ?? 0;
+                                                    $repliesOperatorCount = $data['replies_operator'] ?? 0;
+
+                                                    $totalRepliesCommanderCount =
+                                                        $data['total_replies_commander'] ?? '0/0';
+                                                    $totalRepliesOperatorCount =
+                                                        $data['total_replies_operator'] ?? '0/0';
+
+                                                    $replyFromCommanderCount = $data['reply_from_commander'] ?? 0;
+                                                    $replyFromOperatorCount = $data['reply_from_operator'] ?? 0;
+
+                                                    $notForwardCommanderCount = $data['not_forward_commander'] ?? 0;
+                                                    $notForwardOperatorCount = $data['not_forward_operator'] ?? 0;
+
+                                                    $solvedCommanderCount = $data['total_solved_commander'] ?? 0;
+                                                    $solvedOperatorCount = $data['total_solved_operator'] ?? 0;
+
+                                                    $cancelledCommanderCount = $data['total_cancelled_commander'] ?? 0;
+                                                    $cancelledOperatorCount = $data['total_cancelled_operator'] ?? 0;
+
+                                                    $totalReviewedCommanderCount =
+                                                        $data['total_reviewed_commander'] ?? '0/0';
+                                                    $totalReviewedOperatorCount =
+                                                        $data['total_reviewed_operator'] ?? '0/0';
+
+                                                    $updatesCommanderCount = $data['total_updates_commander'] ?? 0;
+                                                    $updatesOperatorCount = $data['total_updates_operator'] ?? 0;
+
+                                                    // Set styles
+                                                    $totalStyle = $hasTotal
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $totalRepliesStyle = $hasTotalReplies
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $repliesStyle = $hasReplies
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $replyFromStyle = $hasReplyFrom
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $notForwardStyle = $hasNotForward
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $totalSolvedStyle = $hasTotalSolved
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $totalCancelledStyle = $hasTotalCancelled
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration; color: #000000;';
+                                                    $totalReviewedStyle = $hasTotalReviewed
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $totalUpdatesStyle = $hasTotalUpdates
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                @endphp
+
+                                                <tr>
+                                                    <td style="font-weight:bold">{{ $prakar }}</td>
+
+                                                    {{-- Total Complaints --}}
+                                                    <td>
+                                                        @if ($hasTotal)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $totalStyle }}" class="dropdown-toggle"
+                                                                    data-bs-toggle="dropdown" href="#">
+                                                                    {{ $data['total'] ?? 0 }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalLinkOperator }}">
+                                                                            ऑपरेटर ({{ $data['operator_total'] ?? 0 }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalLinkCommander }}">
+                                                                            कमांडर ({{ $data['commander_total'] ?? 0 }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $totalStyle }}">{{ $data['total'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Total Replies (Complaints/Replies) --}}
+                                                    <td>
+                                                        @if ($hasTotalReplies)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $totalRepliesStyle }}" class="dropdown-toggle"
+                                                                    data-bs-toggle="dropdown" href="#">
+                                                                    {{ $data['total_replies'] ?? '0 / 0' }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalRepliesLinkOperator }}">
+                                                                            ऑपरेटर ({{ $totalRepliesOperatorCount }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalRepliesLinkCommander }}">
+                                                                            कमांडर ({{ $totalRepliesCommanderCount }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $totalRepliesStyle }}">{{ $data['total_replies'] ?? '0/0' }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Replies Count --}}
+                                                    <td>
+                                                        @if ($hasReplies)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $repliesStyle }}" class="dropdown-toggle"
+                                                                    data-bs-toggle="dropdown" href="#">
+                                                                    {{ $data['replies'] ?? 0 }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $repliesLinkOperator }}">
+                                                                            ऑपरेटर ({{ $repliesOperatorCount }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $repliesLinkCommander }}">
+                                                                            कमांडर ({{ $repliesCommanderCount }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $repliesStyle }}">{{ $data['replies'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Reply From --}}
+                                                    <td>
+                                                        @if ($hasReplyFrom)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $replyFromStyle }}" class="dropdown-toggle"
+                                                                    data-bs-toggle="dropdown" href="#">
+                                                                    {{ $data['reply_from'] ?? 0 }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $replyFromLinkOperator }}">
+                                                                            ऑपरेटर ({{ $replyFromOperatorCount }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $replyFromLinkCommander }}">
+                                                                            कमांडर ({{ $replyFromCommanderCount }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $replyFromStyle }}">{{ $data['reply_from'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Not Forward --}}
+                                                    <td>
+                                                        @if ($hasNotForward)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $notForwardStyle }}" class="dropdown-toggle"
+                                                                    data-bs-toggle="dropdown" href="#">
+                                                                    {{ $data['not_forward'] ?? 0 }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $notForwardLinkOperator }}">
+                                                                            ऑपरेटर ({{ $notForwardOperatorCount }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $notForwardLinkCommander }}">
+                                                                            कमांडर ({{ $notForwardCommanderCount }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $notForwardStyle }}">{{ $data['not_forward'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Total Solved --}}
+                                                    <td>
+                                                        @if ($hasTotalSolved)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $totalSolvedStyle }}"
+                                                                    class="dropdown-toggle" data-bs-toggle="dropdown"
+                                                                    href="#">
+                                                                    {{ $data['total_solved'] ?? 0 }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalSolvedLinkOperator }}">
+                                                                            ऑपरेटर ({{ $solvedOperatorCount }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalSolvedLinkCommander }}">
+                                                                            कमांडर ({{ $solvedCommanderCount }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $totalSolvedStyle }}">{{ $data['total_solved'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Total Cancelled --}}
+                                                    <td>
+                                                        @if ($hasTotalCancelled)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $totalCancelledStyle }}"
+                                                                    class="dropdown-toggle" data-bs-toggle="dropdown"
+                                                                    href="#">
+                                                                    {{ $data['total_cancelled'] ?? 0 }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalCancelledLinkOperator }}">
+                                                                            ऑपरेटर ({{ $cancelledOperatorCount }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalCancelledLinkCommander }}">
+                                                                            कमांडर ({{ $cancelledCommanderCount }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $totalCancelledStyle }}">{{ $data['total_cancelled'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Total Reviewed (Complaints/Replies) --}}
+                                                    <td>
+                                                        @if ($hasTotalReviewed)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $totalReviewedStyle }}"
+                                                                    class="dropdown-toggle" data-bs-toggle="dropdown"
+                                                                    href="#">
+                                                                    {{ $data['total_reviewed'] ?? '0/0' }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalReviewedLinkOperator }}">
+                                                                            ऑपरेटर ({{ $totalReviewedOperatorCount }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalReviewedLinkCommander }}">
+                                                                            कमांडर ({{ $totalReviewedCommanderCount }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $totalReviewedStyle }}">{{ $data['total_reviewed'] ?? '0/0' }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Total Updates --}}
+                                                    <td>
+                                                        @if ($hasTotalUpdates)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $totalUpdatesStyle }}"
+                                                                    class="dropdown-toggle" data-bs-toggle="dropdown"
+                                                                    href="#">
+                                                                    {{ $data['total_updates'] ?? 0 }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalUpdatesLinkOperator }}">
+                                                                            ऑपरेटर ({{ $updatesOperatorCount }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $totalUpdatesLinkCommander }}">
+                                                                            कमांडर ({{ $updatesCommanderCount }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $totalUpdatesStyle }}">{{ $data['total_updates'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                            <tr style="font-weight:bold; background-color: #e2e3e5;">
+                                                <td>कुल</td>
+                                                <td>{{ $totals['total'] }}</td>
+                                                <td>{{ $totals['total_replies'] }}</td>
+                                                <td>{{ $totals['replies'] }}</td>
+                                                <td>{{ $totals['reply_from'] }}</td>
+                                                <td>{{ $totals['not_forward'] }}</td>
+                                                <td>{{ $totals['total_solved'] }}</td>
+                                                <td>{{ $totals['total_cancelled'] }}</td>
+                                                <td>{{ $totals['total_reviewed'] }}</td>
+                                                <td>{{ $totals['total_updates'] }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                @endif
+                            @endforeach
                         @endif
 
                         {{-- Operator Report --}}
-                        @if (!empty($reportOperator))
+                        {{-- @if (!empty($reportOperator))
                             @foreach ($reportOperator as $operatorId => $data)
                                 @if (!empty($data))
                                     <div class="step-header bg-dark text-white p-2 rounded mt-4">
@@ -325,10 +920,452 @@
                                     </table>
                                 @endif
                             @endforeach
+                        @endif --}}
+
+                        @if (!empty($reportOperator))
+                            @foreach ($reportOperator as $operatorId => $data)
+                                @if (!empty($data))
+                                    <div class="step-header bg-dark text-white p-2 rounded mt-4">
+                                        {{ $offices->firstWhere('admin_id', $operatorId)->admin_name ?? 'ऑपरेटर रिपोर्ट' }}:
+                                        {{ $dateRangeText }}
+                                    </div>
+
+                                    @php
+                                        $totals = [
+                                            'total' => 0,
+                                            'followups' => '0/0',
+                                            'completed_followups' => 0,
+                                            'overall_incoming' => 0,
+                                            'incoming_reason1' => '0/0',
+                                            'incoming_reason2' => 0,
+                                            'incoming_reason3' => 0,
+                                        ];
+                                    @endphp
+
+                                    <table class="table table-bordered table-sm mt-2" style="color: black">
+                                        <thead style="background-color: blanchedalmond">
+                                            <tr>
+                                                <th>प्रकार</th>
+                                                <th>कुल पंजीकृत</th>
+                                                <th>कुल फ़ॉलोअप</th>
+                                                <th>पूर्ण फ़ॉलोअप</th>
+                                                <th>कुल प्राप्त कॉल</th>
+                                                <th>प्राप्त फ़ॉलोअप प्रतिक्रिया</th>
+                                                <th>समस्या स्थिति</th>
+                                                <th>समस्या स्थिति अपडेट</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($data as $prakar => $d)
+                                                @php
+                                                    foreach (
+                                                        [
+                                                            'total',
+                                                            'completed_followups',
+                                                            'overall_incoming',
+                                                            'incoming_reason2',
+                                                            'incoming_reason3',
+                                                        ]
+                                                        as $key
+                                                    ) {
+                                                        $totals[$key] +=
+                                                            isset($d[$key]) && is_numeric($d[$key]) ? $d[$key] : 0;
+                                                    }
+                                                    foreach (['followups', 'incoming_reason1'] as $key) {
+                                                        if (isset($d[$key])) {
+                                                            $totals[$key] = sumFraction($totals[$key], $d[$key]);
+                                                        }
+                                                    }
+
+                                                    $isSuchnaType = in_array($prakar, [
+                                                        'शुभ सुचना',
+                                                        'अशुभ सुचना',
+                                                        'सुझाव',
+                                                    ]);
+
+                                                    // Determine base routes based on complaint type
+                                                    if ($isSuchnaType) {
+                                                        $operatorRoute = 'operator.suchnas.view';
+                                                        $commanderRoute = 'commander.suchnas.view';
+                                                    } else {
+                                                        $operatorRoute = 'operator.complaint.view';
+                                                        $commanderRoute = 'commander.complaint.view';
+                                                    }
+
+                                                    $baseLinkParams = [
+                                                        'complaint_type' => $prakar,
+                                                        'operator_id' =>
+                                                            $operatorId !== 'Grand Total' ? $operatorId : null,
+                                                        'from_date' => request('from_date'),
+                                                        'to_date' => request('to_date'),
+                                                    ];
+
+                                                    // Total complaints link
+                                                    $totalLink = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, ['filter' => 'all']),
+                                                    );
+
+                                                    // Followups links - using original link parameters
+                                                      $followupLinkOperator = route(
+        $operatorRoute,
+        array_merge($baseLinkParams, [
+            'operatorfilter' => 'followups',
+            'followup_complaint_ids' => $d['followup_link_params']['followup_complaint_ids'] ?? '',
+        ]),
+    );
+
+    $followupLinkCommander = route(
+        $commanderRoute,
+        array_merge($baseLinkParams, [
+            'operatorfilter' => 'followups',
+            'followup_complaint_ids' => $d['followup_link_params_commander']['followup_complaint_ids'] ?? '',
+        ]),
+    );
+
+                                                    // Completed Followups links - using original link parameters
+                                                    $completedFollowupLinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'operatorfilter' => 'completed_followups',
+                                                            'followup_status' => 2,
+                                                        ]),
+                                                    );
+
+                                                    $completedFollowupLinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'operatorfilter' => 'completed_followups',
+                                                            'followup_status' => 2,
+                                                        ]),
+                                                    );
+
+                                                    // Overall Incoming links - using original link parameters
+                                                    $overallIncomingLinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'operatorfilter' => 'overall_incoming',
+                                                            'incoming_complaint_ids' =>
+                                                                $d['overall_incoming_link_params'][
+                                                                    'incoming_complaint_ids'
+                                                                ] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    $overallIncomingLinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'operatorfilter' => 'overall_incoming',
+                                                            'incoming_complaint_ids' =>
+                                                                $d['overall_incoming_link_params'][
+                                                                    'incoming_complaint_ids'
+                                                                ] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    // Incoming Reason 1 links - using original link parameters
+                                                    $incomingReason1LinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'operatorfilter' => 'incoming_reason1',
+                                                            'incoming_complaint_ids' =>
+                                                                $d['incoming_reason1_link_params'][
+                                                                    'incoming_complaint_ids'
+                                                                ] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    $incomingReason1LinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'operatorfilter' => 'incoming_reason1',
+                                                            'incoming_complaint_ids' =>
+                                                                $d['incoming_reason1_link_params'][
+                                                                    'incoming_complaint_ids'
+                                                                ] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    // Incoming Reason 2 links - using original link parameters
+                                                    $incomingReason2LinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'operatorfilter' => 'incoming_reason2',
+                                                            'incoming_complaint_ids' =>
+                                                                $d['incoming_reason2_link_params'][
+                                                                    'incoming_complaint_ids'
+                                                                ] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    $incomingReason2LinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'operatorfilter' => 'incoming_reason2',
+                                                            'incoming_complaint_ids' =>
+                                                                $d['incoming_reason2_link_params'][
+                                                                    'incoming_complaint_ids'
+                                                                ] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    // Incoming Reason 3 links - using original link parameters
+                                                    $incomingReason3LinkOperator = route(
+                                                        $operatorRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'operatorfilter' => 'incoming_reason3',
+                                                            'incoming_complaint_ids' =>
+                                                                $d['incoming_reason3_link_params'][
+                                                                    'incoming_complaint_ids'
+                                                                ] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    $incomingReason3LinkCommander = route(
+                                                        $commanderRoute,
+                                                        array_merge($baseLinkParams, [
+                                                            'operatorfilter' => 'incoming_reason3',
+                                                            'incoming_complaint_ids' =>
+                                                                $d['incoming_reason3_link_params'][
+                                                                    'incoming_complaint_ids'
+                                                                ] ?? '',
+                                                        ]),
+                                                    );
+
+                                                    // Check if counts are zero
+                                                    $hasTotal = ($d['total'] ?? 0) > 0;
+                                                    $hasFollowups = ($d['followups'] ?? '0 / 0') !== '0 / 0';
+                                                    $hasCompletedFollowups = ($d['completed_followups'] ?? 0) > 0;
+                                                    $hasOverallIncoming = ($d['overall_incoming'] ?? 0) > 0;
+                                                    $hasIncomingReason1 =
+                                                        ($d['incoming_reason1'] ?? '0 / 0') !== '0 / 0';
+                                                    $hasIncomingReason2 = ($d['incoming_reason2'] ?? 0) > 0;
+                                                    $hasIncomingReason3 = ($d['incoming_reason3'] ?? 0) > 0;
+
+                                                    // Set CSS styles
+                                                    $totalStyle = $hasTotal
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $followupStyle = $hasFollowups
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $completedFollowupStyle = $hasCompletedFollowups
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $overallIncomingStyle = $hasOverallIncoming
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $incomingReason1Style = $hasIncomingReason1
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $incomingReason2Style = $hasIncomingReason2
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                    $incomingReason3Style = $hasIncomingReason3
+                                                        ? 'cursor: pointer; color: #593bdb;'
+                                                        : 'cursor: default; text-decoration: none; color: #000000;';
+                                                @endphp
+
+                                                <tr>
+                                                    <td style="font-weight:bold">{{ $prakar }}</td>
+
+                                                    {{-- Total Complaints --}}
+                                                    <td>
+                                                        @if ($hasTotal)
+                                                            <a style="{{ $totalStyle }}" target="_blank"
+                                                                href="{{ $totalLink }}">
+                                                                {{ $d['total'] ?? 0 }}
+                                                            </a>
+                                                        @else
+                                                            <span
+                                                                style="{{ $totalStyle }}">{{ $d['total'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Followups (Complaints/Replies) --}}
+                                                    <td>
+                                                        @if ($hasFollowups)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $followupStyle }}" class="dropdown-toggle"
+                                                                    data-bs-toggle="dropdown" href="#">
+                                                                    {{ $d['followups'] ?? '0/0' }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $followupLinkOperator }}">
+                                                                            ऑपरेटर ({{ $d['followups_operator'] ?? 0 }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $followupLinkCommander }}">
+                                                                            कमांडर ({{ $d['followups_commander'] ?? 0 }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $followupStyle }}">{{ $d['followups'] ?? '0/0' }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Completed Followups --}}
+                                                    <td>
+                                                        @if ($hasCompletedFollowups)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $completedFollowupStyle }}"
+                                                                    class="dropdown-toggle" data-bs-toggle="dropdown"
+                                                                    href="#">
+                                                                    {{ $d['completed_followups'] ?? 0 }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $completedFollowupLinkOperator }}">
+                                                                            ऑपरेटर
+                                                                            ({{ $d['completed_followups_operator'] ?? 0 }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $completedFollowupLinkCommander }}">
+                                                                            कमांडर
+                                                                            ({{ $d['completed_followups_commander'] ?? 0 }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $completedFollowupStyle }}">{{ $d['completed_followups'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Overall Incoming --}}
+                                                    <td>
+                                                        @if ($hasOverallIncoming)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $overallIncomingStyle }}"
+                                                                    class="dropdown-toggle" data-bs-toggle="dropdown"
+                                                                    href="#">
+                                                                    {{ $d['overall_incoming'] ?? 0 }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $overallIncomingLinkOperator }}">
+                                                                            ऑपरेटर
+                                                                            ({{ $d['overall_incoming_operator'] ?? 0 }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $overallIncomingLinkCommander }}">
+                                                                            कमांडर
+                                                                            ({{ $d['overall_incoming_commander'] ?? 0 }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $overallIncomingStyle }}">{{ $d['overall_incoming'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Incoming Reason 1 --}}
+                                                    <td>
+                                                        @if ($hasIncomingReason1)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $incomingReason1Style }}"
+                                                                    class="dropdown-toggle" data-bs-toggle="dropdown"
+                                                                    href="#">
+                                                                    {{ $d['incoming_reason1'] ?? '0/0' }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $incomingReason1LinkOperator }}">
+                                                                            ऑपरेटर
+                                                                            ({{ $d['incoming_reason1_operator'] ?? 0 }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $incomingReason1LinkCommander }}">
+                                                                            कमांडर
+                                                                            ({{ $d['incoming_reason1_commander'] ?? 0 }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $incomingReason1Style }}">{{ $d['incoming_reason1'] ?? '0/0' }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Incoming Reason 2 --}}
+                                                    <td>
+                                                        @if ($hasIncomingReason2)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $incomingReason2Style }}"
+                                                                    class="dropdown-toggle" data-bs-toggle="dropdown"
+                                                                    href="#">
+                                                                    {{ $d['incoming_reason2'] ?? 0 }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $incomingReason2LinkOperator }}">
+                                                                            ऑपरेटर
+                                                                            ({{ $d['incoming_reason2_operator'] ?? 0 }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $incomingReason2LinkCommander }}">
+                                                                            कमांडर
+                                                                            ({{ $d['incoming_reason2_commander'] ?? 0 }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $incomingReason2Style }}">{{ $d['incoming_reason2'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+
+                                                    {{-- Incoming Reason 3 --}}
+                                                    <td>
+                                                        @if ($hasIncomingReason3)
+                                                            <div class="dropdown">
+                                                                <a style="{{ $incomingReason3Style }}"
+                                                                    class="dropdown-toggle" data-bs-toggle="dropdown"
+                                                                    href="#">
+                                                                    {{ $d['incoming_reason3'] ?? 0 }}
+                                                                </a>
+                                                                <ul class="dropdown-menu">
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $incomingReason3LinkOperator }}">
+                                                                            ऑपरेटर
+                                                                            ({{ $d['incoming_reason3_operator'] ?? 0 }})
+                                                                        </a></li>
+                                                                    <li><a class="dropdown-item" target="_blank"
+                                                                            href="{{ $incomingReason3LinkCommander }}">
+                                                                            कमांडर
+                                                                            ({{ $d['incoming_reason3_commander'] ?? 0 }})
+                                                                        </a></li>
+                                                                </ul>
+                                                            </div>
+                                                        @else
+                                                            <span
+                                                                style="{{ $incomingReason3Style }}">{{ $d['incoming_reason3'] ?? 0 }}</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                            <tr style="font-weight:bold; background-color: #e2e3e5;">
+                                                <td>कुल</td>
+                                                <td>{{ $totals['total'] }}</td>
+                                                <td>{{ $totals['followups'] }}</td>
+                                                <td>{{ $totals['completed_followups'] }}</td>
+                                                <td>{{ $totals['overall_incoming'] }}</td>
+                                                <td>{{ $totals['incoming_reason1'] }}</td>
+                                                <td>{{ $totals['incoming_reason2'] }}</td>
+                                                <td>{{ $totals['incoming_reason3'] }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                @endif
+                            @endforeach
                         @endif
 
                         {{-- Member Report --}}
-                        @if (!empty($reportMember))
+                        {{-- @if (!empty($reportMember))
                             @php $grandTotalMembers = 0; @endphp
 
                             @foreach ($reportMember as $memberId => $memberData)
@@ -361,6 +1398,93 @@
                                                     <td>{{ $value }}</td>
                                                 </tr>
                                             @endforeach
+
+                                            <tr style="font-weight:bold; background-color: #e2e3e5;">
+                                                <td>कुल</td>
+                                                <td>{{ $memberTotal }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    @php $grandTotalMembers += $memberTotal; @endphp
+                                @endif
+                            @endforeach
+                        @endif --}}
+
+                        @if (!empty($reportMember))
+                            @php $grandTotalMembers = 0; @endphp
+
+                            @foreach ($reportMember as $memberId => $memberData)
+                                @if (!empty($memberData))
+                                    <div class="step-header bg-dark text-white p-2 rounded mt-4">
+                                        {{ $fields->firstWhere('member_id', $memberId)->name ?? 'कमांडर रिपोर्ट' }}:
+                                        {{ $dateRangeText }}
+                                    </div>
+
+                                    @php $memberTotal = 0; @endphp
+
+                                    <table class="table table-bordered table-sm mt-2" style="color: black">
+                                        <thead style="background-color: blanchedalmond">
+                                            <tr>
+                                                <th>प्रकार</th>
+                                                <th>कुल पंजीकृत</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($memberData as $prakar => $data)
+                                                @php
+                                                    $value =
+                                                        isset($data['total']) && is_numeric($data['total'])
+                                                            ? (int) $data['total']
+                                                            : 0;
+                                                    $memberTotal += $value;
+                                                    $link = '';
+                                                    $prakarNormalized = trim($prakar);
+
+                                                    if (
+                                                        $prakarNormalized === 'समस्या' ||
+                                                        $prakarNormalized === 'विकास'
+                                                    ) {
+                                                        $routeName = 'commander.complaint.view';
+                                                    } elseif (
+                                                        $prakarNormalized === 'शुभ सुचना' ||
+                                                        $prakarNormalized === 'अशुभ सुचना'
+                                                    ) {
+                                                        $routeName = 'commander.suchnas.view';
+                                                    } else {
+                                                        $routeName = null;
+                                                    }
+
+                                                    if ($routeName) {
+                                                        if (!empty($memberId) && $memberId !== 'Grand Total') {
+                                                            $link = route($routeName, [
+                                                                'created_by_member' => $memberId,
+                                                                'complaint_type' => $prakarNormalized,
+                                                            ]);
+                                                        } elseif ($memberId === 'Grand Total') {
+                                                            $link = route($routeName, [
+                                                                'complaint_type' => $prakarNormalized,
+                                                            ]);
+                                                        }
+                                                    }
+                                                @endphp
+
+
+                                                <tr>
+                                                    <td style="font-weight:bold">{{ $prakar }}</td>
+                                                    <td>
+                                                        @if ($link)
+                                                            <a class="text-primary" style="cursor: pointer;"
+                                                                target="_blank" href="{{ $link }}">
+                                                                {{ $value }}
+                                                            </a>
+                                                        @else
+                                                            {{ $value }}
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+
 
                                             <tr style="font-weight:bold; background-color: #e2e3e5;">
                                                 <td>कुल</td>

@@ -315,7 +315,7 @@
                     }
                 });
 
-                 $('#division_id').on('change', function() {
+                $('#division_id').on('change', function() {
                     const divisionId = $(this).val();
                     $('#district_id, #vidhansabha_id, #gram_id, #polling_id, #area_id').html('');
                     $('#district_id').append('<option value="">--चुने--</option>');
@@ -487,9 +487,9 @@
                 if (urlParams.has('admin_id')) $('#admin_id').val(urlParams.get('admin_id'));
                 if (urlParams.has('reply_id')) $('#reply_id').val(urlParams.get('reply_id'));
 
-               
+
                 if (urlParams.has('jati_null') && urlParams.get('jati_null') === '1') {
-                    $('#jati_id').val(''); 
+                    $('#jati_id').val('');
                 } else if (urlParams.has('jati_id')) {
                     $('#jati_id').val(urlParams.get('jati_id'));
                 }
@@ -541,7 +541,7 @@
                                 d.department_id = $('#department_id').val();
                             }
                             d.subject_id = $('#subject_id').val();
-                             d.division_id = $('#division_id').val();
+                            d.division_id = $('#division_id').val();
                             d.district_id = $('#district_id').val();
                             d.vidhansabha_id = $('#vidhansabha_id').val();
                             d.mandal_id = $('#mandal_id').val();
@@ -566,6 +566,42 @@
 
                             d.complaintOtherFilter = $('#complaintOtherFilter').val();
                             d.filter = $('#complaintFilterTabs a.active').data('filter') || '';
+
+                            if (urlParams.has('created_by_member')) {
+                                d.created_by_member = urlParams.get('created_by_member');
+                            }
+
+                                                        if (urlParams.has('operatorfilter')) {
+                                d.operatorfilter = urlParams.get('operatorfilter');
+                            }
+
+                            if (urlParams.has('followup_complaint_ids') && urlParams.get(
+                                    'followup_complaint_ids').trim() !== '') {
+                                d.followup_complaint_ids = urlParams.get('followup_complaint_ids');
+                            }
+
+                            if (urlParams.has('followup_status')) {
+                                d.followup_status = urlParams.get('followup_status');
+                            }
+
+                            // Only send incoming_complaint_ids if it's not empty
+                            if (urlParams.has('incoming_complaint_ids') && urlParams.get(
+                                    'incoming_complaint_ids').trim() !== '') {
+                                d.incoming_complaint_ids = urlParams.get('incoming_complaint_ids');
+                            }
+
+                            if (urlParams.has('managerfilter')) {
+                                d.managerfilter = urlParams.get('managerfilter');
+                            }
+
+                            if (urlParams.has('complaint_ids') && urlParams.get('complaint_ids').trim() !==
+                                '') {
+                                d.complaint_ids = urlParams.get('complaint_ids');
+                            }
+
+                            if (urlParams.has('manager_id')) {
+                                d.manager_id = urlParams.get('manager_id');
+                            }
                         }
                     },
                     columns: [{
